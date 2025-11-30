@@ -1,0 +1,29 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffff00;
+  display: inline;
+}
+
+Box {
+  display: inline;
+  color: inherit;
+  padding: 0px, 5px;
+  fontSize: inherit;
+}
+
+.box2 {
+  color: #ff0000;
+}
+
+.box3 {
+  color: #0000ff;
+}
+
+.box4 {
+  color: #00ff00;
+}
+

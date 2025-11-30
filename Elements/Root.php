@@ -1,0 +1,48 @@
+<?php
+
+namespace SPTK;
+
+class Root extends Element {
+
+  protected function init() {
+    $sdl = SDL::$instance->sdl;
+    $displayId = $sdl->SDL_GetPrimaryDisplay();
+    $workArea = $sdl->new('SDL_Rect');
+    $sdl->SDL_GetDisplayUsableBounds($displayId, \FFI::addr($workArea));
+    $this->geometry->x = $workArea->x;
+    $this->geometry->y = $workArea->y;
+    $this->geometry->width = $workArea->w;
+    $this->geometry->height = $workArea->h;
+    $this->geometry->innerWidth = $this->geometry->width;
+    $this->geometry->innerHeight = $this->geometry->height;
+    $this->geometry->fullWidth = $this->geometry->width;
+    $this->geometry->fullHeight = $this->geometry->height;
+  }
+
+  protected function render($ptmp) {
+    foreach ($this->stack as $descendant) {
+      $descendant->render(null);
+    }
+    return false;
+  }
+
+  protected function calculateGeometry($cursor) {
+    foreach ($this->descendants as $element) {
+      $element->calculateGeometry(false);
+    }
+  }
+
+  public function eventHandler($event) {
+    $handled = false;
+    foreach (self::$root->stack as $window) {
+      $handled = $window->eventHandler($event);
+      if ($handled) {
+        break;
+      }
+    }
+    if ($event['type'] == SDL::SDL_QUIT) {
+      SDL::$instance->end();
+    }
+  }
+
+}

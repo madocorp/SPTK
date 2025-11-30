@@ -1,0 +1,42 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffffff;
+  fontSize: 15px;
+}
+
+Box {
+  display: block;
+  color: #000000;
+  backgroundColor: #ffffff;
+  border: 3px;
+  borderColor: #555555;
+  width: 48.5%;
+  height: 48.5%;
+  fontSize: 12px;
+  padding: 5px;
+}
+
+.b1 {
+  x: 1%;
+  y: 1%;
+  textAlign: left;
+}
+.b2 {
+  x: -1%;
+  y: 1%;
+  textAlign: right;
+}
+.b3 {
+  x: 1%;
+  y: -1%;
+  textAlign: center;
+}
+.b4 {
+  x: -1%;
+  y: -1%;
+  textAlign: justify;
+}

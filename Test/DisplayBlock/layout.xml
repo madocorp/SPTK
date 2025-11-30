@@ -1,0 +1,37 @@
+<Window title="DisplayBlock">
+  <Box class="a">
+    <Box class="l2 a">AA</Box>
+    <Box class="l2 b">AB</Box>
+    <Box class="l2 c">AC</Box>
+    <Box class="l2 d">AD</Box>
+    <Box class="l2 e">AE</Box>
+  </Box>
+  <Box class="b">
+    <Box class="l2 a">BA</Box>
+    <Box class="l2 b">BB</Box>
+    <Box class="l2 c">BC</Box>
+    <Box class="l2 d">BD</Box>
+    <Box class="l2 e">BE</Box>
+  </Box>
+  <Box class="c">
+    <Box class="l2 a">CA</Box>
+    <Box class="l2 b">CB</Box>
+    <Box class="l2 c">CC</Box>
+    <Box class="l2 d">CD</Box>
+    <Box class="l2 e">CE</Box>
+  </Box>
+  <Box class="d">
+    <Box class="l2 a">DA</Box>
+    <Box class="l2 b">DB</Box>
+    <Box class="l2 c">DC</Box>
+    <Box class="l2 d">DD</Box>
+    <Box class="l2 e">DE</Box>
+  </Box>
+  <Box class="e">
+    <Box class="l2 a">EA</Box>
+    <Box class="l2 b">EB</Box>
+    <Box class="l2 c">EC</Box>
+    <Box class="l2 d">ED</Box>
+    <Box class="l2 e">EE</Box>
+  </Box>
+</Window>

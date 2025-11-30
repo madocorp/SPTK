@@ -1,0 +1,7 @@
+<Window title="DynamicClass">
+  <Event type="KeyPress">Controller::alterClass</Event>
+  Press Tab to alter class!
+  <Box class="yellow" id="dynamic-class-box">
+    Original class: yellow
+  </Box>
+</Window>

@@ -1,0 +1,19 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffff00;
+}
+
+Box {
+  width: 50%;
+  height: 50%;
+  x: 40px;
+  y: 50px;
+  padding: 10px;
+  backgroundColor: #0000aa;
+  border: 3px;
+  borderColor: #00cccc;
+}

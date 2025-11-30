@@ -1,0 +1,36 @@
+<Window title="DisplayInline">
+  <IBox class="a"></IBox>
+  <IBox class="b"></IBox>
+  <IBox class="c"></IBox>
+  <IBox class="d"></IBox>
+  <IBox class="e"></IBox>
+
+  <IBox class="a"></IBox>
+  <IBox class="b"></IBox>
+  <IBox class="c"></IBox>
+  <IBox class="d"></IBox>
+  <IBox class="e"></IBox>
+
+  <IBox class="a"></IBox>
+  <IBox class="b"></IBox>
+  <IBox class="c"></IBox>
+  <IBox class="d"></IBox>
+  <IBox class="e"></IBox>
+
+  <AC class="middle">
+    <IBox class="a"></IBox>
+    <IBox class="b"></IBox>
+    <IBox class="c"></IBox>
+    <IBox class="d"></IBox>
+    <IBox class="e"></IBox>
+  </AC>
+
+  <IBox class="a"></IBox>
+  <IBox class="b"></IBox>
+  <IBox class="c"></IBox>
+  <IBox class="d"></IBox>
+  <IBox class="e"></IBox>
+
+  In arcu nulla, <IBox class="big">sollicitudin non nisl sed</IBox>, tempor fringilla neque.
+  Vivamus blandit<NL/> nisl elit.
+</Window>

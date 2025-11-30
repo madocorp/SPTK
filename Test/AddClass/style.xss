@@ -1,0 +1,17 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffff00;
+  fontSize: 16px;
+}
+
+.red {
+  color: #ff0000;
+}
+
+.big {
+  fontSize: 30px;;
+}

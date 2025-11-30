@@ -1,0 +1,226 @@
+Root {
+  width: content;
+  height: content;
+  display: inline;
+  x: 0px;
+  y: 0px;
+  border: 0px;
+  borderColor: #000000;
+  margin: 0px;
+  padding: 0px;
+  backgroundColor: #00000000;
+  backgroundImage: none;
+  backgroundAlignX: center;
+  backgroundAlignY: center;
+  backgroundSizeX: content;
+  backgroundSizeY: content;
+  font: LiberationMono-Bold.ttf;
+  fontSize: 16px;
+  color: #ffffff;
+  textAlign: left;
+  ascent: auto;
+  lineHeight: 150%;
+  letterSpacing: 1px;
+  wordSpacing: 10px;
+  textWrap: auto;
+}
+
+Window {
+  width: 640px;
+  height: 480px;
+  backgroundColor: #0000aa;
+  fontSize: 16px;
+}
+
+Word {
+  display: word;
+  width: content;
+  height: content;
+  backgroundColor: inherit;
+  fontSize: inherit;
+  color: inherit;
+}
+
+Box {
+  display: block;
+}
+
+IBox {
+  display: inline;
+}
+
+NL {
+  display: newline;
+  width: 0px;
+  height: 0px;
+}
+
+Menu {
+  display: block;
+  width: 100%;
+  height: 100%;
+  x: 0px;
+  y: 0px;
+  backgroundColor: #00000000;
+  padding: 0px;
+  margin: 0px;
+}
+
+SubMenu {
+  display: block;
+  y: 20px;
+}
+
+MenuBar {
+  display: block;
+  width: 100%;
+  height: 20px;
+  backgroundColor: #00aaaa;
+  color: #000000;
+}
+
+MenuBarHotKey {
+  color: #0000ff;
+  width: 20px;
+  textAlign: right;
+  paddingRight: 3px;
+}
+
+MenuBarItem {
+  display: inline;
+  width: content;
+  color: #000000;
+  padding: 1px, 15px, 0px, 0px;
+  backgroundColor: #00000000;
+}
+
+Key {
+  display: block;
+  width: 100px;
+  height: 100px;
+  x: 30px;
+  y: 30px;
+  backgroundColor: #ff0000ff;
+  color: #ffffffff;
+}
+
+.active-menu-bar-item {
+  backgroundColor: #00ffff;
+}
+
+MenuBox {
+  display: block;
+  width: 150px;
+  height: content;
+  backgroundColor: #00aaaa;
+  border: 3px;
+  borderColor: #00ffff;
+  padding: 0px;
+  lineHeight: 100%;
+}
+
+MenuBoxItem {
+  display: inline;
+  width: 100%;
+  padding: 1px, 10px, 0px, 10px;
+}
+
+.active-menu-box-item {
+  color: #ff0000;
+  backgroundColor: #000000;
+}
+
+Panel {
+  display: block;
+  x: 50%;
+  y: 50%;
+  marginTop: half;
+  marginLeft: half;
+  width: 60%;
+  height: content;
+  backgroundColor: #cccccc;
+  color: #000000;
+  border: 3px;
+  borderColor: #eeeeee;
+  fontSize: 15px;
+}
+
+PanelTitle {
+  width: 100%;
+  height: 21px;
+  backgroundColor: #eeeeee;
+  color: #000000;
+  textAlign: center;
+  fontSize: 15px;
+}
+
+PanelContent {
+  y: 17px;
+  x: 0px;
+  padding: 10px;
+  color: #000000;
+  fontSize: 12px;
+}
+
+WarningPanel {
+  display: block;
+  x: 50%;
+  y: 50%;
+  marginTop: half;
+  marginLeft: half;
+  width: 60%;
+  height: content;
+  backgroundColor: #ffff00;
+  color: #000000;
+  border: 3px;
+  borderColor: #ffaa00;
+}
+
+WarningPanelTitle {
+  width: 100%;
+  height: 21px;
+  backgroundColor: #ffaa00;
+  color: #ffffff;
+  textAlign: center;
+  fontSize: 15px;
+}
+
+WarningPanelContent {
+  y: 17px;
+  x: 0px;
+  padding: 10px;
+  color: #000000;
+  fontSize: 12px;
+}
+
+ErrorPanel {
+  display: block;
+  x: 50%;
+  y: 50%;
+  marginTop: half;
+  marginLeft: half;
+  width: 60%;
+  height: content;
+  backgroundColor: #ffaaaa;
+  color: #000000;
+  border: 3px;
+  borderColor: #cc0000;
+}
+
+ErrorPanelTitle {
+  width: 100%;
+  height: 21px;
+  backgroundColor: #cc0000;
+  color: #ffffff;
+  textAlign: center;
+  fontSize: 15px;
+}
+
+ErrorPanelContent {
+  y: 17px;
+  x: 0px;
+  padding: 10px;
+  color: #000000;
+  fontSize: 12px;
+}
+

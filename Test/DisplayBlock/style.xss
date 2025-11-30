@@ -1,0 +1,54 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffff00;
+}
+
+Box {
+  display: block;
+  width: 100px;
+  height: 100px;
+  border: 2px;
+  borderColor: #ffff00;
+  color: #ffffff;
+  backgroundColor: #000055;
+}
+
+.l2 {
+  width: 25px;
+  height: 25px;
+  backgroundColor: #333333;
+  fontSize: 10px;
+  textAlign: center;
+  paddingTop: 5px;
+}
+
+.a {
+  x: 10px;
+  y: 10px;
+}
+
+.b {
+  x: -10px;
+  y: 10px;
+}
+
+.c {
+  x: -10px;
+  y: -10px;
+}
+
+.d {
+  x: 10px;
+  y: -10px;
+}
+
+.e {
+  marginRight: half;
+  marginTop: half;
+  x: -50%;
+  y: 50%;
+}

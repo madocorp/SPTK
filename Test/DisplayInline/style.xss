@@ -1,0 +1,49 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffffff;
+  fontSize: 16px;
+}
+
+.a {
+  width: 100px;
+  height: 20px;
+  backgroundColor: #0000ff;
+}
+
+.b {
+  width: 70px;
+  height: 30px;
+  backgroundColor: #4444ff;
+}
+
+.c {
+  width: 50px;
+  height: 50px;
+  backgroundColor: #8888ff;
+}
+
+.d {
+  width: 30px;
+  height: 70px;
+  backgroundColor: #aaaaff;
+}
+
+.e {
+  width: 20px;
+  height: 100px;
+  backgroundColor: #ffffffff;
+}
+
+.big {
+  fontSize: 30px;
+  color: #ff0000;
+  width: 250px;
+}
+
+.middle {
+  ascent: 50%;
+}
