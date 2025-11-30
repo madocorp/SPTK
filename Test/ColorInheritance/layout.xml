@@ -1,0 +1,22 @@
+<Window title="ColorInheritance">
+  <Box>
+    Box1.1
+    <Box class="box2">
+      Box2.1
+      <Box class="box3">
+        Box3
+      </Box>
+      Box2.2
+    </Box>
+    <Box class="box4">
+      Box4
+      <Box>Box4.1</Box>
+      <Box class="box2">Box2.3</Box>
+      <Box>
+        Box4.2
+        <Box>Box4.3</Box>
+      </Box>
+    </Box>
+    Box1.1
+  </Box>
+</Window>

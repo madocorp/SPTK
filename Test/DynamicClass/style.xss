@@ -1,0 +1,22 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
+Box {
+  y: 20px;
+}
+
+.yellow {
+  color: #ffff00;
+  backgroundColor: #000000;
+}
+
+.red {
+  color: #ff0000;
+  backgroundColor: #000000;
+}

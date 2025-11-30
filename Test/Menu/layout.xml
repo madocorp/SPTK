@@ -1,0 +1,36 @@
+<Window title="Menu">
+  <Menu>
+    <MenuBar>
+      <MenuBarItem id="menu-a">BarItem1</MenuBarItem>
+      <MenuBarItem id="menu-b">BarItem2</MenuBarItem>
+      <MenuBarItem id="menu-c">BarItem3</MenuBarItem>
+      <MenuBarItem id="menu-d">BarItem4</MenuBarItem>
+    </MenuBar>
+    <SubMenu>
+      <MenuBox belongsTo="menu-a">
+        <MenuBoxItem onSelect="Controller::noop">BoxItem1.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem1.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem1.3g</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem1.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem1.5</MenuBoxItem>
+      </MenuBox>
+      <MenuBox belongsTo="menu-b">
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.3</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.5</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.7</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem2.8</MenuBoxItem>
+      </MenuBox>
+      <MenuBox belongsTo="menu-c">
+        <MenuBoxItem onSelect="Controller::noop">BoxItem3.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop">BoxItem3.2</MenuBoxItem>
+      </MenuBox>
+      <MenuBox belongsTo="menu-d">
+        <MenuBoxItem onSelect="Controller::noop">BoxItem4</MenuBoxItem>
+      </MenuBox>
+    </SubMenu>
+  </Menu>
+</Window>

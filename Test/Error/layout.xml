@@ -1,0 +1,12 @@
+<Window title="Panel">
+  <ErrorPanel id="panel">
+    <ErrorPanelTitle>Panel error</ErrorPanelTitle>
+    <ErrorPanelContent>
+      This is an error panel.
+    </ErrorPanelContent>
+  </ErrorPanel>
+  <Box>
+    <Event type="KeyPress">Controller::showPanel</Event>
+    Press space to raise an error message!
+  </Box>
+</Window>

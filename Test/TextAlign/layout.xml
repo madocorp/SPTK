@@ -1,0 +1,14 @@
+<Window title="TextAlign">
+  <Box class="b1">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis erat est, ac porta ex egestas ut. Donec tincidunt porttitor est, eu ultrices nisl congue laoreet. Suspendisse eu sem faucibus, ornare quam id, ultricies nisi. Aenean viverra vulputate auctor. Sed hendrerit turpis nec tristique egestas. Proin ac leo sagittis, rhoncus metus sed, semper orci. Phasellus erat nibh, vestibulum vel odio id, finibus porta neque.
+  </Box>
+  <Box class="b2">
+    Sed eu felis sit amet mauris lobortis fermentum. Etiam eu pulvinar enim. Praesent et felis ante. Etiam lorem nisi, tristique eu aliquet at, suscipit nec ligula. Phasellus a velit eget nunc varius lacinia. Integer tincidunt velit purus, sit amet mattis nisi posuere ac. Nam mollis venenatis leo sit amet aliquet. Quisque eleifend et velit eu iaculis. Phasellus feugiat odio quis magna feugiat, eget dignissim justo aliquam. Donec eu malesuada quam. Curabitur sollicitudin tellus non augue fermentum, vel vulputate odio feugiat. Ut ut mollis tellus. Fusce luctus magna sit amet sem tempus facilisis. Nam sodales tortor eget tristique efficitur. Ut sollicitudin erat id ex gravida consequat. Maecenas bibendum condimentum tortor nec elementum. 
+  </Box>
+  <Box class="b3">
+    Nulla vestibulum sagittis convallis. Curabitur maximus, augue et dapibus interdum, sapien augue viverra odio, et sollicitudin orci libero vel arcu. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Quisque lacus ex, scelerisque eget turpis ut, imperdiet placerat tortor. Fusce porttitor mollis tortor id commodo. Proin et eleifend est. Sed quis gravida nibh. Maecenas facilisis ultrices mi a vehicula. Sed ut quam accumsan, rhoncus quam at, tempor elit.
+  </Box>
+  <Box class="b4">
+    Nam porta, enim id auctor lacinia, ante dui aliquet diam, at venenatis dui nibh vitae justo. Quisque nec mollis lacus. Sed fringilla faucibus nisi eu efficitur. Vestibulum nec enim urna. In mollis ante convallis lacus vehicula, quis vehicula metus semper. Proin luctus leo ac justo pharetra pellentesque. In sit amet bibendum neque. Etiam non aliquam diam, vel sodales massa. Nullam nec lorem leo. Proin tincidunt accumsan dolor eget pellentesque. Sed eu suscipit nulla. Fusce turpis nulla, lacinia non posuere sit amet, pretium id est. Vestibulum tempus erat id libero aliquet, nec porttitor nibh gravida. Sed ex ligula, blandit ac risus ac, fermentum pulvinar lorem. Morbi efficitur felis mauris, nec suscipit nisl commodo nec. Morbi auctor rutrum mauris. 
+  </Box>
+</Window>

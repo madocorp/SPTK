@@ -1,0 +1,81 @@
+<?php
+
+namespace SPTK;
+
+class Menu extends Box {
+
+  protected $bar;
+  protected $sub;
+  protected $openedIndex = false;
+
+  protected function init() {
+    $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+  }
+
+  protected function addDescendant($element) {
+    parent::addDescendant($element);
+    if ($element->type == 'MenuBar') {
+      $this->bar = $element;
+    } else if ($element->type == 'SubMenu') {
+      $this->sub = $element;
+    }
+  }
+
+  public function keyPressHandler($element, $event) {
+    $menu = false;
+    switch ($event['key']) {
+      case KeyCode::F1: $menu = 0; break;
+      case KeyCode::F2: $menu = 1; break;
+      case KeyCode::F3: $menu = 2; break;
+      case KeyCode::F4: $menu = 3; break;
+      case KeyCode::F5: $menu = 4; break;
+      case KeyCode::F6: $menu = 5; break;
+      case KeyCode::F7: $menu = 6; break;
+      case KeyCode::F8: $menu = 7; break;
+      case KeyCode::F9: $menu = 8; break;
+      case KeyCode::F10: $menu = 9; break;
+      case KeyCode::F11: $menu = 10; break;
+      case KeyCode::F12: $menu = 11; break;
+      case KeyCode::ESCAPE: $this->closeMenu(); break;
+    }
+    if ($menu !== false) {
+      return $this->openMenu($menu);
+    }
+    return false;
+  }
+
+  protected function closeMenu() {
+    $this->bar->inactivateMenuBarItems();
+    $this->openedIndex = false;
+    $this->sub->closeMenuBoxes();
+  }
+
+  protected function openMenu($menuIndex) {
+    $barItem = $this->bar->activateMenuBarItem($menuIndex);
+    if ($barItem === false) {
+      $this->openedIndex = false;
+      return false;
+    }
+    $this->openedIndex = $menuIndex;
+    $this->sub->showMenuBox($barItem->getId(), $barItem->geometry->x, 0, true);
+  }
+
+  public function nextMenu() {
+    $n = $this->bar->getItemCount();
+    $menuIndex = $this->openedIndex + 1;
+    if ($menuIndex >= $n) {
+      $menuIndex = 0;
+    }
+    $this->openMenu($menuIndex);
+  }
+
+  public function previousMenu() {
+    $n = $this->bar->getItemCount();
+    $menuIndex = $this->openedIndex - 1;
+    if ($menuIndex < 0) {
+      $menuIndex = $n - 1;
+    }
+    $this->openMenu($menuIndex);
+  }
+
+}

@@ -1,0 +1,12 @@
+<Window title="Panel">
+  <Box>
+    <Event type="KeyPress">Controller::showPanel</Event>
+    Press space to show a Panel!
+  </Box>
+  <Panel id="panel">
+    <PanelTitle>Panel test</PanelTitle>
+    <PanelContent>
+      This is a nice panel.
+    </PanelContent>
+  </Panel>
+</Window>
