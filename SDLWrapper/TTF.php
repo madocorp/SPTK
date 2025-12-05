@@ -4,6 +4,8 @@ namespace SPTK;
 
 class TTF {
 
+  const TTF_HINTING_NONE = 3;
+
   public static $instance;
 
   public $ttf;

@@ -25,7 +25,17 @@ class Word extends Element {
     $sdlColor->g = $color[1];
     $sdlColor->b = $color[2];
     $sdlColor->a = $color[3] ?? 0xff;
-    $this->surface = $ttf->TTF_RenderText_Blended($font->font, $this->value, strlen($this->value), $sdlColor);
+
+    $bgcolor = $this->ancestor->style->get('backgroundColor');
+    $sdlBgColor = $ttf->new("SDL_Color");
+    $sdlBgColor->r = $bgcolor[0];
+    $sdlBgColor->g = $bgcolor[1];
+    $sdlBgColor->b = $bgcolor[2];
+    $sdlBgColor->a = $bgcolor[3] ?? 0xff;
+
+//    $this->surface = $ttf->TTF_RenderText_Blended($font->font, $this->value, strlen($this->value), $sdlColor);
+    $this->surface = $ttf->TTF_RenderText_Shaded($font->font, $this->value, strlen($this->value), $sdlColor, $sdlBgColor);
+
     $this->geometry->width = $this->surface->w;
     $this->geometry->height = $this->surface->h;
     $this->geometry->ascent = $font->ascent;

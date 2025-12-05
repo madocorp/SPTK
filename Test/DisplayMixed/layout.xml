@@ -1,0 +1,21 @@
+<Window title="DisplayMixed">
+  <Box class="b1"></Box>
+  <Box class="i">1</Box>
+  <Box class="i">2</Box>
+  <Box class="i">3</Box>
+  <Box class="i">4</Box>
+  <Box class="i">5</Box>
+  <Box class="i">6</Box>
+  <Box class="i">7</Box>
+  <Box class="b2"></Box>
+  <Box class="i">8</Box>
+  <Box class="i">9</Box>
+  <Box class="i">10</Box>
+  <Box class="i">11</Box>
+  <Box class="i">12</Box>
+  <Box class="i">13</Box>
+  <Box class="i">14</Box>
+  <Box class="i">15</Box>
+  <Box class="i">16</Box>
+  <Box class="b3"></Box>
+</Window>

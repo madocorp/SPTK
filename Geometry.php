@@ -4,6 +4,7 @@ namespace SPTK;
 
 class Geometry {
 
+  public $element;
   public $x = 0;
   public $y = 0;
   public $width = 0;
@@ -29,6 +30,10 @@ class Geometry {
   public $ascent = 0;
   public $descent = 0;
 public $baseLine = 0; // ???
+
+  public function __construct($element) {
+    $this->element = $element;
+  }
 
   public function setValues($ancestorGeometry, $style) {
     $this->marginTop = $style->get('marginTop', $ancestorGeometry->innerWidth);
@@ -161,16 +166,16 @@ public $baseLine = 0; // ???
     $textAlign = $ancestorStyle->get('textAlign');
     switch ($textAlign) {
       case 'left':
-        $this->alignLeft($cursor, $ancestorGeometry, $style);
+        $this->alignLeft($cursor, $ancestorGeometry, $ancestorStyle);
         break;
       case 'right':
-        $this->alignRight($cursor, $ancestorGeometry, $style);
+        $this->alignRight($cursor, $ancestorGeometry, $ancestorStyle);
         break;
       case 'justify':
-        $this->alignJustify($cursor, $ancestorGeometry, $style);
+        $this->alignJustify($cursor, $ancestorGeometry, $ancestorStyle);
         break;
       case 'center':
-        $this->alignCenter($cursor, $ancestorGeometry, $style);
+        $this->alignCenter($cursor, $ancestorGeometry, $ancestorStyle);
         break;
     }
   }
@@ -180,6 +185,9 @@ public $baseLine = 0; // ???
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
     for ($i = $cursor->lineFirstElement; $i < $cursor->lineLastElement; $i++) {
+      if (isset($cursor->skipped[$i])) {
+        continue;
+      }
       $element = $cursor->elements[$i];
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
@@ -205,6 +213,9 @@ public $baseLine = 0; // ???
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
     for ($i = $cursor->lineLastElement - 1; $i >= $cursor->lineFirstElement; $i--) {
+      if (isset($cursor->skipped[$i])) {
+        continue;
+      }
       $element = $cursor->elements[$i];
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
@@ -229,6 +240,9 @@ public $baseLine = 0; // ???
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
     for ($i = $cursor->lineFirstElement; $i < $cursor->lineLastElement; $i++) {
+      if (isset($cursor->skipped[$i])) {
+        continue;
+      }
       $element = $cursor->elements[$i];
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
@@ -250,6 +264,9 @@ public $baseLine = 0; // ???
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
     for ($i = $cursor->lineFirstElement; $i < $cursor->lineLastElement; $i++) {
+      if (isset($cursor->skipped[$i])) {
+        continue;
+      }
       $element = $cursor->elements[$i];
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();

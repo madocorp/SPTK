@@ -1,4 +1,5 @@
 <Window title="ColorInheritance">
+  <Event type="KeyPress">Controller::alterClass</Event>
   <Box>
     Box1.1
     <Box class="box2">
@@ -12,6 +13,26 @@
       Box4
       <Box>Box4.1</Box>
       <Box class="box2">Box2.3</Box>
+      <Box>
+        Box4.2
+        <Box>Box4.3</Box>
+      </Box>
+    </Box>
+    Box1.1
+  </Box>
+  <Box>
+    Box1.1
+    <Box class="box2bg">
+      Box2.1
+      <Box class="box3bg">
+        Box3
+      </Box>
+      Box2.2
+    </Box>
+    <Box class="box4bg" id="dynamic-class-box">
+      Box4
+      <Box>Box4.1</Box>
+      <Box class="box2bg">Box2.3</Box>
       <Box>
         Box4.2
         <Box>Box4.3</Box>

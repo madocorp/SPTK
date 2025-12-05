@@ -8,7 +8,7 @@ Root {
   borderColor: #000000;
   margin: 0px;
   padding: 0px;
-  backgroundColor: #00000000;
+  backgroundColor: inherit;
   backgroundImage: none;
   backgroundAlignX: center;
   backgroundAlignY: center;
@@ -90,18 +90,8 @@ MenuBarItem {
   display: inline;
   width: content;
   color: #000000;
+  backgroundColor: inherit;
   padding: 1px, 15px, 0px, 0px;
-  backgroundColor: #00000000;
-}
-
-Key {
-  display: block;
-  width: 100px;
-  height: 100px;
-  x: 30px;
-  y: 30px;
-  backgroundColor: #ff0000ff;
-  color: #ffffffff;
 }
 
 .active-menu-bar-item {
@@ -122,12 +112,26 @@ MenuBox {
 MenuBoxItem {
   display: inline;
   width: 100%;
-  padding: 1px, 10px, 0px, 10px;
+  padding: 1px, 0px, 0px, 10px;
+  backgroundColor: inherit;
+  height: 25px;
+}
+
+MenuBoxItemRight {
+  display: block;
+  x: -1px;
+  y: 0px;
+  color: #0000ff;
+  backgroundColor: #ff0000;
 }
 
 .active-menu-box-item {
-  color: #ff0000;
   backgroundColor: #000000;
+}
+
+.menu-separator {
+  borderBottom: 3px;
+  borderColor: #00ffff;
 }
 
 Panel {

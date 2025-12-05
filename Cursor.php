@@ -5,6 +5,7 @@ namespace SPTK;
 class Cursor {
 
   public $elements;
+  public $skipped;
   public $n;
   public $i = 0;
   public $x = 0;
@@ -24,12 +25,16 @@ class Cursor {
 
   public function __construct($elements, $wordSpacing, $lineHeight) {
     $this->elements = $elements;
+    $this->skipped = [];
     $this->n = count($this->elements);
     $this->wordSpacing = $wordSpacing;
     $this->lineHeight = $lineHeight;
   }
 
   public function skipElement() {
+    $this->lineElements++;
+    $this->lineLastElement++;
+    $this->skipped[$this->i] = true;
     $this->i++;
     if ($this->i >= $this->n) {
       return true;
