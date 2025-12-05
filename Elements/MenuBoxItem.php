@@ -16,7 +16,12 @@ class MenuBoxItem extends Box {
   }
 
   public function setSubmenu($value) {
-    $this->submenu = ($value === 'true');
+    if ($value === 'true') {
+      $this->submenu = true;
+      $mbir = new MenuBoxItemRight($this);
+      $word = new Word($mbir);
+      $word->setValue('>');
+    }
   }
 
   public function setSelectable($value) {

@@ -112,4 +112,3 @@ bool SDL_SetRenderTarget(SDL_Renderer* renderer, SDL_Texture* texture);
 SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface);
 void SDL_DestroySurface(SDL_Surface* surface);
 bool SDL_RenderLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2);
-

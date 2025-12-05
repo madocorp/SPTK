@@ -22,11 +22,17 @@ class App {
   private $xml;
   private $xss;
   private $dir;
+  private $initCallback;
+  private $timerCallback;
+  private $endCallback;
 
-  public function __construct($xml, $xss) {
+  public function __construct($xml, $xss, $init = null, $timer = null, $end = null) {
     $this->xml = $xml;
     $this->xss = $xss;
     $this->dir = dirname(__FILE__);
+    $this->initCallback = $init;
+    $this->timerCallback = $timer;
+    $this->endCallback = $end;
     if (!is_null(self::$instance)) {
       throw new \Exception("SPTK\\App is a singleton, you can't instantiate more than once");
     }
@@ -46,6 +52,9 @@ class App {
       Element::$root->debug();
     }
     Element::refresh();
+    if (!is_null($this->initCallback)) {
+      call_user_func($this->initCallback);
+    }
   }
 
   public function autoload($class) {
@@ -85,9 +94,15 @@ class App {
     if (DEBUG) {
       echo "timer\n";
     }
+    if (!is_null($this->timerCallback)) {
+      call_user_func($this->timerCallback);
+    }
   }
 
   public function end() {
+    if (!is_null($this->endCallback)) {
+      call_user_func($this->endCallback);
+    }
     Font::closeAll();
   }
 

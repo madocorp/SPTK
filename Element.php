@@ -50,7 +50,7 @@ class Element {
       throw new \Exception("Duplicated element id: {$this->id}");
     }
     $this->setStyle($ancestor);
-    $this->geometry = new Geometry;
+    $this->geometry = new Geometry($this);
     self::$elementsById[$this->id] = $this;
     $this->ancestor = $ancestor;
     if (is_null($this->ancestor)) {
@@ -208,6 +208,7 @@ class Element {
     if (!in_array($class, $this->sclass)) {
       $this->sclass[] = $class;
       $this->setStyle($this->ancestor);
+      $this->redraw();
     }
   }
 
@@ -216,6 +217,7 @@ class Element {
     if ($key !== false) {
       unset($this->sclass[$key]);
       $this->setStyle($this->ancestor);
+      $this->redraw();
     }
   }
 
@@ -243,6 +245,10 @@ class Element {
       return call_user_func($this->events[$event['name']], $this, $event);
     }
     return false;
+  }
+
+  public function getIid() {
+    return $this->iid;
   }
 
   public function getId() {
@@ -325,7 +331,7 @@ class Element {
     if ($this->value !== false) {
       $value = " [{$this->value}]";
     }
-    echo "{$pad}{$this->type}#{$this->id}{$class}{$value}\n";
+    echo "{$pad}{$this->type}@{$this->iid}#{$this->id}{$class}{$value}\n";
     foreach ($this->events as $event => $handler) {
       echo "{$pad}  - {$event} > " . (is_array($handler) ? (is_object($handler[0]) ? get_class($handler[0]) : $handler[0]) . '::' . $handler[1] : implode('::', $handler)) . "\n";
     }

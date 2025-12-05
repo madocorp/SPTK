@@ -4,7 +4,7 @@ Window {
   x: 30%;
   y: 30%;
   backgroundColor: #000000;
-  color: #ffff00;
+  color: #ffffff;
   display: inline;
 }
 
@@ -27,3 +27,21 @@ Box {
   color: #00ff00;
 }
 
+.box2bg {
+  backgroundColor: #ff0000;
+}
+
+.box3bg {
+  backgroundColor: #0000ff;
+}
+
+.box4bg {
+  backgroundColor: #00ff00;
+}
+
+.yellow {
+  backgroundColor: #ffff00;
+}
+.red {
+  backgroundColor: #ff0000;
+}
