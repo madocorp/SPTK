@@ -26,9 +26,9 @@ class Root extends Element {
     return false;
   }
 
-  protected function calculateGeometry($cursor) {
+  protected function calculateGeometry() {
     foreach ($this->descendants as $element) {
-      $element->calculateGeometry(false);
+      $element->calculateGeometry();
     }
   }
 

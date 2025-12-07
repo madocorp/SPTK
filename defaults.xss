@@ -87,7 +87,6 @@ MenuBarHotKey {
 }
 
 MenuBarItem {
-  display: inline;
   width: content;
   color: #000000;
   backgroundColor: inherit;
@@ -110,19 +109,24 @@ MenuBox {
 }
 
 MenuBoxItem {
-  display: inline;
   width: 100%;
-  padding: 1px, 0px, 0px, 10px;
+  padding: 2px, 0px, 0px, 0px;
   backgroundColor: inherit;
-  height: 25px;
+  height: 22px;
 }
 
 MenuBoxItemRight {
   display: block;
-  x: -1px;
+  x: -2px;
   y: 0px;
   color: #0000ff;
-  backgroundColor: #ff0000;
+}
+
+MenuBoxItemLeft {
+  width: 15px;
+  color: #0000ff;
+  textAlign: center;
+  font: DejaVuSans-Bold.ttf;
 }
 
 .active-menu-box-item {
@@ -130,6 +134,7 @@ MenuBoxItemRight {
 }
 
 .menu-separator {
+  height: 25px;
   borderBottom: 3px;
   borderColor: #00ffff;
 }

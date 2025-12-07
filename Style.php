@@ -97,7 +97,7 @@ class Style {
     }
   }
 
-  public function get($name, $reference = false) {
+  public function get($name, $reference = false, &$negative = null) {
     if (!isset($this->rules[$name])) {
       throw new \Exception("Unknown style rule: {$name}");
     }

@@ -1,0 +1,6 @@
+<Window title="Tmp">
+<Box class="small">small</Box>
+<Box class="big">big</Box>
+<Box class="small">small again</Box>
+<Box class="vbig">very big</Box>
+</Window>

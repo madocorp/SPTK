@@ -4,47 +4,42 @@ namespace SPTK;
 
 class Cursor {
 
-  public $elements;
-  public $skipped;
-  public $n;
-  public $i = 0;
+  public $elements = [];
   public $x = 0;
   public $y = 0;
   public $w = 0;
   public $s = 0;
-  public $lineFirstElement = 0;
-  public $lineLastElement = 0;
   public $ascent = 0;
   public $descent = 0;
   public $firstLineAscent = false;
-  public $lineElements = 0;
-  public $separators = 0;
+  public $textAlign;
   public $wordSpacing;
   public $lineHeight;
-  protected $previousIsWord = false;
+  public $previousIsWord = false;
+  public $lines = 0;
 
-  public function __construct($elements, $wordSpacing, $lineHeight) {
-    $this->elements = $elements;
-    $this->skipped = [];
-    $this->n = count($this->elements);
-    $this->wordSpacing = $wordSpacing;
-    $this->lineHeight = $lineHeight;
+  public function configure($style) {
+    $this->wordSpacing = $style->get('wordSpacing');
+    $fontSize = $style->get('fontSize');
+    $this->lineHeight = $style->get('lineHeight', $fontSize);
+    $this->textAlign = $style->get('textAlign');
   }
 
-  public function skipElement() {
-    $this->lineElements++;
-    $this->lineLastElement++;
-    $this->skipped[$this->i] = true;
-    $this->i++;
-    if ($this->i >= $this->n) {
-      return true;
-    }
-    return false;
+  public function reset() {
+    $this->elements = [];
+    $this->x = 0;
+    $this->y = 0;
+    $this->w = 0;
+    $this->s = 0;
+    $this->ascent = 0;
+    $this->descent = 0;
+    $this->firstLineAscent = false;
+    $this->previousIsWord = false;
+    $this->lines = 0;
   }
 
-  public function addElement($w, $h, $ascent, $descent, $isWord) {
-    $this->lineElements++;
-    $this->lineLastElement++;
+  public function addElement($element, $w, $h, $ascent, $descent, $isWord) {
+    $this->elements[] = $element;
     $this->ascent = max($this->ascent, $ascent);
     $this->descent = max($this->descent, $descent);
     $this->x += $w;
@@ -54,28 +49,22 @@ class Cursor {
       $this->s++;
     }
     $this->previousIsWord = $isWord;
-    $this->i++;
-    if ($this->i >= $this->n) {
-      return true;
-    }
-    return false;
-  }
-
-  public function endLine() {
-    if ($this->firstLineAscent === false) {
+    if ($this->lines <= 1) {
+      $this->lines = 1;
       $this->firstLineAscent = $this->ascent;
     }
-    $this->y += max($this->lineHeight, $this->ascent + $this->descent);
-    $this->separators = 0;
-    $this->lineFirstElement += $this->lineElements;
-    $this->lineLastElement = $this->lineFirstElement;
+  }
+
+  public function newLine() {
+    $this->elements = [];
     $this->x = 0;
+    $this->y += max($this->lineHeight, $this->ascent + $this->descent);
     $this->w = 0;
     $this->s = 0;
-    $this->lineElements = 0;
-    $this->previousIsWord = false;
     $this->ascent = 0;
     $this->descent = 0;
+    $this->previousIsWord = false;
+    $this->lines++;
   }
 
 }

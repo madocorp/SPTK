@@ -41,19 +41,20 @@ class MenuBox extends Box {
     if ($menu === false) {
       $menu = $this->active;
     }
+    $boxItem = end($this->stack);
+    $boxItem->removeClass('active-menu-box-item');
     $i = 0;
-    $boxItem = false;
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBoxItem') {
-        $element->removeClass('active-menu-box-item');
         if ($i == $menu) {
           $boxItem = $element;
+          $boxItem->addClass('active-menu-box-item');
+          $boxItem->raise();
+          break;
         }
         $i++;
       }
     }
-    $boxItem->addClass('active-menu-box-item');
-    $boxItem->raise();
   }
 
   public function keyPressHandler($element, $event) {

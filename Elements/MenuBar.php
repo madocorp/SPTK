@@ -15,15 +15,16 @@ class MenuBar extends Box {
   }
 
   public function activateMenuBarItem($menuIndex) {
+    $barItem = end($this->stack);
+    $barItem->removeClass('active-menu-bar-item');
     $i = 0;
-    $barItem = false;
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBarItem') {
         if ($i == $menuIndex) {
           $element->addClass('active-menu-bar-item');
+          $element->raise();
           $barItem = $element;
-        } else {
-          $element->removeClass('active-menu-bar-item');
+          break;
         }
         $i++;
       }

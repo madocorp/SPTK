@@ -6,4 +6,5 @@ Window {
   backgroundColor: #000000;
   color: #ffffff;
   fontSize: 15px;
+  textAlign: left;
 }

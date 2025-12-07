@@ -29,7 +29,6 @@ class Geometry {
   public $paddingRight = 0;
   public $ascent = 0;
   public $descent = 0;
-public $baseLine = 0; // ???
 
   public function __construct($element) {
     $this->element = $element;
@@ -125,113 +124,95 @@ public $baseLine = 0; // ???
     }
   }
 
-  public function setBlockPosition($cursor, $ancestorGeometry, $style, $ancestorStyle) {
-    $last = $cursor->skipElement();
-    if ($last) {
-      $this->formatRow($cursor, $ancestorGeometry, $style, $ancestorStyle);
-    }
-    $this->x = $style->get('x', $ancestorGeometry->innerWidth);
-    if ($this->x < 0) {
-      $this->x = $ancestorGeometry->innerWidth - $this->fullWidth + $this->x - $this->marginRight + $ancestorGeometry->paddingRight + $ancestorGeometry->borderRight;
+  public function setBlockPosition($ancestorGeometry, $style) {
+    $this->x = $style->get('x', $ancestorGeometry->innerWidth, $isNegative);
+    if ($isNegative) {
+      $this->x = $ancestorGeometry->width - $ancestorGeometry->paddingRight - $ancestorGeometry->borderRight - $this->fullWidth + $this->x - $this->marginRight;
     } else {
       $this->x = $this->x + $this->marginLeft + $ancestorGeometry->paddingLeft + $ancestorGeometry->borderLeft;
     }
-    $this->y = $style->get('y', $ancestorGeometry->innerHeight);
-    if ($this->y < 0) {
-      $this->y = $ancestorGeometry->innerHeight - $this->fullHeight + $this->y - $this->marginBottom + $ancestorGeometry->paddingBottom + $ancestorGeometry->borderBottom;
+    $this->y = $style->get('y', $ancestorGeometry->innerHeight, $isNegative);
+    if ($isNegative) {
+      $this->y = $ancestorGeometry->height - $ancestorGeometry->paddingBottom - $ancestorGeometry->borderBottom - $this->fullHeight + $this->y - $this->marginBottom;
     } else {
       $this->y = $this->y + $this->marginTop + $ancestorGeometry->paddingTop + $ancestorGeometry->borderTop;
     }
   }
 
-  public function setInlinePosition($cursor, $ancestorGeometry, $style, $ancestorStyle) {
+  public function setInlinePosition($cursor, $element, $ancestorGeometry) {
+    $style = $element->getStyle();
+    $display = $style->get('display');
     if (
-      $style->get('display') == 'newline' ||
+      $display == 'newline' ||
       (
         $ancestorGeometry->width != 'content' &&
-        $cursor->x + ($style->get('display') == 'word' && $cursor->lineElements > 0 ? $ancestorStyle->get('wordSpacing') : 0) + $this->width > $ancestorGeometry->innerWidth
+        $cursor->x + ($display == 'word' && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
       )
     ) {
-      $this->formatRow($cursor, $ancestorGeometry, $style, $ancestorStyle);
-      $cursor->endLine();
+      $this->formatRow($cursor, $ancestorGeometry);
+      $cursor->newLine();
     }
-    $last = $cursor->addElement($this->width, $this->height, $this->ascent, $this->descent, $style->get('display') == 'word');
-    if ($last) {
-      $this->formatRow($cursor, $ancestorGeometry, $style, $ancestorStyle);
-      $cursor->endLine();
-    }
+    $cursor->addElement($element, $this->width, $this->height, $this->ascent, $this->descent, $display == 'word');
   }
 
-  protected function formatRow($cursor, $ancestorGeometry, $style, $ancestorStyle) {
-    $textAlign = $ancestorStyle->get('textAlign');
-    switch ($textAlign) {
+  public function formatRow($cursor, $ancestorGeometry) {
+    if (count($cursor->elements) <= 0) {
+      return;
+    }
+    switch ($cursor->textAlign) {
       case 'left':
-        $this->alignLeft($cursor, $ancestorGeometry, $ancestorStyle);
+        $this->alignLeft($cursor, $ancestorGeometry);
         break;
       case 'right':
-        $this->alignRight($cursor, $ancestorGeometry, $ancestorStyle);
+        $this->alignRight($cursor, $ancestorGeometry);
         break;
       case 'justify':
-        $this->alignJustify($cursor, $ancestorGeometry, $ancestorStyle);
+        $this->alignJustify($cursor, $ancestorGeometry);
         break;
       case 'center':
-        $this->alignCenter($cursor, $ancestorGeometry, $ancestorStyle);
+        $this->alignCenter($cursor, $ancestorGeometry);
         break;
     }
   }
 
-  protected function alignLeft($cursor, $ancestorGeometry, $style) {
+  protected function alignLeft($cursor, $ancestorGeometry) {
     $x = $ancestorGeometry->borderLeft + $ancestorGeometry->paddingLeft;
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
-    for ($i = $cursor->lineFirstElement; $i < $cursor->lineLastElement; $i++) {
-      if (isset($cursor->skipped[$i])) {
-        continue;
-      }
-      $element = $cursor->elements[$i];
+    foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
       $isWord = $estyle->get('display') == 'word';
       if ($isWord && $previousIsWord) {
-        $x += $style->get('wordSpacing');
+        $x += $cursor->wordSpacing;
       }
       $geometry->x = $x;
-      $fontSize = $style->get('fontSize', $ancestorGeometry->innerHeight);
-      $lineHeight = $style->get('lineHeight', $fontSize);
-      if ($lineHeight < $fontSize) {
-        $lineHeight = $fontSize;
-      }
-//      $geometry->y = $y + $cursor->y + ($isWord ? ($cursor->lineHeight - $lineHeight + $geometry->baseLine) : 0);
       $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
       $x += $geometry->width;
       $previousIsWord = $isWord;
     }
   }
 
-  protected function alignRight($cursor, $ancestorGeometry, $style) {
+  protected function alignRight($cursor, $ancestorGeometry) {
     $x = $ancestorGeometry->width - $ancestorGeometry->borderRight - $ancestorGeometry->paddingRight;
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
-    for ($i = $cursor->lineLastElement - 1; $i >= $cursor->lineFirstElement; $i--) {
-      if (isset($cursor->skipped[$i])) {
-        continue;
-      }
-      $element = $cursor->elements[$i];
+    $cursor->elements = array_reverse($cursor->elements);
+    foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
       $isWord = $estyle->get('display') == 'word';
       if ($isWord && $previousIsWord) {
-        $x -= $style->get('wordSpacing');
+        $x -= $cursor->wordSpacing;
       }
       $x -= $geometry->width;
       $geometry->x = $x;
-      $fontSize = $style->get('fontSize', $ancestorGeometry->innerHeight);
-      $geometry->y = $y + $cursor->y + ($isWord ? ($cursor->lineHeight - $style->get('lineHeight', $fontSize) + $geometry->baseLine) : 0);
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
       $previousIsWord = $isWord;
     }
   }
 
-  protected function alignJustify($cursor, $ancestorGeometry, $style) {
+  protected function alignJustify($cursor, $ancestorGeometry) {
     $spaceWidth = 0;
     if ($cursor->s > 0) {
       $spaceWidth = (int)(($ancestorGeometry->innerWidth - $cursor->w) / $cursor->s);
@@ -239,11 +220,7 @@ public $baseLine = 0; // ???
     $x = $ancestorGeometry->borderLeft + $ancestorGeometry->paddingLeft;
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
-    for ($i = $cursor->lineFirstElement; $i < $cursor->lineLastElement; $i++) {
-      if (isset($cursor->skipped[$i])) {
-        continue;
-      }
-      $element = $cursor->elements[$i];
+    foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
       $isWord = $estyle->get('display') == 'word';
@@ -251,32 +228,26 @@ public $baseLine = 0; // ???
         $x += $spaceWidth;
       }
       $geometry->x = $x;
-      $fontSize = $style->get('fontSize', $ancestorGeometry->innerHeight);
-      $geometry->y = $y + $cursor->y + ($isWord ? ($cursor->lineHeight - $style->get('lineHeight', $fontSize) + $geometry->baseLine) : 0);
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
       $x += $geometry->width;
       $previousIsWord = $isWord;
     }
   }
 
-  protected function alignCenter($cursor, $ancestorGeometry, $style) {
+  protected function alignCenter($cursor, $ancestorGeometry) {
     $lw = $cursor->x;
     $x = (int)(($ancestorGeometry->innerWidth - $lw) / 2) + $ancestorGeometry->borderLeft + $ancestorGeometry->paddingLeft;
     $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
     $previousIsWord = false;
-    for ($i = $cursor->lineFirstElement; $i < $cursor->lineLastElement; $i++) {
-      if (isset($cursor->skipped[$i])) {
-        continue;
-      }
-      $element = $cursor->elements[$i];
+    foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
       $isWord = $estyle->get('display') == 'word';
       if ($isWord && $previousIsWord) {
-        $x += $style->get('wordSpacing');
+        $x += $cursor->wordSpacing;
       }
       $geometry->x = $x;
-      $fontSize = $style->get('fontSize', $ancestorGeometry->innerHeight);
-      $geometry->y = $y + $cursor->y + ($isWord ? ($cursor->lineHeight - $style->get('lineHeight', $fontSize) + $geometry->baseLine) : 0);
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
       $x += $geometry->width;
       $previousIsWord = $isWord;
     }

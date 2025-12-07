@@ -17,6 +17,7 @@ class Window extends Element {
     $this->sdl = SDL::$instance->sdl;
     $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
+echo "CreateRenderer\n";
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, 0, 0, 0, 0xff);
     $frameTop = \FFI::new("int");
     $frameBottom = \FFI::new("int");
@@ -32,7 +33,7 @@ class Window extends Element {
       $this->geometry->height = $this->style->get('height', $this->ancestor->geometry->height);
     }
     $fontSize = $this->style->get('fontSize', $this->geometry->height);
-    $this->calculateGeometry(false);
+    $this->calculateGeometry();
     $this->setSize();
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->geometry->setInnerSize();
@@ -117,12 +118,13 @@ class Window extends Element {
     return false;
   }
 
-  protected function calculateGeometry($cursor) {
+  protected function calculateGeometry() {
+    $this->cursor->reset();
     $fontSize = $this->style->get('fontSize', $this->geometry->innerHeight);
-    $dcursor = new Cursor($this->descendants, $this->style->get('wordSpacing'), $this->style->get('lineHeight', $fontSize));
     foreach ($this->descendants as $element) {
-      $element->calculateGeometry($dcursor);
+      $element->calculateGeometry();
     }
+    $this->geometry->formatRow($this->cursor, $this->geometry);
   }
 
   public function getAttributeList() {

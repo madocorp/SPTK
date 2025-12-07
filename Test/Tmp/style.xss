@@ -1,0 +1,41 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffff00;
+  fontSize: 30px;
+}
+
+.c {
+  display: inline;
+  color: #000000;
+  backgroundColor: #00aaaa;
+  width: 200px;
+  hieght: 20px;
+  paddingRight: 3px;
+}
+
+.t {
+  display: inline;
+  color: #0000ff;
+  width: 20px;
+  textAlign: right;
+  paddingRight: 3px;
+}
+
+.small {
+  display: inline;
+  fontSize: 15px;
+}
+
+.big {
+  display: inline;
+  fontSize: 30px;
+}
+
+.vbig {
+  display: inline;
+  fontSize: 60px;
+}
