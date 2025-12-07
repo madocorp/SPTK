@@ -6,58 +6,72 @@ use XMLReader;
 
 class LayoutXmlReader {
 
-  protected $root;
+  private $root;
+  private $event = false;
+  private $current;
 
   public function __construct($file) {
     if (!file_exists($file)) {
       throw new \Exception("File not found: {$file}");
     }
     $this->root = new Root();
-    $current = $this->root;
+    $this->current = $this->root;
     $xml = new XMLReader();
     if (!$xml->open($file)) {
       throw new \Exception("Couldn't open file: {$file}");
     }
-    $event = false;
+    $this->parseWithIncludes($xml);
+    $xml->close();
+  }
+
+  private function parseWithIncludes($xml) {
     while ($xml->read()) {
       switch ($xml->nodeType) {
         case XMLReader::ELEMENT:
-          if ($xml->name === 'Event') {
-            $event = $xml->getAttribute('type') ?? 'nope';
+          if ($xml->name === 'Root') {
+            // skip
+          } else if ($xml->name === 'Include') {
+            $file = $xml->getAttribute('file');
+            $included = new XmlReader();
+            $included->open($file);
+            $this->parseWithIncludes($included);
+            $included->close();
+          } else if ($xml->name === 'Event') {
+            $this->event = $xml->getAttribute('type') ?? 'nope';
           } else if ($xml->name === 'AC') {
-            $current->addChildClass($xml->getAttribute('class'));
+            $this->current->addChildClass($xml->getAttribute('class'));
           } else {
             $type = 'SPTK\\' . str_replace('_', '', ucwords($xml->name, '_'));
             $id = $xml->getAttribute('id') ?? false;
             $class = $xml->getAttribute('class') ?? false;
-            $current = new $type($current, $id, $class);
-            $attributes = $current->getAttributeList();
+            $this->current = new $type($this->current, $id, $class);
+            $attributes = $this->current->getAttributeList();
             foreach ($attributes as $attribute) {
               $value = $xml->getAttribute($attribute) ?? false;
               $fname = 'set' . ucfirst($attribute);
-              $current->$fname($value);
+              $this->current->$fname($value);
             }
             if ($xml->isEmptyElement) {
-              if (!is_null($current)) {
-                $current = $current->getAncestor();
+              if (!is_null($this->current)) {
+                $this->current = $this->current->getAncestor();
               }
             }
           }
           break;
         case XMLReader::END_ELEMENT:
           if ($xml->name === 'Event') {
-            $event = false;
+            $this->event = false;
           } else if ($xml->name === 'AC') {
-            $current->removeChildClass($xml->getAttribute('class'));
+            $this->current->removeChildClass($xml->getAttribute('class'));
           } else {
-            if (!is_null($current)) {
-              $current = $current->getAncestor();
+            if (!is_null($this->current)) {
+              $this->current = $this->current->getAncestor();
             }
           }
           break;
         case XMLReader::TEXT:
-          if ($event !== false) {
-            $current->addEvent($event, trim($xml->value));
+          if ($this->event !== false) {
+            $this->current->addEvent($this->event, trim($xml->value));
             break;
           }
           $txt = trim($xml->value);
@@ -65,14 +79,13 @@ class LayoutXmlReader {
           $txt = preg_replace('/ +/', ' ', $txt);
           $words = explode(' ', $txt);
           foreach ($words as $i => $word) {
-            $w = new Word($current);
+            $w = new Word($this->current);
             $w->setValue($word);
             unset($w);
           }
           break;
       }
     }
-    $xml->close();
   }
 
 }

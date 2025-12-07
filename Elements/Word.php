@@ -6,14 +6,20 @@ class Word extends Element {
 
   public $value;
   protected $surface;
+  protected $rect;
+
+  public function init() {
+    $sdl = SDL::$instance->sdl;
+    $this->rect = $sdl->new('SDL_FRect');
+  }
 
   public function setValue($value) {
     $this->value = "{$value}";
     $this->draw();
   }
 
-  protected function calculateGeometry($cursor) {
-    $this->geometry->setInlinePosition($cursor, $this->ancestor->geometry, $this->style, $this->ancestor->style);
+  protected function calculateGeometry() {
+    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $this->style, $this->ancestor->style);
   }
 
   protected function draw() {
@@ -40,6 +46,10 @@ class Word extends Element {
     $this->geometry->height = $this->surface->h;
     $this->geometry->ascent = $font->ascent;
     $this->geometry->descent = $font->descent;
+
+    $sdl = SDL::$instance->sdl;
+    $surface = $sdl->cast("SDL_Surface *", $this->surface);
+    $this->texture = $sdl->SDL_CreateTextureFromSurface($this->renderer, $surface);
   }
 
   public function __destruct() {
@@ -48,15 +58,11 @@ class Word extends Element {
   }
 
   protected function render($ptmpTexture) {
-    $sdl = SDL::$instance->sdl;
-    $surface = $sdl->cast("SDL_Surface *", $this->surface);
-    $texture = $sdl->SDL_CreateTextureFromSurface($this->renderer, $surface);
-    $destRect = $sdl->new('SDL_FRect');
-    $destRect->x = $this->geometry->x;
-    $destRect->y = $this->geometry->y;
-    $destRect->w = $this->geometry->width;
-    $destRect->h = $this->geometry->height;
-    $ptmpTexture->copy($texture, $destRect);
+    $this->rect->x = $this->geometry->x;
+    $this->rect->y = $this->geometry->y;
+    $this->rect->w = $this->geometry->width;
+    $this->rect->h = $this->geometry->height;
+    $ptmpTexture->copy($this->texture, $this->rect);
     return false;
   }
 

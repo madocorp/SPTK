@@ -25,6 +25,7 @@ class Element {
   protected $events = [];
   protected $attributes = [];
   protected $childClass = [];
+  protected $cursor = false;
 
   public function __construct($ancestor = null, $id = false, $class = false) {
     $this->iid = self::$nextInternalId;
@@ -49,6 +50,7 @@ class Element {
     if ($this->id !== StyleSheet::ANY && isset(self::$elementsById[$this->id])) {
       throw new \Exception("Duplicated element id: {$this->id}");
     }
+    $this->cursor = new Cursor();
     $this->setStyle($ancestor);
     $this->geometry = new Geometry($this);
     self::$elementsById[$this->id] = $this;
@@ -63,6 +65,10 @@ class Element {
       $this->ancestor->addDescendant($this);
     }
     $this->init();
+  }
+
+  public function purge() {
+    unset(self::$elementsById[$this->id]);
   }
 
   protected function init() {
@@ -83,22 +89,23 @@ class Element {
     foreach ($this->descendants as $descendant) {
       $descendant->setStyle($this);
     }
+    $this->cursor->configure($this->style);
   }
 
-  protected function calculateGeometry($cursor) {
+  protected function calculateGeometry() {
+    $this->cursor->reset();
     $originalWidth = $this->geometry->width;
     $originalHeight = $this->geometry->height;
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->geometry->setSize($this->ancestor->geometry, $this->style);
     $maxX = 0;
     $maxY = 0;
-    $fontSize = $this->style->get('fontSize', $this->geometry->innerHeight);
-    $dcursor = new Cursor($this->descendants, $this->style->get('wordSpacing'), $this->style->get('lineHeight', $fontSize));
     foreach ($this->descendants as $element) {
-      $element->calculateGeometry($dcursor);
+      $element->calculateGeometry();
       $maxX = max($maxX, $element->geometry->x + $element->geometry->width);
       $maxY = max($maxY, $element->geometry->y + $element->geometry->height);
     }
+    $this->geometry->formatRow($this->cursor, $this->geometry);
     $display = $this->style->get('display');
     if ($display == 'word') {
       $this->geometry->setInnerSize();
@@ -106,11 +113,11 @@ class Element {
       $this->geometry->setContentSize($this->style, $maxX, $maxY);
     }
     if ($display == 'block') {
-      $this->geometry->setBlockPosition($cursor, $this->ancestor->geometry, $this->style, $this->ancestor->style);
+      $this->geometry->setBlockPosition($this->ancestor->geometry, $this->style);
     } else if ($display == 'inline' || $display == 'word' || $display == 'newline') {
-      $this->geometry->setInlinePosition($cursor, $this->ancestor->geometry, $this->style, $this->ancestor->style);
+      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry);
     }
-    $this->geometry->setAscent($this->style, $dcursor->firstLineAscent);
+    $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
     if ($originalWidth != $this->geometry->width || $originalHeight != $this->geometry->height) {
       $this->draw();
     }
@@ -348,9 +355,19 @@ class Element {
     array_pop($this->childClass);
   }
 
+  public function findParentByType($type) {
+    if ($this->type == $type) {
+      return $this;
+    }
+    if (is_null($this->ancestor)) {
+      return false;
+    }
+    return $this->ancestor->findParentByType($type);
+  }
+
   public static function refresh() {
     $t = microtime(true);
-    self::$root->calculateGeometry(new Cursor(self::$root->descendants, 0, 0));
+    self::$root->calculateGeometry();
     self::$root->render(null);
     if (DEBUG) {
       echo "Refreshed:", microtime(true) - $t, "\n";

@@ -1,0 +1,24 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
+.a {
+  backgroundColor: #ff0000;
+  x: -0px;
+  y: -0px;
+  width: 300px;
+  height: 300px;
+}
+
+.b {
+  backgroundColor: #ffff00;
+  x: -0%;
+  y: -0%;
+  width: 100px;
+  height: 100px;
+}

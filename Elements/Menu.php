@@ -44,13 +44,13 @@ class Menu extends Box {
     return false;
   }
 
-  protected function closeMenu() {
+  public function closeMenu() {
     $this->bar->inactivateMenuBarItems();
     $this->openedIndex = false;
     $this->sub->closeMenuBoxes();
   }
 
-  protected function openMenu($menuIndex) {
+  public function openMenu($menuIndex) {
     $barItem = $this->bar->activateMenuBarItem($menuIndex);
     if ($barItem === false) {
       $this->openedIndex = false;
