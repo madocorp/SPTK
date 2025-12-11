@@ -61,19 +61,17 @@ class Menu extends Element {
   }
 
   public function nextMenu() {
-    $n = $this->bar->getItemCount();
     $menuIndex = $this->openedIndex + 1;
-    if ($menuIndex >= $n) {
+    if ($menuIndex >= $this->bar->getItemCount()) {
       $menuIndex = 0;
     }
     $this->openMenu($menuIndex);
   }
 
   public function previousMenu() {
-    $n = $this->bar->getItemCount();
     $menuIndex = $this->openedIndex - 1;
     if ($menuIndex < 0) {
-      $menuIndex = $n - 1;
+      $menuIndex = $this->bar->getItemCount() - 1;
     }
     $this->openMenu($menuIndex);
   }

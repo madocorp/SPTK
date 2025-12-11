@@ -9,6 +9,7 @@ require_once 'Font.php';
 require_once 'Texture.php';
 require_once 'Geometry.php';
 require_once 'Cursor.php';
+require_once 'ElementStatic.php';
 require_once 'Element.php';
 require_once 'LayoutXmlReader.php';
 require_once 'Style.php';

@@ -87,6 +87,7 @@ class MenuBoxItem extends Element {
 
   public function setOnSelect($value) {
     $this->onSelect = $this->parseCallback($value);
+
   }
 
   protected function openSubmenu() {
@@ -124,6 +125,13 @@ class MenuBoxItem extends Element {
       return true;
     }
     if ($event['key'] == KeyCode::SPACE) {
+$p = self::getActivePath();
+echo count($p), ': ';
+foreach ($p as $e) {
+  echo $e->type, " / ";
+}
+echo "\n";
+
       if ($this->selectable !== false || $this->radio !== false) {
         $this->setSelected(!$this->selected);
         if ($this->onSelect !== false) {

@@ -6,7 +6,7 @@ class MenuBox extends Element {
 
   public $belongsTo = false;
   public $submenu = false;
-  public $active = 0;
+  public $activeMenu = 0;
   protected $num = 0;
 
   protected function init() {
@@ -39,7 +39,7 @@ class MenuBox extends Element {
 
   public function activateMenuBoxItem($menu = false) {
     if ($menu === false) {
-      $menu = $this->active;
+      $menu = $this->activeMenu;
     }
     $boxItem = end($this->stack);
     $boxItem->removeClass('MenuBoxItem:active');
@@ -80,20 +80,20 @@ class MenuBox extends Element {
       return true;
     }
     if ($event['key'] == KeyCode::UP) {
-      $this->active--;
-      if ($this->active < 0) {
-        $this->active = $this->num - 1;
+      $this->activeMenu--;
+      if ($this->activeMenu < 0) {
+        $this->activeMenu = $this->num - 1;
       }
-      $this->activateMenuBoxItem($this->active);
+      $this->activateMenuBoxItem($this->activeMenu);
       Element::refresh();
       return true;
     }
     if ($event['key'] == KeyCode::DOWN) {
-      $this->active++;
-      if ($this->active >= $this->num) {
-        $this->active = 0;
+      $this->activeMenu++;
+      if ($this->activeMenu >= $this->num) {
+        $this->activeMenu = 0;
       }
-      $this->activateMenuBoxItem($this->active);
+      $this->activateMenuBoxItem($this->activeMenu);
       Element::refresh();
       return true;
     }
