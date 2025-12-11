@@ -45,4 +45,8 @@ class Root extends Element {
     }
   }
 
+  protected function isActive() {
+    return true;
+  }
+
 }

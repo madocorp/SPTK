@@ -4,9 +4,7 @@ namespace SPTK;
 
 class Element {
 
-  public static $root;
-  protected static $elementsById = [];
-  protected static $nextInternalId = 0;
+  use ElementStatic;
 
   protected $iid;
   protected $id;
@@ -20,16 +18,15 @@ class Element {
   protected $renderer = false;
   protected $texture = false;
   protected $value = false;
-  protected $geometry;
-  protected $style;
+  protected $geometry = false;
+  protected $style = false;
   protected $events = [];
   protected $attributes = [];
   protected $childClass = [];
   protected $cursor = false;
 
   public function __construct($ancestor = null, $id = false, $class = false, $type = false) {
-    $this->iid = self::$nextInternalId;
-    self::$nextInternalId++;
+    $this->iid = self::getNextId();
     if (!is_null($ancestor)) {
       $this->renderer = $ancestor->renderer;
     }
@@ -55,10 +52,10 @@ class Element {
       throw new \Exception("Duplicated element id: {$this->id}");
     }
     $this->cursor = new Cursor();
-    $this->setStyle($ancestor);
+    $this->ancestor = $ancestor;
+    $this->recalculateStyle();
     $this->geometry = new Geometry($this);
     self::$elementsById[$this->id] = $this;
-    $this->ancestor = $ancestor;
     if (is_null($this->ancestor)) {
       if (!is_null(self::$root)) {
         throw new \Exception("You have to define only one root element.");
@@ -78,19 +75,19 @@ class Element {
 
   }
 
-  protected function setStyle($ancestor) {
+  protected function recalculateStyle() {
     $defaultStyle = false;
     $ancestorStyle = false;
     if (isset(self::$root)) {
       $defaultStyle = self::$root->style;
-      $ancestorStyle = $ancestor->style;
+      $ancestorStyle = $this->ancestor->style;
     }
     $this->style = StyleSheet::get($defaultStyle, $ancestorStyle, $this->type, $this->sclass, $this->id);
     if ($this->style->get('display') == 'none') {
       $this->display = false;
     }
     foreach ($this->descendants as $descendant) {
-      $descendant->setStyle($this);
+      $descendant->recalculateStyle();
     }
     $this->cursor->configure($this->style);
   }
@@ -215,7 +212,7 @@ class Element {
   public function addClass($class) {
     if (!in_array($class, $this->sclass)) {
       $this->sclass[] = $class;
-      $this->setStyle($this->ancestor);
+      $this->recalculateStyle();
       $this->redraw();
     }
   }
@@ -224,7 +221,7 @@ class Element {
     $key = array_search($class, $this->sclass);
     if ($key !== false) {
       unset($this->sclass[$key]);
-      $this->setStyle($this->ancestor);
+      $this->recalculateStyle();
       $this->redraw();
     }
   }
@@ -321,14 +318,6 @@ class Element {
     $this->display = false;
   }
 
-  public function isActive() {
-    $last = end($this->ancestor->stack);
-    if ($last->iid = $this->iid) {
-      return true;
-    }
-    return false;
-  }
-
   public function debug($level = 0) {
     $pad = str_repeat(' ', $level * 4);
     $class = '';
@@ -364,26 +353,6 @@ class Element {
       return false;
     }
     return $this->ancestor->findParentByType($type);
-  }
-
-  public static function refresh() {
-    $t = microtime(true);
-    self::$root->calculateGeometry();
-    self::$root->render(null);
-    if (DEBUG) {
-      echo "Refreshed:", microtime(true) - $t, "\n";
-    }
-  }
-
-  public static function event($event) {
-    self::$root->eventHandler($event);
-  }
-
-  public static function getById($id) {
-    if (!isset(self::$elementsById[$id])) {
-      throw new \Exception("Element not found by id: {$id}");
-    }
-    return self::$elementsById[$id];
   }
 
 }

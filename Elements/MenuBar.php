@@ -15,8 +15,8 @@ class MenuBar extends Element {
   }
 
   public function activateMenuBarItem($menuIndex) {
-    $barItem = end($this->stack);
-    $barItem->removeClass('MenuBarItem:active');
+    $this->inactivateMenuBarItems();
+    $barItem = false;
     $i = 0;
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBarItem') {
