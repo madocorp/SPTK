@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class MenuBoxItem extends Box {
+class MenuBoxItem extends Element {
 
   protected $submenu = false;
   protected $onOpen = false;
@@ -15,7 +15,7 @@ class MenuBoxItem extends Box {
 
   protected function init() {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
-    $this->selectField = new MenuBoxItemLeft($this);
+    $this->selectField = new Element($this, false, false, 'MenuBoxItemLeft');
   }
 
   public function getAttributeList() {
@@ -25,7 +25,7 @@ class MenuBoxItem extends Box {
   public function setSubmenu($value) {
     if ($value === 'true') {
       $this->submenu = true;
-      $mbir = new MenuBoxItemRight($this);
+      $mbir = new Element($this, false, false, 'MenuBoxItemRight');
       $word = new Word($mbir);
       $word->setValue('>');
     }

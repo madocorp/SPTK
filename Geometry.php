@@ -54,7 +54,7 @@ class Geometry {
       $this->width = $style->get('width', $ancestorGeometry->innerWidth);
       $this->height = $style->get('height', $ancestorGeometry->innerHeight);
     }
-    $this->setInnerSize();
+    $this->setCalculatedSize();
   }
 
   public function setContentSize($style, $maxX, $maxY) {
@@ -78,10 +78,10 @@ class Geometry {
     if ($this->marginRight == 'half') {
       $this->marginRight = (int)(-$this->width / 2);
     }
-    $this->setInnerSize();
+    $this->setCalculatedSize();
   }
 
-  public function setInnerSize() {
+  public function setCalculatedSize() {
     if ($this->width != 'content') {
       $this->innerWidth =
         $this->width -
@@ -109,18 +109,18 @@ class Geometry {
   }
 
   public function setAscent($style, $firstLineAscent) {
-    $ascent = $style->get('ascent', $this->innerHeight);
+    $ascent = $style->get('ascent', $this->height);
     if ($ascent == 'auto') {
       if ($firstLineAscent === false) {
-        $this->ascent = $this->height;
+        $this->ascent = $this->fullHeight ;
         $this->descent = 0;
       } else {
-        $this->ascent = $firstLineAscent;
-        $this->descent = $this->height - $firstLineAscent;
+        $this->ascent = $firstLineAscent + $this->marginTop + $this->borderTop + $this->paddingTop;
+        $this->descent = $this->fullHeight - $this->ascent;
       }
     } else {
-      $this->ascent = $ascent;
-      $this->descent = $this->height - $ascent;
+      $this->ascent = $ascent + $this->marginTop;
+      $this->descent = $this->fullHeight - $this->ascent;
     }
   }
 
@@ -139,9 +139,7 @@ class Geometry {
     }
   }
 
-  public function setInlinePosition($cursor, $element, $ancestorGeometry) {
-    $style = $element->getStyle();
-    $display = $style->get('display');
+  public function setInlinePosition($cursor, $element, $ancestorGeometry, $display, $textAlign) {
     if (
       $display == 'newline' ||
       (
@@ -152,7 +150,7 @@ class Geometry {
       $this->formatRow($cursor, $ancestorGeometry);
       $cursor->newLine();
     }
-    $cursor->addElement($element, $this->width, $this->height, $this->ascent, $this->descent, $display == 'word');
+    $cursor->addElement($element, $this, $display == 'word' || $textAlign == 'justify' || true);
   }
 
   public function formatRow($cursor, $ancestorGeometry) {
@@ -186,9 +184,9 @@ class Geometry {
       if ($isWord && $previousIsWord) {
         $x += $cursor->wordSpacing;
       }
-      $geometry->x = $x;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
-      $x += $geometry->width;
+      $geometry->x = $x + $geometry->marginLeft;
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
+      $x += $geometry->fullWidth;
       $previousIsWord = $isWord;
     }
   }
@@ -205,9 +203,9 @@ class Geometry {
       if ($isWord && $previousIsWord) {
         $x -= $cursor->wordSpacing;
       }
-      $x -= $geometry->width;
+      $x -= $geometry->fullWidth;
       $geometry->x = $x;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
       $previousIsWord = $isWord;
     }
   }
@@ -222,15 +220,13 @@ class Geometry {
     $previousIsWord = false;
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
-      $estyle = $element->getStyle();
-      $isWord = $estyle->get('display') == 'word';
-      if ($isWord && $previousIsWord) {
+      if ($previousIsWord) {
         $x += $spaceWidth;
       }
-      $geometry->x = $x;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
-      $x += $geometry->width;
-      $previousIsWord = $isWord;
+      $geometry->x = $x + $geometry->marginLeft;
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
+      $x += $geometry->fullWidth;
+      $previousIsWord = true;
     }
   }
 
@@ -246,9 +242,9 @@ class Geometry {
       if ($isWord && $previousIsWord) {
         $x += $cursor->wordSpacing;
       }
-      $geometry->x = $x;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent;
-      $x += $geometry->width;
+      $geometry->x = $x + $geometry->marginLeft;
+      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
+      $x += $geometry->fullWidth;
       $previousIsWord = $isWord;
     }
   }

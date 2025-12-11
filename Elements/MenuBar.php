@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class MenuBar extends Box {
+class MenuBar extends Element {
 
   protected $num = 0;
 
@@ -16,12 +16,12 @@ class MenuBar extends Box {
 
   public function activateMenuBarItem($menuIndex) {
     $barItem = end($this->stack);
-    $barItem->removeClass('active-menu-bar-item');
+    $barItem->removeClass('MenuBarItem:active');
     $i = 0;
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBarItem') {
         if ($i == $menuIndex) {
-          $element->addClass('active-menu-bar-item');
+          $element->addClass('MenuBarItem:active');
           $element->raise();
           $barItem = $element;
           break;
@@ -35,7 +35,7 @@ class MenuBar extends Box {
   public function inactivateMenuBarItems() {
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBarItem') {
-        $element->removeClass('active-menu-bar-item');
+        $element->removeClass('MenuBarItem:active');
       }
     }
   }

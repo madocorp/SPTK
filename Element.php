@@ -27,13 +27,17 @@ class Element {
   protected $childClass = [];
   protected $cursor = false;
 
-  public function __construct($ancestor = null, $id = false, $class = false) {
+  public function __construct($ancestor = null, $id = false, $class = false, $type = false) {
     $this->iid = self::$nextInternalId;
     self::$nextInternalId++;
     if (!is_null($ancestor)) {
       $this->renderer = $ancestor->renderer;
     }
-    $this->type = basename(str_replace('\\', '/', get_class($this)));
+    if ($type) {
+      $this->type = $type;
+    } else {
+      $this->type = basename(str_replace('\\', '/', get_class($this)));
+    }
     if ($id === false) {
       $this->id = StyleSheet::ANY;
     } else {
@@ -61,7 +65,6 @@ class Element {
       }
       self::$root = $this;
     } else {
-//      $this->addTo($this->ancestor);
       $this->ancestor->addDescendant($this);
     }
     $this->init();
@@ -108,14 +111,15 @@ class Element {
     $this->geometry->formatRow($this->cursor, $this->geometry);
     $display = $this->style->get('display');
     if ($display == 'word') {
-      $this->geometry->setInnerSize();
+      $this->geometry->setCalculatedSize();
     } else {
       $this->geometry->setContentSize($this->style, $maxX, $maxY);
     }
     if ($display == 'block') {
       $this->geometry->setBlockPosition($this->ancestor->geometry, $this->style);
     } else if ($display == 'inline' || $display == 'word' || $display == 'newline') {
-      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry);
+      $textAlign = $this->ancestor->style->get('textAlign');
+      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $display, $textAlign);
     }
     $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
     if ($originalWidth != $this->geometry->width || $originalHeight != $this->geometry->height) {
@@ -149,7 +153,10 @@ class Element {
   }
 
   protected function draw() {
-    // ...
+    $color = $this->style->get('backgroundColor');
+    $width = $this->geometry->width - $this->geometry->borderLeft - $this->geometry->borderRight;
+    $height = $this->geometry->height - $this->geometry->borderTop - $this->geometry->borderBottom;
+    $this->texture = new Texture($this->renderer, $width, $height, $color);
   }
 
   public function redraw() {
@@ -159,15 +166,9 @@ class Element {
     }
   }
 
-// TODO: replace to addTo
   protected function addDescendant($element) {
     $this->descendants[] = $element;
     $this->stack[] = $element;
-  }
-
-  protected function addTo($ancestor) {
-    $ancestor->descendants[] = $this;
-    $ancestor->stack[] = $this;
   }
 
   public function remove() {

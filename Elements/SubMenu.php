@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class SubMenu extends Box {
+class SubMenu extends Element {
 
   public function showMenuBox($id, $x, $y, $closeOthers) {
     foreach ($this->descendants as $element) {

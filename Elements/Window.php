@@ -36,7 +36,7 @@ echo "CreateRenderer\n";
     $this->calculateGeometry();
     $this->setSize();
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->geometry->setInnerSize();
+    $this->geometry->setCalculatedSize();
     $this->geometry->x = $this->style->get('x', $this->ancestor->geometry->width) + $this->ancestor->geometry->x + $this->geometry->x;
     $this->geometry->y = $this->style->get('y', $this->ancestor->geometry->height) + $this->ancestor->geometry->y + $this->geometry->y;
     $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
@@ -60,7 +60,7 @@ echo "CreateRenderer\n";
     $this->geometry->height = $height->cdata;
     $this->setSize();
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->geometry->setInnerSize();
+    $this->geometry->setCalculatedSize();
   }
 
   public function draw() {
