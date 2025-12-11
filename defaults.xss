@@ -14,9 +14,9 @@ Root {
   backgroundAlignY: center;
   backgroundSizeX: content;
   backgroundSizeY: content;
-  font: LiberationMono-Bold.ttf;
+  font: inherit;
   fontSize: 16px;
-  color: #ffffff;
+  color: inherit;
   textAlign: left;
   ascent: auto;
   lineHeight: 150%;
@@ -30,6 +30,7 @@ Window {
   height: 480px;
   backgroundColor: #0000aa;
   fontSize: 16px;
+  font: LiberationMono-Bold;
 }
 
 Word {
@@ -43,10 +44,6 @@ Word {
 
 Box {
   display: block;
-}
-
-IBox {
-  display: inline;
 }
 
 NL {
@@ -93,7 +90,7 @@ MenuBarItem {
   padding: 1px, 15px, 0px, 0px;
 }
 
-.active-menu-bar-item {
+.MenuBarItem:active {
   backgroundColor: #00ffff;
 }
 
@@ -112,6 +109,7 @@ MenuBoxItem {
   width: 100%;
   padding: 2px, 0px, 0px, 0px;
   backgroundColor: inherit;
+  color: #ffffff;
   height: 22px;
 }
 
@@ -126,14 +124,13 @@ MenuBoxItemLeft {
   width: 15px;
   color: #0000ff;
   textAlign: center;
-  font: DejaVuSans-Bold.ttf;
 }
 
-.active-menu-box-item {
+.MenuBoxItem:active {
   backgroundColor: #000000;
 }
 
-.menu-separator {
+.MenuSeparator {
   height: 25px;
   borderBottom: 3px;
   borderColor: #00ffff;
@@ -150,22 +147,24 @@ Panel {
   backgroundColor: #cccccc;
   color: #000000;
   border: 3px;
-  borderColor: #eeeeee;
+  borderColor: #555555;
   fontSize: 15px;
 }
 
 PanelTitle {
   width: 100%;
-  height: 21px;
-  backgroundColor: #eeeeee;
-  color: #000000;
+  height: 25px;
+  backgroundColor: #555555;
+  color: #ffffff;
   textAlign: center;
   fontSize: 15px;
+  paddingTop: 2px;
 }
 
 PanelContent {
   y: 17px;
   x: 0px;
+  width: 100%;
   padding: 10px;
   color: #000000;
   fontSize: 12px;
@@ -197,6 +196,7 @@ WarningPanelTitle {
 WarningPanelContent {
   y: 17px;
   x: 0px;
+  width: 100%;
   padding: 10px;
   color: #000000;
   fontSize: 12px;
@@ -228,8 +228,61 @@ ErrorPanelTitle {
 ErrorPanelContent {
   y: 17px;
   x: 0px;
+  width: 100%;
   padding: 10px;
   color: #000000;
   fontSize: 12px;
 }
 
+Label {
+  width: 100%;
+  paddingBottom: 10px;
+  lineHeight: 100%;
+}
+
+Input {
+  width: 100%;
+  backgroundColor: #00aaaa;
+  height: 20px;
+}
+
+HalfBoxLeft {
+  width: 50%;
+  paddingRight: 9px;
+  borderRight: 1px;
+  borderColor: #555555;
+}
+
+HalfBoxRight {
+  width: 50%;
+  paddingLeft: 10px;
+}
+
+ButtonBox {
+  width: 100%;
+  marginTop: 10px;
+  paddingTop: 10px;
+  borderTop: 1px;
+  borderColor: #555555;
+  textAlign: justify;
+}
+
+Button {
+  margin: 5px, 10px;
+  color: #cccccc;
+  backgroundColor: #555555;
+  padding: 5px, 20px, 3px, 20px;
+  border: 1px;
+  borderColor: #aaaaaa;
+}
+
+.Button:active {
+  backgroundColor: #000000;
+  color: #ffffff;
+  borderColor: #ffffff;
+}
+
+ButtonHotKey {
+  color: #00aaaa;
+  paddingRight: 5px;
+}

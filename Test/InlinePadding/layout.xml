@@ -1,0 +1,13 @@
+<Window title="InlinePadding">
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="padding">P</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+  <IBox class="long">L</IBox>
+</Window>

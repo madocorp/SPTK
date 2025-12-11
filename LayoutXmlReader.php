@@ -41,10 +41,14 @@ class LayoutXmlReader {
           } else if ($xml->name === 'AC') {
             $this->current->addChildClass($xml->getAttribute('class'));
           } else {
-            $type = 'SPTK\\' . str_replace('_', '', ucwords($xml->name, '_'));
+            $type = str_replace('_', '', ucwords($xml->name, '_'));
+            $element = 'SPTK\\' . $type;
             $id = $xml->getAttribute('id') ?? false;
             $class = $xml->getAttribute('class') ?? false;
-            $this->current = new $type($this->current, $id, $class);
+            if (!class_exists($element)) {
+              $element = 'SPTK\\Element';
+            }
+            $this->current = new $element($this->current, $id, $class, $type);
             $attributes = $this->current->getAttributeList();
             foreach ($attributes as $attribute) {
               $value = $xml->getAttribute($attribute) ?? false;
@@ -59,7 +63,11 @@ class LayoutXmlReader {
           }
           break;
         case XMLReader::END_ELEMENT:
-          if ($xml->name === 'Event') {
+          if ($xml->name === 'Root') {
+            // skip
+          } else if ($xml->name === 'Include') {
+            // skip
+          } else if ($xml->name === 'Event') {
             $this->event = false;
           } else if ($xml->name === 'AC') {
             $this->current->removeChildClass($xml->getAttribute('class'));

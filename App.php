@@ -60,7 +60,9 @@ class App {
   public function autoload($class) {
     $class = explode('\\', $class);
     if ($class[0] == 'SPTK') {
-      require_once "Elements/{$class[1]}.php";
+      if (file_exists(__DIR__ . "/Elements/{$class[1]}.php")) {
+        require_once "Elements/{$class[1]}.php";
+      }
     }
   }
 
@@ -92,7 +94,7 @@ class App {
 
   public function timer() {
     if (DEBUG) {
-      echo "timer\n";
+//      echo "timer\n";
     }
     if (!is_null($this->timerCallback)) {
       call_user_func($this->timerCallback);

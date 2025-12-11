@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class Menu extends Box {
+class Menu extends Element {
 
   protected $bar;
   protected $sub;

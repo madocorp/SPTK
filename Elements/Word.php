@@ -23,7 +23,8 @@ class Word extends Element {
   }
 
   protected function draw() {
-    $font = new Font("LiberationMono-Bold.ttf", $this->style->get('fontSize', $this->ancestor->geometry->innerHeight));
+    $fontName = $this->style->get('font');
+    $font = new Font($fontName, $this->style->get('fontSize', $this->ancestor->geometry->innerHeight));
     $ttf = TTF::$instance->ttf;
     $color = $this->style->get('color');
     $sdlColor = $ttf->new("SDL_Color");
@@ -46,6 +47,7 @@ class Word extends Element {
     $this->geometry->height = $this->surface->h;
     $this->geometry->ascent = $font->ascent;
     $this->geometry->descent = $font->descent;
+    $this->geometry->setCalculatedSize();
 
     $sdl = SDL::$instance->sdl;
     $surface = $sdl->cast("SDL_Surface *", $this->surface);

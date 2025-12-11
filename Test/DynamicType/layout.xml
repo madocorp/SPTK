@@ -1,0 +1,4 @@
+<Window title="DynamicType">
+  Window
+  <NonDefinedElement>Dynamic type!</NonDefinedElement>
+</Window>

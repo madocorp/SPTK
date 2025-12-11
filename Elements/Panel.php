@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class Panel extends Box {
+class Panel extends Element {
 
   protected function init() {
     $this->display = false;

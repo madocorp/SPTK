@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class MenuBox extends Box {
+class MenuBox extends Element {
 
   public $belongsTo = false;
   public $submenu = false;
@@ -42,13 +42,13 @@ class MenuBox extends Box {
       $menu = $this->active;
     }
     $boxItem = end($this->stack);
-    $boxItem->removeClass('active-menu-box-item');
+    $boxItem->removeClass('MenuBoxItem:active');
     $i = 0;
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBoxItem') {
         if ($i == $menu) {
           $boxItem = $element;
-          $boxItem->addClass('active-menu-box-item');
+          $boxItem->addClass('MenuBoxItem:active');
           $boxItem->raise();
           break;
         }

@@ -38,12 +38,12 @@ class Cursor {
     $this->lines = 0;
   }
 
-  public function addElement($element, $w, $h, $ascent, $descent, $isWord) {
+  public function addElement($element, $geometry, $isWord) {
     $this->elements[] = $element;
-    $this->ascent = max($this->ascent, $ascent);
-    $this->descent = max($this->descent, $descent);
-    $this->x += $w;
-    $this->w += $w;
+    $this->ascent = max($this->ascent, $geometry->ascent);
+    $this->descent = max($this->descent, $geometry->descent);
+    $this->x += $geometry->fullWidth;
+    $this->w += $geometry->fullWidth;
     if ($isWord && $this->previousIsWord) {
       $this->x += $this->wordSpacing;
       $this->s++;
