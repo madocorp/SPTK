@@ -83,7 +83,7 @@ class Element {
       $ancestorStyle = $this->ancestor->style;
     }
     $this->style = StyleSheet::get($defaultStyle, $ancestorStyle, $this->type, $this->sclass, $this->id);
-    if ($this->style->get('display') == 'none') {
+    if (!$this->style->get('display')) {
       $this->display = false;
     }
     foreach ($this->descendants as $descendant) {
@@ -106,17 +106,17 @@ class Element {
       $maxY = max($maxY, $element->geometry->y + $element->geometry->height);
     }
     $this->geometry->formatRow($this->cursor, $this->geometry);
-    $display = $this->style->get('display');
-    if ($display == 'word') {
+    $position = $this->style->get('position');
+    if ($position == 'word') {
       $this->geometry->setCalculatedSize();
     } else {
       $this->geometry->setContentSize($this->style, $maxX, $maxY);
     }
-    if ($display == 'block') {
-      $this->geometry->setBlockPosition($this->ancestor->geometry, $this->style);
-    } else if ($display == 'inline' || $display == 'word' || $display == 'newline') {
+    if ($position == 'absolute') {
+      $this->geometry->setAbsolutePosition($this->ancestor->geometry, $this->style);
+    } else if ($position == 'inline' || $position == 'word' || $position == 'newline') {
       $textAlign = $this->ancestor->style->get('textAlign');
-      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $display, $textAlign);
+      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $position, $textAlign);
     }
     $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
     if ($originalWidth != $this->geometry->width || $originalHeight != $this->geometry->height) {
@@ -124,8 +124,8 @@ class Element {
     }
   }
 
-  protected function render($ptmpTexture) {
-    if ($this->display === false) {
+  protected function render() {
+    if (!$this->display) {
       return false;
     }
     if ($this->geometry->width == 'content' || $this->geometry->height == 'content') {
@@ -136,11 +136,11 @@ class Element {
       return false;
     }
     $tmpTexture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, [0, 0, 0, 0]);
-    $this->texture->copyTo($tmpTexture, $this->geometry->borderLeft, $this->geometry->borderTop);
+    $this->texture->copyTo($tmpTexture, 0, 0);
     $n = count($this->stack);
     for ($i = 0; $i < $n; $i++) {
       $descendant = $this->stack[$i];
-      $dTexture = $descendant->render($tmpTexture);
+      $dTexture = $descendant->render();
       if ($dTexture !== false) {
         $dTexture->copyTo($tmpTexture, $descendant->geometry->x, $descendant->geometry->y);
       }
@@ -209,7 +209,10 @@ class Element {
     }
   }
 
-  public function addClass($class) {
+  public function addClass($class, $dynamic = false) {
+    if ($dynamic) {
+      $class = $this->type . ':' . $class;
+    }
     if (!in_array($class, $this->sclass)) {
       $this->sclass[] = $class;
       $this->recalculateStyle();
@@ -217,7 +220,10 @@ class Element {
     }
   }
 
-  public function removeClass($class) {
+  public function removeClass($class, $dynamic = false) {
+    if ($dynamic) {
+      $class = $this->type . ':' . $class;
+    }
     $key = array_search($class, $this->sclass);
     if ($key !== false) {
       unset($this->sclass[$key]);
@@ -226,7 +232,10 @@ class Element {
     }
   }
 
-  public function hasClass($class) {
+  public function hasClass($class, $dynamic = false) {
+    if ($dynamic) {
+      $class = $this->type . ':' . $class;
+    }
     return in_array($class, $this->sclass);
   }
 
@@ -348,9 +357,6 @@ class Element {
   public function findParentByType($type) {
     if ($this->type == $type) {
       return $this;
-    }
-    if (is_null($this->ancestor)) {
-      return false;
     }
     return $this->ancestor->findParentByType($type);
   }

@@ -2,7 +2,7 @@
 
 namespace SPTK;
 
-class Keycode {
+class KeyCode {
 
   const RETURN = 0x0D;
   const TAB = 0x09;

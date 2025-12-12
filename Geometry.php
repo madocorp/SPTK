@@ -50,7 +50,7 @@ class Geometry {
   }
 
   public function setSize($ancestorGeometry, $style) {
-    if ($style->get('display') != 'word') {
+    if ($style->get('position') != 'word') {
       $this->width = $style->get('width', $ancestorGeometry->innerWidth);
       $this->height = $style->get('height', $ancestorGeometry->innerHeight);
     }
@@ -124,7 +124,7 @@ class Geometry {
     }
   }
 
-  public function setBlockPosition($ancestorGeometry, $style) {
+  public function setAbsolutePosition($ancestorGeometry, $style) {
     $this->x = $style->get('x', $ancestorGeometry->innerWidth, $isNegative);
     if ($isNegative) {
       $this->x = $ancestorGeometry->width - $ancestorGeometry->paddingRight - $ancestorGeometry->borderRight - $this->fullWidth + $this->x - $this->marginRight;
@@ -139,18 +139,18 @@ class Geometry {
     }
   }
 
-  public function setInlinePosition($cursor, $element, $ancestorGeometry, $display, $textAlign) {
+  public function setInlinePosition($cursor, $element, $ancestorGeometry, $position, $textAlign) {
     if (
-      $display == 'newline' ||
+      $position == 'newline' ||
       (
         $ancestorGeometry->width != 'content' &&
-        $cursor->x + ($display == 'word' && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
+        $cursor->x + ($position == 'word' && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
       )
     ) {
       $this->formatRow($cursor, $ancestorGeometry);
       $cursor->newLine();
     }
-    $cursor->addElement($element, $this, $display == 'word' || $textAlign == 'justify' || true);
+    $cursor->addElement($element, $this, $position == 'word' || $textAlign == 'justify' || true);
   }
 
   public function formatRow($cursor, $ancestorGeometry) {
@@ -180,7 +180,7 @@ class Geometry {
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
-      $isWord = $estyle->get('display') == 'word';
+      $isWord = $estyle->get('position') == 'word';
       if ($isWord && $previousIsWord) {
         $x += $cursor->wordSpacing;
       }
@@ -199,7 +199,7 @@ class Geometry {
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
-      $isWord = $estyle->get('display') == 'word';
+      $isWord = $estyle->get('position') == 'word';
       if ($isWord && $previousIsWord) {
         $x -= $cursor->wordSpacing;
       }
@@ -238,7 +238,7 @@ class Geometry {
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
-      $isWord = $estyle->get('display') == 'word';
+      $isWord = $estyle->get('position') == 'word';
       if ($isWord && $previousIsWord) {
         $x += $cursor->wordSpacing;
       }

@@ -21,7 +21,7 @@ class MenuBar extends Element {
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBarItem') {
         if ($i == $menuIndex) {
-          $element->addClass('MenuBarItem:active');
+          $element->addClass('active', true);
           $element->raise();
           $barItem = $element;
           break;
@@ -35,7 +35,7 @@ class MenuBar extends Element {
   public function inactivateMenuBarItems() {
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBarItem') {
-        $element->removeClass('MenuBarItem:active');
+        $element->removeClass('active', true);
       }
     }
   }

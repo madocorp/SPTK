@@ -9,7 +9,7 @@ Window {
 }
 
 Box {
-  display: block;
+  position: absolute;
   color: #000000;
   backgroundColor: #ffffff;
   border: 3px;
