@@ -6,6 +6,7 @@ class Panel extends Element {
 
   private $inputList;
   private $focusId;
+  private $hotKeys = [];
 
   protected function init() {
     $this->display = false;
@@ -67,9 +68,21 @@ class Panel extends Element {
     $this->inputList[$this->focusId]['element']->removeClass('active', true);
   }
 
+  public function addHotKey($key, $callback) {
+    $this->hotKeys[$key] = $callback;
+  }
+
+  public function removeHotKey($key) {
+    unset($this->hotKeys[$key]);
+  }
+
   public function keyPressHandler($element, $event) {
     if (!$this->display) {
       return false;
+    }
+    if (isset($this->hotKeys[$event['key']])) {
+      call_user_func($this->hotKeys[$event['key']], $this);
+      return true;
     }
     if ($event['key'] == KeyCode::ESCAPE) {
       $this->inputList = [];
@@ -79,7 +92,7 @@ class Panel extends Element {
     }
     if ($event['key'] == KeyCode::TAB) {
       if ($this->focusId < 0) {
-        return false;
+        return true;
       }
       if ($event['mod'] == 0) {
         $this->inactivateInput();
@@ -100,7 +113,7 @@ class Panel extends Element {
       }
       return true;
     }
-    return false;
+    return true;
   }
 
 }

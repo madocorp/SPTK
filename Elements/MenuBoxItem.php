@@ -70,28 +70,16 @@ class MenuBoxItem extends Element {
   public function setFilterable($value) {
   }
 
-  protected function parseCallback($value) {
-    if (empty($value)) {
-      return false;
-    }
-    $function = explode('::', $value);
-    if (!is_array($function) || count($function) !== 2) {
-      throw new \Exception("Malformed callback function: '{$value}'");
-    }
-    return $function;
-  }
-
   public function setOnOpen($value) {
-    $this->onOpen = $this->parseCallback($value);
+    $this->onOpen = self::parseCallback($value);
   }
 
   public function setOnSelect($value) {
-    $this->onSelect = $this->parseCallback($value);
-
+    $this->onSelect = self::parseCallback($value);
   }
 
   protected function openSubmenu() {
-    $submenu = $this->findParentByType('SubMenu');
+    $submenu = $this->findAncestorByType('SubMenu');
     foreach ($submenu->descendants as $menuBox) {
       if ($menuBox->belongsTo == $this->id) {
         $x = $this->geometry->x + $this->geometry->width;
@@ -117,7 +105,7 @@ class MenuBoxItem extends Element {
       if ($this->submenu) {
         return $this->openSubmenu();
       }
-      $menu = $this->findParentByType('Menu');
+      $menu = $this->findAncestorByType('Menu');
       $menu->closeMenu();
       if ($this->onOpen !== false) {
         call_user_func($this->onOpen);
@@ -125,13 +113,6 @@ class MenuBoxItem extends Element {
       return true;
     }
     if ($event['key'] == KeyCode::SPACE) {
-$p = self::getActivePath();
-echo count($p), ': ';
-foreach ($p as $e) {
-  echo $e->type, " / ";
-}
-echo "\n";
-
       if ($this->selectable !== false || $this->radio !== false) {
         $this->setSelected(!$this->selected);
         if ($this->onSelect !== false) {

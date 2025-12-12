@@ -46,7 +46,7 @@ trait ElementStatic {
   public static function immediateRender($element) {
     $t = microtime(true);
     $tmpTexture = $element->render();
-    $window = $element->findParentByType('Window');
+    $window = $element->findAncestorByType('Window');
     $x = 0;
     $y = 0;
     static::getRelativePos($window->iid, $element, $x, $y);
@@ -56,6 +56,17 @@ trait ElementStatic {
     if (DEBUG) {
       echo "Immediate refresh:", microtime(true) - $t, "\n";
     }
+  }
+
+  public static function parseCallback($value) {
+    if (empty($value)) {
+      return false;
+    }
+    $function = explode('::', $value);
+    if (!is_array($function) || count($function) !== 2) {
+      throw new \Exception("Malformed callback function: '{$value}'");
+    }
+    return $function;
   }
 
 }
