@@ -354,11 +354,11 @@ class Element {
     array_pop($this->childClass);
   }
 
-  public function findParentByType($type) {
+  public function findAncestorByType($type) {
     if ($this->type == $type) {
       return $this;
     }
-    return $this->ancestor->findParentByType($type);
+    return $this->ancestor->findAncestorByType($type);
   }
 
 }

@@ -100,6 +100,8 @@ class Window extends Element {
         $this->tmpTexture = false;
         $this->getSize();
         $this->draw();
+Element::refresh();
+        return true;
       }
       $n = count($this->stack);
       if ($n > 0) {

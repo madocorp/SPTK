@@ -49,7 +49,7 @@ class Root extends Element {
     return true;
   }
 
-  public function findParentByType($type) {
+  public function findAncestorByType($type) {
     return false;
   }
 
