@@ -11,18 +11,32 @@ class Texture {
   protected $width;
   protected $height;
 
-  public function __construct($renderer, $width, $height, $color) {
+  private static $sdlRect;
+  private static $sdlRectAddr;
+
+  public static function init() {
+    $sdl = SDL::$instance->sdl;
+    // SDL_FRect is same as SDL_Rect (because of incompatible arguments issue)
+    self::$sdlRect = $sdl->new('SDL_FRect');
+    self::$sdlRectAddr = \FFI::addr(self::$sdlRect);
+  }
+
+  public function __construct($renderer, $width, $height, $color, $fromSurface = false) {
     $this->sdl = SDL::$instance->sdl;
     $this->ttf = TTF::$instance->ttf;
     $this->renderer = $renderer;
     $this->width = $width;
     $this->height = $height;
-    $this->texture = $this->sdl->SDL_CreateTexture($this->renderer, SDL::SDL_PIXELFORMAT_RGBA8888, SDL::SDL_TEXTUREACCESS_TARGET, $this->width, $this->height);
-    $this->sdl->SDL_SetTextureBlendMode($this->texture, SDL::SDL_BLENDMODE_BLEND);
-    $this->sdl->SDL_SetTextureScaleMode($this->texture, SDL::SDL_SCALE_MODE_NEAREST);
-    $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
-    $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
-    $this->sdl->SDL_RenderClear($this->renderer);
+    if ($fromSurface === false) {
+      $this->texture = $this->sdl->SDL_CreateTexture($this->renderer, SDL::SDL_PIXELFORMAT_RGBA8888, SDL::SDL_TEXTUREACCESS_TARGET, $this->width, $this->height);
+      $this->sdl->SDL_SetTextureBlendMode($this->texture, SDL::SDL_BLENDMODE_BLEND);
+      $this->sdl->SDL_SetTextureScaleMode($this->texture, SDL::SDL_SCALE_MODE_NEAREST);
+      $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
+      $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
+      $this->sdl->SDL_RenderClear($this->renderer);
+    } else {
+      $this->texture = $this->sdl->SDL_CreateTextureFromSurface($this->renderer, $fromSurface);
+    }
   }
 
   public function __destruct() {
@@ -41,17 +55,20 @@ class Texture {
 
   public function copyTo($target, $x, $y) {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $target->texture ?? null);
-    $destRect = $this->sdl->new('SDL_FRect');
-    $destRect->x = $x;
-    $destRect->y = $y;
-    $destRect->w = $this->width;
-    $destRect->h = $this->height;
-    $this->sdl->SDL_RenderTexture($this->renderer, $this->texture, null, \FFI::addr($destRect));
+    self::$sdlRect->x = $x;
+    self::$sdlRect->y = $y;
+    self::$sdlRect->w = $this->width;
+    self::$sdlRect->h = $this->height;
+    $this->sdl->SDL_RenderTexture($this->renderer, $this->texture, null, self::$sdlRectAddr);
   }
 
-  public function copy($texture, $rect) {
+  public function copy($texture, $x, $y, $w, $h) {
+    self::$sdlRect->x = $x;
+    self::$sdlRect->y = $y;
+    self::$sdlRect->w = $w;
+    self::$sdlRect->h = $h;
     $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
-    $this->sdl->SDL_RenderTexture($this->renderer, $texture, null, \FFI::addr($rect));
+    $this->sdl->SDL_RenderTexture($this->renderer, $texture, null, self::$sdlRectAddr);
   }
 
 }

@@ -12,12 +12,12 @@ class Window extends Element {
 
   protected $sdl;
   protected $window;
+  protected $tmpTexture = false;
 
   protected function init() {
     $this->sdl = SDL::$instance->sdl;
     $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
-echo "CreateRenderer\n";
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, 0, 0, 0, 0xff);
     $frameTop = \FFI::new("int");
     $frameBottom = \FFI::new("int");
@@ -68,23 +68,25 @@ echo "CreateRenderer\n";
     $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, $color);
   }
 
-  protected function render($ptmp) {
+  protected function render() {
     if ($this->texture === false) {
       return false;
     }
     $width = $this->geometry->width - $this->geometry->borderLeft - $this->geometry->borderRight;
     $height = $this->geometry->height - $this->geometry->borderTop - $this->geometry->borderBottom;
-    $tmpTexture = new Texture($this->renderer, $width, $height, [0, 0, 0, 0]);
-    $this->texture->copyTo($tmpTexture, 0, 0);
+    if ($this->tmpTexture === false) {
+      $this->tmpTexture = new Texture($this->renderer, $width, $height, [0, 0, 0, 0]);
+    }
+    $this->texture->copyTo($this->tmpTexture, 0, 0);
     $n = count($this->stack);
     for ($i = 0; $i < $n; $i++) {
       $descendant = $this->stack[$i];
-      $dTexture = $descendant->render($tmpTexture);
+      $dTexture = $descendant->render();
       if ($dTexture !== false) {
-        $dTexture->copyTo($tmpTexture, $descendant->geometry->x, $descendant->geometry->y);
+        $dTexture->copyTo($this->tmpTexture, $descendant->geometry->x, $descendant->geometry->y);
       }
     }
-    $tmpTexture->copyTo(null, 0, 0);
+    $this->tmpTexture->copyTo(null, 0, 0);
     $this->sdl->SDL_RenderPresent($this->renderer);
     return false;
   }
@@ -95,6 +97,7 @@ echo "CreateRenderer\n";
     }
     if (true) { // check window id
       if ($event['type'] == SDL::SDL_EVENT_WINDOW_RESIZED) {
+        $this->tmpTexture = false;
         $this->getSize();
         $this->draw();
       }

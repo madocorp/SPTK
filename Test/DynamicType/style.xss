@@ -9,7 +9,7 @@ Window {
 }
 
 NonDefinedElement {
-  display: block;
+  position: absolute;
   x: 50px;
   y: 50px;
   color: #ffffff;

@@ -42,13 +42,13 @@ class MenuBox extends Element {
       $menu = $this->activeMenu;
     }
     $boxItem = end($this->stack);
-    $boxItem->removeClass('MenuBoxItem:active');
+    $boxItem->removeClass('active', true);
     $i = 0;
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBoxItem') {
         if ($i == $menu) {
           $boxItem = $element;
-          $boxItem->addClass('MenuBoxItem:active');
+          $boxItem->addClass('active', true);
           $boxItem->raise();
           break;
         }

@@ -1,7 +1,8 @@
 Root {
   width: content;
   height: content;
-  display: inline;
+  display: true;
+  position: inline;
   x: 0px;
   y: 0px;
   border: 0px;
@@ -34,7 +35,7 @@ Window {
 }
 
 Word {
-  display: word;
+  position: word;
   width: content;
   height: content;
   backgroundColor: inherit;
@@ -43,17 +44,17 @@ Word {
 }
 
 Box {
-  display: block;
+  position: absolute;
 }
 
 NL {
-  display: newline;
+  position: newline;
   width: 0px;
   height: 0px;
 }
 
 Menu {
-  display: block;
+  position: absolute;
   width: 100%;
   height: 100%;
   x: 0px;
@@ -64,12 +65,12 @@ Menu {
 }
 
 SubMenu {
-  display: block;
+  position: absolute;
   y: 20px;
 }
 
 MenuBar {
-  display: block;
+  position: absolute;
   width: 100%;
   height: 20px;
   backgroundColor: #00aaaa;
@@ -90,12 +91,12 @@ MenuBarItem {
   padding: 1px, 15px, 0px, 0px;
 }
 
-.MenuBarItem:active {
+MenuBarItem:active {
   backgroundColor: #00ffff;
 }
 
 MenuBox {
-  display: block;
+  position: absolute;
   width: 150px;
   height: content;
   backgroundColor: #00aaaa;
@@ -114,7 +115,7 @@ MenuBoxItem {
 }
 
 MenuBoxItemRight {
-  display: block;
+  position: absolute;
   x: -2px;
   y: 0px;
   color: #0000ff;
@@ -126,7 +127,7 @@ MenuBoxItemLeft {
   textAlign: center;
 }
 
-.MenuBoxItem:active {
+MenuBoxItem:active {
   backgroundColor: #000000;
 }
 
@@ -137,7 +138,7 @@ MenuBoxItemLeft {
 }
 
 Panel {
-  display: block;
+  position: absolute;
   x: 50%;
   y: 50%;
   marginTop: half;
@@ -171,7 +172,7 @@ PanelContent {
 }
 
 WarningPanel {
-  display: block;
+  position: absolute;
   x: 50%;
   y: 50%;
   marginTop: half;
@@ -203,7 +204,7 @@ WarningPanelContent {
 }
 
 ErrorPanel {
-  display: block;
+  position: absolute;
   x: 50%;
   y: 50%;
   marginTop: half;
@@ -243,7 +244,12 @@ Label {
 Input {
   width: 100%;
   backgroundColor: #00aaaa;
+  color: #000000;
   height: 20px;
+}
+
+Input:active {
+  backgroundColor: #00ffff;
 }
 
 HalfBoxLeft {
@@ -276,7 +282,7 @@ Button {
   borderColor: #aaaaaa;
 }
 
-.Button:active {
+Button:active {
   backgroundColor: #000000;
   color: #ffffff;
   borderColor: #ffffff;

@@ -15,7 +15,6 @@ typedef Uint32 SDL_AudioDeviceID;
 typedef Uint32 SDL_SurfaceFlags;
 typedef Uint32 SDL_PixelFormat;
 typedef Sint32 SDL_Keycode;
-typedef Uint16 SDL_Keymod;
 
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
@@ -94,8 +93,6 @@ bool SDL_SetRenderDrawColor(SDL_Renderer* renderer, Uint8 r, Uint8 g, Uint8 b, U
 bool SDL_RenderClear(SDL_Renderer* renderer);
 bool SDL_RenderPresent(SDL_Renderer* renderer);
 bool SDL_SetWindowTitle(SDL_Window* window, const char* title);
-
-
 int SDL_SetHint(const char* name, const char* value);
 bool SDL_PollEvent(SDL_Event* event);
 void SDL_DestroyRenderer(SDL_Renderer* renderer);
@@ -112,3 +109,4 @@ bool SDL_SetRenderTarget(SDL_Renderer* renderer, SDL_Texture* texture);
 SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface);
 void SDL_DestroySurface(SDL_Surface* surface);
 bool SDL_RenderLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2);
+SDL_Keymod SDL_GetModState(void);

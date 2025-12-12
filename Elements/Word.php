@@ -4,14 +4,11 @@ namespace SPTK;
 
 class Word extends Element {
 
-  public $value;
+  public $value = false;
   protected $surface;
-  protected $rect;
 
-  public function init() {
-    $sdl = SDL::$instance->sdl;
-    $this->rect = $sdl->new('SDL_FRect');
-  }
+  private static $fgColor;
+  private static $bgColor;
 
   public function setValue($value) {
     $this->value = "{$value}";
@@ -24,34 +21,40 @@ class Word extends Element {
 
   protected function draw() {
     $fontName = $this->style->get('font');
-    $font = new Font($fontName, $this->style->get('fontSize', $this->ancestor->geometry->innerHeight));
+    $fontSize = $this->style->get('fontSize', $this->ancestor->geometry->innerHeight);
+    $font = new Font($fontName, $fontSize);
+    if (empty($this->value)) {
+      $this->geometry->ascent = $font->ascent;
+      $this->geometry->descent = $font->descent;
+      return;
+    }
     $ttf = TTF::$instance->ttf;
+    if (self::$fgColor == false) {
+      self::$fgColor = $ttf->new("SDL_Color");
+    }
+    if (self::$bgColor == false) {
+      self::$bgColor = $ttf->new("SDL_Color");
+    }
     $color = $this->style->get('color');
-    $sdlColor = $ttf->new("SDL_Color");
-    $sdlColor->r = $color[0];
-    $sdlColor->g = $color[1];
-    $sdlColor->b = $color[2];
-    $sdlColor->a = $color[3] ?? 0xff;
-
+    self::$fgColor->r = $color[0];
+    self::$fgColor->g = $color[1];
+    self::$fgColor->b = $color[2];
+    self::$fgColor->a = $color[3] ?? 0xff;
     $bgcolor = $this->ancestor->style->get('backgroundColor');
-    $sdlBgColor = $ttf->new("SDL_Color");
-    $sdlBgColor->r = $bgcolor[0];
-    $sdlBgColor->g = $bgcolor[1];
-    $sdlBgColor->b = $bgcolor[2];
-    $sdlBgColor->a = $bgcolor[3] ?? 0xff;
-
+    self::$bgColor->r = $bgcolor[0];
+    self::$bgColor->g = $bgcolor[1];
+    self::$bgColor->b = $bgcolor[2];
+    self::$bgColor->a = $bgcolor[3] ?? 0xff;
 //    $this->surface = $ttf->TTF_RenderText_Blended($font->font, $this->value, strlen($this->value), $sdlColor);
-    $this->surface = $ttf->TTF_RenderText_Shaded($font->font, $this->value, strlen($this->value), $sdlColor, $sdlBgColor);
-
+    $this->surface = $ttf->TTF_RenderText_Shaded($font->font, $this->value, strlen($this->value), self::$fgColor, self::$bgColor);
     $this->geometry->width = $this->surface->w;
     $this->geometry->height = $this->surface->h;
     $this->geometry->ascent = $font->ascent;
     $this->geometry->descent = $font->descent;
     $this->geometry->setCalculatedSize();
-
     $sdl = SDL::$instance->sdl;
     $surface = $sdl->cast("SDL_Surface *", $this->surface);
-    $this->texture = $sdl->SDL_CreateTextureFromSurface($this->renderer, $surface);
+    $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, $bgcolor, $surface);
   }
 
   public function __destruct() {
@@ -59,13 +62,8 @@ class Word extends Element {
     $ttf->SDL_DestroySurface($this->surface);
   }
 
-  protected function render($ptmpTexture) {
-    $this->rect->x = $this->geometry->x;
-    $this->rect->y = $this->geometry->y;
-    $this->rect->w = $this->geometry->width;
-    $this->rect->h = $this->geometry->height;
-    $ptmpTexture->copy($this->texture, $this->rect);
-    return false;
+  protected function render() {
+    return $this->texture;
   }
 
 }

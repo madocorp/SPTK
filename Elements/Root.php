@@ -19,9 +19,9 @@ class Root extends Element {
     $this->geometry->fullHeight = $this->geometry->height;
   }
 
-  protected function render($ptmp) {
+  protected function render() {
     foreach ($this->stack as $descendant) {
-      $descendant->render(null);
+      $descendant->render();
     }
     return false;
   }
@@ -47,6 +47,10 @@ class Root extends Element {
 
   protected function isActive() {
     return true;
+  }
+
+  public function findParentByType($type) {
+    return false;
   }
 
 }

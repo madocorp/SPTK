@@ -25,6 +25,9 @@ class StyleSheet {
     $styles = explode("}", $file);
     foreach ($styles as $style) {
       list($selector, $rules) = explode("{", $style, 2);
+      if (strpos($selector, ':') !== false) {
+        $selector = '.' . $selector;
+      }
       $rules = trim($rules, ";");
       $rules = explode(";", $rules);
       $processedRules = [];

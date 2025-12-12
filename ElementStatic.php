@@ -17,7 +17,7 @@ trait ElementStatic {
   public static function refresh() {
     $t = microtime(true);
     static::$root->calculateGeometry();
-    static::$root->render(null);
+    static::$root->render();
     if (DEBUG) {
       echo "Refreshed:", microtime(true) - $t, "\n";
     }
@@ -32,6 +32,30 @@ trait ElementStatic {
       throw new \Exception("Element not found by id: {$id}");
     }
     return static::$elementsById[$id];
+  }
+
+  public static function getRelativePos($referenceId, $element, &$x, &$y) {
+    if ($element->iid == $referenceId) {
+      return;
+    }
+    $x += $element->geometry->x;
+    $y += $element->geometry->y;
+    static::getRelativePos($referenceId, $element->ancestor, $x, $y);
+  }
+
+  public static function immediateRender($element) {
+    $t = microtime(true);
+    $tmpTexture = $element->render();
+    $window = $element->findParentByType('Window');
+    $x = 0;
+    $y = 0;
+    static::getRelativePos($window->iid, $element, $x, $y);
+    $tmpTexture->copyTo($window->tmpTexture, $x, $y);
+    $window->tmpTexture->copyTo(null, 0, 0);
+    $window->sdl->SDL_RenderPresent($window->renderer);
+    if (DEBUG) {
+      echo "Immediate refresh:", microtime(true) - $t, "\n";
+    }
   }
 
 }

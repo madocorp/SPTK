@@ -47,7 +47,6 @@ class Font {
   }
 
   private function getPath($name, $exact) {
-echo $name, "\n";
     $clearName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name));
     $minL = strlen($clearName);
     $closestPath = false;

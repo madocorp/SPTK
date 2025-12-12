@@ -21,7 +21,7 @@ Window {
 }
 
 .b1 {
-  display: block;
+  position: absolute;
   width: 30px;
   height: 30px;
   backgroundColor: #ff0000;
@@ -30,7 +30,7 @@ Window {
 }
 
 .b2 {
-  display: block;
+  position: absolute;
   width: 30px;
   height: 30px;
   backgroundColor: #00ff00;
@@ -39,7 +39,7 @@ Window {
 }
 
 .b3 {
-  display: block;
+  position: absolute;
   width: 30px;
   height: 30px;
   backgroundColor: #0000ff;
