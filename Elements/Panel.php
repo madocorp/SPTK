@@ -31,6 +31,17 @@ class Panel extends Element {
     }
   }
 
+  public function getValue() {
+    $value = [];
+    foreach ($this->inputList as $input) {
+      $key = $input['element']->getId();
+      if ($key !== false) {
+        $value[$key] = $input['element']->getValue();
+      }
+    }
+    return $value;
+  }
+
   private function setInputList($element) {
     if ($element->acceptInput) {
       $this->inputList[] = $this->getInputElementDetails($element);

@@ -40,6 +40,7 @@ class Window extends Element {
     $this->geometry->x = $this->style->get('x', $this->ancestor->geometry->width) + $this->ancestor->geometry->x + $this->geometry->x;
     $this->geometry->y = $this->style->get('y', $this->ancestor->geometry->height) + $this->ancestor->geometry->y + $this->geometry->y;
     $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
+    $this->sdl->SDL_StartTextInput($this->window);
     $this->draw();
   }
 
@@ -100,7 +101,6 @@ class Window extends Element {
         $this->tmpTexture = false;
         $this->getSize();
         $this->draw();
-Element::refresh();
         return true;
       }
       $n = count($this->stack);

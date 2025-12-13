@@ -15,6 +15,7 @@ typedef Uint32 SDL_AudioDeviceID;
 typedef Uint32 SDL_SurfaceFlags;
 typedef Uint32 SDL_PixelFormat;
 typedef Sint32 SDL_Keycode;
+typedef int SDL_EventType; // This is an enum type, but it doesn't matter to us.
 
 typedef struct SDL_Window SDL_Window;
 typedef struct SDL_Renderer SDL_Renderer;
@@ -25,13 +26,13 @@ typedef struct SDL_Palette SDL_Palette;
 typedef struct SDL_Texture SDL_Texture;
 typedef struct SDL_QuitEvent
 {
-  int type;
+  SDL_EventType type;
   Uint32 reserved;
   Uint64 timestamp;
 } SDL_QuitEvent;
 typedef struct SDL_KeyboardEvent
 {
-  int type;
+  SDL_EventType type;
   Uint32 reserved;
   Uint64 timestamp;
   SDL_WindowID windowID;
@@ -43,10 +44,19 @@ typedef struct SDL_KeyboardEvent
   bool down;
   bool repeat;
 } SDL_KeyboardEvent;
+typedef struct SDL_TextInputEvent
+{
+  SDL_EventType type;
+  Uint32 reserved;
+  Uint64 timestamp;
+  SDL_WindowID windowID;
+  const char *text;
+} SDL_TextInputEvent;
 typedef union SDL_Event
 {
   Uint32 type;
   SDL_KeyboardEvent key;
+  SDL_TextInputEvent text;
   Uint8 padding[128];
 } SDL_Event;
 typedef struct SDL_Rect
@@ -110,3 +120,4 @@ SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* s
 void SDL_DestroySurface(SDL_Surface* surface);
 bool SDL_RenderLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2);
 SDL_Keymod SDL_GetModState(void);
+bool SDL_StartTextInput(SDL_Window *window);

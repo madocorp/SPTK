@@ -85,7 +85,7 @@ class MenuBox extends Element {
         $this->activeMenu = $this->num - 1;
       }
       $this->activateMenuBoxItem($this->activeMenu);
-      Element::refresh();
+      Element::immediateRender($this);
       return true;
     }
     if ($event['key'] == KeyCode::DOWN) {
@@ -94,7 +94,7 @@ class MenuBox extends Element {
         $this->activeMenu = 0;
       }
       $this->activateMenuBoxItem($this->activeMenu);
-      Element::refresh();
+      Element::immediateRender($this);
       return true;
     }
     return false;

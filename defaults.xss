@@ -36,11 +36,7 @@ Window {
 
 Word {
   position: word;
-  width: content;
-  height: content;
-  backgroundColor: inherit;
   fontSize: inherit;
-  color: inherit;
 }
 
 Box {
@@ -244,12 +240,22 @@ Label {
 Input {
   width: 100%;
   backgroundColor: #00aaaa;
-  color: #000000;
+  color: #444444;
   height: 20px;
 }
 
 Input:active {
-  backgroundColor: #00ffff;
+  color: #000000;
+  backgroundColor: #00cccc;
+}
+
+InputValue {
+  position: inline;
+}
+
+InputValue:selected {
+  backgroundColor: #000000;
+  color: #00cccc;
 }
 
 HalfBoxLeft {
