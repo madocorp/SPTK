@@ -118,7 +118,7 @@ class MenuBoxItem extends Element {
         if ($this->onSelect !== false) {
           call_user_func($this->onSelect, $this->selected);
         }
-        Element::refresh();
+        Element::immediateRender($this->ancestor);
         return true;
       }
     }

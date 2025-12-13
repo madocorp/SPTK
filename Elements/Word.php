@@ -24,8 +24,12 @@ class Word extends Element {
     $fontSize = $this->style->get('fontSize', $this->ancestor->geometry->innerHeight);
     $font = new Font($fontName, $fontSize);
     if (empty($this->value)) {
+      $this->texture = false;
+      $this->geometry->width = 0;
+      $this->geometry->height = 0;
       $this->geometry->ascent = $font->ascent;
       $this->geometry->descent = $font->descent;
+      $this->geometry->setCalculatedSize();
       return;
     }
     $ttf = TTF::$instance->ttf;
@@ -40,7 +44,7 @@ class Word extends Element {
     self::$fgColor->g = $color[1];
     self::$fgColor->b = $color[2];
     self::$fgColor->a = $color[3] ?? 0xff;
-    $bgcolor = $this->ancestor->style->get('backgroundColor');
+    $bgcolor = $this->style->get('backgroundColor');
     self::$bgColor->r = $bgcolor[0];
     self::$bgColor->g = $bgcolor[1];
     self::$bgColor->b = $bgcolor[2];

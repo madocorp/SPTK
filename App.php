@@ -6,6 +6,7 @@ require_once 'SDLWrapper/SDL.php';
 require_once 'SDLWrapper/TTF.php';
 require_once 'SDLWrapper/KeyCode.php';
 require_once 'SDLWrapper/KeyModifier.php';
+require_once 'SDLWrapper/ScanCode.php';
 require_once 'Font.php';
 require_once 'Texture.php';
 require_once 'Geometry.php';

@@ -12,6 +12,7 @@ class SDL {
   const SDL_EVENT_WINDOW_RESIZED = 0x206;
   const SDL_EVENT_KEY_DOWN = 0x300;
   const SDL_EVENT_KEY_UP = 0x301;
+  const SDL_EVENT_TEXT_INPUT = 0x303;
 
   const SDL_PIXELFORMAT_RGBA8888 = ((1 << 28) | (6 << 24) | (4 << 20) | (6 << 16) | (32 << 8) | (4 << 0));
   const SDL_TEXTUREACCESS_STATIC = 0;
@@ -85,6 +86,10 @@ class SDL {
         $parsedEvent = $this->keyboardEventToArray($event->key);
         $parsedEvent['name'] = 'KeyRelease';
         break;
+      case SDL::SDL_EVENT_TEXT_INPUT:
+        $parsedEvent = $this->textInputEventToArray($event->text);
+        $parsedEvent['name'] = 'TextInput';
+        break;
       default:
         $parsedEvent['type'] = $event->type;
         break;
@@ -103,7 +108,16 @@ class SDL {
       'mod' => $keyEvent->mod,
       'raw' => $keyEvent->raw,
       'down' => (bool)$keyEvent->down,
-      'repeat' => (bool)$keyEvent->repeat,
+      'repeat' => (bool)$keyEvent->repeat
+    ];
+  }
+
+  private function textInputEventToArray($textInputEvent) {
+    return [
+      'type' => $textInputEvent->type,
+      'timestamp' => $textInputEvent->timestamp,
+      'windowID' => $textInputEvent->windowID,
+      'text' => $textInputEvent->text
     ];
   }
 

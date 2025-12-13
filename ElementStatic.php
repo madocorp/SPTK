@@ -45,6 +45,8 @@ trait ElementStatic {
 
   public static function immediateRender($element) {
     $t = microtime(true);
+    $element->ancestor->cursor->reset();
+    $element->calculateGeometry();
     $tmpTexture = $element->render();
     $window = $element->findAncestorByType('Window');
     $x = 0;
