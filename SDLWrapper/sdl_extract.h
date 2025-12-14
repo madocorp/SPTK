@@ -121,3 +121,7 @@ void SDL_DestroySurface(SDL_Surface* surface);
 bool SDL_RenderLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2);
 SDL_Keymod SDL_GetModState(void);
 bool SDL_StartTextInput(SDL_Window *window);
+bool SDL_SetClipboardText(const char *text);
+char* SDL_GetClipboardText(void);
+bool SDL_HasClipboardText(void);
+void SDL_free(void* mem);

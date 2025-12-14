@@ -17,6 +17,7 @@ require_once 'LayoutXmlReader.php';
 require_once 'Style.php';
 require_once 'StyleSheet.php';
 require_once 'Border.php';
+require_once 'Clipboard.php';
 
 class App {
 
