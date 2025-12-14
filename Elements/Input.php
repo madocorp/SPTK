@@ -191,6 +191,29 @@ class Input extends Element {
         $this->refreshValue();
         return true;
     }
+    $paste = false;
+    $clipboardAction = Clipboard::processEvent($event, $this->selected, $paste);
+    if ($clipboardAction == Clipboard::CUT) {
+      $this->selected = mb_substr($this->after, 0, 1);
+      $this->after = mb_substr($this->after, 1);
+      $this->refreshValue();
+      return true;
+    } else if ($clipboardAction == Clipboard::COPY) {
+      $this->before .= $this->selected;
+      $this->selected = mb_substr($this->after, 0, 1);
+      $this->after = mb_substr($this->after, 1);
+      $this->refreshValue();
+      return true;
+    } else if ($clipboardAction == Clipboard::PASTE) {
+      if (mb_strlen($this->selected) > 1) {
+        $this->selected = $paste;
+      } else {
+        $this->after = $this->selected . $this->after;
+        $this->selected = $paste;
+      }
+      $this->refreshValue();
+      return true;
+    }
     return false;
   }
 
