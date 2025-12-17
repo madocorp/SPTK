@@ -1,10 +1,10 @@
 <Window title="Menu">
   <Menu>
     <MenuBar>
-      <MenuBarItem id="menu-a">BarItem1</MenuBarItem>
-      <MenuBarItem id="menu-b">BarItem2</MenuBarItem>
-      <MenuBarItem id="menu-c">BarItem3</MenuBarItem>
-      <MenuBarItem id="menu-d">BarItem4</MenuBarItem>
+      <MenuBarItem name="menu-a">BarItem1</MenuBarItem>
+      <MenuBarItem name="menu-b">BarItem2</MenuBarItem>
+      <MenuBarItem name="menu-c">BarItem3</MenuBarItem>
+      <MenuBarItem name="menu-d">BarItem4</MenuBarItem>
     </MenuBar>
     <SubMenu>
       <MenuBox belongsTo="menu-a">

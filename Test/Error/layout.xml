@@ -1,5 +1,5 @@
 <Window title="Panel">
-  <ErrorPanel id="panel">
+  <ErrorPanel name="panel">
     <ErrorPanelTitle>Panel error</ErrorPanelTitle>
     <ErrorPanelContent>
       This is an error panel.

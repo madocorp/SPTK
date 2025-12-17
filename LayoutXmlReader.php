@@ -43,12 +43,12 @@ class LayoutXmlReader {
           } else {
             $type = str_replace('_', '', ucwords($xml->name, '_'));
             $element = 'SPTK\\' . $type;
-            $id = $xml->getAttribute('id') ?? false;
+            $name = $xml->getAttribute('name') ?? false;
             $class = $xml->getAttribute('class') ?? false;
             if (!class_exists($element)) {
               $element = 'SPTK\\Element';
             }
-            $this->current = new $element($this->current, $id, $class, $type);
+            $this->current = new $element($this->current, $name, $class, $type);
             $attributes = $this->current->getAttributeList();
             foreach ($attributes as $attribute) {
               $value = $xml->getAttribute($attribute) ?? false;

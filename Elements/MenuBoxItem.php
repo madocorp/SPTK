@@ -18,6 +18,15 @@ class MenuBoxItem extends Element {
     $this->selectField = new Element($this, false, false, 'MenuBoxItemLeft');
   }
 
+  public function getValue() {
+    foreach ($this->descendants as $descendant) {
+      if ($descendant->type == 'Word') {
+        return $descendant->getValue();
+      }
+    }
+    return false;
+  }
+
   public function getAttributeList() {
     return ['submenu', 'radio', 'selectable', 'selected', 'filterable', 'onOpen', 'onSelect'];
   }
@@ -81,10 +90,10 @@ class MenuBoxItem extends Element {
   protected function openSubmenu() {
     $submenu = $this->findAncestorByType('SubMenu');
     foreach ($submenu->descendants as $menuBox) {
-      if ($menuBox->belongsTo == $this->id) {
+      if ($menuBox->belongsTo == $this->name) {
         $x = $this->geometry->x + $this->geometry->width;
         $y = $this->geometry->y + floor($this->geometry->height / 2);
-        $submenu->showMenuBox($this->id, $x, $y, false);
+        $submenu->showMenuBox($this->name, $x, $y, false);
         return true;
       }
     }
@@ -99,7 +108,7 @@ class MenuBoxItem extends Element {
       if ($this->selectable !== false || $this->radio !== false) {
         $this->setSelected(!$this->selected);
         if ($this->onSelect !== false) {
-          call_user_func($this->onSelect, $this->selected);
+          call_user_func($this->onSelect, $this, $this->selected);
         }
       }
       if ($this->submenu) {
@@ -116,7 +125,7 @@ class MenuBoxItem extends Element {
       if ($this->selectable !== false || $this->radio !== false) {
         $this->setSelected(!$this->selected);
         if ($this->onSelect !== false) {
-          call_user_func($this->onSelect, $this->selected);
+          call_user_func($this->onSelect, $this, $this->selected);
         }
         Element::immediateRender($this->ancestor);
         return true;

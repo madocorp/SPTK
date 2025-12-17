@@ -4,10 +4,10 @@ namespace SPTK;
 
 class SubMenu extends Element {
 
-  public function showMenuBox($id, $x, $y, $closeOthers) {
+  public function showMenuBox($name, $x, $y, $closeOthers) {
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBox') {
-        if ($element->belongsTo == $id) {
+        if ($element->belongsTo == $name) {
           $element->activateMenuBoxItem();
           $element->style->set('x', "{$x}px");
           $element->style->set('y', "{$y}px");

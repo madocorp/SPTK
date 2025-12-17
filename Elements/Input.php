@@ -118,7 +118,7 @@ class Input extends Element {
               $this->selectDirection = -1;
             }
           }
-        } else {
+        } else if ($event['mod'] == 0) {
           if ($this->selected !== '') {
             $this->after = $this->selected . $this->after;
             $this->selected = '';
@@ -131,6 +131,8 @@ class Input extends Element {
             $this->after = mb_substr($this->after, 1);
           }
           $this->selectDirection = 0;
+        } else {
+          break;
         }
         $this->refreshValue();
         return true;
@@ -150,7 +152,7 @@ class Input extends Element {
               $this->selectDirection = 1;
             }
           }
-        } else {
+        } else if ($event['mod'] == 0) {
           if ($this->selected !== '') {
             $this->before =  $this->before . $this->selected;
             $this->selected = '';
@@ -160,6 +162,8 @@ class Input extends Element {
             $this->after = mb_substr($this->after, 1);
           }
           $this->selectDirection = 0;
+        } else {
+          break;
         }
         $this->refreshValue();
         return true;
