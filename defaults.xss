@@ -145,7 +145,6 @@ Panel {
   color: #000000;
   border: 3px;
   borderColor: #555555;
-  fontSize: 15px;
 }
 
 PanelTitle {
@@ -154,7 +153,6 @@ PanelTitle {
   backgroundColor: #555555;
   color: #ffffff;
   textAlign: center;
-  fontSize: 15px;
   paddingTop: 2px;
 }
 
@@ -164,7 +162,6 @@ PanelContent {
   width: 100%;
   padding: 10px;
   color: #000000;
-  fontSize: 12px;
 }
 
 WarningPanel {
@@ -183,11 +180,11 @@ WarningPanel {
 
 WarningPanelTitle {
   width: 100%;
-  height: 21px;
+  height: 25px;
   backgroundColor: #ffaa00;
   color: #ffffff;
   textAlign: center;
-  fontSize: 15px;
+  paddingTop: 2px;
 }
 
 WarningPanelContent {
@@ -196,7 +193,6 @@ WarningPanelContent {
   width: 100%;
   padding: 10px;
   color: #000000;
-  fontSize: 12px;
 }
 
 ErrorPanel {
@@ -215,11 +211,11 @@ ErrorPanel {
 
 ErrorPanelTitle {
   width: 100%;
-  height: 21px;
+  height: 25px;
   backgroundColor: #cc0000;
   color: #ffffff;
   textAlign: center;
-  fontSize: 15px;
+  paddingTop: 2px;
 }
 
 ErrorPanelContent {
@@ -228,7 +224,6 @@ ErrorPanelContent {
   width: 100%;
   padding: 10px;
   color: #000000;
-  fontSize: 12px;
 }
 
 Label {

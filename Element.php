@@ -6,8 +6,8 @@ class Element {
 
   use ElementStatic;
 
-  protected $iid;
   protected $id;
+  protected $name;
   protected $type;
   protected $sclass = [];
   protected $ancestor;
@@ -25,8 +25,8 @@ class Element {
   protected $childClass = [];
   protected $cursor = false;
 
-  public function __construct($ancestor = null, $id = false, $class = false, $type = false) {
-    $this->iid = self::getNextId();
+  public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
+    $this->id = self::getNextId();
     if (!is_null($ancestor)) {
       $this->renderer = $ancestor->renderer;
     }
@@ -35,10 +35,10 @@ class Element {
     } else {
       $this->type = basename(str_replace('\\', '/', get_class($this)));
     }
-    if ($id === false) {
-      $this->id = StyleSheet::ANY;
+    if ($name === false) {
+      $this->name = StyleSheet::ANY;
     } else {
-      $this->id = $id;
+      $this->name = $name;
     }
     if ($class !== false) {
       $class = preg_replace('/ +/', ' ', $class);
@@ -48,14 +48,10 @@ class Element {
     if (!is_null($ancestor) && !empty($ancestor->childClass)) {
       $this->sclass = array_merge($this->sclass, $ancestor->childClass);
     }
-    if ($this->id !== StyleSheet::ANY && isset(self::$elementsById[$this->id])) {
-      throw new \Exception("Duplicated element id: {$this->id}");
-    }
     $this->cursor = new Cursor();
     $this->ancestor = $ancestor;
     $this->recalculateStyle();
     $this->geometry = new Geometry($this);
-    self::$elementsById[$this->id] = $this;
     if (is_null($this->ancestor)) {
       if (!is_null(self::$root)) {
         throw new \Exception("You have to define only one root element.");
@@ -65,10 +61,6 @@ class Element {
       $this->ancestor->addDescendant($this);
     }
     $this->init();
-  }
-
-  public function purge() {
-    unset(self::$elementsById[$this->id]);
   }
 
   protected function init() {
@@ -82,7 +74,7 @@ class Element {
       $defaultStyle = self::$root->style;
       $ancestorStyle = $this->ancestor->style;
     }
-    $this->style = StyleSheet::get($defaultStyle, $ancestorStyle, $this->type, $this->sclass, $this->id);
+    $this->style = StyleSheet::get($defaultStyle, $ancestorStyle, $this->type, $this->sclass, $this->name);
     if (!$this->style->get('display')) {
       $this->display = false;
     }
@@ -92,7 +84,7 @@ class Element {
     $this->cursor->configure($this->style);
   }
 
-  protected function calculateGeometry() {
+  public function calculateGeometry() {
     $this->cursor->reset();
     $originalWidth = $this->geometry->width;
     $originalHeight = $this->geometry->height;
@@ -171,14 +163,14 @@ class Element {
   public function remove() {
     $ancestor = $this->ancestor;
     foreach ($ancestor->descendants as $i => $element) {
-      if ($element->iid == $this->iid) {
+      if ($element->id === $this->id) {
         unset($ancestor->descendants[$i]);
         $ancestor->descendants = array_values($ancestor->descendants);
         return;
       }
     }
     foreach ($ancestor->stack as $i => $element) {
-      if ($element->iid == $this->iid) {
+      if ($element->id === $this->id) {
         unset($ancestor->stack[$i]);
         $ancestor->stack = array_values($ancestor->stack);
         return;
@@ -186,9 +178,14 @@ class Element {
     }
   }
 
+  public function clear() {
+    $this->descendants = [];
+    $this->stack = [];
+  }
+
   public function raise() {
     foreach ($this->ancestor->stack as $i => $element) {
-      if ($element->iid == $this->iid) {
+      if ($element->id === $this->id) {
         unset($this->ancestor->stack[$i]);
         $this->ancestor->stack[] = $element;
         $this->ancestor->stack = array_values($this->ancestor->stack);
@@ -200,7 +197,7 @@ class Element {
 
   public function lower() {
     foreach ($this->ancestor->stack as $i => $element) {
-      if ($element->iid == $this->iid) {
+      if ($element->id === $this->id) {
         unset($this->ancestor->stack[$i]);
         array_unshift($this->ancestor->stack, $element);
         $this->ancestor->stack = array_values($this->ancestor->stack);
@@ -261,12 +258,12 @@ class Element {
     return false;
   }
 
-  public function getIid() {
-    return $this->iid;
-  }
-
   public function getId() {
     return $this->id;
+  }
+
+  public function getName() {
+    return $this->name;
   }
 
   public function getType() {
@@ -337,7 +334,7 @@ class Element {
     if ($this->value !== false) {
       $value = " [{$this->value}]";
     }
-    echo "{$pad}{$this->type}@{$this->iid}#{$this->id}{$class}{$value}\n";
+    echo "{$pad}{$this->type}@{$this->id}#{$this->name}{$class}{$value}\n";
     foreach ($this->events as $event => $handler) {
       echo "{$pad}  - {$event} > " . (is_array($handler) ? (is_object($handler[0]) ? get_class($handler[0]) : $handler[0]) . '::' . $handler[1] : implode('::', $handler)) . "\n";
     }

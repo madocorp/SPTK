@@ -3,7 +3,7 @@
     <Event type="KeyPress">Controller::showPanel</Event>
     Press space for a good warning!
   </Box>
-  <WarningPanel id="panel">
+  <WarningPanel name="panel">
     <WarningPanelTitle>Panel warning</WarningPanelTitle>
     <WarningPanelContent>
       This is a warning panel.

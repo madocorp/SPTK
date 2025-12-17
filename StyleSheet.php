@@ -83,7 +83,7 @@ class StyleSheet {
     }
   }
 
-  public static function get($defaultStyle, $ancestorStyle, $type, $class = self::ANY, $id = self::ANY) {
+  public static function get($defaultStyle, $ancestorStyle, $type, $class = self::ANY, $name = self::ANY) {
     if (is_array($class)) {
       $classStr = implode('.', $class);
     } else if ($class !== self::ANY) {
@@ -92,7 +92,7 @@ class StyleSheet {
     } else {
       $classStr = self::ANY;
     }
-    if (!isset(self::$cache[$type][$classStr][$id])) {
+    if (!isset(self::$cache[$type][$classStr][$name])) {
       $style = new Style($defaultStyle);
       if (isset(self::$styles[$type])) {
         $style->merge(self::$styles[$type]);
@@ -104,12 +104,12 @@ class StyleSheet {
           }
         }
       }
-      if ($id !== self::ANY && isset(self::$styles["#{$id}"])) {
-        $style->merge(self::$styles["#{$id}"]);
+      if ($name !== self::ANY && isset(self::$styles["#{$name}"])) {
+        $style->merge(self::$styles["#{$name}"]);
       }
-      self::$cache[$type][$classStr][$id] = $style;
+      self::$cache[$type][$classStr][$name] = $style;
     } else {
-      $style = self::$cache[$type][$classStr][$id];
+      $style = self::$cache[$type][$classStr][$name];
     }
     $inheritedStyle = clone $style;
     if ($ancestorStyle !== false) {

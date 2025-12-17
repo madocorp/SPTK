@@ -21,6 +21,31 @@ class MenuBox extends Element {
     }
   }
 
+  public function getValue() {
+    $selected = [];
+    foreach ($this->descendants as $item) {
+      if ($item->selectable && $item->selected) {
+        $selected[] = $item->name;
+      }
+    }
+    return $selected;
+  }
+
+  public function getRadioValue($group) {
+    foreach ($this->descendants as $item) {
+      if ($item->group === $group && $item->selected) {
+        return $item->name;
+      }
+    }
+    return false;
+  }
+
+  public function clear() {
+    parent::clear();
+    $this->num = 0;
+    $this->activeMenu = 0;
+  }
+
   public function getItemCount() {
     return $this->num;
   }

@@ -29,7 +29,7 @@
       </Box>
       Box2.2
     </Box>
-    <Box class="box4bg" id="dynamic-class-box">
+    <Box class="box4bg" name="dynamic-class-box">
       Box4
       <Box>Box4.1</Box>
       <Box class="box2bg">Box2.3</Box>

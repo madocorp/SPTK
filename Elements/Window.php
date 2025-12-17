@@ -123,7 +123,7 @@ class Window extends Element {
     return false;
   }
 
-  protected function calculateGeometry() {
+  public function calculateGeometry() {
     $this->cursor->reset();
     $fontSize = $this->style->get('fontSize', $this->geometry->innerHeight);
     foreach ($this->descendants as $element) {

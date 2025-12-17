@@ -30,7 +30,7 @@ class App {
   private $timerCallback;
   private $endCallback;
 
-  public function __construct($xml, $xss, $init = null, $timer = null, $end = null) {
+  public function __construct($xml, $xss, $init = null, $timer = null, $end = null, $loop = null) {
     $this->xml = $xml;
     $this->xss = $xss;
     $this->dir = dirname(__FILE__);
@@ -42,7 +42,7 @@ class App {
     }
     self::$instance = $this;
     spl_autoload_register([$this, 'autoload']);
-    new SDL([$this, 'init'], [$this, 'timer'], [$this, 'eventHandler'], [$this, 'end']);
+    new SDL([$this, 'init'], [$this, 'timer'], [$this, 'eventHandler'], [$this, 'end'], $loop);
   }
 
   public function init() {

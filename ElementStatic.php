@@ -5,13 +5,12 @@ namespace SPTK;
 trait ElementStatic {
 
   public static $root;
-  protected static $elementsById = [];
   private static $nextInternalId = 0;
 
   protected static function getNextId() {
-    $iid = static::$nextInternalId;
+    $id = static::$nextInternalId;
     static::$nextInternalId++;
-    return $iid;
+    return $id;
   }
 
   public static function refresh() {
@@ -27,15 +26,25 @@ trait ElementStatic {
     static::$root->eventHandler($event);
   }
 
-  public static function getById($id) {
-    if (!isset(static::$elementsById[$id])) {
-      throw new \Exception("Element not found by id: {$id}");
+  public static function byName($name, $element = false) {
+    if ($element === false) {
+      $element = static::$root;
     }
-    return static::$elementsById[$id];
+    $q = [$element];
+    while (!empty($q)) {
+      $e = array_shift($q);
+      if ($e->name === $name) {
+        return $e;
+      }
+      foreach ($e->descendants as $descendant) {
+        $q[] = $descendant;
+      }
+    }
+    return false;
   }
 
   public static function getRelativePos($referenceId, $element, &$x, &$y) {
-    if ($element->iid == $referenceId) {
+    if ($element->id == $referenceId) {
       return;
     }
     $x += $element->geometry->x;
@@ -51,7 +60,7 @@ trait ElementStatic {
     $window = $element->findAncestorByType('Window');
     $x = 0;
     $y = 0;
-    static::getRelativePos($window->iid, $element, $x, $y);
+    static::getRelativePos($window->id, $element, $x, $y);
     $tmpTexture->copyTo($window->tmpTexture, $x, $y);
     $window->tmpTexture->copyTo(null, 0, 0);
     $window->sdl->SDL_RenderPresent($window->renderer);

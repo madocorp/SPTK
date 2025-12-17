@@ -28,21 +28,28 @@ class SDL {
   private $timerPeriod = 1000000;
   private $eventCallback;
   private $timerCallback;
+  private $loopCallback;
   private $end = false;
 
-  public function __construct($initCallback, $timerCallback, $eventCallback, $endCallback) {
+  public function __construct($initCallback, $timerCallback, $eventCallback, $endCallback, $loopCallback) {
     if (!is_null(self::$instance)) {
       throw new \Exception("SPTK\\SDL is a singleton, you can't instantiate more than once");
     }
     self::$instance = $this;
     $this->eventCallback = $eventCallback;
     $this->timerCallback = $timerCallback;
+    $this->loopCallback = $loopCallback;
     pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
     $dir = App::$instance->getDir();
     $this->sdl = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_extract.h"), "{$dir}/SDLWrapper/libSDL3.so");
     $this->sdl->SDL_Init(self::SDL_INIT_VIDEO);
     call_user_func($initCallback);
-    $this->eventLoop();
+    try {
+      $this->eventLoop();
+    } catch (\Exception $e) {
+      echo "Uncaught exception in the event loop!\n";
+      echo $e->getMessage(), "\n";
+    }
     call_user_func($endCallback);
     $this->sdl->SDL_Quit();
   }
@@ -62,6 +69,9 @@ class SDL {
           $parsedEvent = $this->parseEvent($event);
           call_user_func($this->eventCallback, $parsedEvent);
         }
+      }
+      if ($this->loopCallback !== null) {
+        call_user_func($this->loopCallback);
       }
       pcntl_signal_dispatch();
       $now = microtime(true) * 1000000;

@@ -19,7 +19,7 @@ class Controller {
   public static function alterClass($element, $event) {
     if ($event['name'] == 'KeyPress') {
       if ($event['key'] == SPTK\KeyCode::TAB) {
-        $dynamicClassBox = SPTK\Element::getById('dynamic-class-box');
+        $dynamicClassBox = SPTK\Element::byName('dynamic-class-box');
         if ($dynamicClassBox->hasClass('yellow')) {
           $dynamicClassBox->removeClass('yellow');
           $dynamicClassBox->addClass('red');
@@ -36,7 +36,7 @@ class Controller {
   public static function showPanel($element, $event) {
     if ($event['name'] == 'KeyPress') {
       if ($event['key'] == SPTK\KeyCode::SPACE) {
-        $telement = SPTK\Element::getById('panel');
+        $telement = SPTK\Element::byName('panel');
         $telement->show();
         SPTK\Element::refresh();
       }

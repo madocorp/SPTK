@@ -3,7 +3,7 @@
     <Event type="KeyPress">Controller::showPanel</Event>
     Press space to show a Panel!
   </Box>
-  <Panel id="panel">
+  <Panel name="panel">
     <PanelTitle>Panel test</PanelTitle>
     <PanelContent>
       This is a nice panel.
