@@ -108,7 +108,8 @@ class Element {
       $this->geometry->setAbsolutePosition($this->ancestor->geometry, $this->style);
     } else if ($position == 'inline' || $position == 'word' || $position == 'newline') {
       $textAlign = $this->ancestor->style->get('textAlign');
-      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $position, $textAlign);
+      $textWrap = $this->ancestor->style->get('textWrap');
+      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $position, $textAlign, $textWrap);
     }
     $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
     if ($originalWidth != $this->geometry->width || $originalHeight != $this->geometry->height) {
@@ -314,6 +315,18 @@ class Element {
 
   public function getValue() {
     return $this->value;
+  }
+
+  public function addText($text) {
+    $rows = explode("\n", $text);
+    foreach ($rows as $row) {
+      $row = explode(' ', $row);
+      foreach ($row as $word) {
+        $element = new Word($this);
+        $element->setValue($word);
+      }
+      new Element($this, false, false, 'NL');
+    }
   }
 
   public function show() {

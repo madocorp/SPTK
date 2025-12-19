@@ -51,8 +51,14 @@ class Geometry {
 
   public function setSize($ancestorGeometry, $style) {
     if ($style->get('position') != 'word') {
-      $this->width = $style->get('width', $ancestorGeometry->innerWidth);
-      $this->height = $style->get('height', $ancestorGeometry->innerHeight);
+      $width = $style->get('width', $ancestorGeometry->innerWidth);
+      if ($width !== 'calculated') {
+        $this->width = $width;
+      }
+      $height = $style->get('height', $ancestorGeometry->innerHeight);
+      if ($height !== 'calculated') {
+        $this->height = $height;
+      }
     }
     $this->setCalculatedSize();
   }
@@ -139,10 +145,11 @@ class Geometry {
     }
   }
 
-  public function setInlinePosition($cursor, $element, $ancestorGeometry, $position, $textAlign) {
+  public function setInlinePosition($cursor, $element, $ancestorGeometry, $position, $textAlign, $textWrap) {
     if (
       $position == 'newline' ||
       (
+        $textWrap == 'auto' &&
         $ancestorGeometry->width != 'content' &&
         $cursor->x + ($position == 'word' && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
       )

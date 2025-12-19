@@ -16,7 +16,7 @@ class Word extends Element {
   }
 
   public function calculateGeometry() {
-    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $this->style, $this->ancestor->style);
+    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $this->style, $this->ancestor->style, 'manual');
   }
 
   protected function draw() {

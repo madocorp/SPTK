@@ -91,8 +91,9 @@ class MenuBoxItem extends Element {
     $submenu = $this->findAncestorByType('SubMenu');
     foreach ($submenu->descendants as $menuBox) {
       if ($menuBox->belongsTo == $this->name) {
-        $x = $this->geometry->x + $this->geometry->width;
-        $y = $this->geometry->y + floor($this->geometry->height / 2);
+        self::getRelativePos($submenu->id, $this, $x, $y);
+        $x += $this->geometry->width;
+        $y += floor($this->geometry->height / 2) - $menuBox->geometry->marginTop - $menuBox->geometry->borderTop;
         $submenu->showMenuBox($this->name, $x, $y, false);
         return true;
       }
