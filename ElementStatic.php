@@ -43,6 +43,41 @@ trait ElementStatic {
     return false;
   }
 
+  public static function fistByType($type, $element = false) {
+    if ($element === false) {
+      $element = static::$root;
+    }
+    $q = [$element];
+    while (!empty($q)) {
+      $e = array_shift($q);
+      if ($e->type === $type) {
+        return $e;
+      }
+      foreach ($e->descendants as $descendant) {
+        $q[] = $descendant;
+      }
+    }
+    return false;
+  }
+
+  public static function allByType($type, $element = false) {
+    $elements = [];
+    if ($element === false) {
+      $element = static::$root;
+    }
+    $q = [$element];
+    while (!empty($q)) {
+      $e = array_shift($q);
+      if ($e->type === $type) {
+        $elements[] = $e;
+      }
+      foreach ($e->descendants as $descendant) {
+        $q[] = $descendant;
+      }
+    }
+    return $elements;
+  }
+
   public static function getRelativePos($referenceId, $element, &$x, &$y) {
     if ($element->id == $referenceId) {
       return;

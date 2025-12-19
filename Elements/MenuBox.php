@@ -66,6 +66,9 @@ class MenuBox extends Element {
     if ($menu === false) {
       $menu = $this->activeMenu;
     }
+    if (empty($this->stack)) {
+      return;
+    }
     $boxItem = end($this->stack);
     $boxItem->removeClass('active', true);
     $i = 0;
@@ -82,6 +85,23 @@ class MenuBox extends Element {
     }
   }
 
+  public function calculateGeometry() {
+    $items = self::allByType('MenuBoxItem', $this);
+    $width = 0;
+    foreach ($items as $item) {
+      $iwidth = 0;
+      foreach ($item->descendants as $word) {
+        $iwidth += $word->geometry->width;
+        $iwidth += $word->style->get('wordSpacing');
+      }
+      if ($iwidth > $width) {
+        $width = $iwidth;
+      }
+    }
+    $this->geometry->width = $width;
+    parent::calculateGeometry();
+  }
+
   public function keyPressHandler($element, $event) {
     if (!$this->display) {
       return false;
@@ -93,6 +113,7 @@ class MenuBox extends Element {
     }
     if ($event['key'] == KeyCode::LEFT) {
       if ($this->submenu) {
+        $this->lower();
         $this->hide();
         Element::refresh();
       } else {

@@ -47,8 +47,8 @@ class SDL {
     try {
       $this->eventLoop();
     } catch (\Exception $e) {
-      echo "Uncaught exception in the event loop!\n";
-      echo $e->getMessage(), "\n";
+      echo "ERROR: Uncaught exception in the event loop!\n";
+      echo '       ' . $e->getMessage(), "\n";
     }
     call_user_func($endCallback);
     $this->sdl->SDL_Quit();

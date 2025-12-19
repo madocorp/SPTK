@@ -45,8 +45,26 @@ class Panel extends Element {
   public function setValue($values) {
     foreach ($values as $name => $value) {
       $element = Element::byName($name, $this);
-      $element->setValue($value);
+      if ($element !== false) {
+        $element->setValue($value);
+      }
     }
+  }
+
+  public function setText($text) {
+    $content = Element::fistByType('PanelContent', $this);
+    if ($content === false) {
+      $content = Element::fistByType('WarningPanelContent', $this);
+    }
+    if ($content === false) {
+      $content = Element::fistByType('ErrorPanelContent', $this);
+    }
+    if ($content === false) {
+      return;
+    }
+    $content->clear();
+    $content->addText($text);
+    $content->calculateGeometry();
   }
 
   private function setInputList($element) {
@@ -108,6 +126,7 @@ class Panel extends Element {
     }
     switch ($event['key']) {
       case KeyCode::ESCAPE:
+      case KeyCode::RETURN:
         $this->inputList = [];
         $this->hide();
         Element::refresh();

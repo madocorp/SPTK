@@ -6,6 +6,7 @@ class Button extends Element {
 
   protected $onPress = false;
   protected $hotKeyStr = false;
+  protected $panel = false;
 
   protected function init() {
     $this->acceptInput = true;
@@ -34,19 +35,19 @@ class Button extends Element {
     $this->onPress = self::parseCallback($value);
     if ($this->hotKeyStr !== false) {
       foreach (['Panel', 'WarningPanel', 'ErrorPanel', 'Window'] as $type) {
-        $panel = $this->findAncestorByType($type);
-        if ($panel !== false) {
+        $this->panel = $this->findAncestorByType($type);
+        if ($this->panel !== false) {
           break;
         }
       }
-      $panel->addHotKey(constant("\SPTK\KeyCode::{$this->hotKeyStr}"), $this->onPress);
+      $this->panel->addHotKey(constant("\SPTK\KeyCode::{$this->hotKeyStr}"), $this->onPress);
     }
   }
 
   public function keyPressHandler($element, $event) {
     if ($event['key'] == KeyCode::RETURN && $event['mod'] == 0) {
       if ($this->onPress !== false) {
-        call_user_func($this->onPress, $this);
+        call_user_func($this->onPress, $this->panel);
         return true;
       }
     }
