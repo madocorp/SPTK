@@ -43,7 +43,7 @@ trait ElementStatic {
     return false;
   }
 
-  public static function fistByType($type, $element = false) {
+  public static function firstByType($type, $element = false) {
     if ($element === false) {
       $element = static::$root;
     }

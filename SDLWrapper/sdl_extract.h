@@ -105,6 +105,7 @@ bool SDL_RenderPresent(SDL_Renderer* renderer);
 bool SDL_SetWindowTitle(SDL_Window* window, const char* title);
 int SDL_SetHint(const char* name, const char* value);
 bool SDL_PollEvent(SDL_Event* event);
+bool SDL_WaitEventTimeout(SDL_Event *event, Sint32 timeoutMS);
 void SDL_DestroyRenderer(SDL_Renderer* renderer);
 void SDL_DestroyWindow(SDL_Window* window);
 bool SDL_RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture, const SDL_FRect* srcrect, const SDL_FRect* dstrect);
@@ -125,3 +126,5 @@ bool SDL_SetClipboardText(const char *text);
 char* SDL_GetClipboardText(void);
 bool SDL_HasClipboardText(void);
 void SDL_free(void* mem);
+
+

@@ -32,7 +32,11 @@ class Button extends Element {
     if ($value === false) {
       return;
     }
-    $this->onPress = self::parseCallback($value);
+    if (is_array($value)) {
+      $this->onPress = $value;
+    } else {
+      $this->onPress = self::parseCallback($value);
+    }
     if ($this->hotKeyStr !== false) {
       foreach (['Panel', 'WarningPanel', 'ErrorPanel', 'Window'] as $type) {
         $this->panel = $this->findAncestorByType($type);
@@ -48,8 +52,8 @@ class Button extends Element {
     if ($event['key'] == KeyCode::RETURN && $event['mod'] == 0) {
       if ($this->onPress !== false) {
         call_user_func($this->onPress, $this->panel);
-        return true;
       }
+      return true;
     }
     return false;
   }
