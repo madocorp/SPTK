@@ -167,14 +167,14 @@ class Element {
       if ($element->id === $this->id) {
         unset($ancestor->descendants[$i]);
         $ancestor->descendants = array_values($ancestor->descendants);
-        return;
+        break;
       }
     }
     foreach ($ancestor->stack as $i => $element) {
       if ($element->id === $this->id) {
         unset($ancestor->stack[$i]);
         $ancestor->stack = array_values($ancestor->stack);
-        return;
+        break;
       }
     }
   }
@@ -319,14 +319,17 @@ class Element {
 
   public function addText($text) {
     $rows = explode("\n", $text);
-    foreach ($rows as $row) {
+    foreach ($rows as $i => $row) {
+      if ($i > 0) {
+        new Element($this, false, false, 'NL');
+      }
       $row = explode(' ', $row);
       foreach ($row as $word) {
         $element = new Word($this);
         $element->setValue($word);
       }
-      new Element($this, false, false, 'NL');
     }
+    $this->calculateGeometry();
   }
 
   public function show() {

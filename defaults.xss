@@ -176,13 +176,13 @@ WarningPanel {
   backgroundColor: #ffff00;
   color: #000000;
   border: 3px;
-  borderColor: #ffaa00;
+  borderColor: #aa5500;
 }
 
 WarningPanelTitle {
   width: 100%;
   height: 25px;
-  backgroundColor: #ffaa00;
+  backgroundColor: #aa5500;
   color: #ffffff;
   textAlign: center;
   paddingTop: 2px;
@@ -253,6 +253,19 @@ InputValue:selected {
   backgroundColor: #000000;
   color: #00cccc;
 }
+
+ConfirmationCode {
+  width: 50px;
+  backgroundColor: #00aaaa;
+  color: #444444;
+  height: 20px;
+}
+
+ConfirmationCode:active {
+  color: #000000;
+  backgroundColor: #00cccc;
+}
+
 
 HalfBoxLeft {
   width: 50%;

@@ -24,7 +24,7 @@ class SDL {
   public static $instance;
 
   public $sdl;
-  private $waitForEvent = 100;
+  private $waitForEvent = 100; // ms
   private $timerPeriod = 1000000;
   private $eventCallback;
   private $timerCallback;
@@ -62,13 +62,12 @@ class SDL {
     $event = $this->sdl->new('SDL_Event');
     $timer = microtime(true) * 1000000;
     while (!$this->end) {
-      $hasEvent = true;
-      while ($hasEvent !== false && !$this->end) {
-        $hasEvent = $this->sdl->SDL_PollEvent(\FFI::addr($event));
-        if ($hasEvent !== false) {
+      $hasEvent = $this->sdl->SDL_WaitEventTimeout(\FFI::addr($event), $this->waitForEvent);
+      if ($hasEvent) {
+        do {
           $parsedEvent = $this->parseEvent($event);
           call_user_func($this->eventCallback, $parsedEvent);
-        }
+        } while (!$this->end && $this->sdl->SDL_PollEvent(\FFI::addr($event)));
       }
       if ($this->loopCallback !== null) {
         call_user_func($this->loopCallback);
@@ -78,8 +77,6 @@ class SDL {
       if ($now > $timer + $this->timerPeriod) {
         call_user_func($this->timerCallback, $now);
         $timer = $now;
-      } else {
-        usleep($this->waitForEvent);
       }
     }
   }

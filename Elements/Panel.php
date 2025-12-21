@@ -7,6 +7,8 @@ class Panel extends Element {
   private $inputList;
   private $focusIndex;
   private $hotKeys = [];
+  protected $destroyAtClose = false;
+  protected $pin = false;
 
   protected function init() {
     $this->display = false;
@@ -52,12 +54,12 @@ class Panel extends Element {
   }
 
   public function setText($text) {
-    $content = Element::fistByType('PanelContent', $this);
+    $content = Element::firstByType('PanelContent', $this);
     if ($content === false) {
-      $content = Element::fistByType('WarningPanelContent', $this);
+      $content = Element::firstByType('WarningPanelContent', $this);
     }
     if ($content === false) {
-      $content = Element::fistByType('ErrorPanelContent', $this);
+      $content = Element::firstByType('ErrorPanelContent', $this);
     }
     if ($content === false) {
       return;
@@ -127,9 +129,7 @@ class Panel extends Element {
     switch ($event['key']) {
       case KeyCode::ESCAPE:
       case KeyCode::RETURN:
-        $this->inputList = [];
-        $this->hide();
-        Element::refresh();
+        $this->close();
         return true;
       case KeyCode::TAB:
         if ($this->focusIndex < 0) {
@@ -266,6 +266,65 @@ class Panel extends Element {
       $this->focusIndex = $idx;
     }
     $this->activateInput();
+    Element::refresh();
+  }
+
+  public static function forge($parent, $title, $text, $buttons = false) {
+    if (is_string($parent)) {
+      $parent = Element::firstByType($parent);
+      if ($parent === false) {
+        throw new \Exception("Parent element not found for the panel.");
+      }
+    }
+    $className = static::class;
+    $panelName = basename(str_replace('\\', '/', $className));
+    $panel = new $className($parent);
+    $titleElement = new Element($panel, false, false, "{$panelName}Title");
+    $titleElement->addText($title);
+    $conetentElement = new Element($panel, false, false, "{$panelName}Content");
+    if (strpos($text, '%CONFIRMATION_CODE%') !== false) {
+      $code = sprintf('%03d', rand(0, 999));
+      $text = str_replace('%CONFIRMATION_CODE%', $code, $text);
+      $conetentElement->addText($text);
+      $labelElement = new Element($conetentElement, false, false, 'Label');
+      $labelElement->addText('Confirmation code:');
+      $codeElement = new ConfirmationCode($labelElement, 'confirmed');
+      $codeElement->setCode($code);
+    } else {
+      $conetentElement->addText($text);
+    }
+    if (is_array($buttons)) {
+      $buttonBoxElement = new Element($conetentElement, false, false, 'ButtonBox');
+      foreach ($buttons as $button) {
+        $buttonElement = new Button($buttonBoxElement);
+        if (isset($button['hotKey'])) {
+          $buttonElement->setHotKey($button['hotKey']);
+        }
+        if (isset($button['onPress'])) {
+          if ($button['onPress'] === 'close') {
+            $buttonElement->setOnPress([$panel, 'close']);
+          } else {
+            $buttonElement->setOnPress($button['onPress']);
+          }
+        }
+        $buttonElement->addText($button['text']);
+      }
+    }
+    $conetentElement->calculateGeometry();
+$panel->calculateGeometry();
+$panel->calculateGeometry();
+$panel->calculateGeometry();
+    $panel->show();
+    Element::refresh();
+  }
+
+  public function close() {
+    if ($this->destroyAtClose) {
+      $this->remove();
+    } else {
+      $this->inputList = [];
+      $this->hide();
+    }
     Element::refresh();
   }
 
