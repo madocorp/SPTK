@@ -4,10 +4,6 @@
     Box1.1
     <Box class="box2">
       Box2.1
-      <Box class="box3">
-        Box3
-      </Box>
-      Box2.2
     </Box>
     <Box class="box4">
       Box4

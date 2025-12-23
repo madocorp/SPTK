@@ -13,6 +13,7 @@ class Cursor {
   public $descent = 0;
   public $firstLineAscent = false;
   public $textAlign;
+  public $textWrap;
   public $wordSpacing;
   public $lineHeight;
   public $previousIsWord = false;
@@ -23,6 +24,7 @@ class Cursor {
     $fontSize = $style->get('fontSize');
     $this->lineHeight = $style->get('lineHeight', $fontSize);
     $this->textAlign = $style->get('textAlign');
+    $this->textWrap = $style->get('textWrap');
   }
 
   public function reset() {
@@ -38,12 +40,13 @@ class Cursor {
     $this->lines = 0;
   }
 
-  public function addElement($element, $geometry, $isWord) {
+  public function addElement($element, $geometry) {
     $this->elements[] = $element;
     $this->ascent = max($this->ascent, $geometry->ascent);
     $this->descent = max($this->descent, $geometry->descent);
     $this->x += $geometry->fullWidth;
     $this->w += $geometry->fullWidth;
+    $isWord = $element->isWord() || $this->textAlign === 'justify';
     if ($isWord && $this->previousIsWord) {
       $this->x += $this->wordSpacing;
       $this->s++;

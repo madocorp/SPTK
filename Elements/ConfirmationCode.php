@@ -12,9 +12,9 @@ class ConfirmationCode extends Element {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
-    $this->elementCode = new Word($this, false, false, 'InputValue');
+    $this->elementCode = new InputValue($this);
     $this->elementCode->setValue('');
-    $this->elementSelected = new Word($this, false, false, 'InputValue');
+    $this->elementSelected = new InputValue($this);
     $this->elementSelected->setValue(' ');
   }
 

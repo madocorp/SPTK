@@ -20,7 +20,7 @@ class MenuBoxItem extends Element {
 
   public function getValue() {
     foreach ($this->descendants as $descendant) {
-      if ($descendant->type == 'Word') {
+      if ($descendant->isWord()) {
         return $descendant->getValue();
       }
     }

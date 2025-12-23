@@ -4,7 +4,6 @@ namespace SPTK;
 
 class Geometry {
 
-  public $element;
   public $x = 0;
   public $y = 0;
   public $width = 0;
@@ -15,6 +14,8 @@ class Geometry {
   public $fullHeight = 0;
   public $contentWidth = 0;
   public $contentHeight = 0;
+  public $originalWidth = 0;
+  public $originalHeight = 0;
   public $marginTop = 0;
   public $marginLeft = 0;
   public $marginBottom = 0;
@@ -30,11 +31,9 @@ class Geometry {
   public $ascent = 0;
   public $descent = 0;
 
-  public function __construct($element) {
-    $this->element = $element;
-  }
-
   public function setValues($ancestorGeometry, $style) {
+    $this->originalWidth = $this->width;
+    $this->originalHeight = $this->height;
     $this->marginTop = $style->get('marginTop', $ancestorGeometry->innerWidth);
     $this->marginLeft = $style->get('marginLeft', $ancestorGeometry->innerHeight);
     $this->marginBottom = $style->get('marginBottom', $ancestorGeometry->innerWidth);
@@ -47,47 +46,34 @@ class Geometry {
     $this->paddingLeft = $style->get('paddingLeft', $ancestorGeometry->innerHeight);
     $this->paddingBottom = $style->get('paddingBottom', $ancestorGeometry->innerWidth);
     $this->paddingRight = $style->get('paddingRight', $ancestorGeometry->innerHeight);
+    $this->width = $style->get('width', $ancestorGeometry->innerWidth);
+    $this->height = $style->get('height', $ancestorGeometry->innerHeight);
   }
 
-  public function setSize($ancestorGeometry, $style) {
-    if ($style->get('position') != 'word') {
-      $width = $style->get('width', $ancestorGeometry->innerWidth);
-      if ($width !== 'calculated') {
-        $this->width = $width;
-      }
-      $height = $style->get('height', $ancestorGeometry->innerHeight);
-      if ($height !== 'calculated') {
-        $this->height = $height;
-      }
-    }
-    $this->setCalculatedSize();
-  }
-
-  public function setContentSize($style, $maxX, $maxY) {
-    $this->contentWidth = $maxX + 1 + $this->borderRight + $this->paddingRight;
-    if ($style->get('width') == 'content') {
+  public function setContentDependentValues($maxX, $maxY) {
+    $this->contentWidth = $maxX + $this->paddingRight + $this->borderRight;
+    if ($this->width === 'content') {
       $this->width = $this->contentWidth;
     }
-    $this->contentHeight = $maxY + 1 + $this->borderBottom + $this->paddingBottom;
-    if ($style->get('height') == 'content') {
+    $this->contentHeight = $maxY + $this->paddingBottom + $this->borderBottom;
+    if ($this->height === 'content') {
       $this->height = $this->contentHeight;
     }
-    if ($this->marginTop == 'half') {
+    if ($this->marginTop === 'half') {
       $this->marginTop = (int)(-$this->height / 2);
     }
-    if ($this->marginLeft == 'half') {
+    if ($this->marginLeft === 'half') {
       $this->marginLeft = (int)(-$this->width / 2);
     }
-    if ($this->marginBottom == 'half') {
+    if ($this->marginBottom === 'half') {
       $this->marginBottom = (int)(-$this->height / 2);
     }
-    if ($this->marginRight == 'half') {
+    if ($this->marginRight === 'half') {
       $this->marginRight = (int)(-$this->width / 2);
     }
-    $this->setCalculatedSize();
   }
 
-  public function setCalculatedSize() {
+  public function setDerivedSize() {
     if ($this->width != 'content') {
       $this->innerWidth =
         $this->width -
@@ -124,6 +110,9 @@ class Geometry {
         $this->ascent = $firstLineAscent + $this->marginTop + $this->borderTop + $this->paddingTop;
         $this->descent = $this->fullHeight - $this->ascent;
       }
+    } else if ($ascent == 'content') {
+      $this->ascent = $this->fullHeight;
+      $this->descent = 0;
     } else {
       $this->ascent = $ascent + $this->marginTop;
       $this->descent = $this->fullHeight - $this->ascent;
@@ -145,19 +134,19 @@ class Geometry {
     }
   }
 
-  public function setInlinePosition($cursor, $element, $ancestorGeometry, $position, $textAlign, $textWrap) {
+  public function setInlinePosition($cursor, $element, $ancestorGeometry, $position) {
     if (
       $position == 'newline' ||
       (
-        $textWrap == 'auto' &&
+        $cursor->textWrap == 'auto' &&
         $ancestorGeometry->width != 'content' &&
-        $cursor->x + ($position == 'word' && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
+        $cursor->x + ($element->isWord() && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
       )
     ) {
       $this->formatRow($cursor, $ancestorGeometry);
       $cursor->newLine();
     }
-    $cursor->addElement($element, $this, $position == 'word' || $textAlign == 'justify' || true);
+    $cursor->addElement($element, $this);
   }
 
   public function formatRow($cursor, $ancestorGeometry) {
@@ -187,7 +176,7 @@ class Geometry {
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
-      $isWord = $estyle->get('position') == 'word';
+      $isWord = $element->isWord();
       if ($isWord && $previousIsWord) {
         $x += $cursor->wordSpacing;
       }
@@ -206,7 +195,7 @@ class Geometry {
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
-      $isWord = $estyle->get('position') == 'word';
+      $isWord = $element->isWord();
       if ($isWord && $previousIsWord) {
         $x -= $cursor->wordSpacing;
       }
@@ -245,7 +234,7 @@ class Geometry {
     foreach ($cursor->elements as $element) {
       $geometry = $element->getGeometry();
       $estyle = $element->getStyle();
-      $isWord = $estyle->get('position') == 'word';
+      $isWord = $element->isWord();
       if ($isWord && $previousIsWord) {
         $x += $cursor->wordSpacing;
       }
@@ -254,6 +243,10 @@ class Geometry {
       $x += $geometry->fullWidth;
       $previousIsWord = $isWord;
     }
+  }
+
+  public function sizeChanged() {
+    return ($this->originalWidth !== $this->width || $this->originalHeight !== $this->height);
   }
 
 }

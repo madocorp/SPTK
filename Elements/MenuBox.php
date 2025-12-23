@@ -15,10 +15,11 @@ class MenuBox extends Element {
   }
 
   protected function addDescendant($element) {
-    parent::addDescendant($element);
-    if ($element->type == 'MenuBoxItem') {
-      $this->num++;
+    if ($element->type !== 'MenuBoxItem') {
+      throw new \Exception("In MenuBox only MenuBoxItem elements are allowed!");
     }
+    $this->num++;
+    parent::addDescendant($element);
   }
 
   public function getValue() {
@@ -73,19 +74,26 @@ class MenuBox extends Element {
     $boxItem->removeClass('active', true);
     $i = 0;
     foreach ($this->descendants as $element) {
-      if ($element->type == 'MenuBoxItem') {
-        if ($i == $menu) {
-          $boxItem = $element;
-          $boxItem->addClass('active', true);
-          $boxItem->raise();
-          break;
-        }
-        $i++;
+      if ($i == $menu) {
+        $boxItem = $element;
+        $boxItem->addClass('active', true);
+        $boxItem->raise();
+        break;
       }
+      $i++;
     }
   }
 
-  public function calculateGeometry() {
+  protected function measure() {
+    $this->geometry->setValues($this->ancestor->geometry, $this->style);
+    $this->calculateSize();
+    $this->geometry->setDerivedSize();
+    foreach ($this->descendants as $element) {
+      $element->measure();
+    }
+  }
+
+  protected function calculateSize() {
     $items = self::allByType('MenuBoxItem', $this);
     $width = 0;
     foreach ($items as $item) {
@@ -99,7 +107,6 @@ class MenuBox extends Element {
       }
     }
     $this->geometry->width = $width;
-    parent::calculateGeometry();
   }
 
   public function keyPressHandler($element, $event) {

@@ -41,6 +41,16 @@ class Controller {
         SPTK\Element::refresh();
       }
     }
+    return true;
+  }
+
+  public static function panelForge($element, $event) {
+    if ($event['name'] == 'KeyPress') {
+      if ($event['key'] == SPTK\KeyCode::SPACE) {
+        SPTK\WarningPanel::forge('Window', 'forged warning', 'test');
+      }
+    }
+    return true;
   }
 
   public static function noop() {

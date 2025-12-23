@@ -106,7 +106,7 @@ class Style {
     $negative = $this->rules[$name][self::F_NEGATIVE];
     if ($type == self::T_PERCENT) {
       if ($reference == 'content') {
-        throw new \Excepetion('A percentage value cannot be specified if the reference value depends on the content!');
+        throw new \Exception('A percentage value cannot be specified if the reference value depends on the content!');
       }
       return (int)round(($reference * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }

@@ -6,6 +6,10 @@ class Word extends Element {
 
   public $value = false;
   protected $surface;
+  protected $width;
+  protected $height;
+  protected $ascent;
+  protected $descent;
 
   private static $fgColor;
   private static $bgColor;
@@ -15,21 +19,32 @@ class Word extends Element {
     $this->draw();
   }
 
-  public function calculateGeometry() {
-    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $this->style, $this->ancestor->style, 'manual');
+  public function isWord() {
+    return true;
+  }
+
+  protected function measure() {
+    $this->geometry->width = $this->width;
+    $this->geometry->height = $this->height;
+    $this->geometry->ascent = $this->ascent;
+    $this->geometry->descent = $this->descent;
+    $this->geometry->setDerivedSize();
+  }
+
+  protected function layout() {
+    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, 'inline');
   }
 
   protected function draw() {
     $fontName = $this->style->get('font');
     $fontSize = $this->style->get('fontSize', $this->ancestor->geometry->innerHeight);
     $font = new Font($fontName, $fontSize);
-    if (empty($this->value)) {
+    if ($this->value === false || $this->value === '') {
       $this->texture = false;
-      $this->geometry->width = 0;
-      $this->geometry->height = 0;
-      $this->geometry->ascent = $font->ascent;
-      $this->geometry->descent = $font->descent;
-      $this->geometry->setCalculatedSize();
+      $this->width = 0;
+      $this->height = 0;
+      $this->ascent = $font->ascent;
+      $this->descent = $font->descent;
       return;
     }
     $ttf = TTF::$instance->ttf;
@@ -51,14 +66,13 @@ class Word extends Element {
     self::$bgColor->a = $bgcolor[3] ?? 0xff;
 //    $this->surface = $ttf->TTF_RenderText_Blended($font->font, $this->value, strlen($this->value), $sdlColor);
     $this->surface = $ttf->TTF_RenderText_Shaded($font->font, $this->value, strlen($this->value), self::$fgColor, self::$bgColor);
-    $this->geometry->width = $this->surface->w;
-    $this->geometry->height = $this->surface->h;
-    $this->geometry->ascent = $font->ascent;
-    $this->geometry->descent = $font->descent;
-    $this->geometry->setCalculatedSize();
+    $this->width = $this->surface->w;
+    $this->height = $this->surface->h;
+    $this->ascent = $font->ascent;
+    $this->descent = $font->descent;
     $sdl = SDL::$instance->sdl;
     $surface = $sdl->cast("SDL_Surface *", $this->surface);
-    $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, $bgcolor, $surface);
+    $this->texture = new Texture($this->renderer, $this->width, $this->height, $bgcolor, $surface);
   }
 
   public function __destruct() {

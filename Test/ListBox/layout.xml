@@ -1,0 +1,20 @@
+<Window title="List">
+  <Box>
+    <Event type="KeyPress">Controller::showPanel</Event>
+    Press space to show a Panel!
+  </Box>
+  <Panel name="panel">
+    <PanelTitle>ListBox test</PanelTitle>
+    <PanelContent>
+      <Label>Test:<Input name="test"/></Label>
+      <Label>Test2:<Input name="test2"/></Label>
+      <Label name="x">Fruits:<ListBox name="fruits">
+        <ListItem>lemon</ListItem>
+        <ListItem selected="true">banana</ListItem>
+        <ListItem>orange</ListItem>
+        <ListItem>apple</ListItem>
+        <ListItem>pear</ListItem>
+      </ListBox></Label>
+    </PanelContent>
+  </Panel>
+</Window>

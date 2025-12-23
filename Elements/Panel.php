@@ -66,7 +66,6 @@ class Panel extends Element {
     }
     $content->clear();
     $content->addText($text);
-    $content->calculateGeometry();
   }
 
   private function setInputList($element) {
@@ -257,6 +256,9 @@ class Panel extends Element {
  }
 
   private function activateClosestInput($direction) {
+    if ($this->focusIndex < 0) {
+      return;
+    }
     $this->inactivateInput();
     $idx = $this->findClosestInput($direction);
     if ($idx === false) {
@@ -269,7 +271,7 @@ class Panel extends Element {
     Element::refresh();
   }
 
-  public static function forge($parent, $title, $text, $buttons = false) {
+  public static function forge($parent, $title, $text, $buttons = false, $name = false, $sclass = false) {
     if (is_string($parent)) {
       $parent = Element::firstByType($parent);
       if ($parent === false) {
@@ -278,21 +280,39 @@ class Panel extends Element {
     }
     $className = static::class;
     $panelName = basename(str_replace('\\', '/', $className));
-    $panel = new $className($parent);
+    $panel = new $className($parent, $name, $sclass);
     $titleElement = new Element($panel, false, false, "{$panelName}Title");
     $titleElement->addText($title);
     $conetentElement = new Element($panel, false, false, "{$panelName}Content");
-    if (strpos($text, '%CONFIRMATION_CODE%') !== false) {
+    if (strpos($text, '%CONFIRMATION%') !== false) {
       $code = sprintf('%03d', rand(0, 999));
-      $text = str_replace('%CONFIRMATION_CODE%', $code, $text);
+      $confirmMessages = [
+        'To continue, enter %CONFIRMATION_CODE% to confirm that you have read and understood the consequences of this action.',
+        'This action requires confirmation. Use the code %CONFIRMATION_CODE% only if you intend to proceed and understand what will happen next.',
+        'Confirmation code %CONFIRMATION_CODE% is required before proceeding. Please make sure you fully understand this action before entering it.',
+        'Before moving forward, locate the confirmation code %CONFIRMATION_CODE% in this message and enter it to verify your intention.',
+        'Carefully review this notice. Once you are certain you want to proceed, confirm your intent using %CONFIRMATION_CODE%.',
+        'Enter %CONFIRMATION_CODE% to confirm that this action is intentional and that you have carefully read this message.',
+        'Only proceed if you fully understand the impact of this operation. The required confirmation code is %CONFIRMATION_CODE%.',
+        'To verify your intent, use %CONFIRMATION_CODE% when prompted after reviewing this confirmation notice.',
+        'This request cannot continue without confirmation. Please supply %CONFIRMATION_CODE% as proof that you intend to proceed.',
+        'Confirmation is mandatory for this action. After reviewing the details, enter %CONFIRMATION_CODE% to continue.'
+      ];
+      $confirmText = $confirmMessages[$code % count($confirmMessages)];
+      $confirmText = str_replace('%CONFIRMATION_CODE%', $code, $confirmText);
+      $text = str_replace('%CONFIRMATION%', $confirmText, $text);
       $conetentElement->addText($text);
       $labelElement = new Element($conetentElement, false, false, 'Label');
-      $labelElement->addText('Confirmation code:');
+      $labelElement->addText('Code:');
       $codeElement = new ConfirmationCode($labelElement, 'confirmed');
       $codeElement->setCode($code);
+      $panel->measure();
+      $panel->layout();
     } else {
       $conetentElement->addText($text);
     }
+    $panel->measure();
+    $panel->layout();
     if (is_array($buttons)) {
       $buttonBoxElement = new Element($conetentElement, false, false, 'ButtonBox');
       foreach ($buttons as $button) {
@@ -309,11 +329,9 @@ class Panel extends Element {
         }
         $buttonElement->addText($button['text']);
       }
+      $panel->measure();
+      $panel->layout();
     }
-    $conetentElement->calculateGeometry();
-$panel->calculateGeometry();
-$panel->calculateGeometry();
-$panel->calculateGeometry();
     $panel->show();
     Element::refresh();
   }
