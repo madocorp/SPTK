@@ -51,7 +51,7 @@ class Element {
     $this->cursor = new Cursor();
     $this->ancestor = $ancestor;
     $this->recalculateStyle();
-    $this->geometry = new Geometry($this);
+    $this->geometry = new Geometry;
     if (is_null($this->ancestor)) {
       if (!is_null(self::$root)) {
         throw new \Exception("You have to define only one root element.");
@@ -64,7 +64,7 @@ class Element {
   }
 
   protected function init() {
-
+    ;
   }
 
   protected function recalculateStyle() {
@@ -84,37 +84,47 @@ class Element {
     $this->cursor->configure($this->style);
   }
 
-  public function calculateGeometry() {
-    $this->cursor->reset();
-    $originalWidth = $this->geometry->width;
-    $originalHeight = $this->geometry->height;
+  protected function measure() {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->geometry->setSize($this->ancestor->geometry, $this->style);
+    $this->geometry->setDerivedSize();
+    foreach ($this->descendants as $element) {
+      $element->measure();
+    }
+  }
+
+  protected function layout() {
+    $this->cursor->reset();
     $maxX = 0;
     $maxY = 0;
     foreach ($this->descendants as $element) {
-      $element->calculateGeometry();
+      $element->layout();
       $maxX = max($maxX, $element->geometry->x + $element->geometry->width);
       $maxY = max($maxY, $element->geometry->y + $element->geometry->height);
     }
-    $this->geometry->formatRow($this->cursor, $this->geometry);
     $position = $this->style->get('position');
-    if ($position == 'word') {
-      $this->geometry->setCalculatedSize();
-    } else {
-      $this->geometry->setContentSize($this->style, $maxX, $maxY);
+    $this->geometry->setContentDependentValues($maxX, $maxY);
+    if ($position == 'inline') {
+      $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
     }
+    $this->geometry->setDerivedSize();
     if ($position == 'absolute') {
       $this->geometry->setAbsolutePosition($this->ancestor->geometry, $this->style);
-    } else if ($position == 'inline' || $position == 'word' || $position == 'newline') {
-      $textAlign = $this->ancestor->style->get('textAlign');
-      $textWrap = $this->ancestor->style->get('textWrap');
-      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $position, $textAlign, $textWrap);
+    } else if ($position == 'inline' || $position == 'newline') {
+      $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, $position);
     }
-    $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
-    if ($originalWidth != $this->geometry->width || $originalHeight != $this->geometry->height) {
+    $this->geometry->formatRow($this->cursor, $this->geometry);
+    if ($this->geometry->sizeChanged()) {
       $this->draw();
     }
+  }
+
+  public function recalculateGeometry() {
+    $this->measure();
+    $this->layout();
+  }
+
+  public function isWord() {
+    return false;
   }
 
   protected function render() {
@@ -161,22 +171,48 @@ class Element {
     $this->stack[] = $element;
   }
 
+  protected function removeDescendant($element) {
+    foreach ($this->descendants as $i => $descendant) {
+      if ($element->id === $descendant->id) {
+        unset($this->descendants[$i]);
+        $this->descendants = array_values($this->descendants);
+        break;
+      }
+    }
+    foreach ($this->stack as $i => $descendant) {
+      if ($element->id === $descendant->id) {
+        unset($this->stack[$i]);
+        $this->stack = array_values($this->stack);
+        break;
+      }
+    }
+  }
+
   public function remove() {
+    $this->ancestor->removeDescendant($this);
+  }
+
+  public function moveAfter($element) {
+    if ($element->id === $this->id) {
+      return;
+    }
+    $after = false;
     $ancestor = $this->ancestor;
-    foreach ($ancestor->descendants as $i => $element) {
-      if ($element->id === $this->id) {
-        unset($ancestor->descendants[$i]);
-        $ancestor->descendants = array_values($ancestor->descendants);
-        break;
+    foreach ($ancestor->descendants as $i => $item) {
+      if ($item->id === $element->id) {
+        $after = $i;
+      } else if ($item->id == $this->id) {
+        $moveFrom = $i;
       }
     }
-    foreach ($ancestor->stack as $i => $element) {
-      if ($element->id === $this->id) {
-        unset($ancestor->stack[$i]);
-        $ancestor->stack = array_values($ancestor->stack);
-        break;
-      }
+    if ($after === false) {
+      return;
     }
+    array_splice($ancestor->descendants, $moveFrom, 1);
+    if ($moveFrom < $after) {
+      $after--;
+    }
+    array_splice($ancestor->descendants, $after + 1, 0, [$this]);
   }
 
   public function clear() {
@@ -329,7 +365,20 @@ class Element {
         $element->setValue($word);
       }
     }
-    $this->calculateGeometry();
+  }
+
+  public function getText(&$text = null) {
+    if ($text === null) {
+      $text = [];
+    }
+    foreach ($this->descendants as $descendant) {
+      if ($descendant->type === 'Word') {
+        $text[] = $descendant->getValue();
+      } else {
+        $descendant->getText($text);
+      }
+    }
+    return implode(' ', $text);
   }
 
   public function show() {
@@ -338,25 +387,6 @@ class Element {
 
   public function hide() {
     $this->display = false;
-  }
-
-  public function debug($level = 0) {
-    $pad = str_repeat(' ', $level * 4);
-    $class = '';
-    if (!empty($this->sclass)) {
-      $class = '.' . implode('.', $this->sclass);
-    }
-    $value = '';
-    if ($this->value !== false) {
-      $value = " [{$this->value}]";
-    }
-    echo "{$pad}{$this->type}@{$this->id}#{$this->name}{$class}{$value}\n";
-    foreach ($this->events as $event => $handler) {
-      echo "{$pad}  - {$event} > " . (is_array($handler) ? (is_object($handler[0]) ? get_class($handler[0]) : $handler[0]) . '::' . $handler[1] : implode('::', $handler)) . "\n";
-    }
-    foreach ($this->descendants as $element) {
-      $element->debug($level + 1);
-    }
   }
 
   public function addChildClass($class) {
@@ -372,6 +402,26 @@ class Element {
       return $this;
     }
     return $this->ancestor->findAncestorByType($type);
+  }
+
+  public function debug($level = 0) {
+    $pad = str_repeat(' ', $level * 4);
+    $class = '';
+    if (!empty($this->sclass)) {
+      $class = '.' . implode('.', $this->sclass);
+    }
+    $value = '';
+    if ($this->value !== false) {
+      $value = " [{$this->value}]";
+    }
+    echo "{$pad}{$this->type}@{$this->id}" . ($this->name !== 0 ? "#{$this->name}" : '') ."{$class}{$value}";
+    echo "  {$this->geometry->width}x{$this->geometry->height} {$this->geometry->x}:{$this->geometry->y}\n";
+    foreach ($this->events as $event => $handler) {
+      echo "{$pad}  - {$event} > " . (is_array($handler) ? (is_object($handler[0]) ? get_class($handler[0]) : $handler[0]) . '::' . $handler[1] : implode('::', $handler)) . "\n";
+    }
+    foreach ($this->descendants as $element) {
+      $element->debug($level + 1);
+    }
   }
 
 }

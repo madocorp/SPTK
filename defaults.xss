@@ -35,7 +35,8 @@ Window {
 }
 
 Word {
-  position: word;
+  width: calculated;
+  height: calculated;
   fontSize: inherit;
 }
 
@@ -230,7 +231,7 @@ ErrorPanelContent {
 Label {
   width: 100%;
   paddingBottom: 10px;
-  lineHeight: 100%;
+  lineHeight: 110%;
 }
 
 Input {
@@ -259,6 +260,7 @@ ConfirmationCode {
   backgroundColor: #00aaaa;
   color: #444444;
   height: 20px;
+  marginTop: 10px;
 }
 
 ConfirmationCode:active {
@@ -266,17 +268,18 @@ ConfirmationCode:active {
   backgroundColor: #00cccc;
 }
 
-
 HalfBoxLeft {
   width: 50%;
   paddingRight: 9px;
   borderRight: 1px;
   borderColor: #555555;
+  ascent: 0;
 }
 
 HalfBoxRight {
   width: 50%;
   paddingLeft: 10px;
+  ascent: 0;
 }
 
 ButtonBox {
@@ -308,3 +311,25 @@ ButtonHotKey {
   paddingRight: 5px;
 }
 
+ListBox {
+  borderColor: #000000;
+  border: 1px;
+  height: 200px;
+  width: 100%;
+  lineHeight: 100%;
+}
+
+ListItem {
+  width: 100%;
+  padding: 0px, 10px;
+}
+
+ListItem:selected {
+  backgroundColor: #555555;
+  color: #aaaaaa;
+}
+
+ListItem:active {
+  backgroundColor: #000000;
+  color: #ffffff;
+}

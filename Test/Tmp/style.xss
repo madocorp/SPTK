@@ -8,34 +8,23 @@ Window {
   fontSize: 30px;
 }
 
-.c {
-  display: inline;
+#x {
+  position: inline;
   color: #000000;
-  backgroundColor: #00aaaa;
-  width: 200px;
-  hieght: 20px;
-  paddingRight: 3px;
+  backgroundColor: #ff0000;
+  width: 100%;
 }
 
-.t {
-  display: inline;
-  color: #0000ff;
-  width: 20px;
-  textAlign: right;
-  paddingRight: 3px;
+#y {
+  position: inline;
+  color: #000000;
+  backgroundColor: #ffff00;
+  width: 100%;
 }
 
-.small {
-  display: inline;
-  fontSize: 15px;
-}
-
-.big {
-  display: inline;
-  fontSize: 30px;
-}
-
-.vbig {
-  display: inline;
-  fontSize: 60px;
+#z {
+  position: inline;
+  color: #000000;
+  backgroundColor: #00ff00;
+  width: 100%;
 }

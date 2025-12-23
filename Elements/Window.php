@@ -13,12 +13,17 @@ class Window extends Element {
   protected $sdl;
   protected $window;
   protected $tmpTexture = false;
+  protected $ffiWidth;
+  protected $ffiHeight;
 
   protected function init() {
     $this->sdl = SDL::$instance->sdl;
     $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
+    $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, 0, 0, 0, 0xff);
+    $this->ffiWidth = \FFI::new("int");
+    $this->ffiHeight = \FFI::new("int");
     $frameTop = \FFI::new("int");
     $frameBottom = \FFI::new("int");
     $frameLeft = \FFI::new("int");
@@ -32,11 +37,8 @@ class Window extends Element {
       $this->geometry->width = $this->style->get('width', $this->ancestor->geometry->width);
       $this->geometry->height = $this->style->get('height', $this->ancestor->geometry->height);
     }
-    $fontSize = $this->style->get('fontSize', $this->geometry->height);
-    $this->calculateGeometry();
     $this->setSize();
-    $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->geometry->setCalculatedSize();
+    $this->geometry->setDerivedSize();
     $this->geometry->x = $this->style->get('x', $this->ancestor->geometry->width) + $this->ancestor->geometry->x + $this->geometry->x;
     $this->geometry->y = $this->style->get('y', $this->ancestor->geometry->height) + $this->ancestor->geometry->y + $this->geometry->y;
     $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
@@ -54,14 +56,10 @@ class Window extends Element {
   }
 
   protected function getSize() {
-    $width = \FFI::new("int");
-    $height = \FFI::new("int");
-    $this->sdl->SDL_GetWindowSize($this->window, \FFI::addr($width), \FFI::addr($height));
-    $this->geometry->width = $width->cdata;
-    $this->geometry->height = $height->cdata;
-    $this->setSize();
-    $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->geometry->setCalculatedSize();
+    $this->sdl->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
+    $this->geometry->width = $this->ffiWidth->cdata;
+    $this->geometry->height = $this->ffiHeight->cdata;
+    $this->geometry->setDerivedSize();
   }
 
   public function draw() {
@@ -123,11 +121,16 @@ class Window extends Element {
     return false;
   }
 
-  public function calculateGeometry() {
+  protected function measure() {
+    foreach ($this->descendants as $descendant) {
+      $descendant->measure();
+    }
+  }
+
+  public function layout() {
     $this->cursor->reset();
-    $fontSize = $this->style->get('fontSize', $this->geometry->innerHeight);
-    foreach ($this->descendants as $element) {
-      $element->calculateGeometry();
+    foreach ($this->descendants as $descendant) {
+      $descendant->layout();
     }
     $this->geometry->formatRow($this->cursor, $this->geometry);
   }

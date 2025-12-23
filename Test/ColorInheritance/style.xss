@@ -5,14 +5,13 @@ Window {
   y: 30%;
   backgroundColor: #000000;
   color: #ffffff;
-  display: inline;
 }
 
 Box {
-  display: inline;
   color: inherit;
   padding: 0px, 5px;
   fontSize: inherit;
+  position: inline;
 }
 
 .box2 {

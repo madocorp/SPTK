@@ -19,9 +19,9 @@ class Input extends Element {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
-    $this->elementBefore = new Word($this, false, false, 'InputValue');
-    $this->elementSelected = new Word($this, false, false, 'InputValue');
-    $this->elementAfter = new Word($this, false, false, 'InputValue');
+    $this->elementBefore = new InputValue($this);
+    $this->elementSelected = new InputValue($this);
+    $this->elementAfter = new InputValue($this);
     $this->setValue('');
   }
 

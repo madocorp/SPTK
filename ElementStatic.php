@@ -15,7 +15,8 @@ trait ElementStatic {
 
   public static function refresh() {
     $t = microtime(true);
-    static::$root->calculateGeometry();
+    static::$root->measure();
+    static::$root->layout();
     static::$root->render();
     if (DEBUG) {
       echo "Refreshed:", microtime(true) - $t, "\n";
@@ -90,7 +91,8 @@ trait ElementStatic {
   public static function immediateRender($element) {
     $t = microtime(true);
     $element->ancestor->cursor->reset();
-    $element->calculateGeometry();
+    $element->measure();
+    $element->layout();
     $tmpTexture = $element->render();
     $window = $element->findAncestorByType('Window');
     $x = 0;

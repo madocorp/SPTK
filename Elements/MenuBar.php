@@ -7,11 +7,12 @@ class MenuBar extends Element {
   protected $num = 0;
 
   protected function addDescendant($element) {
-    parent::addDescendant($element);
-    if ($element->type == 'MenuBarItem') {
-      $this->num++;
-      $element->setHotKey($this->num);
+    if ($element->type !== 'MenuBarItem') {
+      throw new \Exception("In MenuBar only MenuBarItem elements are allowed!");
     }
+    $this->num++;
+    $element->setHotKey($this->num);
+    parent::addDescendant($element);
   }
 
   public function activateMenuBarItem($menuIndex) {
@@ -19,24 +20,20 @@ class MenuBar extends Element {
     $barItem = false;
     $i = 0;
     foreach ($this->descendants as $element) {
-      if ($element->type == 'MenuBarItem') {
-        if ($i == $menuIndex) {
-          $element->addClass('active', true);
-          $element->raise();
-          $barItem = $element;
-          break;
-        }
-        $i++;
+      if ($i == $menuIndex) {
+        $element->addClass('active', true);
+        $element->raise();
+        $barItem = $element;
+        break;
       }
+      $i++;
     }
     return $barItem;
   }
 
   public function inactivateMenuBarItems() {
     foreach ($this->descendants as $element) {
-      if ($element->type == 'MenuBarItem') {
-        $element->removeClass('active', true);
-      }
+      $element->removeClass('active', true);
     }
   }
 
