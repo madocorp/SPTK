@@ -27,13 +27,24 @@ class ListBox extends Element {
   }
 
   public function getValue() {
-    $value = [];
-    foreach ($this->descendants as $i => $descendant) {
-      $key = $descendant->getValue();
-      if ($key === false || $key === '') {
-        $key = $i;
+    if ($this->moveable) {
+      $value = [];
+      foreach ($this->descendants as $i => $descendant) {
+        $key = $descendant->getValue();
+        if ($key === false || $key === '') {
+          $key = $i;
+        }
+        $value[$key] = $descendant->getText();
       }
-      $value[$key] = $descendant->getText();
+    } else {
+      if (!isset($this->descendants[$this->activeItem])) {
+        return false;
+      }
+      $descendant = $this->descendants[$this->activeItem];
+      $value = $descendant->getValue();
+      if ($value === false || $value === '') {
+        $value = $descendant->getText();
+      }
     }
     return $value;
   }
@@ -92,8 +103,12 @@ class ListBox extends Element {
     }
   }
 
-  public function moveCursor($n) {
-    $this->activeItem += $n;
+  public function moveCursor($n, $relative = false) {
+    if ($relative) {
+      $this->activeItem += $n;
+    } else {
+      $this->activeItem = $n;
+    }
     if ($this->activeItem < 0) {
       $this->activeItem = 0;
     } else if ($this->activeItem >= $this->num) {
