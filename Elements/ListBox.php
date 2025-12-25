@@ -123,10 +123,10 @@ class ListBox extends Element {
       if ($i == $this->activeItem) {
         $descendant->addClass('selected', true);
         $descendant->addClass('active', true);
-        if ($descendant->geometry->y + $descendant->geometry->height > $this->sy + $this->geometry->height) {
-          $this->sy = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height;
-        } else if ($descendant->geometry->y < $this->sy) {
-          $this->sy = $descendant->geometry->y;
+        if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height) {
+          $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height;
+        } else if ($descendant->geometry->y < $this->scrollY) {
+          $this->scrollY = $descendant->geometry->y;
         }
       } else {
         $descendant->removeClass('selected', true);

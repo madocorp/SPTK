@@ -37,7 +37,7 @@ class Style {
 
   public function inherit($ancestor) {
     foreach ($this->rules as $name => $value) {
-      if ($value[self::F_VALUE] == 'inherit') {
+      if ($value[self::F_VALUE] === 'inherit') {
         $this->rules[$name] = $ancestor->rules[$name];
       }
     }
