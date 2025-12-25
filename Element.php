@@ -24,6 +24,8 @@ class Element {
   protected $attributes = [];
   protected $childClass = [];
   protected $cursor = false;
+  protected $sx = 0;
+  protected $sy = 0;
 
   public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
     $this->id = self::getNextId();
@@ -145,7 +147,7 @@ class Element {
       $descendant = $this->stack[$i];
       $dTexture = $descendant->render();
       if ($dTexture !== false) {
-        $dTexture->copyTo($tmpTexture, $descendant->geometry->x, $descendant->geometry->y);
+        $dTexture->copyTo($tmpTexture, $descendant->geometry->x - $this->sx, $descendant->geometry->y - $this->sy);
       }
     }
     new Border($tmpTexture, $this->geometry, $this->ancestor->geometry, $this->style);

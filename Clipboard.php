@@ -4,34 +4,6 @@ namespace SPTK;
 
 class Clipboard {
 
-  const COPY = 1;
-  const CUT = 2;
-  const PASTE = 3;
-
-
-  public static function processEvent($event, $copy, &$paste) {
-    $paste = false;
-    if (($event['mod'] & KeyModifier::CTRL) == 0) {
-      return false;
-    }
-    if ($event['scancode'] == ScanCode::C) {
-      self::set($copy);
-      return self::COPY;
-    }
-    if ($event['scancode'] == ScanCode::X) {
-      self::set($copy);
-      return self::CUT;
-    }
-    if ($event['scancode'] == ScanCode::V) {
-      $paste = self::get();
-      if ($paste == false) {
-        return false;
-      }
-      return self::PASTE;
-    }
-    return false;
-  }
-
   public static function set($value) {
     $sdl = SDL::$instance->sdl;
     $len = strlen($value);

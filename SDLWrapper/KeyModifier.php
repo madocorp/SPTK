@@ -4,6 +4,8 @@ namespace SPTK;
 
 class KeyModifier {
 
+  const NONE = 0x0000;
+
   const LSHIFT = 0x0001; /* the left Shift key is down. */
   const RSHIFT = 0x0002; /* the right Shift key is down. */
   const LEVEL5 = 0x0004; /* the Level 5 Shift key is down. */
@@ -22,5 +24,7 @@ class KeyModifier {
   const CTRL = 0x00c0;
   const ALT = 0x0300;
   const GUI = 0x0c00;
+
+  const PRIMARY = (PHP_OS_FAMILY == 'Darwin' ? self::GUI : self::CTRL);
 
 }

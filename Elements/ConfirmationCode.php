@@ -41,7 +41,8 @@ class ConfirmationCode extends Element {
   }
 
   public function keyPressHandler($element, $event) {
-    if ($event['key'] == KeyCode::BACKSPACE) {
+    $action = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
+    if ($action === Action::DELETE_BACK) {
       $code = $this->elementCode->getValue();
       $code = mb_substr($code, 0, -1);
       $this->elementCode->setValue($code);
