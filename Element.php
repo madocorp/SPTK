@@ -24,8 +24,10 @@ class Element {
   protected $attributes = [];
   protected $childClass = [];
   protected $cursor = false;
-  protected $sx = 0;
-  protected $sy = 0;
+  protected $scrollX = 0;
+  protected $scrollY = 0;
+  protected $maxX = 0;
+  protected $maxY = 0;
 
   public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
     $this->id = self::getNextId();
@@ -96,15 +98,15 @@ class Element {
 
   protected function layout() {
     $this->cursor->reset();
-    $maxX = 0;
-    $maxY = 0;
+    $this->maxX = 0;
+    $this->maxY = 0;
     foreach ($this->descendants as $element) {
       $element->layout();
-      $maxX = max($maxX, $element->geometry->x + $element->geometry->width);
-      $maxY = max($maxY, $element->geometry->y + $element->geometry->height);
+      $this->maxX = max($this->maxX, $element->geometry->x + $element->geometry->width);
+      $this->maxY = max($this->maxY, $element->geometry->y + $element->geometry->height);
     }
     $position = $this->style->get('position');
-    $this->geometry->setContentDependentValues($maxX, $maxY);
+    $this->geometry->setContentDependentValues($this->maxX, $this->maxY);
     if ($position == 'inline') {
       $this->geometry->setAscent($this->style, $this->cursor->firstLineAscent);
     }
@@ -147,10 +149,13 @@ class Element {
       $descendant = $this->stack[$i];
       $dTexture = $descendant->render();
       if ($dTexture !== false) {
-        $dTexture->copyTo($tmpTexture, $descendant->geometry->x - $this->sx, $descendant->geometry->y - $this->sy);
+        $dTexture->copyTo($tmpTexture, $descendant->geometry->x - $this->scrollX, $descendant->geometry->y - $this->scrollY);
       }
     }
     new Border($tmpTexture, $this->geometry, $this->ancestor->geometry, $this->style);
+    if ($this->style->get('scrollable')) {
+      new Scrollbar($tmpTexture, $this->scrollX, $this->scrollY, $this->maxX, $this->maxY, $this->geometry, $this->style);
+    }
     return $tmpTexture;
   }
 

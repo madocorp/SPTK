@@ -24,6 +24,10 @@ Root {
   letterSpacing: 1px;
   wordSpacing: 10px;
   textWrap: auto;
+  scrollable: false;
+  scrollbarColor: #aaaaaa;
+  scrollhandleColor: #cccccc;
+  scrollbarSize: 10px;
 }
 
 Window {
@@ -317,6 +321,7 @@ ListBox {
   height: 200px;
   width: 100%;
   lineHeight: 100%;
+  scrollable: true;
 }
 
 ListItem {
