@@ -105,37 +105,38 @@ class MenuBoxItem extends Element {
     if (!$this->display) {
       return false;
     }
-    if ($event['key'] == KeyCode::RETURN) {
-      if ($this->selectable !== false || $this->radio !== false) {
-        $this->setSelected(!$this->selected);
-        if ($this->onSelect !== false) {
-          call_user_func($this->onSelect, $this, $this->selected);
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::CHOOSE:
+        if ($this->selectable !== false || $this->radio !== false) {
+          $this->setSelected(!$this->selected);
+          if ($this->onSelect !== false) {
+            call_user_func($this->onSelect, $this, $this->selected);
+          }
         }
-      }
-      if ($this->submenu) {
-        return $this->openSubmenu();
-      }
-      $menu = $this->findAncestorByType('Menu');
-      $menu->closeMenu();
-      if ($this->onOpen !== false) {
-        call_user_func($this->onOpen);
-      }
-      return true;
-    }
-    if ($event['key'] == KeyCode::SPACE) {
-      if ($this->selectable !== false || $this->radio !== false) {
-        $this->setSelected(!$this->selected);
-        if ($this->onSelect !== false) {
-          call_user_func($this->onSelect, $this, $this->selected);
+        if ($this->submenu) {
+          return $this->openSubmenu();
         }
-        Element::immediateRender($this->ancestor);
+        $menu = $this->findAncestorByType('Menu');
+        $menu->closeMenu();
+        if ($this->onOpen !== false) {
+          call_user_func($this->onOpen);
+        }
         return true;
-      }
-    }
-    if ($event['key'] == KeyCode::RIGHT) {
-      if ($this->submenu) {
-        return $this->openSubmenu();
-      }
+      case Action::SELECT_ITEM:
+        if ($this->selectable !== false || $this->radio !== false) {
+          $this->setSelected(!$this->selected);
+          if ($this->onSelect !== false) {
+            call_user_func($this->onSelect, $this, $this->selected);
+          }
+          Element::immediateRender($this->ancestor);
+          return true;
+        }
+        break;
+      case Action::MOVE_RIGHT:
+        if ($this->submenu) {
+          return $this->openSubmenu();
+        }
+        break;
     }
     return false;
   }

@@ -43,6 +43,7 @@ class SDL {
     $dir = App::$instance->getDir();
     $this->sdl = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_extract.h"), "{$dir}/SDLWrapper/libSDL3.so");
     $this->sdl->SDL_Init(self::SDL_INIT_VIDEO);
+    KeyCombo::init();
     call_user_func($initCallback);
     try {
       $this->eventLoop();

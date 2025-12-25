@@ -75,11 +75,10 @@ class Input extends Element {
   }
 
   public function keyPressHandler($element, $event) {
-    if ($event['key'] == KeyCode::SPACE) {
-      return true;
-    }
-    switch ($event['key']) {
-      case KeyCode::BACKSPACE:
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::SELECT_ITEM:
+        return true;
+      case Action::DELETE_BACK:
         if (mb_strlen($this->selected) > 1) {
           $this->selected = '';
           if ($this->after !== '') {
@@ -92,7 +91,7 @@ class Input extends Element {
         $this->selectDirection = 0;
         $this->refreshValue();
         return true;
-      case KeyCode::DELETE:
+      case Action::DELETE_FORWARD:
         if ($this->after !== '') {
           $this->selected = mb_substr($this->after, 0, 1);
           $this->after = mb_substr($this->after, 1);
@@ -102,121 +101,119 @@ class Input extends Element {
         $this->selectDirection = 0;
         $this->refreshValue();
         return true;
-      case KeyCode::LEFT:
-        if ($event['mod'] & KeyModifier::SHIFT) {
-          if ($this->selectDirection > 0) {
-            if (mb_strlen($this->selected) > 1) {
-              $this->after = mb_substr($this->selected, -1) . $this->after;
-              $this->selected = mb_substr($this->selected, 0, -1);
-            } else {
-              $this->selectDirection = 0;
-            }
+      case Action::SELECT_LEFT:
+        if ($this->selectDirection > 0) {
+          if (mb_strlen($this->selected) > 1) {
+            $this->after = mb_substr($this->selected, -1) . $this->after;
+            $this->selected = mb_substr($this->selected, 0, -1);
           } else {
-            if ($this->before !== '') {
-              $this->selected = mb_substr($this->before, -1) . $this->selected;
-              $this->before = mb_substr($this->before, 0, -1);
-              $this->selectDirection = -1;
-            }
+            $this->selectDirection = 0;
           }
-        } else if ($event['mod'] == 0) {
-          if ($this->selected !== '') {
-            $this->after = $this->selected . $this->after;
-            $this->selected = '';
-          }
+        } else {
           if ($this->before !== '') {
-            $this->selected = mb_substr($this->before, -1);
+            $this->selected = mb_substr($this->before, -1) . $this->selected;
             $this->before = mb_substr($this->before, 0, -1);
-          } else if ($this->after !== '') {
-            $this->selected = mb_substr($this->after, 0, 1);
-            $this->after = mb_substr($this->after, 1);
+            $this->selectDirection = -1;
           }
-          $this->selectDirection = 0;
-        } else {
-          break;
         }
         $this->refreshValue();
         return true;
-      case KeyCode::RIGHT:
-        if ($event['mod'] & KeyModifier::SHIFT) {
-          if ($this->selectDirection < 0) {
-            if (mb_strlen($this->selected) > 1) {
-              $this->before .= mb_substr($this->selected, 0, 1);
-              $this->selected = mb_substr($this->selected, 1);
-            } else {
-              $this->selectDirection = 0;
-            }
-          } else {
-            if ($this->after !== '') {
-              $this->selected .= mb_substr($this->after, 0, 1);
-              $this->after = mb_substr($this->after, 1);
-              $this->selectDirection = 1;
-            }
-          }
-        } else if ($event['mod'] == 0) {
-          if ($this->selected !== '') {
-            $this->before =  $this->before . $this->selected;
-            $this->selected = '';
-          }
-          if ($this->after !== '') {
-            $this->selected = mb_substr($this->after, 0, 1);
-            $this->after = mb_substr($this->after, 1);
-          }
-          $this->selectDirection = 0;
-        } else {
-          break;
+      case Action::MOVE_LEFT:
+        if ($this->selected !== '') {
+          $this->after = $this->selected . $this->after;
+          $this->selected = '';
         }
-        $this->refreshValue();
-        return true;
-      case KeyCode::HOME: // todo: KP_HOME?
-        if ($event['mod'] & KeyModifier::SHIFT) {
-          $this->selected = $this->before . $this->selected ;
-          $this->before = '';
-          $this->selectDirection = -1;
-        } else {
-          $this->after = $this->before . $this->selected . $this->after;
-          $this->before = '';
+        if ($this->before !== '') {
+          $this->selected = mb_substr($this->before, -1);
+          $this->before = mb_substr($this->before, 0, -1);
+        } else if ($this->after !== '') {
           $this->selected = mb_substr($this->after, 0, 1);
           $this->after = mb_substr($this->after, 1);
-          $this->selectDirection = 0;
         }
+        $this->selectDirection = 0;
         $this->refreshValue();
         return true;
-      case KeyCode::END: // todo: KP_END?
-        if ($event['mod'] & KeyModifier::SHIFT) {
-          $this->selected = $this->selected . $this->after;
-          $this->after = '';
-          $this->selectDirection = 1;
+      case Action::SELECT_RIGHT:
+        if ($this->selectDirection < 0) {
+          if (mb_strlen($this->selected) > 1) {
+            $this->before .= mb_substr($this->selected, 0, 1);
+            $this->selected = mb_substr($this->selected, 1);
+          } else {
+            $this->selectDirection = 0;
+          }
         } else {
-          $this->before = $this->before . $this->selected . $this->after;
-          $this->after = '';
-          $this->selected = '';
-          $this->selectDirection = 0;
+          if ($this->after !== '') {
+            $this->selected .= mb_substr($this->after, 0, 1);
+            $this->after = mb_substr($this->after, 1);
+            $this->selectDirection = 1;
+          }
         }
         $this->refreshValue();
         return true;
-    }
-    $paste = false;
-    $clipboardAction = Clipboard::processEvent($event, $this->selected, $paste);
-    if ($clipboardAction == Clipboard::CUT) {
-      $this->selected = mb_substr($this->after, 0, 1);
-      $this->after = mb_substr($this->after, 1);
-      $this->refreshValue();
-      return true;
-    } else if ($clipboardAction == Clipboard::COPY) {
-      $this->before .= $this->selected;
-      $this->selected = mb_substr($this->after, 0, 1);
-      $this->after = mb_substr($this->after, 1);
-      $this->refreshValue();
-      return true;
-    } else if ($clipboardAction == Clipboard::PASTE) {
-      if (mb_strlen($this->selected) > 1) {
-        $this->selected = $paste;
-      } else {
-        $this->after = $this->selected . $this->after;
-        $this->selected = $paste;
-      }
-      $this->refreshValue();
-      return true;
+      case Action::MOVE_RIGHT:
+        if ($this->selected !== '') {
+          $this->before =  $this->before . $this->selected;
+          $this->selected = '';
+        }
+        if ($this->after !== '') {
+          $this->selected = mb_substr($this->after, 0, 1);
+          $this->after = mb_substr($this->after, 1);
+        }
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
+      case Action::SELECT_START:
+        $this->selected = $this->before . $this->selected ;
+        $this->before = '';
+        $this->selectDirection = -1;
+        $this->refreshValue();
+        return true;
+      case Action::MOVE_START:
+        $this->after = $this->before . $this->selected . $this->after;
+        $this->before = '';
+        $this->selected = mb_substr($this->after, 0, 1);
+        $this->after = mb_substr($this->after, 1);
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
+      case Action::SELECT_END:
+        $this->selected = $this->selected . $this->after;
+        $this->after = '';
+        $this->selectDirection = 1;
+        $this->refreshValue();
+        return true;
+      case Action::MOVE_END:
+        $this->before = $this->before . $this->selected . $this->after;
+        $this->after = '';
+        $this->selected = '';
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
+      case Action::CUT:
+        Clipboard::set($this->selected);
+        $this->selected = mb_substr($this->after, 0, 1);
+        $this->after = mb_substr($this->after, 1);
+        $this->refreshValue();
+        return true;
+      case Action::COPY:
+        Clipboard::set($this->selected);
+        $this->before .= $this->selected;
+        $this->selected = mb_substr($this->after, 0, 1);
+        $this->after = mb_substr($this->after, 1);
+        $this->refreshValue();
+        return true;
+      case Action::PASTE:
+        $paste = Clipboard::get();
+        if ($paste !== false) {
+          if (mb_strlen($this->selected) > 1) {
+            $this->selected = $paste;
+          } else {
+            $this->after = $this->selected . $this->after;
+            $this->selected = $paste;
+          }
+          $this->refreshValue();
+        }
+        return true;
     }
     return false;
   }

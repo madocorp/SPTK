@@ -1,0 +1,30 @@
+<Window title="Scroll">
+  <ListBox movable="true">
+    <ListItem selected="true">aaa</ListItem>
+    <ListItem>bbb</ListItem>
+    <ListItem>ccc</ListItem>
+    <ListItem>ddd</ListItem>
+    <ListItem>eee</ListItem>
+    <ListItem>fff</ListItem>
+    <ListItem>ggg</ListItem>
+    <ListItem>hhh</ListItem>
+    <ListItem>iii</ListItem>
+    <ListItem>jjj</ListItem>
+    <ListItem>kkk</ListItem>
+    <ListItem>lll</ListItem>
+    <ListItem>mmm</ListItem>
+    <ListItem>nnn</ListItem>
+    <ListItem>ooo</ListItem>
+    <ListItem>ppp</ListItem>
+    <ListItem>qqq</ListItem>
+    <ListItem>rrr</ListItem>
+    <ListItem>sss</ListItem>
+    <ListItem>ttt</ListItem>
+    <ListItem>uuu</ListItem>
+    <ListItem>vvv</ListItem>
+    <ListItem>www</ListItem>
+    <ListItem>xxx</ListItem>
+    <ListItem>yyy</ListItem>
+    <ListItem>zzz</ListItem>
+  </ListBox>
+</Window>

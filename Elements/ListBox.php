@@ -6,7 +6,7 @@ class ListBox extends Element {
 
   protected $activeItem = 0;
   protected $num = 0;
-  protected $moveable = false;
+  protected $movable = false;
   protected $multiple = false;
 
   protected function init() {
@@ -15,11 +15,11 @@ class ListBox extends Element {
   }
 
   public function getAttributeList() {
-    return ['moveable', 'multiple'];
+    return ['movable', 'multiple'];
   }
 
-  public function setMoveable($value) {
-    $this->moveable = ($value === 'true');
+  public function setMovable($value) {
+    $this->movable = ($value === 'true');
   }
 
   public function setMultiple($value) {
@@ -27,7 +27,7 @@ class ListBox extends Element {
   }
 
   public function getValue() {
-    if ($this->moveable) {
+    if ($this->movable) {
       $value = [];
       foreach ($this->descendants as $i => $descendant) {
         $key = $descendant->getValue();
@@ -123,6 +123,11 @@ class ListBox extends Element {
       if ($i == $this->activeItem) {
         $descendant->addClass('selected', true);
         $descendant->addClass('active', true);
+        if ($descendant->geometry->y + $descendant->geometry->height > $this->sy + $this->geometry->height) {
+          $this->sy = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height;
+        } else if ($descendant->geometry->y < $this->sy) {
+          $this->sy = $descendant->geometry->y;
+        }
       } else {
         $descendant->removeClass('selected', true);
         $descendant->removeClass('active', true);
@@ -136,39 +141,55 @@ class ListBox extends Element {
   }
 
   public function keyPressHandler($element, $event) {
-    switch ($event['key']) {
-      case KeyCode::UP:
-        if ($this->moveable && ($event['mod'] & KeyModifier::SHIFT)) {
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::SELECT_UP:
+        if ($this->movable) {
           if ($this->activeItem > 0) {
             $item = $this->descendants[$this->activeItem];
             array_splice($this->descendants, $this->activeItem, 1);
             $this->activeItem--;
             array_splice($this->descendants, $this->activeItem, 0, [$item]);
           }
-        } else {
-          $this->activeItem--;
-          if ($this->activeItem < 0) {
-            $this->activeItem = $this->num - 1;
-          }
-          $this->activateItem();
+          Element::immediateRender($this);
+          return true;
         }
+        break;
+      case Action::MOVE_UP:
+        $this->activeItem--;
+        if ($this->activeItem < 0) {
+          $this->activeItem = 0;
+        }
+        $this->activateItem();
         Element::immediateRender($this);
         return true;
-      case KeyCode::DOWN:
-        if ($this->moveable && ($event['mod'] & KeyModifier::SHIFT)) {
+      case Action::SELECT_DOWN:
+        if ($this->movable) {
           if ($this->activeItem < $this->num - 1) {
             $item = $this->descendants[$this->activeItem];
             array_splice($this->descendants, $this->activeItem, 1);
             $this->activeItem++;
             array_splice($this->descendants, $this->activeItem, 0, [$item]);
           }
-        } else {
-          $this->activeItem++;
-          if ($this->activeItem >= $this->num) {
-            $this->activeItem = 0;
-          }
-          $this->activateItem();
+          Element::immediateRender($this);
+          return true;
         }
+        break;
+      case Action::MOVE_DOWN:
+        $this->activeItem++;
+        if ($this->activeItem >= $this->num) {
+          $this->activeItem = $this->num - 1;
+        }
+        $this->activateItem();
+        Element::immediateRender($this);
+        return true;
+      case Action::MOVE_START:
+        $this->activeItem = 0;
+        $this->activateItem();
+        Element::immediateRender($this);
+        return true;
+      case Action::MOVE_END:
+        $this->activeItem = $this->num - 1;
+        $this->activateItem();
         Element::immediateRender($this);
         return true;
     }

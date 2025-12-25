@@ -125,43 +125,49 @@ class Panel extends Element {
       call_user_func($this->hotKeys[$event['key']], $this);
       return true;
     }
-    switch ($event['key']) {
-      case KeyCode::ESCAPE:
-      case KeyCode::RETURN:
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::DOIT:
+      case Action::CANCEL:
         $this->close();
         return true;
-      case KeyCode::TAB:
+      case Action::SWITCH_NEXT:
         if ($this->focusIndex < 0) {
           return true;
         }
-        if ($event['mod'] == 0) {
-          $this->inactivateInput();
-          $this->focusIndex++;
-          if ($this->focusIndex >= count($this->inputList)) {
-            $this->focusIndex = 0;
-          }
-          $this->activateInput();
-          Element::refresh();
-        } else if (($event['mod'] | KeyModifier::SHIFT) > 0) {
-          $this->inactivateInput();
-          $this->focusIndex--;
-          if ($this->focusIndex < 0) {
-            $this->focusIndex = count($this->inputList) - 1;
-          }
-          $this->activateInput();
-          Element::refresh();
+        $this->inactivateInput();
+        $this->focusIndex++;
+        if ($this->focusIndex >= count($this->inputList)) {
+          $this->focusIndex = 0;
         }
+        $this->activateInput();
+        Element::refresh();
         return true;
-      case KeyCode::LEFT:
+      case Action::SWITCH_PREVIOUS:
+        if ($this->focusIndex < 0) {
+          return true;
+        }
+        $this->inactivateInput();
+        $this->focusIndex--;
+        if ($this->focusIndex < 0) {
+          $this->focusIndex = count($this->inputList) - 1;
+        }
+        $this->activateInput();
+        Element::refresh();
+        return true;
+      case Action::MOVE_LEFT:
+      case Action::SWITCH_LEFT:
         $this->activateClosestInput('left');
         return true;
-      case KeyCode::RIGHT:
+      case Action::MOVE_RIGHT:
+      case Action::SWITCH_RIGHT:
         $this->activateClosestInput('right');
         return true;
-      case KeyCode::UP:
+      case Action::MOVE_UP:
+      case Action::SWITCH_UP:
         $this->activateClosestInput('up');
         return true;
-      case KeyCode::DOWN:
+      case Action::MOVE_DOWN:
+      case Action::SWITCH_DOWN:
         $this->activateClosestInput('down');
         return true;
     }

@@ -113,42 +113,51 @@ class MenuBox extends Element {
     if (!$this->display) {
       return false;
     }
-    if ($event['key'] == KeyCode::ESCAPE && $this->submenu) {
-      $this->hide();
-      Element::refresh();
-      return true;
-    }
-    if ($event['key'] == KeyCode::LEFT) {
-      if ($this->submenu) {
-        $this->lower();
-        $this->hide();
-        Element::refresh();
-      } else {
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::CLOSE:
+        if ($this->submenu) {
+          $this->hide();
+          Element::refresh();
+          return true;
+        }
+        break;
+      case Action::MOVE_LEFT:
+        if ($this->submenu) {
+          $this->lower();
+          $this->hide();
+          Element::refresh();
+        } else {
+          $this->ancestor->ancestor->previousMenu();
+        }
+        return true;
+      case Action::SWITCH_PREVIOUS:
         $this->ancestor->ancestor->previousMenu();
-      }
-      return true;
-    }
-    if ($event['key'] == KeyCode::TAB || ($event['key'] == KeyCode::RIGHT && !$this->submenu)) {
-      $this->ancestor->ancestor->nextMenu();
-      return true;
-    }
-    if ($event['key'] == KeyCode::UP) {
-      $this->activeMenu--;
-      if ($this->activeMenu < 0) {
-        $this->activeMenu = $this->num - 1;
-      }
-      $this->activateMenuBoxItem($this->activeMenu);
-      Element::immediateRender($this);
-      return true;
-    }
-    if ($event['key'] == KeyCode::DOWN) {
-      $this->activeMenu++;
-      if ($this->activeMenu >= $this->num) {
-        $this->activeMenu = 0;
-      }
-      $this->activateMenuBoxItem($this->activeMenu);
-      Element::immediateRender($this);
-      return true;
+        return true;
+      case Action::SWITCH_NEXT:
+        $this->ancestor->ancestor->nextMenu();
+        return true;
+      case Action::MOVE_RIGHT:
+        if (!$this->submenu) {
+          $this->ancestor->ancestor->nextMenu();
+          return true;
+        }
+        break;
+      case Action::MOVE_UP:
+        $this->activeMenu--;
+        if ($this->activeMenu < 0) {
+          $this->activeMenu = $this->num - 1;
+        }
+        $this->activateMenuBoxItem($this->activeMenu);
+        Element::immediateRender($this);
+        return true;
+      case Action::MOVE_DOWN:
+        $this->activeMenu++;
+        if ($this->activeMenu >= $this->num) {
+          $this->activeMenu = 0;
+        }
+        $this->activateMenuBoxItem($this->activeMenu);
+        Element::immediateRender($this);
+        return true;
     }
     return false;
   }

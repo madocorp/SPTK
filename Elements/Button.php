@@ -49,7 +49,7 @@ class Button extends Element {
   }
 
   public function keyPressHandler($element, $event) {
-    if ($event['key'] == KeyCode::RETURN && $event['mod'] == 0) {
+    if ($event['key'] == Action::DOIT && $event['mod'] == 0) {
       if ($this->onPress !== false) {
         call_user_func($this->onPress, $this->panel);
       }
