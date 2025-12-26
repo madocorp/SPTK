@@ -126,8 +126,8 @@ class Panel extends Element {
       return true;
     }
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
-      case Action::DOIT:
-      case Action::CANCEL:
+      case Action::DO_IT:
+      case Action::CLOSE:
         $this->close();
         return true;
       case Action::SWITCH_NEXT:

@@ -27,9 +27,7 @@ enum Action {
   case DELETE_BACK;
 
   case CLOSE;
-  case CANCEL;
-  case DOIT;
-  case CHOOSE;
+  case DO_IT;
 
   case SWITCH_LEFT;
   case SWITCH_RIGHT;
