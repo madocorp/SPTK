@@ -73,11 +73,15 @@ class MenuBox extends Element {
     $boxItem = end($this->stack);
     $boxItem->removeClass('active', true);
     $i = 0;
-    foreach ($this->descendants as $element) {
+    foreach ($this->descendants as $descendant) {
       if ($i == $menu) {
-        $boxItem = $element;
-        $boxItem->addClass('active', true);
-        $boxItem->raise();
+        $descendant->addClass('active', true);
+        if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
+          $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
+        } else if ($descendant->geometry->y < $this->scrollY) {
+          $this->scrollY = $descendant->geometry->y - $this->geometry->borderTop;
+        }
+        $descendant->raise();
         break;
       }
       $i++;
@@ -88,8 +92,8 @@ class MenuBox extends Element {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->calculateSize();
     $this->geometry->setDerivedSize();
-    foreach ($this->descendants as $element) {
-      $element->measure();
+    foreach ($this->descendants as $descendant) {
+      $descendant->measure();
     }
   }
 
@@ -113,7 +117,7 @@ class MenuBox extends Element {
     if (!$this->display) {
       return false;
     }
-    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+    switch ($a = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::CLOSE:
         if ($this->submenu) {
           $this->hide();

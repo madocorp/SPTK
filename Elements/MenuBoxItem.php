@@ -49,7 +49,7 @@ class MenuBoxItem extends Element {
   }
 
   public function setRadio($value) {
-    if ($value !== 'false') {
+    if ($value !== 'false' && $value !== false) {
       $this->radio = $value;
       $this->selectWord = new Word($this->selectField);
       $this->selectWord->setValue(' ');
@@ -106,7 +106,7 @@ class MenuBoxItem extends Element {
       return false;
     }
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
-      case Action::CHOOSE:
+      case Action::DO_IT:
         if ($this->selectable !== false || $this->radio !== false) {
           $this->setSelected(!$this->selected);
           if ($this->onSelect !== false) {

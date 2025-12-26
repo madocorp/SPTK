@@ -25,9 +25,11 @@ Root {
   wordSpacing: 10px;
   textWrap: auto;
   scrollable: false;
-  scrollbarColor: #aaaaaa;
-  scrollhandleColor: #cccccc;
-  scrollbarSize: 10px;
+  scrollbarColor: #0000ff;
+  scrollhandleColor: transparent;
+  scrollbarSize: 5px;
+  maxHeight: none;
+  maxWidth: none;
 }
 
 Window {
@@ -67,6 +69,8 @@ Menu {
 
 SubMenu {
   position: absolute;
+  width: 100%;
+  height: -20px;
   y: 20px;
 }
 
@@ -105,6 +109,8 @@ MenuBox {
   borderColor: #00ffff;
   padding: 0px;
   lineHeight: 100%;
+  maxHeight: 60%;
+  scrollable: true;
 }
 
 MenuBoxItem {
@@ -118,7 +124,7 @@ MenuBoxItem {
 
 MenuBoxItemRight {
   position: absolute;
-  x: -2px;
+  x: -6px;
   y: 0px;
   color: #0000ff;
 }
@@ -232,6 +238,25 @@ ErrorPanelContent {
   color: #000000;
 }
 
+FilePanel {
+  position: absolute;
+  x: 50%;
+  y: 50%;
+  width: 60%;
+  marginTop: half;
+  marginLeft: half;
+  backgroundColor: #cccccc;
+  color: #000000;
+  border: 3px;
+  borderColor: #555555;
+}
+
+Path {
+  borderBottom: 1px;
+  borderColor: #000000;
+  paddingBottom: 10px;
+}
+
 Label {
   width: 100%;
   paddingBottom: 10px;
@@ -242,7 +267,10 @@ Input {
   width: 100%;
   backgroundColor: #00aaaa;
   color: #444444;
-  height: 20px;
+  height: 30px;
+  textWrap: manual;
+  padding: 5px, 0px;
+  scrollable: true;
 }
 
 Input:active {
@@ -257,6 +285,37 @@ InputValue {
 InputValue:selected {
   backgroundColor: #000000;
   color: #00cccc;
+}
+
+File {
+  width: 100%;
+  backgroundColor: #00aaaa;
+  color: #444444;
+  height: 30px;
+  textWrap: manual;
+  padding: 5px, 0px;
+  scrollable: true;
+}
+
+File:active {
+  color: #000000;
+  backgroundColor: #00cccc;
+}
+
+Browse {
+  position: absolute;
+  y: 0px;
+  x: -5px;
+  height: 20px;
+  width: 20px;
+  textAlign: center;
+  backgroundColor: #0000ff;
+  color: #aaaaaa;
+}
+
+Browse:active {
+  backgroundColor: #000000;
+  color: #ffffff;
 }
 
 ConfirmationCode {
@@ -327,6 +386,7 @@ ListBox {
 ListItem {
   width: 100%;
   padding: 0px, 10px;
+  textWrap: manual;
 }
 
 ListItem:selected {
@@ -346,11 +406,18 @@ ListHeaderRow {
 
 TextBox {
   borderColor: #000000;
+  color: #555555;
   border: 1px;
   width: 100%;
   lineHeight: 100%;
   height: 200px;
   padding: 10px;
+  scrollable: true;
+  textWrap: manual;
+}
+
+TextBox:active {
+  color: #000000;
 }
 
 .w10 { width: 10%; }
@@ -364,3 +431,17 @@ TextBox {
 .w75 { width: 75%; }
 .w80 { width: 80%; }
 .w90 { width: 90%; }
+.w100 { width: 100%; }
+
+.h10 { height: 10%; }
+.h20 { height: 20%; }
+.h25 { height: 25%; }
+.h30 { height: 30%; }
+.h40 { height: 40%; }
+.h50 { height: 50%; }
+.h60 { height: 60%; }
+.h70 { height: 70%; }
+.h75 { height: 75%; }
+.h80 { height: 80%; }
+.h90 { height: 90%; }
+.h100 { height: 100%; }

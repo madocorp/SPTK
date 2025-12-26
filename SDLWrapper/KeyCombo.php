@@ -53,9 +53,7 @@ class KeyCombo {
     self::bind(KeyModifier::NONE, ScanCode::BACKSPACE, Action::DELETE_BACK);
 
     self::bind(KeyModifier::NONE, ScanCode::ESCAPE, Action::CLOSE);
-    self::bind(KeyModifier::NONE, ScanCode::ESCAPE, Action::CANCEL);
-    self::bind(KeyModifier::NONE, ScanCode::RETURN, Action::DOIT);
-    self::bind(KeyModifier::NONE, ScanCode::RETURN, Action::CHOOSE);
+    self::bind(KeyModifier::NONE, ScanCode::RETURN, Action::DO_IT);
     self::bind(KeyModifier::NONE, ScanCode::SPACE, Action::SELECT_ITEM);
 
   }

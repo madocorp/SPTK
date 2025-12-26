@@ -13,16 +13,18 @@ class Scrollbar {
     $size = $style->get('scrollbarSize');
     $vb = $this->vertical($geometry, $sy, $my, $size);
     $hb = $this->horizontal($geometry, $sx, $mx, $size, $vb !== false);
-    if ($vb !== false) {
-      $this->texture->drawFillRect($vb[0], $vb[2], $vb[1], $vb[3], $barColor);
+    if ($vb !== false && $barColor !== 'transparent') {
+      $this->texture->drawFillRect($vb[0], $vb[2], $vb[1], $vb[4], $barColor);
+      $this->texture->drawFillRect($vb[0], $vb[5], $vb[1], $vb[3], $barColor);
     }
-    if ($hb !== false) {
-      $this->texture->drawFillRect($hb[0], $hb[2], $hb[1], $hb[3], $barColor);
+    if ($hb !== false && $barColor !== 'transparent') {
+      $this->texture->drawFillRect($hb[0], $hb[2], $hb[4], $hb[3], $barColor);
+      $this->texture->drawFillRect($hb[5], $hb[2], $hb[1], $hb[3], $barColor);
     }
-    if ($vb !== false) {
+    if ($vb !== false && $handleColor !== 'transparent') {
       $this->texture->drawFillRect($vb[0], $vb[4], $vb[1], $vb[5], $handleColor);
     }
-    if ($hb !== false) {
+    if ($hb !== false && $handleColor !== 'transparent') {
       $this->texture->drawFillRect($hb[4], $hb[2], $hb[5], $hb[3], $handleColor);
     }
   }
@@ -31,13 +33,14 @@ class Scrollbar {
     $y1 = $geometry->borderTop;
     $y2 = $geometry->height - $geometry->borderBottom;
     $barHeight = $y2 - $y1;
-    if ($my <= $barHeight + 1) {
+    $my += $geometry->paddingBottom;
+    if ($my - $geometry->borderTop <= $barHeight + 1) {
       return false;
     }
     $x1 = $geometry->width - $geometry->borderRight - $size;
     $x2 = $geometry->width - $geometry->borderRight;
-    $handlePos = (int)($barHeight * $sy / $my) + $geometry->borderTop;
-    $handleHeight = (int)($barHeight * $barHeight / $my);
+    $handlePos = round($barHeight * $sy / $my) + $geometry->borderTop;
+    $handleHeight = round($barHeight * $barHeight / $my);
     return [$x1, $x2, $y1, $y2, $handlePos, $handlePos + $handleHeight];
   }
 
@@ -45,13 +48,19 @@ class Scrollbar {
     $x1 = $geometry->borderLeft;
     $x2 = $geometry->width - $geometry->borderRight - ($hasVertical ? $size : 0);
     $barWidth = $x2 - $x1;
-    if ($mx - ($hasVertical ? $size : 0) <= $barWidth + 1) {
+    if ($mx <= 0) {
+      return false;
+    }
+    if (!$hasVertical) {
+      $mx += $geometry->paddingRight;
+    }
+    if ($mx - $geometry->borderLeft - ($hasVertical ? $size : 0) <= $barWidth + 1) {
       return false;
     }
     $y1 = $geometry->height - $geometry->borderBottom - $size;
     $y2 = $geometry->height - $geometry->borderBottom;
-    $handlePos = (int)($barWidth * $sx / $mx) + $geometry->borderLeft;
-    $handleWidth = (int)($barWidth * $barWidth / $mx);
+    $handlePos = round($barWidth * $sx / $mx) + $geometry->borderLeft;
+    $handleWidth = round($barWidth * $barWidth / $mx);
     return [$x1, $x2, $y1, $y2, $handlePos, $handlePos + $handleWidth];
   }
 

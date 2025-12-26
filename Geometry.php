@@ -30,6 +30,8 @@ class Geometry {
   public $paddingRight = 0;
   public $ascent = 0;
   public $descent = 0;
+  public $maxHeight = 0;
+  public $maxWidth = 0;
 
   public function setValues($ancestorGeometry, $style) {
     $this->originalWidth = $this->width;
@@ -47,7 +49,15 @@ class Geometry {
     $this->paddingBottom = $style->get('paddingBottom', $ancestorGeometry->innerWidth);
     $this->paddingRight = $style->get('paddingRight', $ancestorGeometry->innerHeight);
     $this->width = $style->get('width', $ancestorGeometry->innerWidth);
+    if ($this->width < 0) {
+      $this->width = $ancestorGeometry->innerWidth + $this->width;
+    }
     $this->height = $style->get('height', $ancestorGeometry->innerHeight);
+    if ($this->height < 0) {
+      $this->height = $ancestorGeometry->innerHeight + $this->height;
+    }
+    $this->maxWidth = $style->get('maxWidth', $ancestorGeometry->innerWidth);
+    $this->maxHeight = $style->get('maxHeight', $ancestorGeometry->innerHeight);
   }
 
   public function setContentDependentValues($maxX, $maxY) {
@@ -58,6 +68,12 @@ class Geometry {
     $this->contentHeight = $maxY + $this->paddingBottom + $this->borderBottom;
     if ($this->height === 'content') {
       $this->height = $this->contentHeight;
+    }
+    if ($this->maxWidth !== 'none' && $this->width > $this->maxWidth) {
+      $this->width = $this->maxWidth;
+    }
+    if ($this->maxHeight !== 'none' && $this->height > $this->maxHeight) {
+      $this->height = $this->maxHeight;
     }
     if ($this->marginTop === 'half') {
       $this->marginTop = (int)(-$this->height / 2);

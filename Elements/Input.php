@@ -7,9 +7,6 @@ class Input extends Element {
   private $before = '';
   private $selected = '';
   private $after = '';
-  private $beforeR = '';
-  private $selectedR = '';
-  private $afterR = '';
   private $elementBefore;
   private $elementSelected;
   private $elementAfter;
@@ -25,10 +22,17 @@ class Input extends Element {
     $this->setValue('');
   }
 
+  public function getAttributeList() {
+    return ['value'];
+  }
+
   public function setValue($value) {
-    $this->before = $this->beforeR = $value;
-    $this->selected = $this->selectedR = '';
-    $this->after = $this->afterR = '';
+    if ($value === false) {
+      return;
+    }
+    $this->before = $value;
+    $this->selected = '';
+    $this->after = '';
     $this->elementBefore->setValue($this->before);
     $this->elementSelected->setValue($this->selected == '' ? ' ' : $this->selected);
     $this->elementAfter->setValue($this->after);
@@ -53,25 +57,18 @@ class Input extends Element {
   }
 
   private function refreshValue() {
-    $changed = false;
-    if ($this->before !== $this->beforeR) {
-      $this->elementBefore->setValue($this->before);
-      $this->beforeR = $this->before;
-      $changed = true;
+    $this->elementBefore->setValue($this->before);
+    $this->elementSelected->setValue($this->selected == '' ? ' ' : $this->selected);
+    $this->elementAfter->setValue($this->after);
+    $this->ancestor->cursor->reset();
+    $this->recalculateGeometry();
+    $selected = $this->elementSelected;
+    if ($selected->geometry->x + $selected->geometry->width > $this->scrollX + $this->geometry->width - $this->geometry->borderLeft) {
+      $this->scrollX = $selected->geometry->x + $selected->geometry->width - $this->geometry->width + $this->geometry->borderLeft;
+    } else if ($selected->geometry->x < $this->scrollX) {
+      $this->scrollX = $selected->geometry->x;
     }
-    if ($this->selected !== $this->selectedR) {
-      $this->elementSelected->setValue($this->selected == '' ? ' ' : $this->selected);
-      $this->selectedR = $this->selected;
-      $changed = true;
-    }
-    if ($this->after !== $this->afterR) {
-      $this->elementAfter->setValue($this->after);
-      $this->afterR = $this->after;
-      $changed = true;
-    }
-    if ($changed) {
-      Element::immediateRender($this);
-    }
+    Element::immediateRender($this);
   }
 
   public function keyPressHandler($element, $event) {

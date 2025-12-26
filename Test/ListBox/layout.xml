@@ -6,7 +6,7 @@
   <Panel name="panel">
     <PanelTitle>ListBox test</PanelTitle>
     <PanelContent>
-      <Label>Test:<Input name="test" /></Label>
+      <Label>Test:<Input name="test" value="0123456789abcdefghijklmnopqrstuvwxyz0123456789" /></Label>
       <Label>Test2:<Input name="test2" /></Label>
       <Label name="x">Fruits:
         <ListBox name="fruits">
@@ -14,6 +14,14 @@
           <ListItem selected="true">banana</ListItem>
           <ListItem>orange</ListItem>
           <ListItem>apple</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
+          <ListItem>pear</ListItem>
           <ListItem>pear</ListItem>
         </ListBox>
       </Label>

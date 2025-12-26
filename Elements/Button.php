@@ -38,7 +38,7 @@ class Button extends Element {
       $this->onPress = self::parseCallback($value);
     }
     if ($this->hotKeyStr !== false) {
-      foreach (['Panel', 'WarningPanel', 'ErrorPanel', 'Window'] as $type) {
+      foreach (['Panel', 'WarningPanel', 'ErrorPanel', 'FilePanel', 'Window'] as $type) {
         $this->panel = $this->findAncestorByType($type);
         if ($this->panel !== false) {
           break;
@@ -49,11 +49,12 @@ class Button extends Element {
   }
 
   public function keyPressHandler($element, $event) {
-    if ($event['key'] == Action::DOIT && $event['mod'] == 0) {
-      if ($this->onPress !== false) {
-        call_user_func($this->onPress, $this->panel);
-      }
-      return true;
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::DO_IT:
+        if ($this->onPress !== false) {
+          call_user_func($this->onPress, $this->panel);
+        }
+        return true;
     }
     return false;
   }
