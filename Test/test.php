@@ -6,16 +6,6 @@ define('SPTK\DEBUG', true);
 
 class Controller {
 
-  public static function tab($element, $event) {
-    if ($event['name'] == 'KeyPress') {
-      if ($event['key'] == SPTK\KeyCode::TAB) {
-        $next = $element->getNext();
-        $next->raise();
-        SPTK\Element::refresh();
-      }
-    }
-  }
-
   public static function alterClass($element, $event) {
     if ($event['name'] == 'KeyPress') {
       if ($event['key'] == SPTK\KeyCode::TAB) {

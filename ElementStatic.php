@@ -88,13 +88,23 @@ trait ElementStatic {
     static::getRelativePos($referenceId, $element->ancestor, $x, $y);
   }
 
-  public static function immediateRender($element) {
+  public static function immediateRender($element, $layout = true) {
     $t = microtime(true);
-    $element->ancestor->cursor->reset();
-    $element->measure();
-    $element->layout();
+    if ($layout) {
+      $element->ancestor->cursor->reset();
+      $element->measure();
+      $element->layout();
+    }
     $tmpTexture = $element->render();
+    if ($tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
     $window = $element->findAncestorByType('Window');
+    if ($window->tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
     $x = 0;
     $y = 0;
     static::getRelativePos($window->id, $element, $x, $y);

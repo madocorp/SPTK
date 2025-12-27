@@ -4,7 +4,6 @@ namespace SPTK;
 
 class File extends Element {
 
-  private $file;
   private $elementFile;
   private $elementBrowse;
 
@@ -35,8 +34,8 @@ class File extends Element {
     if ($value === false) {
       return;
     }
-    $this->file = $value;
-    $this->elementFile->setValue($this->file);
+    $this->value = $value;
+    $this->elementFile->setValue($this->value);
   }
 
   public function keyPressHandler($element, $event) {
@@ -48,10 +47,16 @@ class File extends Element {
     return false;
   }
 
+  public function selected($path) {
+    $this->setValue($path);
+    Element::refresh();
+  }
+
   private function openFilePanel() {
     $window = $this->findAncestorByType('Window'); // ???
     $panel = new FilePanel($window);
-    $panel->setDir('');
+    $panel->setPath($this->value);
+    $panel->setOnSelect([$this, 'selected']);
     $panel->show();
     Element::refresh();
   }

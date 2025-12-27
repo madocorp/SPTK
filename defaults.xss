@@ -10,7 +10,6 @@ Root {
   margin: 0px;
   padding: 0px;
   backgroundColor: inherit;
-  backgroundImage: none;
   backgroundAlignX: center;
   backgroundAlignY: center;
   backgroundSizeX: content;
@@ -445,3 +444,4 @@ TextBox:active {
 .h80 { height: 80%; }
 .h90 { height: 90%; }
 .h100 { height: 100%; }
+
