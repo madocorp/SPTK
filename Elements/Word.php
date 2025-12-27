@@ -11,8 +11,8 @@ class Word extends Element {
   protected $ascent;
   protected $descent;
 
-  private static $fgColor;
-  private static $bgColor;
+  private static $fgColor = false;
+  private static $bgColor = false;
 
   public function setValue($value) {
     $this->value = "{$value}";

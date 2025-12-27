@@ -8,6 +8,7 @@ class ListBox extends Element {
   protected $num = 0;
   protected $movable = false;
   protected $multiple = false;
+  protected $onChange = false;
 
   protected function init() {
     $this->acceptInput = true;
@@ -15,7 +16,7 @@ class ListBox extends Element {
   }
 
   public function getAttributeList() {
-    return ['movable', 'multiple'];
+    return ['movable', 'multiple', 'onChange'];
   }
 
   public function setMovable($value) {
@@ -24,6 +25,17 @@ class ListBox extends Element {
 
   public function setMultiple($value) {
     $this->multiple = ($value === 'true');
+  }
+
+  public function setOnChange($value) {
+    if ($value === false) {
+      return;
+    }
+    if (is_array($value)) {
+      $this->onChange = $value;
+    } else {
+      $this->onChange = self::parseCallback($value);
+    }
   }
 
   public function getValue() {
@@ -134,6 +146,9 @@ class ListBox extends Element {
       }
       $i++;
     }
+    if ($this->onChange !== false) {
+      call_user_func($this->onChange, $this);
+    }
   }
 
   public function getActive() {
@@ -160,7 +175,7 @@ class ListBox extends Element {
           $this->activeItem = 0;
         }
         $this->activateItem();
-        Element::immediateRender($this);
+        Element::immediateRender($this, false);
         return true;
       case Action::SELECT_DOWN:
         if ($this->movable) {
@@ -180,17 +195,17 @@ class ListBox extends Element {
           $this->activeItem = $this->num - 1;
         }
         $this->activateItem();
-        Element::immediateRender($this);
+        Element::immediateRender($this, false);
         return true;
       case Action::MOVE_START:
         $this->activeItem = 0;
         $this->activateItem();
-        Element::immediateRender($this);
+        Element::immediateRender($this, false);
         return true;
       case Action::MOVE_END:
         $this->activeItem = $this->num - 1;
         $this->activateItem();
-        Element::immediateRender($this);
+        Element::immediateRender($this, false);
         return true;
     }
     return false;

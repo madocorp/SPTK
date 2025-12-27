@@ -86,6 +86,8 @@ typedef struct SDL_Surface
   SDL_PixelFormat format;
   int w;
   int h;
+  int pitch;
+  void *pixels;
 } SDL_Surface;
 
 bool SDL_Init(Uint32 flags);
@@ -128,5 +130,10 @@ bool SDL_SetClipboardText(const char* text);
 char* SDL_GetClipboardText(void);
 bool SDL_HasClipboardText(void);
 void SDL_free(void* mem);
+SDL_Surface* SDL_CreateSurface(int width, int height, SDL_PixelFormat format);
+void SDL_DestroySurface(SDL_Surface* surface);
+bool SDL_LockSurface(SDL_Surface* surface);
+void SDL_UnlockSurface(SDL_Surface *surface);
+
 
 

@@ -43,10 +43,6 @@ class Texture {
     $this->sdl->SDL_DestroyTexture($this->texture);
   }
 
-  public function drawImage($image, $x, $y) {
-
-  }
-
   public function drawLine($x1, $y1, $x2, $y2, $color) {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);

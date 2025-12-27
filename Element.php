@@ -147,6 +147,18 @@ class Element {
     $n = count($this->stack);
     for ($i = 0; $i < $n; $i++) {
       $descendant = $this->stack[$i];
+        if ($descendant->geometry->x - $this->scrollX > $this->geometry->width) {
+          continue;
+        }
+        if ($descendant->geometry->y - $this->scrollY > $this->geometry->height) {
+          continue;
+        }
+        if ($descendant->geometry->x + $descendant->geometry->width - $this->scrollX < 0) {
+          continue;
+        }
+        if ($descendant->geometry->y + $descendant->geometry->height - $this->scrollY < 0) {
+          continue;
+        }
       $dTexture = $descendant->render();
       if ($dTexture !== false) {
         $dTexture->copyTo($tmpTexture, $descendant->geometry->x - $this->scrollX, $descendant->geometry->y - $this->scrollY);
@@ -332,13 +344,6 @@ class Element {
 
   public function getAncestor() {
     return $this->ancestor;
-  }
-
-  public function getNext() { // descendants or stack?
-    if (empty($this->descendants)) {
-      return false;
-    }
-    return $this->descendants[0];
   }
 
   public function getAttributeList() {
