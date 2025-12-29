@@ -3,7 +3,7 @@ Window {
   height: 480px;
   x: 30%;
   y: 30%;
-  backgroundColor: #0000ff;
+  backgroundColor: #aaaa00;
   color: #ffff00;
   fontSize: 30px;
   padding: 30px;

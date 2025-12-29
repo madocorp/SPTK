@@ -33,11 +33,20 @@ class Image extends Element {
     $this->geometry->height = $this->height;
     $this->geometry->ascent = $this->height;
     $this->geometry->descent = 0;
-    $this->geometry->setDerivedSize();
+    $this->geometry->setDerivedWidths();
+    $this->geometry->setDerivedHeights();
+  }
+
+  protected function calculateWidths() {
+    ;
+  }
+
+  protected function calculateHeights() {
+    ;
   }
 
   protected function layout() {
-    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, 'inline');
+    ;
   }
 
   protected function load() {

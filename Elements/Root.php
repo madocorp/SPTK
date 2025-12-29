@@ -32,9 +32,28 @@ class Root extends Element {
     }
   }
 
+
+  protected function calculateWidths() {
+    foreach ($this->descendants as $descendant) {
+      $descendant->calculateWidths();
+    }
+  }
+
+  protected function calculateHeights() {
+    foreach ($this->descendants as $descendant) {
+      $descendant->calculateHeights();
+    }
+  }
+
   protected function layout() {
     foreach ($this->descendants as $descendant) {
       $descendant->layout();
+    }
+  }
+
+  protected function redraw($force = false) {
+    foreach ($this->descendants as $descendant) {
+      $descendant->redraw($force);
     }
   }
 

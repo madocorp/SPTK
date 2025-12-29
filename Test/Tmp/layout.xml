@@ -1,6 +1,4 @@
 <Window title="Tmp">
-  <Box>
-    <Event type="KeyPress">Controller::panelForge</Event>
-    Press space to show a Panel!
-  </Box>
+
 </Window>
+

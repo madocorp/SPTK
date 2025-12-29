@@ -6,16 +6,24 @@ class Geometry {
 
   public $x = 0;
   public $y = 0;
+
+  public $windowWidth = 0;
+  public $windowHeight = 0;
+  public $originalWidth = 0;
+  public $originalHeight = 0;
   public $width = 0;
   public $height = 0;
   public $innerWidth = 0;
   public $innerHeight = 0;
   public $fullWidth = 0;
   public $fullHeight = 0;
+  public $maxWidth = 0;
+  public $maxHeight = 0;
+  public $minWidth = 0;
+  public $minHeight = 0;
   public $contentWidth = 0;
   public $contentHeight = 0;
-  public $originalWidth = 0;
-  public $originalHeight = 0;
+
   public $marginTop = 0;
   public $marginLeft = 0;
   public $marginBottom = 0;
@@ -28,107 +36,130 @@ class Geometry {
   public $paddingLeft = 0;
   public $paddingBottom = 0;
   public $paddingRight = 0;
+
+  public $position;
+  public $fontSize = 0;
+  public $lineHeight = 0;
   public $ascent = 0;
   public $descent = 0;
-  public $maxHeight = 0;
-  public $maxWidth = 0;
+  public $wordSpacing = 0;
+  public $textAlign = 'left';
+  public $textWrap = 'left';
+
+  public $lines = [];
 
   public function setValues($ancestorGeometry, $style) {
+    $this->windowWidth = $ancestorGeometry->windowWidth;
+    $this->windowHeight = $ancestorGeometry->windowHeight;
     $this->originalWidth = $this->width;
     $this->originalHeight = $this->height;
-    $this->marginTop = $style->get('marginTop', $ancestorGeometry->innerWidth);
-    $this->marginLeft = $style->get('marginLeft', $ancestorGeometry->innerHeight);
-    $this->marginBottom = $style->get('marginBottom', $ancestorGeometry->innerWidth);
-    $this->marginRight = $style->get('marginRight', $ancestorGeometry->innerHeight);
-    $this->borderTop = $style->get('borderTop', $ancestorGeometry->innerWidth);
-    $this->borderLeft = $style->get('borderLeft', $ancestorGeometry->innerHeight);
-    $this->borderBottom = $style->get('borderBottom', $ancestorGeometry->innerWidth);
-    $this->borderRight = $style->get('borderRight', $ancestorGeometry->innerHeight);
-    $this->paddingTop = $style->get('paddingTop', $ancestorGeometry->innerWidth);
-    $this->paddingLeft = $style->get('paddingLeft', $ancestorGeometry->innerHeight);
-    $this->paddingBottom = $style->get('paddingBottom', $ancestorGeometry->innerWidth);
-    $this->paddingRight = $style->get('paddingRight', $ancestorGeometry->innerHeight);
-    $this->width = $style->get('width', $ancestorGeometry->innerWidth);
-    if ($this->width < 0) {
-      $this->width = $ancestorGeometry->innerWidth + $this->width;
-    }
-    $this->height = $style->get('height', $ancestorGeometry->innerHeight);
-    if ($this->height < 0) {
-      $this->height = $ancestorGeometry->innerHeight + $this->height;
-    }
-    $this->maxWidth = $style->get('maxWidth', $ancestorGeometry->innerWidth);
-    $this->maxHeight = $style->get('maxHeight', $ancestorGeometry->innerHeight);
-  }
-
-  public function setContentDependentValues($maxX, $maxY) {
-    $this->contentWidth = $maxX + $this->paddingRight + $this->borderRight;
+    $this->fontSize = $style->get('fontSize');
+    $this->textAlign = $style->get('textAlign');
+    $this->textWrap = $style->get('textWrap');
+    $this->lineHeight = $style->get('lineHeight', $this);
+    $this->wordSpacing = $style->get('wordSpacing', $this);
+    $this->marginTop = $style->get('marginTop', $ancestorGeometry);
+    $this->marginLeft = $style->get('marginLeft', $ancestorGeometry);
+    $this->marginBottom = $style->get('marginBottom', $ancestorGeometry);
+    $this->marginRight = $style->get('marginRight', $ancestorGeometry);
+    $this->borderTop = $style->get('borderTop', $ancestorGeometry);
+    $this->borderLeft = $style->get('borderLeft', $ancestorGeometry);
+    $this->borderBottom = $style->get('borderBottom', $ancestorGeometry);
+    $this->borderRight = $style->get('borderRight', $ancestorGeometry);
+    $this->paddingTop = $style->get('paddingTop', $ancestorGeometry);
+    $this->paddingLeft = $style->get('paddingLeft', $ancestorGeometry);
+    $this->paddingBottom = $style->get('paddingBottom', $ancestorGeometry);
+    $this->paddingRight = $style->get('paddingRight', $ancestorGeometry);
+    $this->width = $style->get('width', $ancestorGeometry);
+    $this->maxWidth = $style->get('maxWidth', $ancestorGeometry);
+    $this->maxHeight = $style->get('maxHeight', $ancestorGeometry);
+    $this->minWidth = $style->get('minWidth', $ancestorGeometry);
+    $this->minHeight = $style->get('minHeight', $ancestorGeometry);
     if ($this->width === 'content') {
-      $this->width = $this->contentWidth;
+      $this->innerWidth = 'content';
+      $this->fullWidth = 'content';
+    } else {
+      if ($this->width < 0) {
+        $this->width = $ancestorGeometry->innerWidth + $this->width;
+      }
+      if ($this->width < $this->minWidth) {
+        $this->width = $this->minWidth;
+      }
+      if ($this->width > $this->maxWidth) {
+        $this->width = $this->maxWidth;
+      }
+      $this->setDerivedWidths();
     }
-    $this->contentHeight = $maxY + $this->paddingBottom + $this->borderBottom;
+    $this->height = $style->get('height', $ancestorGeometry);
     if ($this->height === 'content') {
-      $this->height = $this->contentHeight;
+      $this->innerHeight = 'content';
+      $this->fullHeight = 'content';
+    } else {
+      if ($this->height < 0) {
+        $this->height = $ancestorGeometry->innerHeight + $this->height;
+      }
+      if ($this->height < $this->minHeight) {
+        $this->height = $this->minHeight;
+      }
+      if ($this->height > $this->maxHeight) {
+        $this->height = $this->maxHeight;
+      }
+      $this->setDerivedHeights();
     }
-    if ($this->maxWidth !== 'none' && $this->width > $this->maxWidth) {
-      $this->width = $this->maxWidth;
-    }
-    if ($this->maxHeight !== 'none' && $this->height > $this->maxHeight) {
-      $this->height = $this->maxHeight;
-    }
-    if ($this->marginTop === 'half') {
-      $this->marginTop = (int)(-$this->height / 2);
-    }
-    if ($this->marginLeft === 'half') {
-      $this->marginLeft = (int)(-$this->width / 2);
-    }
-    if ($this->marginBottom === 'half') {
-      $this->marginBottom = (int)(-$this->height / 2);
-    }
-    if ($this->marginRight === 'half') {
-      $this->marginRight = (int)(-$this->width / 2);
-    }
+    $this->position = $style->get('position');
   }
 
-  public function setDerivedSize() {
-    if ($this->width != 'content') {
-      $this->innerWidth =
-        $this->width -
-        $this->borderLeft -
-        $this->borderRight -
-        $this->paddingLeft -
-        $this->paddingRight;
-      $this->fullWidth =
-        $this->width +
-        (is_int($this->marginLeft) && $this->marginLeft > 0 ? $this->marginLeft : 0) +
-        (is_int($this->marginRight) && $this->marginRight > 0 ? $this->marginRight : 0);
-    }
-    if ($this->height != 'content') {
-      $this->innerHeight =
-        $this->height -
-        $this->borderTop -
-        $this->borderBottom -
-        $this->paddingTop -
-        $this->paddingBottom;
-      $this->fullHeight =
-        $this->height +
-        (is_int($this->marginTop) && $this->marginTop > 0 ? $this->marginTop : 0) +
-        (is_int($this->marginBottom) && $this->marginBottom > 0 ? $this->marginBottom : 0);
-    }
+  public function setDerivedWidths() {
+    $this->innerWidth =
+      $this->width -
+      $this->borderLeft -
+      $this->borderRight -
+      $this->paddingLeft -
+      $this->paddingRight;
+    $this->fullWidth =
+      $this->width +
+      $this->marginLeft +
+      $this->marginRight;
   }
 
-  public function setAscent($style, $firstLineAscent) {
-    $ascent = $style->get('ascent', $this->height);
+  public function setDerivedHeights() {
+    $this->innerHeight =
+      $this->height -
+      $this->borderTop -
+      $this->borderBottom -
+      $this->paddingTop -
+      $this->paddingBottom;
+    $this->fullHeight =
+      $this->height +
+      $this->marginTop +
+      $this->marginBottom;
+  }
+
+  public function setContentHeight($ascent) {
+    $this->contentHeight = 0;
+    foreach ($this->lines as $line) {
+      $this->contentHeight += $line['ascent'] + $line['descent'];
+    }
+    if ($this->height === 'content') {
+      $this->height =
+        $this->borderTop +
+        $this->paddingTop +
+        $this->contentHeight +
+        $this->paddingBottom +
+        $this->borderBottom;
+      $this->setDerivedHeights();
+    }
     if ($ascent == 'auto') {
-      if ($firstLineAscent === false) {
-        $this->ascent = $this->fullHeight ;
-        $this->descent = 0;
-      } else {
-        $this->ascent = $firstLineAscent + $this->marginTop + $this->borderTop + $this->paddingTop;
+      if (isset($this->lines[0])) {
+        $this->ascent = $this->lines[0]['ascent'] + $this->paddingTop + $this->borderTop + $this->marginTop;
         $this->descent = $this->fullHeight - $this->ascent;
+      } else {
+        $this->ascent = $this->fullHeight - $this->marginBottom;
+        $this->descent = $this->marginBottom;
       }
     } else if ($ascent == 'content') {
-      $this->ascent = $this->fullHeight;
-      $this->descent = 0;
+      $this->ascent = $this->fullHeight - $this->marginBottom;
+      $this->descent = $this->marginBottom;
     } else {
       $this->ascent = $ascent + $this->marginTop;
       $this->descent = $this->fullHeight - $this->ascent;
@@ -136,128 +167,21 @@ class Geometry {
   }
 
   public function setAbsolutePosition($ancestorGeometry, $style) {
-    $this->x = $style->get('x', $ancestorGeometry->innerWidth, $isNegative);
-    if ($isNegative) {
+    $this->x = $style->get('x', $ancestorGeometry, $isNegative);
+    if ($this->x === 'middle') {
+      $this->x = (int)(($ancestorGeometry->width - $this->fullWidth) / 2);
+    } else if ($isNegative) {
       $this->x = $ancestorGeometry->width - $ancestorGeometry->paddingRight - $ancestorGeometry->borderRight - $this->fullWidth + $this->x - $this->marginRight;
     } else {
       $this->x = $this->x + $this->marginLeft + $ancestorGeometry->paddingLeft + $ancestorGeometry->borderLeft;
     }
-    $this->y = $style->get('y', $ancestorGeometry->innerHeight, $isNegative);
-    if ($isNegative) {
+    $this->y = $style->get('y', $ancestorGeometry, $isNegative);
+    if ($this->y === 'middle') {
+      $this->y = (int)(($ancestorGeometry->height - $this->fullHeight) / 2);
+    } else if ($isNegative) {
       $this->y = $ancestorGeometry->height - $ancestorGeometry->paddingBottom - $ancestorGeometry->borderBottom - $this->fullHeight + $this->y - $this->marginBottom;
     } else {
       $this->y = $this->y + $this->marginTop + $ancestorGeometry->paddingTop + $ancestorGeometry->borderTop;
-    }
-  }
-
-  public function setInlinePosition($cursor, $element, $ancestorGeometry, $position) {
-    if (
-      $position == 'newline' ||
-      (
-        $cursor->textWrap == 'auto' &&
-        $ancestorGeometry->width != 'content' &&
-        $cursor->x + ($element->isWord() && count($cursor->elements) > 0 ? $cursor->wordSpacing : 0) + $this->width > $ancestorGeometry->innerWidth
-      )
-    ) {
-      $this->formatRow($cursor, $ancestorGeometry);
-      $cursor->newLine();
-    }
-    $cursor->addElement($element, $this);
-  }
-
-  public function formatRow($cursor, $ancestorGeometry) {
-    if (count($cursor->elements) <= 0) {
-      return;
-    }
-    switch ($cursor->textAlign) {
-      case 'left':
-        $this->alignLeft($cursor, $ancestorGeometry);
-        break;
-      case 'right':
-        $this->alignRight($cursor, $ancestorGeometry);
-        break;
-      case 'justify':
-        $this->alignJustify($cursor, $ancestorGeometry);
-        break;
-      case 'center':
-        $this->alignCenter($cursor, $ancestorGeometry);
-        break;
-    }
-  }
-
-  protected function alignLeft($cursor, $ancestorGeometry) {
-    $x = $ancestorGeometry->borderLeft + $ancestorGeometry->paddingLeft;
-    $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
-    $previousIsWord = false;
-    foreach ($cursor->elements as $element) {
-      $geometry = $element->getGeometry();
-      $estyle = $element->getStyle();
-      $isWord = $element->isWord();
-      if ($isWord && $previousIsWord) {
-        $x += $cursor->wordSpacing;
-      }
-      $geometry->x = $x + $geometry->marginLeft;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
-      $x += $geometry->fullWidth;
-      $previousIsWord = $isWord;
-    }
-  }
-
-  protected function alignRight($cursor, $ancestorGeometry) {
-    $x = $ancestorGeometry->width - $ancestorGeometry->borderRight - $ancestorGeometry->paddingRight;
-    $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
-    $previousIsWord = false;
-    $cursor->elements = array_reverse($cursor->elements);
-    foreach ($cursor->elements as $element) {
-      $geometry = $element->getGeometry();
-      $estyle = $element->getStyle();
-      $isWord = $element->isWord();
-      if ($isWord && $previousIsWord) {
-        $x -= $cursor->wordSpacing;
-      }
-      $x -= $geometry->fullWidth;
-      $geometry->x = $x;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
-      $previousIsWord = $isWord;
-    }
-  }
-
-  protected function alignJustify($cursor, $ancestorGeometry) {
-    $spaceWidth = 0;
-    if ($cursor->s > 0) {
-      $spaceWidth = (int)(($ancestorGeometry->innerWidth - $cursor->w) / $cursor->s);
-    }
-    $x = $ancestorGeometry->borderLeft + $ancestorGeometry->paddingLeft;
-    $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
-    $previousIsWord = false;
-    foreach ($cursor->elements as $element) {
-      $geometry = $element->getGeometry();
-      if ($previousIsWord) {
-        $x += $spaceWidth;
-      }
-      $geometry->x = $x + $geometry->marginLeft;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
-      $x += $geometry->fullWidth;
-      $previousIsWord = true;
-    }
-  }
-
-  protected function alignCenter($cursor, $ancestorGeometry) {
-    $lw = $cursor->x;
-    $x = (int)(($ancestorGeometry->innerWidth - $lw) / 2) + $ancestorGeometry->borderLeft + $ancestorGeometry->paddingLeft;
-    $y = $ancestorGeometry->borderTop + $ancestorGeometry->paddingTop;
-    $previousIsWord = false;
-    foreach ($cursor->elements as $element) {
-      $geometry = $element->getGeometry();
-      $estyle = $element->getStyle();
-      $isWord = $element->isWord();
-      if ($isWord && $previousIsWord) {
-        $x += $cursor->wordSpacing;
-      }
-      $geometry->x = $x + $geometry->marginLeft;
-      $geometry->y = $y + $cursor->y + $cursor->ascent - $geometry->ascent + $geometry->marginTop;
-      $x += $geometry->fullWidth;
-      $previousIsWord = $isWord;
     }
   }
 

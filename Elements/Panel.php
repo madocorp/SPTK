@@ -277,13 +277,8 @@ class Panel extends Element {
     Element::refresh();
   }
 
-  public static function forge($parent, $title, $text, $buttons = false, $name = false, $sclass = false) {
-    if (is_string($parent)) {
-      $parent = Element::firstByType($parent);
-      if ($parent === false) {
-        throw new \Exception("Parent element not found for the panel.");
-      }
-    }
+  public static function forge($title, $text, $buttons = false, $name = false, $sclass = false) {
+    $parent = Element::firstByType('Window');
     $className = static::class;
     $panelName = basename(str_replace('\\', '/', $className));
     $panel = new $className($parent, $name, $sclass);
@@ -312,13 +307,9 @@ class Panel extends Element {
       $labelElement->addText('Code:');
       $codeElement = new ConfirmationCode($labelElement, 'confirmed');
       $codeElement->setCode($code);
-      $panel->measure();
-      $panel->layout();
     } else {
       $conetentElement->addText($text);
     }
-    $panel->measure();
-    $panel->layout();
     if (is_array($buttons)) {
       $buttonBoxElement = new Element($conetentElement, false, false, 'ButtonBox');
       foreach ($buttons as $button) {
@@ -335,8 +326,6 @@ class Panel extends Element {
         }
         $buttonElement->addText($button['text']);
       }
-      $panel->measure();
-      $panel->layout();
     }
     $panel->show();
     Element::refresh();

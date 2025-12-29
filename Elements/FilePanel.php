@@ -9,6 +9,7 @@ class FilePanel extends Panel {
   private $theList;
   private $path;
   private $onSelect = false;
+  private $fileFilter = true;
 
   protected function init() {
     parent::init();
@@ -16,8 +17,9 @@ class FilePanel extends Panel {
     $title->addText('Choose a file!');
     $content = new Element($this, false, false, 'PanelContent');
     $this->path = new Element($content, false, 'w100', 'Path');
-    $this->theList = new ListBox($content);
+    $this->theList = new ListBox($content, false, 'wh60');
     $this->theList->setOnChange([$this, 'changed']);
+    $this->theList->setTyping('filter');
     $buttons = new Element($content, false, false, 'ButtonBox');
     $cancel = new Button($buttons);
     $cancel->setHotKey('ESCAPE');
@@ -32,8 +34,12 @@ class FilePanel extends Panel {
     $this->onSelect = $callback;
   }
 
+  public function setFileFilter($filter) {
+    $this->fileFilter = $filter;
+  }
+
   public function setPath($path, $selected = false) {
-    if ($path === '/') {
+    if ($path === '/' || empty($path)) {
       $this->dir = '/';
       $this->file = '';
     } else {
@@ -47,9 +53,20 @@ class FilePanel extends Panel {
         $this->file = '';
       }
     }
+    $res = $this->loadDir($dirs, $files);
+    if (!$res) {
+      return;
+    }
+    $this->fillUpTheList($dirs, $files, $selected);
+    $this->refreshPath();
+    $this->theList->addClass('active', true);
+    $this->theList->raise();
+  }
+
+  private function loadDir(&$dirs, &$files) {
     $handle = opendir($this->dir);
     if ($handle === false) {
-      return;
+      return false;
     }
     $dirs = [];
     $files = [];
@@ -67,7 +84,11 @@ class FilePanel extends Panel {
     closedir($handle);
     sort($dirs);
     sort($files);
-    array_unshift($dirs, '..');
+    array_unshift($dirs, ($this->dir === '/' ? '/' : '..'));
+    return true;
+  }
+
+  private function fillUpTheList($dirs, $files, $selected) {
     $this->theList->clear();
     $i = 0;
     $cursor = 0;
@@ -79,22 +100,36 @@ class FilePanel extends Panel {
       }
       $i++;
     }
-    foreach ($files as $file) {
-      $li = new ListItem($this->theList);
-      $li->addText($file);
-      if ($file === $selected) {
-        $cursor = $i;
+    if ($this->fileFilter !== false) {
+      foreach ($files as $file) {
+        if ($this->fileFilter !== true) {
+          $match = false;
+          foreach ($this->fileFilter as $extension) {
+            if (str_ends_with(mb_strtolower($file), $extension)) {
+              $match = true;
+              break;
+            }
+          }
+          if (!$match) {
+            continue;
+          }
+        }
+        $li = new ListItem($this->theList);
+        $li->addText($file);
+        $li->setValue($file);
+        if ($file === $selected) {
+          $cursor = $i;
+        }
+        $i++;
       }
-      $i++;
     }
     $this->theList->moveCursor($cursor);
+  }
+
+  private function refreshPath() {
     $this->path->clear();
     $this->path->addText($this->dir . $this->file);
-    $this->theList->addClass('active', true);
-    $this->theList->raise();
-    $this->recalculateGeometry();
-    $this->recalculateGeometry();
-    $this->recalculateGeometry(); // ...
+    Element::immediateRender($this->path);
   }
 
   public function changed($element) {
@@ -104,18 +139,18 @@ class FilePanel extends Panel {
     } else {
       $this->file = trim($this->file, '/');
     }
-    $this->path->clear();
-    $this->path->addText($this->dir . $this->file);
-    Element::immediateRender($this->path);
+    $this->refreshPath();
   }
-
 
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_ITEM:
+        $path = "{$this->dir}{$this->file}";
+        if ($this->fileFilter !== false && !is_file($path)) {
+          return true;
+        }
         $this->hide();
         $this->remove();
-        $path = "{$this->dir}{$this->file}";
         if ($this->onSelect !== false) {
           call_user_func($this->onSelect, $path);
         }
@@ -124,6 +159,7 @@ class FilePanel extends Panel {
         $dir = trim($this->theList->getValue(), '/');
         if ($dir === '..') {
           $this->setPath(dirname($this->dir), basename($this->dir));
+          $this->theList->bringToMiddle();
         } else {
           $this->setPath("{$this->dir}{$dir}");
         }
@@ -131,6 +167,7 @@ class FilePanel extends Panel {
         return true;
       case Action::DELETE_BACK:
         $this->setPath(dirname($this->dir), basename($this->dir));
+        $this->theList->bringToMiddle();
         Element::refresh();
         return true;
     }

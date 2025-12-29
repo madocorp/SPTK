@@ -1,4 +1,4 @@
-<Window title="DisplayInline">
+<Window title="PositionInline">
   <IBox class="a"></IBox>
   <IBox class="b"></IBox>
   <IBox class="c"></IBox>

@@ -17,7 +17,6 @@ class Controller {
           $dynamicClassBox->removeClass('red');
           $dynamicClassBox->addClass('yellow');
         }
-        $dynamicClassBox->redraw();
         SPTK\Element::refresh();
       }
     }
@@ -37,7 +36,7 @@ class Controller {
   public static function panelForge($element, $event) {
     if ($event['name'] == 'KeyPress') {
       if ($event['key'] == SPTK\KeyCode::SPACE) {
-        SPTK\WarningPanel::forge('Window', 'forged warning', 'test');
+        SPTK\WarningPanel::forge('forged warning', 'test');
       }
     }
     return true;

@@ -8,23 +8,23 @@ Window {
   fontSize: 30px;
 }
 
-#x {
-  position: inline;
-  color: #000000;
-  backgroundColor: #ff0000;
-  width: 100%;
+MenuBox2 {
+  position: absolute;
+  width: calculated;
+  backgroundColor: #00aaaa;
+  border: 3px;
+  borderColor: #00ffff;
+  padding: 0px;
+  lineHeight: 100%;
+  maxHeight: 60%;
+  scrollable: true;
 }
 
-#y {
-  position: inline;
-  color: #000000;
-  backgroundColor: #ffff00;
+MenuBoxItem2 {
   width: 100%;
-}
-
-#z {
-  position: inline;
-  color: #000000;
-  backgroundColor: #00ff00;
-  width: 100%;
+  padding: 2px, 0px, 0px, 0px;
+  backgroundColor: inherit;
+  color: #ffffff;
+  height: 22px;
+  textWrap: manual;
 }

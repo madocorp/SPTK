@@ -60,8 +60,6 @@ class Input extends Element {
     $this->elementBefore->setValue($this->before);
     $this->elementSelected->setValue($this->selected == '' ? ' ' : $this->selected);
     $this->elementAfter->setValue($this->after);
-    $this->ancestor->cursor->reset();
-    $this->recalculateGeometry();
     $selected = $this->elementSelected;
     if ($selected->geometry->x + $selected->geometry->width > $this->scrollX + $this->geometry->width - $this->geometry->borderLeft) {
       $this->scrollX = $selected->geometry->x + $selected->geometry->width - $this->geometry->width + $this->geometry->borderLeft;

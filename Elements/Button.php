@@ -13,6 +13,10 @@ class Button extends Element {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
+  public function isWord() {
+    return true;
+  }
+
   public function getAttributeList() {
     return ['hotKey', 'onPress'];
   }

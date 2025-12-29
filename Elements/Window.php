@@ -15,8 +15,13 @@ class Window extends Element {
   protected $tmpTexture = false;
   protected $ffiWidth;
   protected $ffiHeight;
+  protected $borderTop = 0;
+  protected $borderLeft = 0;
+  protected $borderBottom = 0;
+  protected $borderRight = 0;
 
   protected function init() {
+    $this->display = false;
     $this->sdl = SDL::$instance->sdl;
     $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
@@ -29,21 +34,26 @@ class Window extends Element {
     $frameLeft = \FFI::new("int");
     $frameRight = \FFI::new("int");
     if ($this->sdl->SDL_GetWindowBordersSize($this->window, \FFI::addr($frameTop), \FFI::addr($frameLeft), \FFI::addr($frameBottom), \FFI::addr($frameRight))) {
-      $this->geometry->width = $this->style->get('width', $this->ancestor->geometry->width - $frameLeft->cdata - $frameRight->cdata);
-      $this->geometry->height = $this->style->get('height', $this->ancestor->geometry->height - $frameTop->cdata - $frameBottom->cdata);
+      $this->borderTop = $frameTop->cdata;
+      $this->borderLeft = $frameLeft->cdata;
+      $this->borderBottom = $frameBottom->cdata;
+      $this->borderRight = $frameRight->cdata;
+      $this->geometry->width = $this->style->get('width', $this->ancestor->geometry);
+      $this->geometry->height = $this->style->get('height', $this->ancestor->geometry);
       $this->geometry->x += $frameLeft->cdata;
       $this->geometry->y += $frameTop->cdata;
     } else {
-      $this->geometry->width = $this->style->get('width', $this->ancestor->geometry->width);
-      $this->geometry->height = $this->style->get('height', $this->ancestor->geometry->height);
+      $this->geometry->width = $this->style->get('width', $this->ancestor->geometry);
+      $this->geometry->height = $this->style->get('height', $this->ancestor->geometry);
     }
     $this->setSize();
-    $this->geometry->setDerivedSize();
-    $this->geometry->x = $this->style->get('x', $this->ancestor->geometry->width) + $this->ancestor->geometry->x + $this->geometry->x;
-    $this->geometry->y = $this->style->get('y', $this->ancestor->geometry->height) + $this->ancestor->geometry->y + $this->geometry->y;
+    $this->getSize();
+    $this->geometry->x = $this->style->get('x', $this->ancestor->geometry) + $this->ancestor->geometry->x + $this->geometry->x;
+    $this->geometry->y = $this->style->get('y', $this->ancestor->geometry) + $this->ancestor->geometry->y + $this->geometry->y;
     $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
     $this->sdl->SDL_StartTextInput($this->window);
     $this->draw();
+    $this->display = true;
   }
 
   public function setTitle($title) {
@@ -51,7 +61,11 @@ class Window extends Element {
   }
 
   protected function setSize() {
-    $this->sdl->SDL_SetWindowSize($this->window, $this->geometry->width, $this->geometry->height);
+    $this->sdl->SDL_SetWindowSize(
+      $this->window,
+      $this->geometry->width - $this->borderLeft - $this->borderRight,
+      $this->geometry->height - $this->borderTop - $this->borderBottom
+    );
     $this->sdl->SDL_SetRenderViewport($this->renderer, null);
   }
 
@@ -59,7 +73,12 @@ class Window extends Element {
     $this->sdl->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
     $this->geometry->width = $this->ffiWidth->cdata;
     $this->geometry->height = $this->ffiHeight->cdata;
-    $this->geometry->setDerivedSize();
+    $this->geometry->windowWidth = $this->geometry->width;
+    $this->geometry->windowHeight = $this->geometry->height;
+    $this->geometry->innerWidth = $this->geometry->width - $this->geometry->paddingLeft - $this->geometry->paddingRight;
+    $this->geometry->fullWidth = $this->geometry->width;
+    $this->geometry->innerHeight = $this->geometry->height - $this->geometry->paddingTop - $this->geometry->paddingBottom;
+    $this->geometry->fullHeight = $this->geometry->height;
   }
 
   public function draw() {
@@ -91,7 +110,7 @@ class Window extends Element {
   }
 
   public function eventHandler($event) {
-    if (!$this->display) {
+    if ($this->display === false) {
       return false;
     }
     if (true) { // check window id
@@ -127,12 +146,10 @@ class Window extends Element {
     }
   }
 
-  public function layout() {
-    $this->cursor->reset();
+  protected function redraw($force = false) {
     foreach ($this->descendants as $descendant) {
-      $descendant->layout();
+      $descendant->redraw($force);
     }
-    $this->geometry->formatRow($this->cursor, $this->geometry);
   }
 
   public function getAttributeList() {

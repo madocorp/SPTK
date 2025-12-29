@@ -90,27 +90,22 @@ class MenuBox extends Element {
 
   protected function measure() {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->calculateSize();
-    $this->geometry->setDerivedSize();
+    $this->calculateWidth();
+    $this->geometry->setDerivedWidths();
     foreach ($this->descendants as $descendant) {
       $descendant->measure();
     }
   }
 
-  protected function calculateSize() {
-    $items = self::allByType('MenuBoxItem', $this);
+  protected function calculateWidth() {
     $width = 0;
-    foreach ($items as $item) {
-      $iwidth = 0;
-      foreach ($item->descendants as $word) {
-        $iwidth += $word->geometry->width;
-        $iwidth += $word->style->get('wordSpacing');
-      }
-      if ($iwidth > $width) {
-        $width = $iwidth;
+    foreach ($this->descendants as $descendant) {
+      $dwidth = $descendant->getWidth();
+      if ($dwidth > $width) {
+        $width = $dwidth;
       }
     }
-    $this->geometry->width = $width;
+    $this->geometry->width = $width + 30; // ...
   }
 
   public function keyPressHandler($element, $event) {

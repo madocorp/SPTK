@@ -14,8 +14,36 @@ class Style {
   const T_PERCENT = 2;
   const T_PIXEL = 3;
   const T_BOOLEAN = 4;
+  const T_WINDOW_WPERCENT = 5;
+  const T_WINDOW_HPERCENT = 6;
 
   public $rules = [];
+
+  private $referenceMap = [
+    'width' => 'innerWidth',
+    'height' => 'innerHeight',
+    'x' => 'innerWidth',
+    'y' => 'innerHeight',
+    'borderLeft' => 'innerWidth',
+    'borderRight' => 'innerWidth',
+    'borderTop' => 'innerHeight',
+    'borderBottom' => 'innerHeight',
+    'marginLeft' => 'innerWidth',
+    'marginRight' => 'innerWidth',
+    'marginTop' => 'innerHeight',
+    'marginBottom' => 'innerHeight',
+    'paddingLeft' => 'innerWidth',
+    'paddingRight' => 'innerWidth',
+    'paddingTop' => 'innerHeight',
+    'paddingBottom' => 'innerHeight',
+    'ascent' => 'height',
+    'lineHeight' => 'fontSize',
+    'wordSpacing' => 'fontSize',
+    'maxWidth' => 'innerWidth',
+    'maxHeight' => 'innerHeight',
+    'minWidth' => 'innerWidth',
+    'minHeight' => 'innerHeight'
+  ];
 
   public function __construct($init = false) {
     if (is_array($init)) {
@@ -58,6 +86,22 @@ class Style {
       } else {
         throw new \Exception("Illegal color string: {$original}");
       }
+    } else if (substr($value, -2) === '%w') {
+      $type = self::T_WINDOW_WPERCENT;
+      $negative = false;
+      if (substr($value, 0, 1) === '-') {
+        $negative = true;
+        $value = substr($value, 1);
+      }
+      $value = (float)str_replace('%w', '', $value);
+    } else if (substr($value, -2) === '%h') {
+      $type = self::T_WINDOW_HPERCENT;
+      $negative = false;
+      if (substr($value, 0, 1) === '-') {
+        $negative = true;
+        $value = substr($value, 1);
+      }
+      $value = (float)str_replace('%h', '', $value);
     } else if (substr($value, -1) === '%') {
       $type = self::T_PERCENT;
       $negative = false;
@@ -105,10 +149,26 @@ class Style {
     $type = $this->rules[$name][self::F_TYPE];
     $negative = $this->rules[$name][self::F_NEGATIVE];
     if ($type == self::T_PERCENT) {
-      if ($reference == 'content') {
+      if (!isset($this->referenceMap[$name])) {
+        throw new \Exception("Percentage value not acepterd for this property: {$name}");
+      }
+      if ($reference === false) {
+        return 0;
+      }
+      $refPropertyName = $this->referenceMap[$name];
+      $referenceValue = $reference->$refPropertyName;
+      if ($referenceValue == 'content') {
         throw new \Exception('A percentage value cannot be specified if the reference value depends on the content!');
       }
-      return (int)round(($reference * $value - 0.001) / 100) * ($negative ? -1 : 1);
+      return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
+    }
+    if ($type == self::T_WINDOW_WPERCENT) {
+      $referenceValue = $reference->windowWidth;
+      return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
+    }
+    if ($type == self::T_WINDOW_HPERCENT) {
+      $referenceValue = $reference->windowHeight;
+      return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }
     if ($type == self::T_PIXEL) {
       return $value * ($negative ? -1 : 1);

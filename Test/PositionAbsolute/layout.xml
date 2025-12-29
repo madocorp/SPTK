@@ -1,4 +1,4 @@
-<Window title="DisplayBlock">
+<Window title="PositionAbsolute">
   <Box class="a">
     <Box class="l2 a">AA</Box>
     <Box class="l2 b">AB</Box>

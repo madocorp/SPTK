@@ -10,31 +10,34 @@ class Border {
 
   public function __construct($texture, $geometry, $ancestorGeometry, $style) {
     $this->texture = $texture;
-    $left = $style->get('borderLeft', $ancestorGeometry->innerWidth);
-    $right = $style->get('borderRight', $ancestorGeometry->innerWidth);
-    $top = $style->get('borderTop', $ancestorGeometry->innerHeight);
-    $bottom = $style->get('borderBottom', $ancestorGeometry->innerHeight);
-    $paddingLeft = $style->get('paddingLeft', $ancestorGeometry->innerWidth);
-    $paddingRight = $style->get('paddingRight', $ancestorGeometry->innerWidth);
-    $paddingTop = $style->get('paddingTop', $ancestorGeometry->innerHeight);
-    $paddingBottom = $style->get('paddingBottom', $ancestorGeometry->innerHeight);
+    $left = $style->get('borderLeft', $ancestorGeometry);
+    $right = $style->get('borderRight', $ancestorGeometry);
+    $top = $style->get('borderTop', $ancestorGeometry);
+    $bottom = $style->get('borderBottom', $ancestorGeometry);
+    if ($left + $right + $top + $bottom === 0) {
+      return;
+    }
+    $paddingLeft = $style->get('paddingLeft', $ancestorGeometry);
+    $paddingRight = $style->get('paddingRight', $ancestorGeometry);
+    $paddingTop = $style->get('paddingTop', $ancestorGeometry);
+    $paddingBottom = $style->get('paddingBottom', $ancestorGeometry);
     $this->w = $geometry->innerWidth + $left + $right + $paddingLeft + $paddingRight - 1;
     $this->h = $geometry->innerHeight + $top + $bottom + $paddingTop + $paddingBottom - 1;
     if ($left > 0) {
       $color = $style->get('borderColorLeft');
       $this->borderLeft($left, $top, $bottom, $color);
     }
-    $right = $style->get('borderRight', $ancestorGeometry->innerWidth);
+    $right = $style->get('borderRight', $ancestorGeometry);
     if ($right > 0) {
       $color = $style->get('borderColorRight');
       $this->borderRight($right, $top, $bottom, $color);
     }
-    $top = $style->get('borderTop', $ancestorGeometry->innerHeight);
+    $top = $style->get('borderTop', $ancestorGeometry);
     if ($top > 0) {
       $color = $style->get('borderColorTop');
       $this->borderTop($top, $left, $right, $color);
     }
-    $bottom = $style->get('borderBottom', $ancestorGeometry->innerHeight);
+    $bottom = $style->get('borderBottom', $ancestorGeometry);
     if ($bottom > 0) {
       $color = $style->get('borderColorBottom');
       $this->borderBottom($bottom, $left, $right, $color);
