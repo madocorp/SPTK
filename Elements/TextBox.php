@@ -10,8 +10,8 @@ class TextBox extends Element {
   protected function init() {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
-    $this->fontSize = $this->style->get('fontSize', $this->ancestor->geometry->innerHeight);
-    $this->lineHeight = $this->style->get('lineHeight', $this->fontSize);
+    $this->fontSize = $this->style->get('fontSize', $this->ancestor->geometry);
+    $this->lineHeight = $this->style->get('lineHeight', $this->ancestor->geometry);
   }
 
   public function getAttributeList() {
@@ -61,7 +61,7 @@ class TextBox extends Element {
         return true;
       case Action::MOVE_RIGHT:
         $this->scrollX += $this->fontSize;
-        $maxScrollX = $this->maxX + $this->geometry->paddingRight - ($this->geometry->width - $this->geometry->borderLeft - $this->geometry->borderRight);
+        $maxScrollX = $this->geometry->contentWidth + $this->geometry->paddingRight - ($this->geometry->width - $this->geometry->borderLeft - $this->geometry->borderRight);
         if ($this->scrollX > $maxScrollX) {
           $this->scrollX = $maxScrollX;
         }
@@ -76,7 +76,7 @@ class TextBox extends Element {
         return true;
       case Action::MOVE_DOWN:
         $this->scrollY += $this->lineHeight;
-        $maxScrollY = $this->maxY + $this->geometry->paddingBottom - ($this->geometry->height - $this->geometry->borderTop - $this->geometry->borderBottom);
+        $maxScrollY = $this->geometry->contentHeight + $this->geometry->paddingBottom - ($this->geometry->height - $this->geometry->borderTop - $this->geometry->borderBottom);
         if ($this->scrollY > $maxScrollY) {
           $this->scrollY = $maxScrollY;
         }

@@ -19,16 +19,25 @@ class MenuBoxItem extends Element {
   }
 
   public function getValue() {
+    if ($this->value === false || $this->value === '') {
+      return $this->getText();
+    }
+    return $this->value;
+  }
+
+  public function getWidth() {
+    $width = 0;
     foreach ($this->descendants as $descendant) {
-      if ($descendant->isWord()) {
-        return $descendant->getValue();
+      if ($descendant->type == 'Word') {
+        $width += $descendant->getWidth();
+        $width += $descendant->style->get('wordSpacing');
       }
     }
-    return false;
+    return $width + 30;
   }
 
   public function getAttributeList() {
-    return ['submenu', 'radio', 'selectable', 'selected', 'filterable', 'onOpen', 'onSelect'];
+    return ['submenu', 'radio', 'selectable', 'selected', 'filterable', 'onOpen', 'onSelect', 'value'];
   }
 
   public function setSubmenu($value) {

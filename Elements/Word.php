@@ -23,21 +23,37 @@ class Word extends Element {
     return true;
   }
 
+  public function getWidth() {
+    return $this->width;
+  }
+
   protected function measure() {
     $this->geometry->width = $this->width;
     $this->geometry->height = $this->height;
+    $this->geometry->fullWidth = $this->width;
+    $this->geometry->fullHeight = $this->height;
+    $this->geometry->innerWidth = $this->width;
+    $this->geometry->innerHeight = $this->height;
     $this->geometry->ascent = $this->ascent;
     $this->geometry->descent = $this->descent;
-    $this->geometry->setDerivedSize();
+    $this->geometry->position = 'inline';
+  }
+
+  protected function calculateWidths() {
+    ;
+  }
+
+  protected function calculateHeights() {
+    ;
   }
 
   protected function layout() {
-    $this->geometry->setInlinePosition($this->ancestor->cursor, $this, $this->ancestor->geometry, 'inline');
+    ;
   }
 
   protected function draw() {
     $fontName = $this->style->get('font');
-    $fontSize = $this->style->get('fontSize', $this->ancestor->geometry->innerHeight);
+    $fontSize = $this->style->get('fontSize', $this->ancestor->geometry);
     $font = new Font($fontName, $fontSize);
     if ($this->value === false || $this->value === '') {
       $this->texture = false;

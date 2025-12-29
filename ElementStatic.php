@@ -15,11 +15,11 @@ trait ElementStatic {
 
   public static function refresh() {
     $t = microtime(true);
-    static::$root->measure();
-    static::$root->layout();
+    static::$root->recalculateGeometry();
     static::$root->render();
     if (DEBUG) {
       echo "Refreshed:", microtime(true) - $t, "\n";
+//static::$root->debug();
     }
   }
 
@@ -91,9 +91,7 @@ trait ElementStatic {
   public static function immediateRender($element, $layout = true) {
     $t = microtime(true);
     if ($layout) {
-      $element->ancestor->cursor->reset();
-      $element->measure();
-      $element->layout();
+      $element->recalculateGeometry();
     }
     $tmpTexture = $element->render();
     if ($tmpTexture === false) {

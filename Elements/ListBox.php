@@ -9,6 +9,11 @@ class ListBox extends Element {
   protected $movable = false;
   protected $multiple = false;
   protected $onChange = false;
+  protected $pageSize = 1;
+  protected $typing = false;
+  protected $typed = '';
+  protected $activeBeforeType = 0;
+  protected $nextMatch = 0;
 
   protected function init() {
     $this->acceptInput = true;
@@ -16,7 +21,7 @@ class ListBox extends Element {
   }
 
   public function getAttributeList() {
-    return ['movable', 'multiple', 'onChange'];
+    return ['movable', 'multiple', 'onChange', 'typing'];
   }
 
   public function setMovable($value) {
@@ -25,6 +30,19 @@ class ListBox extends Element {
 
   public function setMultiple($value) {
     $this->multiple = ($value === 'true');
+  }
+
+  public function setTyping($value) {
+    if ($value === 'search') {
+      $this->typing = 'search';
+      $this->addEvent('TextInput', [$this, 'textInputHandler']);
+    } else if ($value === 'filter') {
+      $this->typing = 'filter';
+      $this->addEvent('TextInput', [$this, 'textInputHandler']);
+    } else {
+      $this->typing = false;
+      $this->removeEvent('TextInput');
+    }
   }
 
   public function setOnChange($value) {
@@ -82,6 +100,7 @@ class ListBox extends Element {
     parent::clear();
     $this->activeItem = 0;
     $this->num = 0;
+    $this->scrollY = 0;
   }
 
   public function addClass($class, $dynamic = false) {
@@ -129,6 +148,17 @@ class ListBox extends Element {
     $this->activateItem();
   }
 
+  public function bringToMiddle() {
+    $active = $this->descendants[$this->activeItem];
+    $this->scrollY = $active->geometry->y + (int)($active->geometry->height / 2 - $this->geometry->height / 2) + $this->geometry->borderTop;
+    if ($this->scrollY < 0) {
+      $this->scrollY = 0;
+    }
+    if ($this->geometry->contentHeight > $this->geometry->height && $this->scrollY > $this->geometry->contentHeight - $this->geometry->height + $this->geometry->borderTop) {
+      $this->scrollY = $this->geometry->contentHeight - $this->geometry->height + $this->geometry->borderTop;
+    }
+  }
+
   public function activateItem() {
     $i = 0;
     foreach ($this->descendants as $descendant) {
@@ -155,6 +185,62 @@ class ListBox extends Element {
     return $this->descendants[$this->activeItem];
   }
 
+  protected function measure() {
+    parent::measure();
+    if (!isset($this->descendants[0])) {
+      return;
+    }
+    $item = $this->descendants[0];
+    $this->pageSize = (int)($this->geometry->innerHeight / $item->geometry->fullHeight);
+  }
+
+  protected function lookUp() {
+    $filter = ($this->typing === 'filter');
+    if ($this->typed === '') {
+      if ($filter) {
+        foreach ($this->descendants as $i => $descendant) {
+          $descendant->show();
+        }
+      }
+      $this->activeItem = $this->activeBeforeTyped;
+      $this->activateItem();
+    } else {
+      $matchIndex = false;
+      $firstMatchIndex = false;
+      $matchCount = 0;
+      foreach ($this->descendants as $i => $descendant) {
+        if ($descendant->match($this->typed)) {
+          if ($firstMatchIndex === false) {
+            $firstMatchIndex = $i;
+          }
+          if ($matchIndex === false && $matchCount == $this->nextMatch) {
+            $matchIndex = $i;
+          }
+          $matchCount++;
+          if ($filter) {
+            $descendant->show();
+          }
+        } else {
+          if ($filter) {
+            $descendant->hide();
+          }
+        }
+      }
+      if ($matchIndex === false && $firstMatchIndex !== false) {
+        $matchIndex = $firstMatchIndex;
+        $this->nextMatch = 0;
+      }
+      if ($matchIndex !== false) {
+        $this->moveCursor($matchIndex);
+        $this->bringToMiddle();
+      } else {
+        $this->typed = mb_substr($this->typed, 0, -1);
+        $this->lookUp();
+      }
+    }
+
+  }
+
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_UP:
@@ -169,14 +255,6 @@ class ListBox extends Element {
           return true;
         }
         break;
-      case Action::MOVE_UP:
-        $this->activeItem--;
-        if ($this->activeItem < 0) {
-          $this->activeItem = 0;
-        }
-        $this->activateItem();
-        Element::immediateRender($this, false);
-        return true;
       case Action::SELECT_DOWN:
         if ($this->movable) {
           if ($this->activeItem < $this->num - 1) {
@@ -189,6 +267,14 @@ class ListBox extends Element {
           return true;
         }
         break;
+      case Action::MOVE_UP:
+        $this->activeItem--;
+        if ($this->activeItem < 0) {
+          $this->activeItem = 0;
+        }
+        $this->activateItem();
+        Element::immediateRender($this, false);
+        return true;
       case Action::MOVE_DOWN:
         $this->activeItem++;
         if ($this->activeItem >= $this->num) {
@@ -207,8 +293,64 @@ class ListBox extends Element {
         $this->activateItem();
         Element::immediateRender($this, false);
         return true;
+      case Action::PAGE_UP:
+        $this->activeItem -= $this->pageSize - 1;
+        if ($this->activeItem < 0) {
+          $this->activeItem = 0;
+        }
+        $this->activateItem();
+        Element::immediateRender($this, false);
+        return true;
+      case Action::PAGE_DOWN:
+        $this->activeItem += $this->pageSize - 1;
+        if ($this->activeItem >= $this->num) {
+          $this->activeItem = $this->num - 1;
+        }
+        $this->activateItem();
+        Element::immediateRender($this, false);
+        return true;
+      case Action::DELETE_BACK:
+        if ($this->typing !== false && mb_strlen($this->typed) > 0) {
+          $this->nextMatch = 0;
+          $this->typed = mb_substr($this->typed, 0, -1);
+          $this->lookUp();
+          if ($this->typing === 'filter') {
+            Element::refresh();
+          } else {
+            Element::immediateRender($this);
+          }
+          return true;
+        }
+        return false;
+      case Action::DO_IT:
+        if ($this->typing !== false && mb_strlen($this->typed) > 0) {
+          $this->nextMatch++;
+          $this->lookUp();
+          if ($this->typing === 'filter') {
+            Element::refresh();
+          } else {
+            Element::immediateRender($this);
+          }
+          return true;
+        }
+        return false;
     }
     return false;
+  }
+
+  public function textInputHandler($element, $event) {
+    if ($this->typed === '') {
+      $this->activeBeforeTyped = $this->activeItem;
+    }
+    $this->nextMatch = 0;
+    $this->typed .= $event['text'];
+    $this->lookUp();
+    if ($this->typing === 'filter') {
+      Element::refresh();
+    } else {
+      Element::immediateRender($this);
+    }
+    return true;
   }
 
 }

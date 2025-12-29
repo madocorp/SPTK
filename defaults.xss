@@ -10,25 +10,22 @@ Root {
   margin: 0px;
   padding: 0px;
   backgroundColor: inherit;
-  backgroundAlignX: center;
-  backgroundAlignY: center;
-  backgroundSizeX: content;
-  backgroundSizeY: content;
   font: inherit;
   fontSize: 16px;
   color: inherit;
   textAlign: left;
   ascent: auto;
-  lineHeight: 150%;
-  letterSpacing: 1px;
-  wordSpacing: 10px;
+  lineHeight: 120%;
+  wordSpacing: 66%;
   textWrap: auto;
   scrollable: false;
   scrollbarColor: #0000ff;
   scrollhandleColor: transparent;
   scrollbarSize: 5px;
-  maxHeight: none;
-  maxWidth: none;
+  maxWidth: 10000px;
+  maxHeight: 10000px;
+  minWidth: 0;
+  minHeight: 0;
 }
 
 Window {
@@ -89,7 +86,6 @@ MenuBarHotKey {
 }
 
 MenuBarItem {
-  width: content;
   color: #000000;
   backgroundColor: inherit;
   padding: 1px, 15px, 0px, 0px;
@@ -102,7 +98,6 @@ MenuBarItem:active {
 MenuBox {
   position: absolute;
   width: calculated;
-  height: content;
   backgroundColor: #00aaaa;
   border: 3px;
   borderColor: #00ffff;
@@ -146,12 +141,9 @@ MenuBoxItem:active {
 
 Panel {
   position: absolute;
-  x: 50%;
-  y: 50%;
+  x: middle;
+  y: middle;
   width: 60%;
-  marginTop: half;
-  marginLeft: half;
-  height: content;
   backgroundColor: #cccccc;
   color: #000000;
   border: 3px;
@@ -177,12 +169,9 @@ PanelContent {
 
 WarningPanel {
   position: absolute;
-  x: 50%;
-  y: 50%;
-  marginTop: half;
-  marginLeft: half;
+  x: middle;
+  y: middle;
   width: 60%;
-  height: content;
   backgroundColor: #ffff00;
   color: #000000;
   border: 3px;
@@ -208,12 +197,9 @@ WarningPanelContent {
 
 ErrorPanel {
   position: absolute;
-  x: 50%;
-  y: 50%;
-  marginTop: half;
-  marginLeft: half;
+  x: middle;
+  y: middle;
   width: 60%;
-  height: content;
   backgroundColor: #ffaaaa;
   color: #000000;
   border: 3px;
@@ -239,11 +225,9 @@ ErrorPanelContent {
 
 FilePanel {
   position: absolute;
-  x: 50%;
-  y: 50%;
+  x: middle;
+  y: middle;
   width: 60%;
-  marginTop: half;
-  marginLeft: half;
   backgroundColor: #cccccc;
   color: #000000;
   border: 3px;
@@ -253,7 +237,7 @@ FilePanel {
 Path {
   borderBottom: 1px;
   borderColor: #000000;
-  paddingBottom: 10px;
+  marginBottom: 10px;
 }
 
 Label {
@@ -286,6 +270,10 @@ InputValue:selected {
   color: #00cccc;
 }
 
+InputValue:matched {
+  color: #0000ff;
+}
+
 File {
   width: 100%;
   backgroundColor: #00aaaa;
@@ -299,6 +287,10 @@ File {
 File:active {
   color: #000000;
   backgroundColor: #00cccc;
+}
+
+.placeholder {
+  color: #0000ff;
 }
 
 Browse {
@@ -346,10 +338,11 @@ HalfBoxRight {
 
 ButtonBox {
   width: 100%;
+  height: 50px;
   marginTop: 10px;
   paddingTop: 10px;
   borderTop: 1px;
-  borderColor: #555555;
+  borderColor: #000000;
   textAlign: justify;
 }
 
@@ -386,6 +379,7 @@ ListItem {
   width: 100%;
   padding: 0px, 10px;
   textWrap: manual;
+  height: 19px;
 }
 
 ListItem:selected {
@@ -444,4 +438,6 @@ TextBox:active {
 .h80 { height: 80%; }
 .h90 { height: 90%; }
 .h100 { height: 100%; }
+
+.wh60 { height: 60%h; }
 

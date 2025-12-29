@@ -12,7 +12,6 @@ require_once 'SDLWrapper/KeyCombo.php';
 require_once 'Font.php';
 require_once 'Texture.php';
 require_once 'Geometry.php';
-require_once 'Cursor.php';
 require_once 'ElementStatic.php';
 require_once 'Element.php';
 require_once 'LayoutXmlReader.php';
@@ -59,7 +58,6 @@ class App {
     if (DEBUG) {
       Element::$root->debug();
     }
-    Element::refresh();
     if (!is_null($this->initCallback)) {
       call_user_func($this->initCallback);
     }
@@ -91,9 +89,6 @@ class App {
   public function eventHandler($event) {
     switch ($event['type']) {
       case SDL::SDL_EVENT_WINDOW_EXPOSED:
-        Element::refresh();
-        break;
-      case SDL::SDL_EVENT_WINDOW_RESIZED:
         Element::refresh();
         break;
     }

@@ -25,6 +25,8 @@ class KeyCombo {
     self::bind(KeyModifier::NONE, ScanCode::KP_7, Action::MOVE_START);
     self::bind(KeyModifier::NONE, ScanCode::END, Action::MOVE_END);
     self::bind(KeyModifier::NONE, ScanCode::KP_1, Action::MOVE_END);
+    self::bind(KeyModifier::NONE, ScanCode::PAGEUP, Action::PAGE_UP);
+    self::bind(KeyModifier::NONE, ScanCode::PAGEDOWN, Action::PAGE_DOWN);
 
     // Select
     self::bind(KeyModifier::SHIFT, ScanCode::LEFT, Action::SELECT_LEFT);

@@ -6,7 +6,10 @@
   <Panel name="panel">
     <PanelTitle>Panel test</PanelTitle>
     <PanelContent>
-      This is a nice panel.
+      <ButtonBox>
+        <Button>Cancel</Button>
+        <Button>Save</Button>
+      </ButtonBox>
     </PanelContent>
   </Panel>
 </Window>
