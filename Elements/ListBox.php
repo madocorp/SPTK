@@ -159,10 +159,16 @@ class ListBox extends Element {
     }
   }
 
-  public function activateItem() {
-    $i = 0;
+  public function activateItem($direction = 1) {
     foreach ($this->descendants as $descendant) {
-      if ($i == $this->activeItem) {
+      $descendant->removeClass('selected', true);
+      $descendant->removeClass('active', true);
+    }
+    for ($i = 0; $i < $this->num; $i++) {
+      $idx = ($this->num + $this->activeItem + $i * $direction) % $this->num;
+      $descendant = $this->descendants[$idx];
+      if ($descendant->display) {
+        $this->activeItem = $idx;
         $descendant->addClass('selected', true);
         $descendant->addClass('active', true);
         if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
@@ -170,11 +176,8 @@ class ListBox extends Element {
         } else if ($descendant->geometry->y < $this->scrollY) {
           $this->scrollY = $descendant->geometry->y - $this->geometry->borderTop;
         }
-      } else {
-        $descendant->removeClass('selected', true);
-        $descendant->removeClass('active', true);
+        break;
       }
-      $i++;
     }
     if ($this->onChange !== false) {
       call_user_func($this->onChange, $this);
@@ -197,8 +200,9 @@ class ListBox extends Element {
   protected function lookUp() {
     $filter = ($this->typing === 'filter');
     if ($this->typed === '') {
-      if ($filter) {
-        foreach ($this->descendants as $i => $descendant) {
+      foreach ($this->descendants as $i => $descendant) {
+        $descendant->match(false);
+        if ($filter) {
           $descendant->show();
         }
       }
@@ -232,19 +236,17 @@ class ListBox extends Element {
       }
       if ($matchIndex !== false) {
         $this->moveCursor($matchIndex);
-        $this->bringToMiddle();
       } else {
         $this->typed = mb_substr($this->typed, 0, -1);
         $this->lookUp();
       }
     }
-
   }
 
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_UP:
-        if ($this->movable) {
+        if ($this->movable && ($this->typing !== 'filter' || $this->typed === '')) {
           if ($this->activeItem > 0) {
             $item = $this->descendants[$this->activeItem];
             array_splice($this->descendants, $this->activeItem, 1);
@@ -256,7 +258,7 @@ class ListBox extends Element {
         }
         break;
       case Action::SELECT_DOWN:
-        if ($this->movable) {
+        if ($this->movable && ($this->typing !== 'filter' || $this->typed === '')) {
           if ($this->activeItem < $this->num - 1) {
             $item = $this->descendants[$this->activeItem];
             array_splice($this->descendants, $this->activeItem, 1);
@@ -272,7 +274,7 @@ class ListBox extends Element {
         if ($this->activeItem < 0) {
           $this->activeItem = 0;
         }
-        $this->activateItem();
+        $this->activateItem(-1);
         Element::immediateRender($this, false);
         return true;
       case Action::MOVE_DOWN:
@@ -280,17 +282,17 @@ class ListBox extends Element {
         if ($this->activeItem >= $this->num) {
           $this->activeItem = $this->num - 1;
         }
-        $this->activateItem();
+        $this->activateItem(1);
         Element::immediateRender($this, false);
         return true;
       case Action::MOVE_START:
         $this->activeItem = 0;
-        $this->activateItem();
+        $this->activateItem(1);
         Element::immediateRender($this, false);
         return true;
       case Action::MOVE_END:
         $this->activeItem = $this->num - 1;
-        $this->activateItem();
+        $this->activateItem(-1);
         Element::immediateRender($this, false);
         return true;
       case Action::PAGE_UP:
@@ -298,7 +300,7 @@ class ListBox extends Element {
         if ($this->activeItem < 0) {
           $this->activeItem = 0;
         }
-        $this->activateItem();
+        $this->activateItem(1);
         Element::immediateRender($this, false);
         return true;
       case Action::PAGE_DOWN:
@@ -306,7 +308,7 @@ class ListBox extends Element {
         if ($this->activeItem >= $this->num) {
           $this->activeItem = $this->num - 1;
         }
-        $this->activateItem();
+        $this->activateItem(-1);
         Element::immediateRender($this, false);
         return true;
       case Action::DELETE_BACK:
@@ -314,11 +316,9 @@ class ListBox extends Element {
           $this->nextMatch = 0;
           $this->typed = mb_substr($this->typed, 0, -1);
           $this->lookUp();
-          if ($this->typing === 'filter') {
-            Element::refresh();
-          } else {
-            Element::immediateRender($this);
-          }
+          $this->recalculateGeometry();
+          $this->bringToMiddle();
+          Element::immediateRender($this, false);
           return true;
         }
         return false;
@@ -326,11 +326,9 @@ class ListBox extends Element {
         if ($this->typing !== false && mb_strlen($this->typed) > 0) {
           $this->nextMatch++;
           $this->lookUp();
-          if ($this->typing === 'filter') {
-            Element::refresh();
-          } else {
-            Element::immediateRender($this);
-          }
+          $this->recalculateGeometry();
+          $this->bringToMiddle();
+          Element::immediateRender($this, false);
           return true;
         }
         return false;
@@ -345,11 +343,9 @@ class ListBox extends Element {
     $this->nextMatch = 0;
     $this->typed .= $event['text'];
     $this->lookUp();
-    if ($this->typing === 'filter') {
-      Element::refresh();
-    } else {
-      Element::immediateRender($this);
-    }
+    $this->recalculateGeometry();
+    $this->bringToMiddle();
+    Element::immediateRender($this, false);
     return true;
   }
 

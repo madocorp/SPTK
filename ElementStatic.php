@@ -19,7 +19,32 @@ trait ElementStatic {
     static::$root->render();
     if (DEBUG) {
       echo "Refreshed:", microtime(true) - $t, "\n";
-//static::$root->debug();
+    }
+  }
+
+  public static function immediateRender($element, $layout = true) {
+    $t = microtime(true);
+    if ($layout) {
+      $element->recalculateGeometry();
+    }
+    $tmpTexture = $element->render();
+    if ($tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
+    $window = $element->findAncestorByType('Window');
+    if ($window->tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
+    $x = 0;
+    $y = 0;
+    static::getRelativePos($window->id, $element, $x, $y);
+    $tmpTexture->copyTo($window->tmpTexture, $x, $y);
+    $window->tmpTexture->copyTo(null, 0, 0);
+    $window->sdl->SDL_RenderPresent($window->renderer);
+    if (DEBUG) {
+      echo "Immediate refresh:", microtime(true) - $t, "\n";
     }
   }
 
@@ -88,31 +113,6 @@ trait ElementStatic {
     static::getRelativePos($referenceId, $element->ancestor, $x, $y);
   }
 
-  public static function immediateRender($element, $layout = true) {
-    $t = microtime(true);
-    if ($layout) {
-      $element->recalculateGeometry();
-    }
-    $tmpTexture = $element->render();
-    if ($tmpTexture === false) {
-      Element::refresh();
-      return;
-    }
-    $window = $element->findAncestorByType('Window');
-    if ($window->tmpTexture === false) {
-      Element::refresh();
-      return;
-    }
-    $x = 0;
-    $y = 0;
-    static::getRelativePos($window->id, $element, $x, $y);
-    $tmpTexture->copyTo($window->tmpTexture, $x, $y);
-    $window->tmpTexture->copyTo(null, 0, 0);
-    $window->sdl->SDL_RenderPresent($window->renderer);
-    if (DEBUG) {
-      echo "Immediate refresh:", microtime(true) - $t, "\n";
-    }
-  }
 
   public static function parseCallback($value) {
     if (empty($value)) {

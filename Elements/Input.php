@@ -11,6 +11,8 @@ class Input extends Element {
   private $elementSelected;
   private $elementAfter;
   private $selectDirection = 0;
+  private $placeholder = '';
+  private $onChange = false;
 
   protected function init() {
     $this->acceptInput = true;
@@ -23,7 +25,7 @@ class Input extends Element {
   }
 
   public function getAttributeList() {
-    return ['value'];
+    return ['value', 'placeholder', 'onChange'];
   }
 
   public function setValue($value) {
@@ -42,9 +44,28 @@ class Input extends Element {
     return $this->before . $this->selected . $this->after;
   }
 
+  public function setPlaceholder($value) {
+    $this->placeholder = $value;
+  }
+
+  public function setOnChange($value) {
+    if ($value === false) {
+      return;
+    }
+    if (is_array($value)) {
+      $this->onChange = $value;
+    } else {
+      $this->onChange = self::parseCallback($value);
+    }
+  }
+
   public function addClass($class, $dynamic = false) {
     if ($dynamic && $class == 'active') {
       $this->elementSelected->addClass('selected', true);
+      if ($this->getValue() === '') {
+        $this->elementBefore->setValue($this->placeholder);
+        $this->elementBefore->addClass('placeholder', true);
+      }
     }
     parent::addClass($class, $dynamic);
   }
@@ -52,6 +73,10 @@ class Input extends Element {
   public function removeClass($class, $dynamic = false) {
     if ($dynamic && $class == 'active') {
       $this->elementSelected->removeClass('selected', true);
+    }
+    if ($this->getValue() === '') {
+      $this->elementBefore->setValue('');
+      $this->elementBefore->removeClass('placeholder', true);
     }
     parent::removeClass($class, $dynamic);
   }
@@ -67,6 +92,9 @@ class Input extends Element {
       $this->scrollX = $selected->geometry->x;
     }
     Element::immediateRender($this);
+    if ($this->onChange !== false) {
+      call_user_func($this->onChange, $this);
+    }
   }
 
   public function keyPressHandler($element, $event) {
@@ -214,6 +242,9 @@ class Input extends Element {
   }
 
   public function textInputHandler($element, $event) {
+    if ($this->getValue() === '') {
+      $this->elementBefore->removeClass('placeholder', true);
+    }
     if (mb_strlen($this->selected) > 1) {
       $this->before .= $event['text'];
       $this->selected = mb_substr($this->after, 0, 1);

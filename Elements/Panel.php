@@ -19,6 +19,7 @@ class Panel extends Element {
   public function show() {
     $this->display = true;
     $this->inputList = [];
+    $this->recalculateGeometry();
     $this->setInputList($this);
     if (empty($this->inputList)) {
       $this->focusIndex = -1;
@@ -69,7 +70,7 @@ class Panel extends Element {
   }
 
   private function setInputList($element) {
-    if ($element->acceptInput) {
+    if ($element->acceptInput && $element->display) {
       $this->inputList[] = $this->getInputElementDetails($element);
       return;
     }

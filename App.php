@@ -89,6 +89,8 @@ class App {
   public function eventHandler($event) {
     switch ($event['type']) {
       case SDL::SDL_EVENT_WINDOW_EXPOSED:
+      case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
+      case SDL::SDL_EVENT_WINDOW_RESTORED:
         Element::refresh();
         break;
     }

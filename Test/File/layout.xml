@@ -6,7 +6,7 @@
   <Panel name="panel">
     <PanelTitle>ListBox test</PanelTitle>
     <PanelContent>
-      <Label>File:<File placeholder="Press space to choose a file!" name="test" start="/home/mado/" file="true" /></Label>
+      <Label>File:<File placeholder="Press space to choose a file!" name="test" start="~" file="true" create="true" /></Label>
       <Label>Test2:<Input name="test2" /></Label>
     </PanelContent>
   </Panel>
