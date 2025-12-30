@@ -274,6 +274,10 @@ InputValue:matched {
   color: #0000ff;
 }
 
+InputValue:placeholder {
+  color: #0000ff;
+}
+
 File {
   width: 100%;
   backgroundColor: #00aaaa;
@@ -289,8 +293,9 @@ File:active {
   backgroundColor: #00cccc;
 }
 
-.placeholder {
-  color: #0000ff;
+FilePanel {
+  width: 70%w;
+  minWidth: 600px;
 }
 
 Browse {
@@ -439,5 +444,29 @@ TextBox:active {
 .h90 { height: 90%; }
 .h100 { height: 100%; }
 
+.wh10 { height: 10%h; }
+.wh20 { height: 20%h; }
+.wh25 { height: 25%h; }
+.wh30 { height: 30%h; }
+.wh40 { height: 40%h; }
+.wh50 { height: 50%h; }
 .wh60 { height: 60%h; }
+.wh70 { height: 70%h; }
+.wh75 { height: 75%h; }
+.wh80 { height: 80%h; }
+.wh90 { height: 90%h; }
+.wh100 { height: 100%h; }
+
+.ww10 { width: 10%w; }
+.ww20 { width: 20%w; }
+.ww25 { width: 25%w; }
+.ww30 { width: 30%w; }
+.ww40 { width: 40%w; }
+.ww50 { width: 50%w; }
+.ww60 { width: 60%w; }
+.ww70 { width: 70%w; }
+.ww75 { width: 75%w; }
+.ww80 { width: 80%w; }
+.ww90 { width: 90%w; }
+.ww100 { width: 100%w; }
 

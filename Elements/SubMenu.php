@@ -8,11 +8,12 @@ class SubMenu extends Element {
     foreach ($this->descendants as $element) {
       if ($element->type == 'MenuBox') {
         if ($element->belongsTo == $name) {
+          $element->show();
+          $element->recalculateGeometry();
           $element->activateMenuBoxItem();
           $element->style->set('x', "{$x}px");
           $element->style->set('y', "{$y}px");
           $element->raise();
-          $element->show();
         } else if ($closeOthers) {
           $element->hide();
         }

@@ -6,29 +6,31 @@ class File extends Element {
 
   private $elementFile;
   private $elementBrowse;
-  private $placeholder;
+  private $placeholder = '';
   private $start =  '';
   private $fileFilter = true;
+  private $create = false;
 
   protected function init() {
     $this->acceptInput = true;
+    $this->value = '';
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+    $this->addEvent('TextInput', [$this, 'textInputHandler']);
     $this->elementFile = new InputValue($this);
     $this->elementBrowse = new Element($this, false, false, 'Browse');
     $this->elementBrowse->addText('..');
   }
 
   public function getAttributeList() {
-    return ['value', 'placeholder', 'start', 'file'];
-// new = true/false: allow name field to save files and create directory option too
+    return ['value', 'placeholder', 'start', 'file', 'create'];
   }
 
   public function addClass($class, $dynamic = false) {
     if ($dynamic && $class == 'active') {
       $this->elementBrowse->addClass('active', true);
-      if (empty($this->value)) {
+      if ($this->value === '') {
         $this->elementFile->setValue($this->placeholder);
-        $this->elementFile->addClass('placeholder');
+        $this->elementFile->addClass('placeholder', true);
       }
     }
     parent::addClass($class, $dynamic);
@@ -37,9 +39,9 @@ class File extends Element {
   public function removeClass($class, $dynamic = false) {
     if ($dynamic && $class == 'active') {
       $this->elementBrowse->removeClass('active', true);
-      if (empty($this->value)) {
+      if ($this->value === '') {
         $this->elementFile->setValue($this->value);
-        $this->elementFile->removeClass('placeholder');
+        $this->elementFile->removeClass('placeholder', true);
       }
     }
     parent::removeClass($class, $dynamic);
@@ -50,7 +52,20 @@ class File extends Element {
   }
 
   public function setStart($value) {
-    $this->start = $value;
+    if ($value === '~') {
+      $value = getenv('HOME') ?: getenv('USERPROFILE');
+      if (!$value) {
+        $value = '.';
+      }
+    }
+    $path = realpath($value);
+    if ($path !== false && is_dir($path)) {
+      $this->start = $path;
+    }
+  }
+
+  public function setCreate($value) {
+    $this->create = ($value === 'true');
   }
 
   public function setFile($value) {
@@ -71,17 +86,9 @@ class File extends Element {
     $this->elementFile->setValue($this->value);
   }
 
-  public function keyPressHandler($element, $event) {
-    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
-      case Action::SELECT_ITEM:
-        $this->openFilePanel();
-        return true;
-    }
-    return false;
-  }
-
   public function selected($path) {
     $this->setValue($path);
+    $this->addClass('active', true);
     Element::refresh();
   }
 
@@ -94,10 +101,31 @@ class File extends Element {
     } else {
       $panel->setPath($this->start);
     }
+    $panel->setCreate($this->create);
     $panel->setOnSelect([$this, 'selected']);
     $panel->show();
-    $this->elementFile->removeClass('placeholder');
+    if ($this->value === '') {
+      $this->elementFile->setValue($this->value);
+      $this->elementFile->removeClass('placeholder', true);
+    }
     Element::refresh();
+  }
+
+  public function keyPressHandler($element, $event) {
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::SELECT_ITEM:
+        $this->openFilePanel();
+        return true;
+      case Action::DELETE_FORWARD:
+      case Action::DELETE_BACK:
+        $this->setValue('');
+        Element::immediateRender($this);
+        return true;
+    }
+    return false;
+  }
+  public function textInputHandler($element, $event) {
+    return true;
   }
 
 }

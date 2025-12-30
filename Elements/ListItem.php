@@ -19,7 +19,7 @@ class ListItem extends Element {
   }
 
   public function match($search) {
-    if ($this->value !== false) {
+    if ($this->value !== false && $search !== false) {
       $pos = strpos($this->value, $search);
       if ($pos === 0) {
         $slen = mb_strlen($search);

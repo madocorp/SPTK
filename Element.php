@@ -99,6 +99,9 @@ class Element {
   }
 
   protected function calculateWidths() {
+    if ($this->display === false) {
+      return;
+    }
     foreach ($this->descendants as $descendant) {
       $descendant->calculateWidths();
     }
@@ -107,6 +110,9 @@ class Element {
       $spaceCount = 0;
       $previousIsWord = false;
       foreach ($this->descendants as $descendant) {
+        if ($descendant->display === false) {
+          continue;
+        }
         if ($descendant->geometry->position === 'inline') {
           if ($descendant->isWord()) {
             if ($previousIsWord) {
@@ -131,6 +137,9 @@ class Element {
   }
 
   protected function calculateHeights() {
+    if ($this->display === false) {
+      return;
+    }
     foreach ($this->descendants as $descendant) {
       $descendant->calculateHeights();
     }
@@ -140,6 +149,9 @@ class Element {
     $previousIsWord = false;
     foreach ($this->descendants as $descendant) {
       if ($descendant->geometry->position === 'absolute') {
+        continue;
+      }
+      if ($descendant->display === false) {
         continue;
       }
       $space = 0;
@@ -152,7 +164,11 @@ class Element {
         $previousIsWord = false;
       }
       if (
-        ($this->geometry->textWrap === 'auto' && $lineWidth + $space + $descendant->geometry->fullWidth > $this->geometry->innerWidth) ||
+        (
+          $this->geometry->textWrap === 'auto' &&
+          $line['width'] > 0 &&
+          $lineWidth + $space + $descendant->geometry->fullWidth > $this->geometry->innerWidth
+        ) ||
         $descendant->type === 'NL'
       ) {
         if ($line['ascent'] + $line['descent'] < $this->geometry->lineHeight) {
@@ -183,6 +199,9 @@ class Element {
   }
 
   protected function layout() {
+    if ($this->display === false) {
+      return;
+    }
     foreach ($this->descendants as $descendant) {
       $descendant->layout();
     }
@@ -225,6 +244,9 @@ class Element {
   }
 
   protected function redraw($force = false) {
+    if ($this->display === false) {
+      return;
+    }
     if ($force || $this->geometry->sizeChanged()) {
       $this->draw();
     }
@@ -234,9 +256,6 @@ class Element {
   }
 
   protected function draw() {
-    if ($this->display === false) {
-      return;
-    }
     $color = $this->style->get('backgroundColor');
     $width = $this->geometry->width;
     $height = $this->geometry->height;
