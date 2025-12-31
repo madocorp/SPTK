@@ -18,6 +18,9 @@ enum Action {
   case PAGE_UP;
   case PAGE_DOWN;
 
+  case LEVEL_UP;
+  case LEVEL_DOWN;
+
   case SELECT_LEFT;
   case SELECT_RIGHT;
   case SELECT_UP;

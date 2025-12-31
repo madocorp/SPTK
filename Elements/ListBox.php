@@ -197,6 +197,10 @@ class ListBox extends Element {
     $this->pageSize = (int)($this->geometry->innerHeight / $item->geometry->fullHeight);
   }
 
+  public function resetSearch() {
+    $this->typed = '';
+  }
+
   protected function lookUp() {
     $filter = ($this->typing === 'filter');
     if ($this->typed === '') {
@@ -243,6 +247,14 @@ class ListBox extends Element {
     }
   }
 
+  protected function nextMatch() {
+    $this->nextMatch++;
+    $this->lookUp();
+    $this->recalculateGeometry();
+    $this->bringToMiddle();
+    Element::immediateRender($this, false);
+  }
+
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_UP:
@@ -258,6 +270,10 @@ class ListBox extends Element {
         }
         break;
       case Action::SELECT_DOWN:
+        if ($this->typing !== false && mb_strlen($this->typed) > 0) {
+          $this->nextMatch();
+          return true;
+        }
         if ($this->movable && ($this->typing !== 'filter' || $this->typed === '')) {
           if ($this->activeItem < $this->num - 1) {
             $item = $this->descendants[$this->activeItem];
@@ -322,9 +338,9 @@ class ListBox extends Element {
           return true;
         }
         return false;
-      case Action::DO_IT:
+      case Action::DELETE_FORWARD:
         if ($this->typing !== false && mb_strlen($this->typed) > 0) {
-          $this->nextMatch++;
+          $this->resetSearch();
           $this->lookUp();
           $this->recalculateGeometry();
           $this->bringToMiddle();

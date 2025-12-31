@@ -13,6 +13,7 @@ require_once 'Font.php';
 require_once 'Texture.php';
 require_once 'Geometry.php';
 require_once 'ElementStatic.php';
+require_once 'ElementAssistant.php';
 require_once 'Element.php';
 require_once 'LayoutXmlReader.php';
 require_once 'Style.php';
@@ -44,7 +45,7 @@ class App {
     }
     self::$instance = $this;
     spl_autoload_register([$this, 'autoload']);
-    new SDL([$this, 'init'], [$this, 'timer'], [$this, 'eventHandler'], [$this, 'end'], $loop);
+    new SDL([$this, 'init'], [$this, 'timer'], ['\SPTK\Element', 'event'], [$this, 'end'], $loop);
   }
 
   public function init() {
@@ -84,17 +85,6 @@ class App {
     foreach ($this->xss as $xssi) {
       StyleSheet::load($xssi);
     }
-  }
-
-  public function eventHandler($event) {
-    switch ($event['type']) {
-      case SDL::SDL_EVENT_WINDOW_EXPOSED:
-      case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
-      case SDL::SDL_EVENT_WINDOW_RESTORED:
-        Element::refresh();
-        break;
-    }
-    Element::event($event);
   }
 
   public function timer() {

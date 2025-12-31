@@ -100,7 +100,15 @@ class Panel extends Element {
     $this->lower();
   }
 
-  public function activateInput() {
+  public function activateInput($name = false) {
+    if ($name !== false) {
+      foreach ($this->inputList as $idx => $input) {
+        if ($input['element']->name === $name) {
+          $this->focusIndex = $idx;
+          break;
+        }
+      }
+    }
     $element = $this->inputList[$this->focusIndex]['element'];
     $element->addClass('active', true);
     $element->raise();

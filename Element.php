@@ -5,6 +5,7 @@ namespace SPTK;
 class Element {
 
   use ElementStatic;
+  use ElementAssistant;
 
   protected $id;
   protected $name;
@@ -262,10 +263,6 @@ class Element {
     $this->texture = new Texture($this->renderer, $width, $height, $color);
   }
 
-  public function isWord() {
-    return false;
-  }
-
   protected function render() {
     if ($this->display === false) {
       return false;
@@ -309,7 +306,6 @@ class Element {
     return $tmpTexture;
   }
 
-
   protected function addDescendant($element) {
     $this->descendants[] = $element;
     $this->stack[] = $element;
@@ -334,29 +330,6 @@ class Element {
 
   public function remove() {
     $this->ancestor->removeDescendant($this);
-  }
-
-  public function moveAfter($element) {
-    if ($element->id === $this->id) {
-      return;
-    }
-    $after = false;
-    $ancestor = $this->ancestor;
-    foreach ($ancestor->descendants as $i => $item) {
-      if ($item->id === $element->id) {
-        $after = $i;
-      } else if ($item->id == $this->id) {
-        $moveFrom = $i;
-      }
-    }
-    if ($after === false) {
-      return;
-    }
-    array_splice($ancestor->descendants, $moveFrom, 1);
-    if ($moveFrom < $after) {
-      $after--;
-    }
-    array_splice($ancestor->descendants, $after + 1, 0, [$this]);
   }
 
   public function clear() {
@@ -439,6 +412,34 @@ class Element {
     return false;
   }
 
+  public function isWord() {
+    return false;
+  }
+
+  public function moveAfter($element) {
+    if ($element->id === $this->id) {
+      return;
+    }
+    $after = false;
+    $ancestor = $this->ancestor;
+    foreach ($ancestor->descendants as $i => $item) {
+      if ($item->id === $element->id) {
+        $after = $i;
+      } else if ($item->id == $this->id) {
+        $moveFrom = $i;
+      }
+    }
+    if ($after === false) {
+      return;
+    }
+    array_splice($ancestor->descendants, $moveFrom, 1);
+    if ($moveFrom < $after) {
+      $after--;
+    }
+    array_splice($ancestor->descendants, $after + 1, 0, [$this]);
+  }
+
+
   public function getId() {
     return $this->id;
   }
@@ -475,7 +476,7 @@ class Element {
     return [];
   }
 
-  public function addevent($event, $handler) {
+  public function addEvent($event, $handler) {
     if (!is_array($handler)) {
       $handler = preg_split('/::/', $handler);
     }
@@ -536,33 +537,6 @@ class Element {
 
   public function removeChildClass($class) {
     array_pop($this->childClass);
-  }
-
-  public function findAncestorByType($type) {
-    if ($this->type == $type) {
-      return $this;
-    }
-    return $this->ancestor->findAncestorByType($type);
-  }
-
-  public function debug($level = 0) {
-    $pad = str_repeat(' ', $level * 4);
-    $class = '';
-    if (!empty($this->sclass)) {
-      $class = '.' . implode('.', $this->sclass);
-    }
-    $value = '';
-    if ($this->value !== false) {
-      $value = " [{$this->value}]";
-    }
-    echo "{$pad}{$this->type}@{$this->id}" . ($this->name !== 0 ? "#{$this->name}" : '') ."{$class}{$value}";
-    echo "  {$this->geometry->width}x{$this->geometry->height} {$this->geometry->x}:{$this->geometry->y}\n";
-    foreach ($this->events as $event => $handler) {
-      echo "{$pad}  - {$event} > " . (is_array($handler) ? (is_object($handler[0]) ? get_class($handler[0]) : $handler[0]) . '::' . $handler[1] : implode('::', $handler)) . "\n";
-    }
-    foreach ($this->descendants as $element) {
-      $element->debug($level + 1);
-    }
   }
 
 }

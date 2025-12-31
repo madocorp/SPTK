@@ -27,8 +27,8 @@ class FilePanel extends Panel {
     $this->theList->setOnChange([$this, 'changed']);
     $this->theList->setTyping('search');
     $this->fileNameLabel = new Element($content, false, false, 'Label');
-    $this->fileNameLabel->addText('File name:');
-    $this->fileNameInput = new Input($this->fileNameLabel);
+    $this->fileNameLabel->addText('New name:');
+    $this->fileNameInput = new Input($this->fileNameLabel, 'fileName');
     $this->fileNameInput->setOnChange([$this, 'changed']);
     $buttons = new Element($content, false, false, 'ButtonBox');
     $cancel = new Button($buttons);
@@ -39,6 +39,8 @@ class FilePanel extends Panel {
     $this->createDirBtn->addText('Create dir');
     $this->createDirBtn->setOnPress([$this, 'createDir']);
     $this->okBtn = new Button($buttons);
+    $this->okBtn->setHotKey('SPACE');
+    $this->okBtn->addText('OK');
     $this->okBtn->setOnPress([$this, 'choose']);
   }
 
@@ -50,14 +52,8 @@ class FilePanel extends Panel {
     $this->fileFilter = $filter;
     if ($this->fileFilter === false) {
       $this->title->addText('Choose a directory!');
-      $this->fileNameInput->hide();
-      $this->fileNameLabel->hide();
-      $this->okBtn->setHotKey('SPACE');
-      $this->okBtn->addText('OK');
     } else {
       $this->title->addText('Choose a file!');
-      $this->okBtn->setHotKey('RETURN');
-      $this->okBtn->addText('OK');
     }
   }
 
@@ -79,19 +75,25 @@ class FilePanel extends Panel {
   }
 
   public function setPath($path, $selected = false) {
-// new file...
+    $this->theList->resetSearch();
     if ($path === '/' || empty($path)) {
       $this->dir = '/';
       $this->file = '';
     } else {
       $path = '/' . trim($path, '/');
-      if (is_file($path)) {
+      if (!file_exists($path)) {
         $this->dir = dirname($path) . '/';
-        $this->file = basename($path);
-        $selected = $this->file;
-      } else {
-        $this->dir = $path . '/';
         $this->file = '';
+        $this->fileNameInput->setValue(basename($path));
+      } else {
+        if (is_file($path)) {
+          $this->dir = dirname($path) . '/';
+          $this->file = basename($path);
+          $selected = $this->file;
+        } else {
+          $this->dir = $path . '/';
+          $this->file = '';
+        }
       }
     }
     $res = $this->loadDir($dirs, $files);
@@ -134,6 +136,7 @@ class FilePanel extends Panel {
     foreach ($dirs as $dir) {
       $li = new ListItem($this->theList);
       $li->addText(($i > 0 ? '/' : '') . $dir);
+      $li->setValue('/' . $dir);
       if ($dir === $selected) {
         $cursor = $i;
       }
@@ -154,6 +157,7 @@ class FilePanel extends Panel {
           }
         }
         $li = new ListItem($this->theList);
+        $li->addClass('file', true);
         $li->addText($file);
         $li->setValue($file);
         if ($file === $selected) {
@@ -163,27 +167,23 @@ class FilePanel extends Panel {
       }
     }
     $this->theList->moveCursor($cursor);
+    $this->theList->recalculateGeometry();
   }
 
   private function refreshPath() {
     $this->path->clear();
-    $path = $this->dir . $this->file;
-    if ($this->fileFilter !== false && $this->create) {
+    $path = rtrim($this->dir .  ($this->file === '..'  ? '' : $this->file), '/');
+    if ($this->create) {
       $fileName = $this->fileNameInput->getValue();
-      if (is_file($path)) {
-        if ($fileName !== '') {
-          $path = $this->dir . $fileName;
-        }
-      } else {
-        if ($fileName !== '') {
-          $path = rtrim($path, '/') . '/' . $fileName;
-        }
+      if ($fileName !== '') {
+        $path = $this->dir . $fileName;
       }
     }
     $this->value = $path;
     $this->path->addText($path);
-    Element::immediateRender($this->path);
-    Element::immediateRender($this->fileNameInput);
+    $this->path->recalculateGeometry();
+    $this->path->scrollToRight();
+    Element::immediateRender($this);
   }
 
   public function changed($element) {
@@ -197,7 +197,21 @@ class FilePanel extends Panel {
   }
 
   public function createDir($element) {
-
+    if (!$this->fileNameInput->hasClass('active', true)) {
+      $this->inactivateInput();
+      $this->activateInput('fileName');
+      Element::immediateRender($this);
+      return;
+    }
+    if (file_exists($this->value)) {
+      return;
+    }
+    $this->fileNameInput->setValue('');
+    $created = mkdir($this->value);
+    if ($created) {
+      $this->setPath($this->value);
+    }
+    Element::immediateRender($this);
   }
 
   public function choose() {
@@ -217,6 +231,7 @@ class FilePanel extends Panel {
       case Action::SELECT_ITEM:
         $this->choose();
         return true;
+      case Action::LEVEL_DOWN:
       case Action::DO_IT:
         $dir = trim($this->theList->getValue(), '/');
         if ($dir === '..') {
@@ -224,12 +239,10 @@ class FilePanel extends Panel {
           $this->theList->bringToMiddle();
         } else if (is_dir("{$this->dir}{$dir}")) {
           $this->setPath("{$this->dir}{$dir}");
-        } else if ($this->fileFilter !== false) {
-          $this->choose();
         }
         Element::refresh();
         return true;
-      case Action::DELETE_BACK:
+      case Action::LEVEL_UP:
         $this->setPath(dirname($this->dir), basename($this->dir));
         $this->theList->bringToMiddle();
         Element::refresh();

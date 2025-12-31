@@ -238,6 +238,7 @@ Path {
   borderBottom: 1px;
   borderColor: #000000;
   marginBottom: 10px;
+  textWrap: manual;
 }
 
 Label {
@@ -385,6 +386,11 @@ ListItem {
   padding: 0px, 10px;
   textWrap: manual;
   height: 19px;
+}
+
+ListItem:file {
+  color: #005555;
+  paddingLeft: 20px;
 }
 
 ListItem:selected {
