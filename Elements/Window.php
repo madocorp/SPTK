@@ -114,11 +114,26 @@ class Window extends Element {
       return false;
     }
     if (true) { // check window id
-      if ($event['type'] == SDL::SDL_EVENT_WINDOW_RESIZED) {
-        $this->tmpTexture = false;
-        $this->getSize();
-        $this->draw();
-        return true;
+      switch ($event['type']) {
+        case SDL::SDL_EVENT_WINDOW_EXPOSED:
+          Element::refresh();
+          return true;
+        case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
+        case SDL::SDL_EVENT_WINDOW_RESTORED:
+        case SDL::SDL_EVENT_WINDOW_RESIZED:
+          $this->tmpTexture = false;
+          $this->getSize();
+          $this->draw();
+          Element::refresh();
+          return true;
+        case SDL::SDL_EVENT_KEY_DOWN:
+        case SDL::SDL_EVENT_KEY_UP:
+        case SDL::SDL_EVENT_TEXT_INPUT:
+          // send these to the elements
+          break;
+        default:
+          // skip other events
+          return true;
       }
       $n = count($this->stack);
       if ($n > 0) {
