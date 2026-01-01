@@ -66,12 +66,12 @@ class FilePanel extends Panel {
     }
   }
 
-  public function getValue() {
-    return $this->value;
-  }
-
   public function setValue($value) {
     $this->value = $value;
+  }
+
+  public function getValue() {
+    return $this->value;
   }
 
   public function setPath($path, $selected = false) {

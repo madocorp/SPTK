@@ -13,10 +13,6 @@ class Button extends Element {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  public function isWord() {
-    return true;
-  }
-
   public function getAttributeList() {
     return ['hotKey', 'onPress'];
   }
@@ -50,6 +46,10 @@ class Button extends Element {
       }
       $this->panel->addHotKey(constant("\SPTK\KeyCode::{$this->hotKeyStr}"), $this->onPress);
     }
+  }
+
+  public function isWord() {
+    return true;
   }
 
   public function keyPressHandler($element, $event) {

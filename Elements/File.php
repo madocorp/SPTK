@@ -25,6 +25,45 @@ class File extends Element {
     return ['value', 'placeholder', 'start', 'file', 'create'];
   }
 
+  public function setValue($value) {
+    if ($value === false) {
+      return;
+    }
+    $this->value = $value;
+    $this->elementFile->setValue($this->value);
+  }
+
+  public function setPlaceholder($value) {
+    $this->placeholder = $value;
+  }
+
+  public function setStart($value) {
+    if ($value === '~') {
+      $value = getenv('HOME') ?: getenv('USERPROFILE');
+      if (!$value) {
+        $value = '.';
+      }
+    }
+    $path = realpath($value);
+    if ($path !== false && is_dir($path)) {
+      $this->start = $path;
+    }
+  }
+
+  public function setFile($value) {
+    if ($value === 'true') {
+      $this->fileFilter = true;
+    } else if ($value === 'false') {
+      $this->fileFilter = false;
+    } else {
+      $this->fileFilter = explode(',', $value);
+    }
+  }
+
+  public function setCreate($value) {
+    $this->create = ($value === 'true');
+  }
+
   public function addClass($class, $dynamic = false) {
     if ($dynamic && $class == 'active') {
       $this->elementBrowse->addClass('active', true);
@@ -45,45 +84,6 @@ class File extends Element {
       }
     }
     parent::removeClass($class, $dynamic);
-  }
-
-  public function setPlaceholder($value) {
-    $this->placeholder = $value;
-  }
-
-  public function setStart($value) {
-    if ($value === '~') {
-      $value = getenv('HOME') ?: getenv('USERPROFILE');
-      if (!$value) {
-        $value = '.';
-      }
-    }
-    $path = realpath($value);
-    if ($path !== false && is_dir($path)) {
-      $this->start = $path;
-    }
-  }
-
-  public function setCreate($value) {
-    $this->create = ($value === 'true');
-  }
-
-  public function setFile($value) {
-    if ($value === 'true') {
-      $this->fileFilter = true;
-    } else if ($value === 'false') {
-      $this->fileFilter = false;
-    } else {
-      $this->fileFilter = explode(',', $value);
-    }
-  }
-
-  public function setValue($value) {
-    if ($value === false) {
-      return;
-    }
-    $this->value = $value;
-    $this->elementFile->setValue($this->value);
   }
 
   public function selected($path) {
@@ -124,6 +124,7 @@ class File extends Element {
     }
     return false;
   }
+
   public function textInputHandler($element, $event) {
     return true;
   }

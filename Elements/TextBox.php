@@ -86,5 +86,4 @@ class TextBox extends Element {
     return false;
   }
 
-
 }

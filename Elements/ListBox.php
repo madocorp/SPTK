@@ -32,6 +32,17 @@ class ListBox extends Element {
     $this->multiple = ($value === 'true');
   }
 
+  public function setOnChange($value) {
+    if ($value === false) {
+      return;
+    }
+    if (is_array($value)) {
+      $this->onChange = $value;
+    } else {
+      $this->onChange = self::parseCallback($value);
+    }
+  }
+
   public function setTyping($value) {
     if ($value === 'search') {
       $this->typing = 'search';
@@ -45,14 +56,12 @@ class ListBox extends Element {
     }
   }
 
-  public function setOnChange($value) {
-    if ($value === false) {
-      return;
-    }
-    if (is_array($value)) {
-      $this->onChange = $value;
-    } else {
-      $this->onChange = self::parseCallback($value);
+  public function setSelected($element) {
+    foreach ($this->descendants as $i => $descendant) {
+      if ($element->id === $descendant->id) {
+        $this->activeItem = $i;
+        $this->activateItem();
+      }
     }
   }
 
@@ -123,15 +132,6 @@ class ListBox extends Element {
       }
     }
     parent::removeClass($class, $dynamic);
-  }
-
-  public function setSelected($element) {
-    foreach ($this->descendants as $i => $descendant) {
-      if ($element->id === $descendant->id) {
-        $this->activeItem = $i;
-        $this->activateItem();
-      }
-    }
   }
 
   public function moveCursor($n, $relative = false) {
