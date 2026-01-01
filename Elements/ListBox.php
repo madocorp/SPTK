@@ -7,7 +7,7 @@ class ListBox extends Element {
   protected $activeItem = 0;
   protected $num = 0;
   protected $movable = false;
-  protected $multiple = false;
+  protected $selectable = false;
   protected $onChange = false;
   protected $pageSize = 1;
   protected $typing = false;
@@ -21,15 +21,11 @@ class ListBox extends Element {
   }
 
   public function getAttributeList() {
-    return ['movable', 'multiple', 'onChange', 'typing'];
+    return ['movable', 'onChange', 'typing'];
   }
 
   public function setMovable($value) {
     $this->movable = ($value === 'true');
-  }
-
-  public function setMultiple($value) {
-    $this->multiple = ($value === 'true');
   }
 
   public function setOnChange($value) {
@@ -215,12 +211,14 @@ class ListBox extends Element {
     } else {
       $matchIndex = false;
       $firstMatchIndex = false;
+      $lastMatchIndex = false;
       $matchCount = 0;
       foreach ($this->descendants as $i => $descendant) {
         if ($descendant->match($this->typed)) {
           if ($firstMatchIndex === false) {
             $firstMatchIndex = $i;
           }
+          $lastMatchIndex = $i;
           if ($matchIndex === false && $matchCount == $this->nextMatch) {
             $matchIndex = $i;
           }
@@ -235,8 +233,13 @@ class ListBox extends Element {
         }
       }
       if ($matchIndex === false && $firstMatchIndex !== false) {
-        $matchIndex = $firstMatchIndex;
-        $this->nextMatch = 0;
+        if ($this->nextMatch < 0) {
+          $matchIndex = $lastMatchIndex;
+          $this->nextMatch = $matchCount - 1;
+        } else {
+          $matchIndex = $firstMatchIndex;
+          $this->nextMatch = 0;
+        }
       }
       if ($matchIndex !== false) {
         $this->moveCursor($matchIndex);
@@ -255,9 +258,21 @@ class ListBox extends Element {
     Element::immediateRender($this, false);
   }
 
+  protected function previousMatch() {
+    $this->nextMatch--;
+    $this->lookUp();
+    $this->recalculateGeometry();
+    $this->bringToMiddle();
+    Element::immediateRender($this, false);
+  }
+
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_UP:
+        if ($this->typing !== false && mb_strlen($this->typed) > 0) {
+          $this->previousMatch();
+          return true;
+        }
         if ($this->movable && ($this->typing !== 'filter' || $this->typed === '')) {
           if ($this->activeItem > 0) {
             $item = $this->descendants[$this->activeItem];

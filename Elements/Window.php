@@ -119,9 +119,9 @@ class Window extends Element {
     }
   }
 
-  protected function redraw($force = false) {
+  protected function redraw() {
     foreach ($this->descendants as $descendant) {
-      $descendant->redraw($force);
+      $descendant->redraw();
     }
   }
 

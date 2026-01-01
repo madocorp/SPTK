@@ -164,15 +164,35 @@ trait ElementLayout {
     $this->geometry->contentWidth = $maxX;
   }
 
-  protected function redraw($force = false) {
+  protected function redraw() {
     if ($this->display === false) {
-      return;
+      return false;
     }
-    if ($force || $this->styleChanged ||  $this->geometry->sizeChanged()) {
+    if ($this->styleChanged ||  $this->geometry->sizeChanged()) {
       $this->draw();
     }
-    foreach ($this->stack as $i => $element) {
-      $element->redraw($force);
+    foreach ($this->stack as $i => $descendant) {
+      if ($descendant->display === false) {
+        continue;
+      }
+      $descendant->clipped = false;
+      if ($descendant->geometry->x - $this->scrollX > $this->geometry->width) {
+        $descendant->clipped = true;
+        continue;
+      }
+      if ($descendant->geometry->y - $this->scrollY > $this->geometry->height) {
+        $descendant->clipped = true;
+        continue;
+      }
+      if ($descendant->geometry->x + $descendant->geometry->width - $this->scrollX < 0) {
+        $descendant->clipped = true;
+        continue;
+      }
+      if ($descendant->geometry->y + $descendant->geometry->height - $this->scrollY < 0) {
+        $descendant->clipped = true;
+        continue;
+      }
+      $descendant->redraw();
     }
   }
 
@@ -193,22 +213,11 @@ trait ElementLayout {
     }
     $tmpTexture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, [0, 0, 0, 0]);
     $this->texture->copyTo($tmpTexture, 0, 0);
-    $n = count($this->stack);
-    for ($i = 0; $i < $n; $i++) {
-      $descendant = $this->stack[$i];
+    foreach ($this->stack as $descendant) {
       if ($descendant->display === false) {
         continue;
       }
-      if ($descendant->geometry->x - $this->scrollX > $this->geometry->width) {
-        continue;
-      }
-      if ($descendant->geometry->y - $this->scrollY > $this->geometry->height) {
-        continue;
-      }
-      if ($descendant->geometry->x + $descendant->geometry->width - $this->scrollX < 0) {
-        continue;
-      }
-      if ($descendant->geometry->y + $descendant->geometry->height - $this->scrollY < 0) {
+      if ($descendant->clipped) {
         continue;
       }
       $dTexture = $descendant->render();

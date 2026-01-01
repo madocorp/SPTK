@@ -384,14 +384,25 @@ ListBox {
 
 ListItem {
   width: 100%;
-  padding: 0px, 10px;
   textWrap: manual;
   height: 19px;
 }
 
+ItemRight {
+  position: absolute;
+  x: -6px;
+  y: 0px;
+  color: #0000ff;
+}
+
+ItemLeft {
+  width: 20px;
+  color: #0000ff;
+  textAlign: center;
+}
+
 ListItem:file {
-  color: #005555;
-  paddingLeft: 20px;
+  color: #555500;
 }
 
 ListItem:selected {

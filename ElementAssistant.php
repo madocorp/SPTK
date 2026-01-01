@@ -8,6 +8,10 @@ trait ElementAssistant {
     ;
   }
 
+  public function postInit() {
+    ;
+  }
+
   public function isWord() {
     return false;
   }

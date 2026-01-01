@@ -72,6 +72,11 @@ trait ElementTree {
     }
   }
 
+  public function setText($text) {
+    $this->clear();
+    $this->addText($text);
+  }
+
   public function getText(&$text = null) {
     if ($text === null) {
       $text = [];

@@ -35,6 +35,7 @@ class Menu extends Element {
     }
     $this->openedIndex = $menuIndex;
     $this->sub->showMenuBox($barItem->getName(), $barItem->geometry->x, 0, true);
+    return true;
   }
 
   public function nextMenu() {

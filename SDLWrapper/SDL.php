@@ -29,32 +29,34 @@ class SDL {
   public $sdl;
   private $waitForEvent = 100; // ms
   private $timerPeriod = 1000000;
-  private $eventCallback;
-  private $timerCallback;
-  private $loopCallback;
+  private $eventCallback = false;
+  private $loopCallback = false;
+  private $timerCallback = false;
+  private $endCallback = false;
   private $end = false;
 
-  public function __construct($initCallback, $timerCallback, $eventCallback, $endCallback, $loopCallback) {
+  public function __construct($initCallback) {
     if (!is_null(self::$instance)) {
       throw new \Exception("SPTK\\SDL is a singleton, you can't instantiate more than once");
     }
     self::$instance = $this;
-    $this->eventCallback = $eventCallback;
-    $this->timerCallback = $timerCallback;
-    $this->loopCallback = $loopCallback;
     pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
     $dir = App::$instance->getDir();
     $this->sdl = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_extract.h"), "{$dir}/SDLWrapper/libSDL3.so");
     $this->sdl->SDL_Init(self::SDL_INIT_VIDEO);
     KeyCombo::init();
-    call_user_func($initCallback);
+    if ($initCallback !== false) {
+      call_user_func($initCallback, $this);
+    }
     try {
       $this->eventLoop();
     } catch (\Exception $e) {
       echo "ERROR: Uncaught exception in the event loop!\n";
       echo '       ' . $e->getMessage(), "\n";
     }
-    call_user_func($endCallback);
+    if ($this->endCallback !== false) {
+      call_user_func($this->endCallback);
+    }
     $this->sdl->SDL_Quit();
   }
 
@@ -70,16 +72,20 @@ class SDL {
       if ($hasEvent) {
         do {
           $parsedEvent = $this->parseEvent($event);
-          call_user_func($this->eventCallback, $parsedEvent);
+          if ($this->eventCallback !== false) {
+            call_user_func($this->eventCallback, $parsedEvent);
+          }
         } while (!$this->end && $this->sdl->SDL_PollEvent(\FFI::addr($event)));
       }
-      if ($this->loopCallback !== null) {
+      if ($this->loopCallback !== false) {
         call_user_func($this->loopCallback);
       }
       pcntl_signal_dispatch();
       $now = microtime(true) * 1000000;
       if ($now > $timer + $this->timerPeriod) {
-        call_user_func($this->timerCallback, $now);
+        if ($this->timerCallback !== false) {
+          call_user_func($this->timerCallback, $now);
+        }
         $timer = $now;
       }
     }
@@ -142,6 +148,22 @@ class SDL {
     }
     $this->timerPeriod = $timerPeriod;
     $this->waitForEvent = $waitForEvent;
+  }
+
+  public function setEventCallback($callback) {
+    $this->eventCallback = $callback;
+  }
+
+  public function setLoopCallback($callback) {
+    $this->loopCallback = $callback;
+  }
+
+  public function setTimerCallback($callback) {
+    $this->timerCallback = $callback;
+  }
+
+  public function setEndCallback($callback) {
+    $this->endCallback = $callback;
   }
 
 }
