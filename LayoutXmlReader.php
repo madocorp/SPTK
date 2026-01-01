@@ -73,6 +73,7 @@ class LayoutXmlReader {
             $this->current->removeChildClass($xml->getAttribute('class'));
           } else {
             if (!is_null($this->current)) {
+              $this->current->postInit();
               $this->current = $this->current->getAncestor();
             }
           }

@@ -34,14 +34,16 @@ class App {
   private $xss;
   private $dir;
   private $initCallback;
+  private $loopCallback;
   private $timerCallback;
   private $endCallback;
 
-  public function __construct($xml, $xss, $init = null, $timer = null, $end = null, $loop = null) {
+  public function __construct($xml, $xss, $init = false, $loop = false, $timer = false, $end = false) {
     $this->xml = $xml;
     $this->xss = $xss;
     $this->dir = dirname(__FILE__);
     $this->initCallback = $init;
+    $this->loopCallback = $loop;
     $this->timerCallback = $timer;
     $this->endCallback = $end;
     if (!is_null(self::$instance)) {
@@ -49,10 +51,10 @@ class App {
     }
     self::$instance = $this;
     spl_autoload_register([$this, 'autoload']);
-    new SDL([$this, 'init'], [$this, 'timer'], ['\SPTK\Element', 'event'], [$this, 'end'], $loop);
+    new SDL([$this, 'init']);
   }
 
-  public function init() {
+  public function init($sdl) {
     if (!defined('DEBUG')) {
       define('DEBUG', false);
     }
@@ -60,10 +62,14 @@ class App {
     Texture::init();
     $this->loadXss();
     $this->loadXml();
+    $sdl->setEventCallback([\SPTK\Element::$root, 'eventHandler']);
+    $sdl->setLoopCallback($this->loopCallback);
+    $sdl->setTimerCallback($this->timerCallback);
+    $sdl->setEndCallback([$this, 'end']);
     if (DEBUG) {
       Element::$root->debug();
     }
-    if (!is_null($this->initCallback)) {
+    if ($this->initCallback !== false) {
       call_user_func($this->initCallback);
     }
   }
@@ -91,17 +97,8 @@ class App {
     }
   }
 
-  public function timer() {
-    if (DEBUG) {
-//      echo "timer\n";
-    }
-    if (!is_null($this->timerCallback)) {
-      call_user_func($this->timerCallback);
-    }
-  }
-
   public function end() {
-    if (!is_null($this->endCallback)) {
+    if ($this->endCallback !== false) {
       call_user_func($this->endCallback);
     }
     Font::closeAll();

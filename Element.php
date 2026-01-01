@@ -31,6 +31,7 @@ class Element {
   protected $childClass = [];
   protected $scrollX = 0;
   protected $scrollY = 0;
+  protected $clipped = false;
 
   public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
     $this->id = self::getNextId();

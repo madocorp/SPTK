@@ -135,8 +135,11 @@ class FilePanel extends Panel {
     $cursor = 0;
     foreach ($dirs as $dir) {
       $li = new ListItem($this->theList);
-      $li->addText(($i > 0 ? '/' : '') . $dir);
-      $li->setValue('/' . $dir);
+      if ($i > 0) {
+        $li->setLeft('/');
+      }
+      $li->setValue($dir);
+      $li->setFilterable(true);
       if ($dir === $selected) {
         $cursor = $i;
       }
@@ -158,7 +161,7 @@ class FilePanel extends Panel {
         }
         $li = new ListItem($this->theList);
         $li->addClass('file', true);
-        $li->addText($file);
+        $li->setFilterable(true);
         $li->setValue($file);
         if ($file === $selected) {
           $cursor = $i;
@@ -183,7 +186,7 @@ class FilePanel extends Panel {
     $this->path->addText($path);
     $this->path->recalculateGeometry();
     $this->path->scrollToRight();
-    Element::immediateRender($this);
+    Element::immediateRender($this->path, false);
   }
 
   public function changed($element) {
