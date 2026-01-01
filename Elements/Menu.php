@@ -21,29 +21,6 @@ class Menu extends Element {
     }
   }
 
-  public function keyPressHandler($element, $event) {
-    $menu = false;
-    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
-      case KeyCode::F1: $menu = 0; break;
-      case KeyCode::F2: $menu = 1; break;
-      case KeyCode::F3: $menu = 2; break;
-      case KeyCode::F4: $menu = 3; break;
-      case KeyCode::F5: $menu = 4; break;
-      case KeyCode::F6: $menu = 5; break;
-      case KeyCode::F7: $menu = 6; break;
-      case KeyCode::F8: $menu = 7; break;
-      case KeyCode::F9: $menu = 8; break;
-      case KeyCode::F10: $menu = 9; break;
-      case KeyCode::F11: $menu = 10; break;
-      case KeyCode::F12: $menu = 11; break;
-      case Action::CLOSE: $this->closeMenu(); break;
-    }
-    if ($menu !== false) {
-      return $this->openMenu($menu);
-    }
-    return false;
-  }
-
   public function closeMenu() {
     $this->bar->inactivateMenuBarItems();
     $this->openedIndex = false;
@@ -74,6 +51,29 @@ class Menu extends Element {
       $menuIndex = $this->bar->getItemCount() - 1;
     }
     $this->openMenu($menuIndex);
+  }
+
+  public function keyPressHandler($element, $event) {
+    $menu = false;
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case KeyCode::F1: $menu = 0; break;
+      case KeyCode::F2: $menu = 1; break;
+      case KeyCode::F3: $menu = 2; break;
+      case KeyCode::F4: $menu = 3; break;
+      case KeyCode::F5: $menu = 4; break;
+      case KeyCode::F6: $menu = 5; break;
+      case KeyCode::F7: $menu = 6; break;
+      case KeyCode::F8: $menu = 7; break;
+      case KeyCode::F9: $menu = 8; break;
+      case KeyCode::F10: $menu = 9; break;
+      case KeyCode::F11: $menu = 10; break;
+      case KeyCode::F12: $menu = 11; break;
+      case Action::CLOSE: $this->closeMenu(); break;
+    }
+    if ($menu !== false) {
+      return $this->openMenu($menu);
+    }
+    return false;
   }
 
 }

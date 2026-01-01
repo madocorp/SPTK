@@ -26,6 +26,8 @@ trait ElementStatic {
     $t = microtime(true);
     if ($layout) {
       $element->recalculateGeometry();
+    } else {
+      $element->redraw();
     }
     $tmpTexture = $element->render();
     if ($tmpTexture === false) {

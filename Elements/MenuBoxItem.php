@@ -18,24 +18,6 @@ class MenuBoxItem extends Element {
     $this->selectField = new Element($this, false, false, 'MenuBoxItemLeft');
   }
 
-  public function getValue() {
-    if ($this->value === false || $this->value === '') {
-      return $this->getText();
-    }
-    return $this->value;
-  }
-
-  public function getWidth() {
-    $width = 0;
-    foreach ($this->descendants as $descendant) {
-      if ($descendant->type == 'Word') {
-        $width += $descendant->getWidth();
-        $width += $descendant->style->get('wordSpacing');
-      }
-    }
-    return $width + 30;
-  }
-
   public function getAttributeList() {
     return ['submenu', 'radio', 'selectable', 'selected', 'filterable', 'onOpen', 'onSelect', 'value'];
   }
@@ -49,17 +31,17 @@ class MenuBoxItem extends Element {
     }
   }
 
-  public function setSelectable($value) {
-    if ($value === 'true') {
-      $this->selectable = true;
+  public function setRadio($value) {
+    if ($value !== 'false' && $value !== false) {
+      $this->radio = $value;
       $this->selectWord = new Word($this->selectField);
       $this->selectWord->setValue(' ');
     }
   }
 
-  public function setRadio($value) {
-    if ($value !== 'false' && $value !== false) {
-      $this->radio = $value;
+  public function setSelectable($value) {
+    if ($value === 'true') {
+      $this->selectable = true;
       $this->selectWord = new Word($this->selectField);
       $this->selectWord->setValue(' ');
     }
@@ -94,6 +76,24 @@ class MenuBoxItem extends Element {
 
   public function setOnSelect($value) {
     $this->onSelect = self::parseCallback($value);
+  }
+
+  public function getValue() {
+    if ($this->value === false || $this->value === '') {
+      return $this->getText();
+    }
+    return $this->value;
+  }
+
+  public function getWidth() {
+    $width = 0;
+    foreach ($this->descendants as $descendant) {
+      if ($descendant->type == 'Word') {
+        $width += $descendant->getWidth();
+        $width += $descendant->style->get('wordSpacing');
+      }
+    }
+    return $width + 30;
   }
 
   protected function openSubmenu() {

@@ -126,63 +126,6 @@ class Panel extends Element {
     unset($this->hotKeys[$key]);
   }
 
-  public function keyPressHandler($element, $event) {
-    if (!$this->display) {
-      return false;
-    }
-    if (isset($this->hotKeys[$event['key']])) {
-      call_user_func($this->hotKeys[$event['key']], $this);
-      return true;
-    }
-    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
-      case Action::DO_IT:
-      case Action::CLOSE:
-        $this->close();
-        return true;
-      case Action::SWITCH_NEXT:
-        if ($this->focusIndex < 0) {
-          return true;
-        }
-        $this->inactivateInput();
-        $this->focusIndex++;
-        if ($this->focusIndex >= count($this->inputList)) {
-          $this->focusIndex = 0;
-        }
-        $this->activateInput();
-        Element::refresh();
-        return true;
-      case Action::SWITCH_PREVIOUS:
-        if ($this->focusIndex < 0) {
-          return true;
-        }
-        $this->inactivateInput();
-        $this->focusIndex--;
-        if ($this->focusIndex < 0) {
-          $this->focusIndex = count($this->inputList) - 1;
-        }
-        $this->activateInput();
-        Element::refresh();
-        return true;
-      case Action::MOVE_LEFT:
-      case Action::SWITCH_LEFT:
-        $this->activateClosestInput('left');
-        return true;
-      case Action::MOVE_RIGHT:
-      case Action::SWITCH_RIGHT:
-        $this->activateClosestInput('right');
-        return true;
-      case Action::MOVE_UP:
-      case Action::SWITCH_UP:
-        $this->activateClosestInput('up');
-        return true;
-      case Action::MOVE_DOWN:
-      case Action::SWITCH_DOWN:
-        $this->activateClosestInput('down');
-        return true;
-    }
-    return true;
-  }
-
   private function findClosestInput($direction) {
     $focus = $this->inputList[$this->focusIndex];
     $bestPrimary = PHP_INT_MAX;
@@ -267,8 +210,7 @@ class Panel extends Element {
       }
     }
     return $bestIdx;
-
- }
+  }
 
   private function activateClosestInput($direction) {
     if ($this->focusIndex < 0) {
@@ -283,6 +225,73 @@ class Panel extends Element {
       $this->focusIndex = $idx;
     }
     $this->activateInput();
+    Element::refresh();
+  }
+
+  public function keyPressHandler($element, $event) {
+    if (!$this->display) {
+      return false;
+    }
+    if (isset($this->hotKeys[$event['key']])) {
+      call_user_func($this->hotKeys[$event['key']], $this);
+      return true;
+    }
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::DO_IT:
+      case Action::CLOSE:
+        $this->close();
+        return true;
+      case Action::SWITCH_NEXT:
+        if ($this->focusIndex < 0) {
+          return true;
+        }
+        $this->inactivateInput();
+        $this->focusIndex++;
+        if ($this->focusIndex >= count($this->inputList)) {
+          $this->focusIndex = 0;
+        }
+        $this->activateInput();
+        Element::refresh();
+        return true;
+      case Action::SWITCH_PREVIOUS:
+        if ($this->focusIndex < 0) {
+          return true;
+        }
+        $this->inactivateInput();
+        $this->focusIndex--;
+        if ($this->focusIndex < 0) {
+          $this->focusIndex = count($this->inputList) - 1;
+        }
+        $this->activateInput();
+        Element::refresh();
+        return true;
+      case Action::MOVE_LEFT:
+      case Action::SWITCH_LEFT:
+        $this->activateClosestInput('left');
+        return true;
+      case Action::MOVE_RIGHT:
+      case Action::SWITCH_RIGHT:
+        $this->activateClosestInput('right');
+        return true;
+      case Action::MOVE_UP:
+      case Action::SWITCH_UP:
+        $this->activateClosestInput('up');
+        return true;
+      case Action::MOVE_DOWN:
+      case Action::SWITCH_DOWN:
+        $this->activateClosestInput('down');
+        return true;
+    }
+    return true;
+  }
+
+  public function close() {
+    if ($this->destroyAtClose) {
+      $this->remove();
+    } else {
+      $this->inputList = [];
+      $this->hide();
+    }
     Element::refresh();
   }
 
@@ -337,16 +346,6 @@ class Panel extends Element {
       }
     }
     $panel->show();
-    Element::refresh();
-  }
-
-  public function close() {
-    if ($this->destroyAtClose) {
-      $this->remove();
-    } else {
-      $this->inputList = [];
-      $this->hide();
-    }
     Element::refresh();
   }
 

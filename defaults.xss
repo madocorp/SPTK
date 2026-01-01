@@ -64,6 +64,7 @@ Menu {
 }
 
 SubMenu {
+  backgroundColor: #00000000;
   position: absolute;
   width: 100%;
   height: -20px;

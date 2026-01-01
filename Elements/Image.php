@@ -49,6 +49,14 @@ class Image extends Element {
     ;
   }
 
+  protected function draw() {
+    // lazy load?
+  }
+
+  protected function render() {
+    return $this->texture;
+  }
+
   protected function load() {
     $img = imagecreatefrompng($this->value);
     if (!$img) {
@@ -100,14 +108,6 @@ class Image extends Element {
     $sdl->SDL_UnlockSurface($surface);
     // create a Texture from the surface
     $this->texture = new Texture($this->renderer, $this->width, $this->height, $bgcolor, $surface);
-  }
-
-  protected function draw() {
-    // lazy load?
-  }
-
-  protected function render() {
-    return $this->texture;
   }
 
 }

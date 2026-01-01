@@ -11,6 +11,16 @@ class ListItem extends Element {
     return ['selected', 'value'];
   }
 
+  public function setSelected($value) {
+    if ($value === true || $value === 'true') {
+      $this->selected = true;
+      $this->addClass('selected', true);
+      $this->ancestor->setSelected($this);
+    } else {
+      $this->selected = false;
+    }
+  }
+
   public function getValue() {
     if ($this->value === false || $this->value === '') {
       return $this->getText();
@@ -43,16 +53,6 @@ class ListItem extends Element {
       $this->addText($this->value);
     }
     return false;
-  }
-
-  public function setSelected($value) {
-    if ($value === true || $value === 'true') {
-      $this->selected = true;
-      $this->addClass('selected', true);
-      $this->ancestor->setSelected($this);
-    } else {
-      $this->selected = false;
-    }
   }
 
 }

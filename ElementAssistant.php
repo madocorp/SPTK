@@ -4,6 +4,66 @@ namespace SPTK;
 
 trait ElementAssistant {
 
+  protected function init() {
+    ;
+  }
+
+  public function isWord() {
+    return false;
+  }
+
+  public function getId() {
+    return $this->id;
+  }
+
+  public function getName() {
+    return $this->name;
+  }
+
+  public function getType() {
+    return $this->type;
+  }
+
+  public function getClass() {
+    return $this->sclass;
+  }
+
+  public function getGeometry() {
+    return $this->geometry;
+  }
+
+  public function getStyle() {
+    return $this->style;
+  }
+
+  public function getDescendants() {
+    return $this->descendants;
+  }
+
+  public function getAncestor() {
+    return $this->ancestor;
+  }
+
+  public function getAttributeList() {
+    return [];
+  }
+
+  public function setValue($value) {
+    $this->value = $value;
+  }
+
+  public function getValue() {
+    return $this->value;
+  }
+
+  public function show() {
+    $this->display = true;
+  }
+
+  public function hide() {
+    $this->display = false;
+  }
+
   public function scrollToLeft() {
     $this->scrollX = 0;
   }
@@ -22,13 +82,6 @@ trait ElementAssistant {
 
   public function scrollToBottom() {
     // todo
-  }
-
-  public function findAncestorByType($type) {
-    if ($this->type == $type) {
-      return $this;
-    }
-    return $this->ancestor->findAncestorByType($type);
   }
 
   public function debug($level = 0) {

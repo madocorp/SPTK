@@ -92,10 +92,13 @@ class StyleSheet {
     } else {
       $classStr = self::ANY;
     }
-    if (!isset(self::$cache[$type][$classStr][$name])) {
+    if (!isset(self::$cache[$type][$name][$classStr])) {
       $style = new Style($defaultStyle);
       if (isset(self::$styles[$type])) {
         $style->merge(self::$styles[$type]);
+      }
+      if ($name !== self::ANY && isset(self::$styles["#{$name}"])) {
+        $style->merge(self::$styles["#{$name}"]);
       }
       if ($class !== self::ANY) {
         foreach ($class as $classi) {
@@ -104,12 +107,9 @@ class StyleSheet {
           }
         }
       }
-      if ($name !== self::ANY && isset(self::$styles["#{$name}"])) {
-        $style->merge(self::$styles["#{$name}"]);
-      }
-      self::$cache[$type][$classStr][$name] = $style;
+      self::$cache[$type][$name][$classStr] = $style;
     } else {
-      $style = self::$cache[$type][$classStr][$name];
+      $style = self::$cache[$type][$name][$classStr];
     }
     $inheritedStyle = clone $style;
     if ($ancestorStyle !== false) {

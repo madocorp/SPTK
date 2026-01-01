@@ -56,6 +56,10 @@ class Window extends Element {
     $this->display = true;
   }
 
+  public function getAttributeList() {
+    return ['title'];
+  }
+
   public function setTitle($title) {
     $this->sdl->SDL_SetWindowTitle($this->window, $title);
   }
@@ -109,6 +113,27 @@ class Window extends Element {
     return false;
   }
 
+  protected function measure() {
+    foreach ($this->descendants as $descendant) {
+      $descendant->measure();
+    }
+  }
+
+  protected function redraw($force = false) {
+    foreach ($this->descendants as $descendant) {
+      $descendant->redraw($force);
+    }
+  }
+
+  public function raise() {
+    return;
+  }
+
+  public function lower() {
+    return;
+  }
+
+
   public function eventHandler($event) {
     if ($this->display === false) {
       return false;
@@ -153,30 +178,6 @@ class Window extends Element {
       return false;
     }
     return false;
-  }
-
-  protected function measure() {
-    foreach ($this->descendants as $descendant) {
-      $descendant->measure();
-    }
-  }
-
-  protected function redraw($force = false) {
-    foreach ($this->descendants as $descendant) {
-      $descendant->redraw($force);
-    }
-  }
-
-  public function getAttributeList() {
-    return ['title'];
-  }
-
-  public function raise() {
-    return;
-  }
-
-  public function lower() {
-    return;
   }
 
 }
