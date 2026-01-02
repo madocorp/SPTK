@@ -33,6 +33,7 @@ trait ElementTree {
   public function clear() {
     $this->descendants = [];
     $this->stack = [];
+    $this->changed = true;
   }
 
   public function raise() {
@@ -70,6 +71,7 @@ trait ElementTree {
         $element->setValue($word);
       }
     }
+    $this->changed = true;
   }
 
   public function setText($text) {

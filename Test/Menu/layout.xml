@@ -8,45 +8,52 @@
     </MenuBar>
     <SubMenu>
       <MenuBox belongsTo="menu-a">
-        <MenuBoxItem onSelect="Controller::noop" submenu="true">BoxItem1.1</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop" selected="true" selectable="true">BoxItem1.2</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem1.3g</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem1.4</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem1.5</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" selectable="aaa">BoxItem1.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" selected="true" selectable="aaa">BoxItem1.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" name="bi1.3" submenu="true">BoxItem1.3g</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" selectable="bbb">BoxItem1.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" selected="true" selectable="bbb">BoxItem1.5</MenuBoxItem>
       </MenuBox>
-      <MenuBox belongsTo="menu-b">
-        <MenuBoxItem onSelect="Controller::noop" submenu="true">BoxItem2.1</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop" selected="true" selectable="true">BoxItem2.2</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.3</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.4</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.5</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.6</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.7</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.8</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.1</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.2</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.3</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.4</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.5</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.6</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.7</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.8</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.1</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.2</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.3</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.4</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.5</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.6</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.7</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.8</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.1</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.2</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.3</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.4</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.5</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.6</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.7</MenuBoxItem>
-        <MenuBoxItem onSelect="Controller::noop">BoxItem2.8</MenuBoxItem>
+      <MenuBox belongsTo="bi1.3" submenu="true">
+        <MenuBoxItem onOpen="Controller::noop">A</MenuBoxItem>
+        <MenuBoxItem onOpen="Controller::noop">B</MenuBoxItem>
+      </MenuBox>
+      <MenuBox belongsTo="menu-b" typing="filter">
+        <MenuBoxItem onSelect="Controller::noop" selectable="true">BoxItem.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" selected="true" selectable="true">BoxItem.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" selectable="true">BoxItem.3</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.5</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.7</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.8</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.3</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.5</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.7</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.8</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">BoxItem.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">CoxItem2.3</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">DoxItem2.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">EoxItem2.5</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">Fox1Item2.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">Fox2Item2.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">Fox3Item2.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">Fox4Item2.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">GoxItem2.7</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">HoxItem2.8</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">IoxItem2.1</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">JoxItem2.2</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">KoxItem2.3</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">LoxItem2.4</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">MoxItem2.5</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">NoxItem2.6</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">OoxItem2.7</MenuBoxItem>
+        <MenuBoxItem onSelect="Controller::noop" filterable="true">PoxItem2.8</MenuBoxItem>
       </MenuBox>
       <MenuBox belongsTo="menu-c">
         <MenuBoxItem onSelect="Controller::noop">BoxItem3.1</MenuBoxItem>
