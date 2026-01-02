@@ -6,11 +6,11 @@ class SubMenu extends Element {
 
   public function showMenuBox($name, $x, $y, $closeOthers) {
     foreach ($this->descendants as $element) {
-      if ($element->type == 'MenuBox') {
+      if ($element->type == 'MenuBox' || $element->type == 'MenuBox2') {
         if ($element->belongsTo == $name) {
           $element->show();
           $element->recalculateGeometry();
-          $element->activateMenuBoxItem();
+          $element->activateItem();
           $element->style->set('x', "{$x}px");
           $element->style->set('y', "{$y}px");
           $element->raise();

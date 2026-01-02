@@ -41,23 +41,13 @@ class ListItem extends Element {
   }
 
   public function getAttributeList() {
-    return ['value', 'selected', 'selectable', 'filterable', 'left', 'right'];
+    return ['value', 'selectable', 'selected', 'filterable', 'left', 'right'];
   }
 
   public function setValue($value) {
     $this->value = $value;
     $this->text = $value;
     $this->valueField->setValue($this->text);
-  }
-
-  public function setSelected($value) {
-    if ($value === true || $value === 'true') {
-      $this->selected = true;
-      $this->addClass('selected', true);
-      $this->ancestor->setSelected($this);
-    } else {
-      $this->selected = false;
-    }
   }
 
   public function setSelectable($value) {
@@ -70,23 +60,61 @@ class ListItem extends Element {
     }
   }
 
+  public function setSelected($value) {
+    if ($value === true || $value === 'true') {
+      $this->selected = true;
+      if ($this->selectable === true) {
+        $this->itemLeft->setText('X');
+      } else {
+        $this->itemLeft->setText('*');
+      }
+    }
+  }
+
   public function setFilterable($value) {
     $this->filterable = ($value === true || $value === 'true');
   }
 
   public function setLeft($value) {
-    $this->itemLeft->setText($value);
+    if ($value !== false) {
+      $this->itemLeft->setText($value);
+    }
   }
 
   public function setRight($value) {
-    $this->itemRight->setText($value);
+    if ($value !== false) {
+      $this->itemRight->setText($value);
+    }
+  }
+
+  public function isSelectable() {
+    return $this->selectable;
   }
 
   public function getValue() {
     if ($this->value === false || $this->value === '') {
-      return $this->getText();
+      return $this->text;
     }
     return $this->value;
+  }
+
+  public function deselect() {
+    $this->selected = false;
+    $this->itemLeft->clear();
+  }
+
+  public function select() {
+    if ($this->selected && $this->selectable === true) {
+      $this->selected = false;
+      $this->itemLeft->clear();
+    } else {
+      $this->selected = true;
+      if ($this->selectable === true) {
+        $this->itemLeft->setText('X');
+      } else {
+        $this->itemLeft->setText('*');
+      }
+    }
   }
 
   public function match($search) {

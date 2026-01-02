@@ -9,6 +9,8 @@ class ListBox extends Element {
   protected $movable = false;
   protected $selectable = false;
   protected $onChange = false;
+  protected $onSelect = false;
+  protected $valueType = false;
   protected $pageSize = 1;
   protected $typing = false;
   protected $typed = '';
@@ -21,7 +23,7 @@ class ListBox extends Element {
   }
 
   public function getAttributeList() {
-    return ['movable', 'onChange', 'typing'];
+    return ['movable', 'onChange', 'typing', 'onSelect', 'valueType'];
   }
 
   public function setMovable($value) {
@@ -52,42 +54,73 @@ class ListBox extends Element {
     }
   }
 
-  public function setSelected($element) {
-    foreach ($this->descendants as $i => $descendant) {
-      if ($element->id === $descendant->id) {
-        $this->activeItem = $i;
-        $this->activateItem();
-      }
-    }
+  public function setOnSelect($value) {
+    $this->onSelect = self::parseCallback($value);
+  }
+
+  public function setValueType($value) {
+    $this->valueType = $value;
   }
 
   public function getValue() {
-    if ($this->movable) {
-      $value = [];
-      foreach ($this->descendants as $i => $descendant) {
-        $key = $descendant->getValue();
-        if ($key === false || $key === '') {
-          $key = $i;
-        }
-        $value[$key] = $descendant->getText();
-      }
-    } else {
-      if (!isset($this->descendants[$this->activeItem])) {
-        return false;
-      }
-      $descendant = $this->descendants[$this->activeItem];
-      $value = $descendant->getValue();
-      if ($value === false || $value === '') {
-        $value = $descendant->getText();
-      }
+    switch ($this->valueType) {
+      case 'order': return $this->getOrderValue();
+      case 'select': return $this->getSelectedValue();
+      case 'radio': return $this->getRadioValues();
+      default: return $this->getSimpleValue();
+    }
+  }
+
+  public function getSimpleValue() {
+    if (!isset($this->descendants[$this->activeItem])) {
+      return false;
+    }
+    $descendant = $this->descendants[$this->activeItem];
+    $value = $descendant->getValue();
+    if ($value === false || $value === '') {
+      $value = $descendant->getText();
+    }
+  }
+
+  public function getOrderValue() {
+    $values = [];
+    foreach ($this->descendants as $descendant) {
+      $values[] = $descendant->getValue();
     }
     return $value;
   }
 
-  protected function addDescendant($element) {
-    if ($element->type !== 'ListItem') {
-      throw new \Exception("In ListBox only ListItem elements are allowed!");
+  public function getSelectedValue() {
+    $selected = [];
+    foreach ($this->descendants as $item) {
+      if ($item->isSelectable() === true && $item->isSelected()) {
+        $selected[] = $item->getValue;
+      }
     }
+    return $selected;
+  }
+
+  public function getRadioValue($group) {
+    foreach ($this->descendants as $item) {
+      if ($item->isSelectable() === $group && $item->isSelected()) {
+        return $item->getValue();
+      }
+    }
+    return false;
+  }
+
+  public function getRadioValues() {
+    $groups = [];
+    foreach ($this->descendants as $item) {
+      $selectable = $item->isSelectable();
+      if ($selectable !== false && $selectable !== true && $item->isSelected()) {
+        $groups[$selectable] = $item->getValue();
+      }
+    }
+    return $groups;
+  }
+
+  protected function addDescendant($element) {
     $this->num++;
     parent::addDescendant($element);
   }
@@ -184,12 +217,15 @@ class ListBox extends Element {
     return $this->descendants[$this->activeItem];
   }
 
-  protected function measure() {
-    parent::measure();
+  protected function calculateHeights() {
+    parent::calculateHeights();
     if (!isset($this->descendants[0])) {
       return;
     }
     $item = $this->descendants[0];
+    if ($this->geometry->innerHeight === 'content' || $item->geometry->fullHeight == 'content') {
+      return;
+    }
     $this->pageSize = (int)($this->geometry->innerHeight / $item->geometry->fullHeight);
   }
 
@@ -361,6 +397,30 @@ class ListBox extends Element {
           $this->bringToMiddle();
           Element::immediateRender($this, false);
           return true;
+        }
+        return false;
+      case Action::SELECT_ITEM:
+      case Action::DO_IT:
+        $item = $this->descendants[$this->activeItem];
+        $selectable = $item->isSelectable();
+        if ($selectable === true) {
+          $item->select();
+          Element::immediateRender($this);
+          if ($this->onSelect !== false) {
+            call_user_func($this->onSelect, $item);
+          }
+        } else if ($selectable !== false) {
+          foreach ($this->descendants as $descendant) {
+            if ($descendant->id === $item->id) {
+              $item->select();
+              if ($this->onSelect !== false) {
+               call_user_func($this->onSelect, $item);
+              }
+            } else if ($selectable === $descendant->isSelectable()) {
+              $descendant->deselect();
+            }
+          }
+          Element::immediateRender($this);
         }
         return false;
     }

@@ -2,11 +2,10 @@
 
 namespace SPTK;
 
-class MenuBox extends Element {
+class MenuBox extends ListBox {
 
   public $belongsTo = false;
   public $submenu = false;
-  public $activeMenu = 0;
   protected $num = 0;
 
   protected function init() {
@@ -14,45 +13,9 @@ class MenuBox extends Element {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  protected function addDescendant($element) {
-    if ($element->type !== 'MenuBoxItem') {
-      throw new \Exception("In MenuBox only MenuBoxItem elements are allowed!");
-    }
-    $this->num++;
-    parent::addDescendant($element);
-  }
-
-  public function getValue() {
-    $selected = [];
-    foreach ($this->descendants as $item) {
-      if ($item->selectable && $item->selected) {
-        $selected[] = $item->name;
-      }
-    }
-    return $selected;
-  }
-
-  public function getRadioValue($group) {
-    foreach ($this->descendants as $item) {
-      if ($item->group === $group && $item->selected) {
-        return $item->name;
-      }
-    }
-    return false;
-  }
-
-  public function clear() {
-    parent::clear();
-    $this->num = 0;
-    $this->activeMenu = 0;
-  }
-
-  public function getItemCount() {
-    return $this->num;
-  }
-
   public function getAttributeList() {
-    return ['belongsTo', 'submenu'];
+    $attributeList = parent::getAttributeList();
+    return array_merge($attributeList, ['belongsTo', 'submenu']);
   }
 
   public function setBelongsTo($value) {
@@ -60,31 +23,8 @@ class MenuBox extends Element {
   }
 
   public function setSubmenu($value) {
-    $this->submenu = ($value === 'true');
-  }
-
-  public function activateMenuBoxItem($menu = false) {
-    if ($menu === false) {
-      $menu = $this->activeMenu;
-    }
-    if (empty($this->stack)) {
-      return;
-    }
-    $boxItem = end($this->stack);
-    $boxItem->removeClass('active', true);
-    $i = 0;
-    foreach ($this->descendants as $descendant) {
-      if ($i == $menu) {
-        $descendant->addClass('active', true);
-        if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
-          $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
-        } else if ($descendant->geometry->y < $this->scrollY) {
-          $this->scrollY = $descendant->geometry->y - $this->geometry->borderTop;
-        }
-        $descendant->raise();
-        break;
-      }
-      $i++;
+    if ($value === true || $value === 'true') {
+      $this->submenu = true;
     }
   }
 
@@ -126,39 +66,45 @@ class MenuBox extends Element {
           $this->hide();
           Element::refresh();
         } else {
-          $this->ancestor->ancestor->previousMenu();
+          $menu = $this->findAncestorByType('Menu');
+          $menu->previousMenu();
         }
         return true;
       case Action::SWITCH_PREVIOUS:
-        $this->ancestor->ancestor->previousMenu();
+        $menu = $this->findAncestorByType('Menu');
+        $menu->previousMenu();
         return true;
       case Action::SWITCH_NEXT:
-        $this->ancestor->ancestor->nextMenu();
+        $menu = $this->findAncestorByType('Menu');
+        $menu->nextMenu();
         return true;
       case Action::MOVE_RIGHT:
-        if (!$this->submenu) {
-          $this->ancestor->ancestor->nextMenu();
+        if ($this->descendants[$this->activeItem]->isSubmenu()) {
+          return $this->descendants[$this->activeItem]->openSubmenu();
+        } else {
+          $menu = $this->findAncestorByType('Menu');
+          $menu->nextMenu();
           return true;
         }
         break;
-      case Action::MOVE_UP:
-        $this->activeMenu--;
-        if ($this->activeMenu < 0) {
-          $this->activeMenu = $this->num - 1;
+      case Action::DO_IT:
+        parent::keyPressHandler($element, $event);
+        if ($this->descendants[$this->activeItem]->isSubmenu()) {
+          return $this->openSubmenu();
         }
-        $this->activateMenuBoxItem($this->activeMenu);
-        Element::immediateRender($this);
+        $menu = $this->findAncestorByType('Menu');
+        $menu->closeMenu();
+        $this->descendants[$this->activeItem]->open();
         return true;
-      case Action::MOVE_DOWN:
-        $this->activeMenu++;
-        if ($this->activeMenu >= $this->num) {
-          $this->activeMenu = 0;
+      case Action::MOVE_RIGHT:
+        if ($this->descendants[$this->activeItem]->isSubmenu()) {
+          return $this->openSubmenu();
         }
-        $this->activateMenuBoxItem($this->activeMenu);
-        Element::immediateRender($this);
-        return true;
+        break;
+
+
     }
-    return false;
+    return parent::keyPressHandler($element, $event);
   }
 
 }

@@ -53,6 +53,7 @@ trait ElementLayout {
         $spaceCount * $this->geometry->wordSpacing +
         $this->geometry->paddingRight +
         $this->geometry->borderRight;
+      $this->geometry->limitateWidth();
       $this->geometry->setDerivedWidths();
     }
   }
@@ -168,7 +169,7 @@ trait ElementLayout {
     if ($this->display === false) {
       return false;
     }
-    if ($this->styleChanged ||  $this->geometry->sizeChanged()) {
+    if ($this->changed ||  $this->geometry->sizeChanged()) {
       $this->draw();
     }
     foreach ($this->stack as $i => $descendant) {
@@ -201,7 +202,7 @@ trait ElementLayout {
     $width = $this->geometry->width;
     $height = $this->geometry->height;
     $this->texture = new Texture($this->renderer, $width, $height, $color);
-    $this->styleChanged = false;
+    $this->changed = false;
   }
 
   protected function render() {

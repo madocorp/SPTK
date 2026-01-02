@@ -15,7 +15,7 @@ trait ElementStyle {
     if (!$this->style->get('display')) {
       $this->display = false;
     }
-    $this->styleChanged = true;
+    $this->changed = true;
     foreach ($this->descendants as $descendant) {
       $descendant->recalculateStyle();
     }

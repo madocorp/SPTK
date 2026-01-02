@@ -82,12 +82,8 @@ class Geometry {
       if ($this->width < 0) {
         $this->width = $ancestorGeometry->innerWidth + $this->width;
       }
-      if ($this->width < $this->minWidth) {
-        $this->width = $this->minWidth;
-      }
-      if ($this->width > $this->maxWidth) {
-        $this->width = $this->maxWidth;
-      }
+
+      $this->limitateWidth();
       $this->setDerivedWidths();
     }
     $this->height = $style->get('height', $ancestorGeometry);
@@ -98,12 +94,7 @@ class Geometry {
       if ($this->height < 0) {
         $this->height = $ancestorGeometry->innerHeight + $this->height;
       }
-      if ($this->height < $this->minHeight) {
-        $this->height = $this->minHeight;
-      }
-      if ($this->height > $this->maxHeight) {
-        $this->height = $this->maxHeight;
-      }
+      $this->limitateHeight();
       $this->setDerivedHeights();
     }
     $this->position = $style->get('position');
@@ -147,6 +138,7 @@ class Geometry {
         $this->contentHeight +
         $this->paddingBottom +
         $this->borderBottom;
+      $this->limitateHeight();
       $this->setDerivedHeights();
     }
     if ($ascent == 'auto') {
@@ -163,6 +155,24 @@ class Geometry {
     } else {
       $this->ascent = $ascent + $this->marginTop;
       $this->descent = $this->fullHeight - $this->ascent;
+    }
+  }
+
+  public function limitateWidth() {
+    if ($this->width < $this->minWidth) {
+      $this->width = $this->minWidth;
+    }
+    if ($this->width > $this->maxWidth) {
+      $this->width = $this->maxWidth;
+    }
+  }
+
+  public function limitateHeight() {
+    if ($this->height < $this->minHeight) {
+      $this->height = $this->minHeight;
+    }
+    if ($this->height > $this->maxHeight) {
+      $this->height = $this->maxHeight;
     }
   }
 
