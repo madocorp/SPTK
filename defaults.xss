@@ -413,13 +413,25 @@ ListHeaderRow {
   padding: 0px, 10px;
 }
 
+TextEditor {
+  borderColor: #000000;
+  color: #aaaaaa;
+  border: 1px;
+  width: 100%;
+  lineHeight: 100%;
+  height: 100%;
+  padding: 10px;
+  scrollable: true;
+  textWrap: manual;
+}
+
 TextBox {
   borderColor: #000000;
   color: #555555;
   border: 1px;
   width: 100%;
   lineHeight: 100%;
-  height: 200px;
+  height: content;
   padding: 10px;
   scrollable: true;
   textWrap: manual;

@@ -1,6 +1,7 @@
 <?php
 
 require_once '../App.php';
+require_once 'Editor/SqlTokenizer.php';
 
 define('SPTK\DEBUG', true);
 
