@@ -1,0 +1,42 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #0000aa;
+  padding: 10px;
+  color: #ffff00;
+  fontSize: 30px;
+}
+
+.red {
+  color: #ff0000;
+}
+
+.blue {
+  color: #0000ff;
+}
+
+.green {
+  color: #00ff00;
+}
+
+.yellow {
+  color: #ffff00;
+}
+
+.purple {
+  color: #ff00ff;
+}
+
+.cyan {
+  color: #00ffff;
+}
+
+.white {
+  color: #ffffff;
+}
+
+.black {
+  color: #000000;
+}

@@ -25,6 +25,7 @@ require_once 'StyleSheet.php';
 require_once 'Border.php';
 require_once 'Scrollbar.php';
 require_once 'Clipboard.php';
+require_once 'Tokenizer.php';
 
 class App {
 

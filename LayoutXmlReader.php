@@ -78,6 +78,14 @@ class LayoutXmlReader {
             }
           }
           break;
+        case XMLReader::CDATA:
+          $value = $xml->value;
+          if ($value[0] === "\n") {
+            $value = mb_substr($value, 1);
+          }
+          $value = preg_replace("/\n( |\t)+$/", "", $value);
+          $this->current->setValue($value);
+          break;
         case XMLReader::TEXT:
           if ($this->event !== false) {
             $this->current->addEvent($this->event, trim($xml->value));

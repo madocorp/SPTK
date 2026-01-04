@@ -158,6 +158,8 @@ class Style {
       $refPropertyName = $this->referenceMap[$name];
       $referenceValue = $reference->$refPropertyName;
       if ($referenceValue == 'content') {
+debug_print_backtrace();
+var_dump($name);
         throw new \Exception('A percentage value cannot be specified if the reference value depends on the content!');
       }
       return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);

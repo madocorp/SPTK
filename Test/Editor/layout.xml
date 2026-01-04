@@ -1,0 +1,20 @@
+<Window title="Editor">
+  <TextEditor tokenizer="SqlTokenizer"><![CDATA[
+SELECT
+  `testfield1`,
+  `testfield2`, -- line comment
+  `testfield3`
+FROM `testdb`.`testtable` AS `TT`
+LEFT JOIN `testdb`.`jointable` AS `JT` ON
+  `JT`.`testid` = `TT`.`id` AND
+  `JT`.`textdfield` = 'some text'
+WHERE
+  `testfield2` > 3 AND
+  (`testfield1` < 5 OR `testfield3`)
+ORDER BY `id` DESC
+LIMIT 10
+/*
+  block comment
+*/
+  ]]></TextEditor>
+</Window>
