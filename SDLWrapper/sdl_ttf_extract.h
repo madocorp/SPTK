@@ -31,8 +31,10 @@ typedef struct SDL_Surface
 
 bool TTF_Init(void);
 TTF_Font* TTF_OpenFont(const char* file, float ptsize);
-int TTF_GetFontAscent(const TTF_Font *font);
-int TTF_GetFontDescent(const TTF_Font *font);
+int TTF_GetFontAscent(const TTF_Font* font);
+int TTF_GetFontDescent(const TTF_Font* font);
+int TTF_GetFontHeight(const TTF_Font* font);
+bool TTF_GetGlyphMetrics(TTF_Font* font, Uint32 ch, int* minx, int* maxx, int* miny, int* maxy, int* advance);
 void TTF_CloseFont(TTF_Font *font);
 SDL_Surface* TTF_RenderText_Blended(TTF_Font* font, const char* text, size_t length, SDL_Color fg);
 SDL_Surface* TTF_RenderText_Shaded(TTF_Font* font, const char* text, size_t length, SDL_Color fg, SDL_Color bg);

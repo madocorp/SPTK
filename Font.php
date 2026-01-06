@@ -14,6 +14,9 @@ class Font {
   public $font;
   public $ascent;
   public $descent;
+  public $height;
+  public $letterWidth;
+
 
   public function __construct($name, $size) {
     if (!isset(self::$fonts[$name][$size])) {
@@ -22,6 +25,8 @@ class Font {
     $this->font = self::$fonts[$name][$size]['handle'];
     $this->ascent = self::$fonts[$name][$size]['ascent'];
     $this->descent = self::$fonts[$name][$size]['descent'];
+    $this->height = self::$fonts[$name][$size]['height'];
+    $this->letterWidth = self::$fonts[$name][$size]['letterWidth'];
   }
 
   private function open($name, $size) {
@@ -42,8 +47,25 @@ class Font {
     self::$fonts[$name][$size]['handle'] = $font;
     $ascent = $ttf->TTF_GetFontAscent($font);
     $descent = $ttf->TTF_GetFontDescent($font);
+    $height = $ttf->TTF_GetFontHeight($font);
+    $minx = \FFI::new("int");
+    $maxx = \FFI::new("int");
+    $miny = \FFI::new("int");
+    $maxy = \FFI::new("int");
+    $advance = \FFI::new("int");
+    $ttf->TTF_GetGlyphMetrics(
+      $font,
+      ord('M'),
+      \FFI::addr($minx),
+      \FFI::addr($maxx),
+      \FFI::addr($miny),
+      \FFI::addr($maxy),
+      \FFI::addr($advance)
+    );
     self::$fonts[$name][$size]['ascent'] = $ascent;
     self::$fonts[$name][$size]['descent'] = $descent;
+    self::$fonts[$name][$size]['height'] = $height;
+    self::$fonts[$name][$size]['letterWidth'] = $advance->cdata;
   }
 
   private function getPath($name, $exact) {

@@ -10,13 +10,14 @@ class SqlTokenizer extends \SPTK\Tokenizer {
   protected $styleMap = [
     'ERROR' => 'red',
     'KEYWORD' => 'cyan',
+    'FUNCTION' => 'yellow',
     'BRACKET' => 'white',
     'SEPARATOR' => 'white',
     'OPERATOR' => 'white',
-    'IDENTIFIER' => 'purple',
-    'NUMBER' => 'yellow',
-    'STRING' => 'green',
-    'COMMENT' => 'blue'
+    'IDENTIFIER' => 'brightblue',
+    'NUMBER' => 'green',
+    'STRING' => 'darkgreen',
+    'COMMENT' => 'gray'
   ];
   protected $contextSwitchers = [
     [
@@ -53,6 +54,7 @@ class SqlTokenizer extends \SPTK\Tokenizer {
   protected $regexpRules = [
     ['type' => 'COMMENT', 'regexp' => '/^--\s.*/'],
     ['type' => 'KEYWORD', 'regexp' => '/^(SELECT|FROM|WHERE|LEFT JOIN|RIGHT JOIN|INNER JOIN|JOIN|LIMIT|ORDER BY|AS|ON|ASC|DESC)(\s|$)/'],
+    ['type' => 'FUNCTION', 'regexp' => '/^(COALESCE)(\s*\()/'],
     ['type' => 'IDENTIFIER', 'regexp' => '/^`[^`]+`/'],
     ['type' => 'OPERATOR', 'regexp' => '/^(<=|>=|<|>|=|AND|OR|\+|-|\/|\*)/'],
     ['type' => 'NUMBER', 'regexp' => '/^(0x[0-9a-fA-F]+|0b[01]+|[0-9]+(\.[0-9]+)?)/'],

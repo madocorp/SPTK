@@ -68,6 +68,10 @@ trait ElementAssistant {
     $this->display = false;
   }
 
+  public function lineBreak() {
+    return false;
+  }
+
   public function scrollToLeft() {
     $this->scrollX = 0;
   }

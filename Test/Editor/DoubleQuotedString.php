@@ -3,7 +3,7 @@
 class DoubleQuotedString extends \SPTK\Tokenizer {
 
   protected $styleMap = [
-    'STRING' => 'green',
+    'STRING' => 'darkgreen',
     'ERROR' => 'error'
   ];
   protected $regexpRules = [

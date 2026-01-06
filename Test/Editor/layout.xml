@@ -1,20 +1,59 @@
 <Window title="Editor">
   <TextEditor tokenizer="SqlTokenizer"><![CDATA[
-SELECT
-  `testfield1`,
-  `testfield2`, -- line comment
-  `testfield3`
-FROM `testdb`.`testtable` AS `TT`
-LEFT JOIN `testdb`.`jointable` AS `JT` ON
-  `JT`.`testid` = `TT`.`id` AND
-  `JT`.`textdfield` = 'some text'
-WHERE
-  `testfield2` > 3 AND
-  (`testfield1` < 5 OR `testfield3`)
-ORDER BY `id` DESC
-LIMIT 10
-/*
-  block comment
-*/
+0  SELECT
+1    `testfield1`,
+2    `testfield2`, -- line comment
+3   COALESCE(`testfield3`, 3.14)
+4  FROM `testdb`.`testtable` AS `TT`
+5  LEFT JOIN `testdb`.`jointable` AS `JT` ON
+6    `JT`.`testid` = `TT`.`id` AND
+7    `JT`.`textdfield` = 'some text'
+8  WHERE
+9   `testfield2` > 3 AND
+10   (`testfield1` < 5 OR `testfield3`)
+11 ORDER BY `id` DESC
+12 LIMIT 10;
+13 /*
+14   block comment:
+15   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc sapien turpis,
+16   malesuada ac ligula nec, malesuada condimentum felis. Fusce et lectus at elit
+17   porta ultrices. Quisque ut erat pretium, rutrum quam at, laoreet nibh. Quisque
+18   euismod eget augue sit amet vehicula. Mauris vitae dolor pulvinar, mollis
+19   purus eu, interdum magna. Vivamus tincidunt est eget nunc egestas, sed porta
+20   neque euismod. Ut laoreet tincidunt vulputate.
+21 */
+22
+23  SELECT
+24   `a` AS `A`,
+25   `b` AS `B`,
+26   `c` AS `C`,
+27   `d` AS `D`,
+28   `e` AS `E`,
+29   `f` AS `F`,
+30   `g` AS `G`,
+31   `h` AS `H`,
+32   `i` AS `I`,
+33   `j` AS `J`,
+34   `k` AS `K`,
+35   `l` AS `L`,
+36   `m` AS `M`,
+37   `n` AS `N`,
+38   `o` AS `O`,
+39   `p` AS `P`
+40 FROM `alphabet`
+41 WHERE
+42   `language` = "ENGLISH" OR
+43   `language` = "GERMAN" OR
+44   `language` = "FRENCH";
+45 /*
+46   block comment:
+47   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc sapien turpis,
+48   malesuada ac ligula nec, malesuada condimentum felis. Fusce et lectus at elit
+49   porta ultrices. Quisque ut erat pretium, rutrum quam at, laoreet nibh. Quisque
+50   euismod eget augue sit amet vehicula. Mauris vitae dolor pulvinar, mollis
+51   purus eu, interdum magna. Vivamus tincidunt est eget nunc egestas, sed porta
+52   neque euismod. Ut laoreet tincidunt vulputate.
+53 */
+
   ]]></TextEditor>
 </Window>

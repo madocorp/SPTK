@@ -33,14 +33,16 @@ class Scrollbar {
     $y1 = $geometry->borderTop;
     $y2 = $geometry->height - $geometry->borderBottom;
     $barHeight = $y2 - $y1;
-    $my += $geometry->paddingBottom;
     if ($my - $geometry->borderTop <= $barHeight + 1) {
       return false;
     }
     $x1 = $geometry->width - $geometry->borderRight - $size;
     $x2 = $geometry->width - $geometry->borderRight;
     $handlePos = round($barHeight * $sy / $my) + $geometry->borderTop;
-    $handleHeight = round($barHeight * $barHeight / $my);
+    $handleHeight = round($barHeight * $geometry->innerHeight / $my);
+    if ($handlePos + $handleHeight > $y2) {
+      $handleHeight = $y2 - $handlePos;
+    }
     return [$x1, $x2, $y1, $y2, $handlePos, $handlePos + $handleHeight];
   }
 
@@ -51,16 +53,16 @@ class Scrollbar {
     if ($mx <= 0) {
       return false;
     }
-    if (!$hasVertical) {
-      $mx += $geometry->paddingRight;
-    }
     if ($mx - $geometry->borderLeft - ($hasVertical ? $size : 0) <= $barWidth + 1) {
       return false;
     }
     $y1 = $geometry->height - $geometry->borderBottom - $size;
     $y2 = $geometry->height - $geometry->borderBottom;
     $handlePos = round($barWidth * $sx / $mx) + $geometry->borderLeft;
-    $handleWidth = round($barWidth * $barWidth / $mx);
+    $handleWidth = round($barWidth * $geometry->innerWidth / $mx);
+    if ($handlePos + $handleWidth > $x2) {
+      $handleWidth = $x2 - $handlePos;
+    }
     return [$x1, $x2, $y1, $y2, $handlePos, $handlePos + $handleWidth];
   }
 

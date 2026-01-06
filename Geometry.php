@@ -126,11 +126,13 @@ class Geometry {
       $this->marginBottom;
   }
 
-  public function setContentHeight($ascent) {
+  public function setContentHeight($ascent, $maxY) {
     $this->contentHeight = 0;
     foreach ($this->lines as $line) {
       $this->contentHeight += $line['ascent'] + $line['descent'];
     }
+    $this->contentHeight += $this->paddingBottom;
+    $this->contentHeight = max($this->contentHeight, $maxY);
     if ($this->height === 'content') {
       $this->height =
         $this->borderTop +
@@ -177,21 +179,25 @@ class Geometry {
   }
 
   public function setAbsolutePosition($ancestorGeometry, $style) {
-    $this->x = $style->get('x', $ancestorGeometry, $isNegative);
-    if ($this->x === 'middle') {
-      $this->x = (int)(($ancestorGeometry->width - $this->fullWidth) / 2);
-    } else if ($isNegative) {
-      $this->x = $ancestorGeometry->width - $ancestorGeometry->paddingRight - $ancestorGeometry->borderRight - $this->fullWidth + $this->x - $this->marginRight;
-    } else {
-      $this->x = $this->x + $this->marginLeft + $ancestorGeometry->paddingLeft + $ancestorGeometry->borderLeft;
+    $x = $style->get('x', $ancestorGeometry, $isNegative);
+    if ($x !== 'calculated') {
+      if ($x === 'middle') {
+        $this->x = (int)(($ancestorGeometry->width - $this->fullWidth) / 2);
+      } else if ($isNegative) {
+        $this->x = $ancestorGeometry->width - $ancestorGeometry->paddingRight - $ancestorGeometry->borderRight - $this->fullWidth + $x - $this->marginRight;
+      } else {
+        $this->x = $x + $this->marginLeft + $ancestorGeometry->paddingLeft + $ancestorGeometry->borderLeft;
+      }
     }
-    $this->y = $style->get('y', $ancestorGeometry, $isNegative);
-    if ($this->y === 'middle') {
-      $this->y = (int)(($ancestorGeometry->height - $this->fullHeight) / 2);
-    } else if ($isNegative) {
-      $this->y = $ancestorGeometry->height - $ancestorGeometry->paddingBottom - $ancestorGeometry->borderBottom - $this->fullHeight + $this->y - $this->marginBottom;
-    } else {
-      $this->y = $this->y + $this->marginTop + $ancestorGeometry->paddingTop + $ancestorGeometry->borderTop;
+    $y = $style->get('y', $ancestorGeometry, $isNegative);
+    if ($y !== 'calculated') {
+      if ($y === 'middle') {
+        $this->y = (int)(($ancestorGeometry->height - $this->fullHeight) / 2);
+      } else if ($isNegative) {
+        $this->y = $ancestorGeometry->height - $ancestorGeometry->paddingBottom - $ancestorGeometry->borderBottom - $this->fullHeight + $y - $this->marginBottom;
+      } else {
+        $this->y = $y + $this->marginTop + $ancestorGeometry->paddingTop + $ancestorGeometry->borderTop;
+      }
     }
   }
 
