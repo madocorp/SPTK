@@ -137,7 +137,7 @@ class Tokenizer {
         continue;
       }
       if (preg_match($rule['regexp'], $str, $matches)) {
-        if (isset($mathces[1])) {
+        if (isset($matches[1])) {
           $value = $matches[1];
         } else {
           $value = $matches[0];
@@ -193,7 +193,6 @@ class Tokenizer {
     self::$tokenizer = new $className($context);
     self::tokenize();
     $tokens = self::$tokens;
-    self::$lines = [];
     self::$tokens = [];
     return $tokens;
   }

@@ -3,7 +3,7 @@
 class BlockComment extends \SPTK\Tokenizer {
 
   protected $styleMap = [
-    'STRING' => 'blue',
+    'STRING' => 'gray',
     'ERROR' => 'error'
   ];
   protected $regexpRules = [

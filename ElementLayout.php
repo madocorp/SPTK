@@ -69,8 +69,12 @@ trait ElementLayout {
     $line = ['ascent' => 0, 'descent' => 0, 'width' => 0, 'spaceCount' => 0, 'elements' => []];
     $lineWidth = 0;
     $previousIsWord = false;
+    $maxY = 0;
     foreach ($this->descendants as $descendant) {
       if ($descendant->geometry->position === 'absolute') {
+        if ($descendant->display) {
+          $maxY = max($maxY, $descendant->geometry->y + $descendant->geometry->fullHeight + $this->geometry->paddingBottom);
+        }
         continue;
       }
       if ($descendant->display === false) {
@@ -91,7 +95,7 @@ trait ElementLayout {
           $line['width'] > 0 &&
           $lineWidth + $space + $descendant->geometry->fullWidth > $this->geometry->innerWidth
         ) ||
-        $descendant->type === 'NL'
+        $descendant->lineBreak()
       ) {
         if ($line['ascent'] + $line['descent'] < $this->geometry->lineHeight) {
           $line['descent'] = $this->geometry->lineHeight - $line['ascent'];
@@ -117,22 +121,25 @@ trait ElementLayout {
     }
     $this->geometry->lines = $lines;
     $ascent = $this->style->get('ascent', $this->geometry);
-    $this->geometry->setContentHeight($ascent);
+    $this->geometry->setContentHeight($ascent, $maxY);
   }
 
   protected function layout() {
     if ($this->display === false) {
       return;
     }
+    $maxX = 0;
     foreach ($this->descendants as $descendant) {
       $descendant->layout();
+      if ($descendant->display && $descendant->geometry->position === 'absolute') {
+        $maxX = max($maxX, $descendant->geometry->x + $descendant->geometry->fullWidth + $this->geometry->paddingRight);
+      }
     }
     if ($this->geometry->position === 'absolute') {
       $this->geometry->setAbsolutePosition($this->ancestor->geometry, $this->style);
     }
     $y = $this->geometry->borderTop + $this->geometry->paddingTop;
     $space = $this->geometry->wordSpacing;
-    $maxX = 0;
     foreach ($this->geometry->lines as $line) {
       $y += $line['ascent'];
       $x = $this->geometry->borderLeft + $this->geometry->paddingLeft;
@@ -158,8 +165,8 @@ trait ElementLayout {
         }
         $element->geometry->x = $x + $element->geometry->marginLeft;
         $x += $element->geometry->fullWidth;
-        $maxX = max($maxX, $x);
       }
+      $maxX = max($maxX, $x + $this->geometry->paddingRight);
       $y += $line['descent'];
     }
     $this->geometry->contentWidth = $maxX;
