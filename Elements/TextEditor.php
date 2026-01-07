@@ -5,11 +5,9 @@ namespace SPTK;
 class TextEditor extends Element {
 
   protected $lines = [];
-  protected $row1 = 0;
-  protected $col1 = 0;
-  protected $row2 = 0;
-  protected $col2 = 1;
-  protected $selectDirection = 0;
+  protected $row = [0, 0];
+  protected $col = [0, 1];
+  protected $selectDirection = [0, 0];
   protected $lineHeight;
   protected $letterWidth;
   protected $tokenizer;
@@ -119,26 +117,26 @@ class TextEditor extends Element {
 
   protected function buildTree($firstOnScreen, $tokens) {
     $this->clear();
-    $selected = ($this->row1 < $firstOnScreen && $this->row2 >= $firstOnScreen);
+    $selected = ($this->row[0] < $firstOnScreen && $this->row[1] >= $firstOnScreen);
     foreach ($tokens as $i => $line) {
       $row = new InputRow($this);
       $row->setPos($i, $this->lineHeight);
       $j = 0;
       foreach ($line as $token) {
-        if ($i === $this->row1 && $this->col1 > $j && $this->col1 < $j + $token['length']) {
-          $split = $this->col1 - $j;
+        if ($i === $this->row[0] && $this->col[0] > $j && $this->col[0] < $j + $token['length']) {
+          $split = $this->col[0] - $j;
           $token = $this->splitToken($token, $split, $selected, $row);
           $j += $split;
         }
-        if ($i === $this->row1 && $j === $this->col1) {
+        if ($i === $this->row[0] && $j === $this->col[0]) {
           $selected = true;
         }
-        if ($i === $this->row2 && $this->col2 > $j && $this->col2 < $j + $token['length']) {
-          $split = $this->col2 - $j;
+        if ($i === $this->row[1] && $this->col[1] > $j && $this->col[1] < $j + $token['length']) {
+          $split = $this->col[1] - $j;
           $token = $this->splitToken($token, $split, $selected, $row);
           $j += $split;
         }
-        if ($i === $this->row2 && $j === $this->col2) {
+        if ($i === $this->row[1] && $j === $this->col[1]) {
           $selected = false;
         }
         if ($selected) {
@@ -148,10 +146,10 @@ class TextEditor extends Element {
         $iv->setValue($token['value']);
         $j += $token['length'];
       }
-      if ($this->row2 === $i && $this->col2 == $j) {
+      if ($this->row[1] === $i && $this->col[1] == $j) {
        $selected = false;
       }
-      if ($this->row2 === $i && $this->col2 > $j) {
+      if ($this->row[1] === $i && $this->col[1] > $j) {
         $iv = new InputValue($row, false, 'InputValue:selected');
         $iv->setValue(' ');
       }
@@ -159,12 +157,12 @@ class TextEditor extends Element {
   }
 
   protected function setScroll() {
-    if ($this->selectDirection > 0) {
-      $row = $this->row2;
-      $col = $this->col2;
+    if ($this->selectDirection[0] > 0 || $this->selectDirection[1] > 0) {
+      $row = $this->row[1];
+      $col = $this->col[1];
     } else {
-      $row = $this->row1;
-      $col = $this->col1;
+      $row = $this->row[0];
+      $col = $this->col[0];
     }
     if ($row === 0) {
       $this->scrollY = 0;
@@ -213,157 +211,250 @@ echo 'tree: ', microtime(true) - $t, "\n";
     array_splice($this->lines, $offset, $length, $replacement);
   }
 
+  protected function checkDocStart($c) {
+    if ($this->row[$c] < 0) {
+      $this->row[$c] = 0;
+    }
+  }
+
+  protected function checkDocEnd($c) {
+    $lcnt = count($this->lines);
+    if ($this->row[$c] >= $lcnt) {
+      $this->row[$c] = $lcnt - 1;
+    }
+  }
+
+  protected function checkLineLength($c) {
+    $len = mb_strlen($this->lines[$this->row[$c]]);
+    if ($this->col[$c] > $len) {
+      $this->col[$c] = $len;
+    }
+  }
+
+  protected function moveForward($c, $newline = 0) {
+    $len = mb_strlen($this->lines[$this->row[$c]]) - $newline;
+    if ($this->col[$c] < $len) {
+      $this->col[$c]++;
+    } else {
+      $lcnt = count($this->lines);
+      if ($this->row[$c] < $lcnt - 1) {
+        $this->row[$c]++;
+        $this->col[$c] = $c;
+      }
+    }
+  }
+
+  protected function moveBackward($c, $newline = 0) {
+    if ($this->col[$c] > $c) {
+      $this->col[$c]--;
+    } else {
+      if ($this->row[$c] > 0) {
+        $this->row[$c]--;
+        $this->col[$c] = mb_strlen($this->lines[$this->row[$c]]) - $newline;
+      }
+    }
+  }
+
+  protected function resetSelection() {
+    $this->row[1] = $this->row[0];
+    $this->col[1] = $this->col[0] + 1;
+    $this->selectDirection[0] = 0;
+    $this->selectDirection[1] = 0;
+  }
+
+  protected function replaceSelection($newLines) {
+    $before = mb_substr($this->lines[$this->row[0]], 0, $this->col[0]);
+    $after = mb_substr($this->lines[$this->row[1]], $this->col[1]);
+    $last = count($newLines) - 1;
+    $newLines[0] = $before . $newLines[0];
+    $newLines[$last] = $newLines[$last] . $after;
+    $this->lineSplice($this->row[0], $this->row[1] - $this->row[0] + 1, $newLines);
+  }
+
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_ITEM:
         return true;
       case Action::SELECT_LEFT:
-        return true;
+        if ($this->selectDirection[1] == 0 && $this->col[1] > mb_strlen($this->lines[$this->row[1]])) {
+          $this->col[1]--;
+        }
+        if ($this->selectDirection[1] <= 0) {
+          $this->moveBackward(0, 1);
+          $this->selectDirection[1] = -1;
+        } else {
+          $this->moveBackward(1, 0);
+          if ($this->row[0] === $this->row[1] && $this->col[0] === $this->col[1] - 1) {
+            $this->selectDirection[0] = 0;
+            $this->selectDirection[1] = 0;
+          }
+        }
+        break;
       case Action::SELECT_RIGHT:
-        return true;
+        if ($this->selectDirection[1] == 0 && $this->col[1] >  mb_strlen($this->lines[$this->row[1]])) {
+          $this->row[0]++;
+          $this->col[0] = 0;
+        }
+        if ($this->selectDirection[1] >= 0) {
+          $this->moveForward(1, 0);
+          $this->selectDirection[1] = 1;
+        } else {
+          $this->moveForward(0, 1);
+          if ($this->row[0] === $this->row[1] && $this->col[0] === $this->col[1] - 1) {
+            $this->selectDirection[0] = 0;
+            $this->selectDirection[1] = 0;
+          }
+        }
+        break;;
       case Action::SELECT_UP:
-        return true;
+        if ($this->selectDirection[0] == 0 && $this->col[1] >  mb_strlen($this->lines[$this->row[1]])) {
+          $this->col[1]--;
+        }
+        if ($this->selectDirection[0] <= 0) {
+          $this->row[0]--;
+          $this->checkDocStart(0, 1);
+          $this->checkLineLength(0);
+          $this->selectDirection[0] = -1;
+          $this->selectDirection[1] = -1;
+        } else {
+          $this->row[1]--;
+          $this->checkLineLength(1, 1);
+          if ($this->row[0] === $this->row[1]) {
+            $this->selectDirection[0] = 0;
+            if ($this->col[1] <= $this->col[0]) {
+              $this->col[1] = $this->col[0] + 1;
+            }
+          }
+        }
+        break;
       case Action::SELECT_DOWN:
-        return true;
+        if ($this->selectDirection[0] == 0 && $this->col[1] >  mb_strlen($this->lines[$this->row[1]])) {
+echo "A\n";
+          $this->row[0]++;
+          $this->col[0] = 0;
+        }
+        if ($this->selectDirection[0] >= 0) {
+          $this->row[1]++;
+          $this->checkDocEnd(1);
+          $this->checkLineLength(1, 1);
+          $this->selectDirection[0] = 1;
+          $this->selectDirection[1] = 1;
+        } else {
+          $this->row[0]++;
+          $this->checkLineLength(0, 1);
+          if ($this->row[0] === $this->row[1]) {
+            $this->selectDirection[0] = 0;
+          }
+        }
+        break;
       case Action::SELECT_START:
-        return true;
+        $this->col[0] = 0;
+        $this->selectDirection[1] = -1;
+        break;
       case Action::SELECT_END:
-        return true;
+        $this->col[1] = mb_strlen($this->lines[$this->row[0]]);
+        $this->selectDirection[1] = 1;
+        break;
       case Action::MOVE_LEFT:
-        $this->col1--;
-        if ($this->col1 < 0) {
-          $this->row1--;
-          if ($this->row1 < 0) {
-            $this->row1 = 0;
-            $this->col1 = 0;
-          } else {
-            $this->col1 = mb_strlen($this->lines[$this->row1]);
-          }
-        }
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->moveBackward(0);
+        $this->resetSelection();
+        break;
       case Action::MOVE_RIGHT:
-        $this->col1++;
-        $len = mb_strlen($this->lines[$this->row1]);
-        if ($this->col1 > $len) {
-          $this->row1++;
-          $lcnt = count($this->lines);
-          if ($this->row1 >= $lcnt) {
-            $this->row1 = $lcnt - 1;
-            $this->col1 = $len;
-          } else {
-            $this->col1 = 0;
-          }
-        }
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->moveForward(0);
+        $this->resetSelection();
+        break;
       case Action::MOVE_UP:
-        $this->row1--;
-        if ($this->row1 < 0) {
-          $this->row1 = 0;
-        }
-        $len = mb_strlen($this->lines[$this->row1]);
-        if ($this->col1 > $len) {
-          $this->col1 = $len;
-        }
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->row[0]--;
+        $this->checkDocStart(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
       case Action::MOVE_DOWN:
-        $this->row1++;
-        $lcnt = count($this->lines);
-        if ($this->row1 >= $lcnt) {
-          $this->row1 = $lcnt - 1;
-        }
-        $len = mb_strlen($this->lines[$this->row1]);
-        if ($this->col1 > $len) {
-          $this->col1 = $len;
-        }
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->row[0]++;
+        $this->checkDocEnd(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
       case Action::MOVE_START:
-        $this->col1 = 0;
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->col[0] = 0;
+        $this->resetSelection();
+        break;
       case Action::MOVE_END:
-        $this->col1 = mb_strlen($this->lines[$this->row1]);
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->col[0] = mb_strlen($this->lines[$this->row[0]]);
+        $this->resetSelection();
+        break;
       case Action::PAGE_DOWN:
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->row1 += $linesOnScreen;
-        $lcnt = count($this->lines);
-        if ($this->row1 >= $lcnt) {
-          $this->row1 = $lcnt - 1;
-        }
-        $len = mb_strlen($this->lines[$this->row1]);
-        if ($this->col1 > $len) {
-          $this->col1 = $len;
-        }
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->row[0] += $linesOnScreen;
+        $this->checkDocEnd(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
       case Action::PAGE_UP:
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->row1 -= $linesOnScreen;
-        if ($this->row1 < 0) {
-          $this->row1 = 0;
-        }
-        $len = mb_strlen($this->lines[$this->row1]);
-        if ($this->col1 > $len) {
-          $this->col1 = $len;
-        }
-        $this->row2 = $this->row1;
-        $this->col2 = $this->col1 + 1;
-        $this->update();
-        return true;
+        $this->row[0] -= $linesOnScreen;
+        $this->checkDocStart(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
       case Action::DELETE_BACK:
-        return true;
+        $line = $this->lines[$this->row[0]];
+        if ($this->row[0] === $this->row[1] && $this->col[0] === 0 && $this->col[1] === 1) {
+          if ($this->row[0] > 0) {
+            $this->row[0]--;
+            $line2 = $this->lines[$this->row[0]];
+            $len = mb_strlen($line2);
+            $this->col[0] = $len;
+            $this->lineSplice($this->row[0], 2, $line2 . $line);
+            $this->resetSelection();
+          }
+        } else if ($this->row[0] === $this->row[1] && $this->col[0] === $this->col[1] - 1) {
+          $this->col[0]--;
+          $this->col[1]--;
+          $this->replaceSelection(['']);
+        } else {
+          $this->replaceSelection(['']);
+          $this->resetSelection();
+        }
+        break;
       case Action::DELETE_FORWARD:
-        $line = $this->lines[$this->row1];
-        if ($this->col1 === mb_strlen($line)) {
+        $line = $this->lines[$this->row[0]];
+        $len = mb_strlen($line);
+        if ($this->row[0] === $this->row[1] && $this->col[0] === $len && $this->col[1] === $len + 1) {
           $lcnt = count($this->lines);
-          if ($this->row1 < $lcnt) {
-            $line2 = $this->lines[$this->row1 + 1];
-            $this->lineSplice($this->row1, 2, $line . $line2);
+          if ($this->row[0] < $lcnt) {
+            $line2 = $this->lines[$this->row[0] + 1];
+            $this->lineSplice($this->row[0], 2, $line . $line2);
           }
         } else {
-          $line = mb_substr($line, 0, $this->col1) . mb_substr($line, $this->col1 + 1);
-          $this->lineSplice($this->row1, 1, $line);
+          $this->replaceSelection(['']);
+          $this->resetSelection();
         }
-        $this->update();
-        return true;
+        break;
       case Action::CUT:
         return true;
       case Action::COPY:
         return true;
       case Action::PASTE:
         return true;
+      default:
+        return false;
     }
-    return false;
+echo "{$this->row[0]}:{$this->col[0]}   {$this->row[1]}:{$this->col[1]}\n";
+    $this->update();
+    return true;
   }
 
   public function textInputHandler($element, $event) {
-    if ($this->row1 != $this->row2 || $this->col2 - $this->col1 > 1) {
+    if ($this->row[0] != $this->row[1] || $this->col[1] - $this->col[0] > 1) {
     } else {
-      $cline = $this->lines[$this->row1];
-      $this->lines[$this->row1] = mb_substr($cline, 0, $this->col1) . $event['text'] . mb_substr($cline, $this->col1);
-      $this->col1++;
-      $this->col2++;
+      $cline = $this->lines[$this->row[0]];
+      $this->lines[$this->row[0]] = mb_substr($cline, 0, $this->col[0]) . $event['text'] . mb_substr($cline, $this->col[0]);
+      $this->col[0]++;
+      $this->col[1]++;
     }
-    $this->selectDirection = 0;
+    $this->selectDirection[0] = 0;
+    $this->selectDirection[1] = 0;
     $this->update();
     return true;
   }
