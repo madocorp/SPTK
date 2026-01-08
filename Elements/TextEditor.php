@@ -303,8 +303,28 @@ echo 'tree: ', microtime(true) - $t, "\n";
 
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      /* SPACE */
       case Action::SELECT_ITEM:
         return true;
+      /* UP */
+      case Action::MOVE_UP:
+        $this->row[0]--;
+        $this->checkDocStart(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::PAGE_UP:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->row[0] -= $linesOnScreen;
+        $this->checkDocStart(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::LEVEL_UP:
+        $this->row[0] = 0;
+        $this->col[0] = 0;
+        $this->resetSelection();
+        break;
       case Action::SELECT_UP:
         if ($this->selectDirection[0] <= 0) {
           $this->row[0]--;
@@ -317,6 +337,44 @@ echo 'tree: ', microtime(true) - $t, "\n";
           $this->checkLineLength(1, 1);
         }
         $this->checkSelection();
+        break;
+      case Action::SELECT_PAGE_UP:
+// TODO
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->row[0] -= $linesOnScreen;
+        $this->checkDocStart(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::SELECT_LEVEL_UP:
+        if ($this->selectDirection[0] > 0 || $this->selectDirection[1] > 0) {
+          $tmp = $this->col[1]; $this->col[1] = $this->col[0]; $this->col[0] = $tmp;
+          $tmp = $this->row[1]; $this->row[1] = $this->row[0]; $this->row[0] = $tmp;
+        }
+        $this->row[0] = 0;
+        $this->col[0] = 0;
+        $this->selectDirection[0] = -1;
+        $this->selectDirection[1] = -1;
+        break;
+      /* DOWN */
+      case Action::MOVE_DOWN:
+        $this->row[0]++;
+        $this->checkDocEnd(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::PAGE_DOWN:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->row[0] += $linesOnScreen;
+        $this->checkDocEnd(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::LEVEL_DOWN:
+        $lines = count($this->lines) - 1;
+        $this->row[0] = $lines;
+        $this->col[0] = mb_strlen($this->lines[$lines]);
+        $this->resetSelection();
         break;
       case Action::SELECT_DOWN:
         if ($this->selectDirection[0] >= 0) {
@@ -332,16 +390,10 @@ echo 'tree: ', microtime(true) - $t, "\n";
         $this->checkSelection();
         break;
       case Action::SELECT_PAGE_DOWN:
+// TODO
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
         $this->row[0] += $linesOnScreen;
         $this->checkDocEnd(0);
-        $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::SELECT_PAGE_UP:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->row[0] -= $linesOnScreen;
-        $this->checkDocStart(0);
         $this->checkLineLength(0);
         $this->resetSelection();
         break;
@@ -356,15 +408,19 @@ echo 'tree: ', microtime(true) - $t, "\n";
         $this->selectDirection[0] = 1;
         $this->selectDirection[1] = 1;
         break;
-      case Action::SELECT_LEVEL_UP:
-        if ($this->selectDirection[0] > 0 || $this->selectDirection[1] > 0) {
-          $tmp = $this->col[1]; $this->col[1] = $this->col[0]; $this->col[0] = $tmp;
-          $tmp = $this->row[1]; $this->row[1] = $this->row[0]; $this->row[0] = $tmp;
-        }
-        $this->row[0] = 0;
+      /* LEFT */
+      case Action::MOVE_LEFT:
+        $this->moveBackward(0);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_FIRST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->col[0] = max(0, $this->col[0] - $lettersOnScreen);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_START:
         $this->col[0] = 0;
-        $this->selectDirection[0] = -1;
-        $this->selectDirection[1] = -1;
+        $this->resetSelection();
         break;
       case Action::SELECT_LEFT:
         if ($this->selectDirection[1] <= 0) {
@@ -375,15 +431,6 @@ echo 'tree: ', microtime(true) - $t, "\n";
         }
         $this->checkSelection();
         break;
-      case Action::SELECT_RIGHT:
-        if ($this->selectDirection[1] >= 0) {
-          $this->moveForward(1);
-          $this->selectDirection[1] = 1;
-        } else {
-          $this->moveForward(0);
-        }
-        $this->checkSelection();
-        break;;
       case Action::SELECT_FIRST:
         $lettersOnScreen = (int)($this->geometry->width / $this->letterWidth) - 1;
         if ($this->selectDirection[1] <= 0) {
@@ -403,6 +450,31 @@ echo 'tree: ', microtime(true) - $t, "\n";
         }
         $this->checkSelection();
         break;
+      /* RIGHT */
+      case Action::MOVE_RIGHT:
+        $this->moveForward(0);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_LAST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->col[0] += $lettersOnScreen;
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_END:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
+        $this->col[0] = mb_strlen($this->lines[$this->row[0]]);
+        $this->resetSelection();
+        break;
+      case Action::SELECT_RIGHT:
+        if ($this->selectDirection[1] >= 0) {
+          $this->moveForward(1);
+          $this->selectDirection[1] = 1;
+        } else {
+          $this->moveForward(0);
+        }
+        $this->checkSelection();
+        break;;
       case Action::SELECT_LAST:
         $lettersOnScreen = (int)($this->geometry->width / $this->letterWidth) - 1;
         if ($this->selectDirection[1] >= 0) {
@@ -424,71 +496,7 @@ echo 'tree: ', microtime(true) - $t, "\n";
         }
         $this->checkSelection();
         break;
-      case Action::MOVE_UP:
-        $this->row[0]--;
-        $this->checkDocStart(0);
-        $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::MOVE_DOWN:
-        $this->row[0]++;
-        $this->checkDocEnd(0);
-        $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::PAGE_DOWN:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->row[0] += $linesOnScreen;
-        $this->checkDocEnd(0);
-        $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::PAGE_UP:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->row[0] -= $linesOnScreen;
-        $this->checkDocStart(0);
-        $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::LEVEL_DOWN:
-        $lines = count($this->lines) - 1;
-        $this->row[0] = $lines;
-        $this->col[0] = mb_strlen($this->lines[$lines]);
-        $this->resetSelection();
-        break;
-      case Action::LEVEL_UP:
-        $this->row[0] = 0;
-        $this->col[0] = 0;
-        $this->resetSelection();
-        break;
-      case Action::MOVE_LEFT:
-        $this->moveBackward(0);
-        $this->resetSelection();
-        break;
-      case Action::MOVE_RIGHT:
-        $this->moveForward(0);
-        $this->resetSelection();
-        break;
-      case Action::MOVE_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->col[0] = max(0, $this->col[0] - $lettersOnScreen);
-        $this->resetSelection();
-        break;
-      case Action::MOVE_START:
-        $this->col[0] = 0;
-        $this->resetSelection();
-        break;
-      case Action::MOVE_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->col[0] += $lettersOnScreen;
-        $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::MOVE_END:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
-        $this->col[0] = mb_strlen($this->lines[$this->row[0]]);
-        $this->resetSelection();
-        break;
+      /* DELETE */
       case Action::DELETE_BACK:
         $line = $this->lines[$this->row[0]];
         if ($this->row[0] === $this->row[1] && $this->col[0] === 0 && $this->col[1] === 1) {
@@ -523,6 +531,7 @@ echo 'tree: ', microtime(true) - $t, "\n";
           $this->resetSelection();
         }
         break;
+      /* COPY-PASTE*/
       case Action::CUT:
         return true;
       case Action::COPY:
