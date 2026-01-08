@@ -262,6 +262,10 @@ InputValue:placeholder {
   color: #0000ff;
 }
 
+InputValue:newline {
+  backgroundColor: #0000ff;
+}
+
 InputRow {
   position: absolute;
   x: calculated;

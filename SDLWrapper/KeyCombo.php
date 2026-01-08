@@ -21,10 +21,14 @@ class KeyCombo {
     self::bind(KeyModifier::NONE, ScanCode::RIGHT, Action::MOVE_RIGHT);
     self::bind(KeyModifier::NONE, ScanCode::UP, Action::MOVE_UP);
     self::bind(KeyModifier::NONE, ScanCode::DOWN, Action::MOVE_DOWN);
-    self::bind(KeyModifier::NONE, ScanCode::HOME, Action::MOVE_START);
-    self::bind(KeyModifier::NONE, ScanCode::KP_7, Action::MOVE_START);
-    self::bind(KeyModifier::NONE, ScanCode::END, Action::MOVE_END);
-    self::bind(KeyModifier::NONE, ScanCode::KP_1, Action::MOVE_END);
+    self::bind(KeyModifier::NONE, ScanCode::HOME, Action::MOVE_FIRST);
+    self::bind(KeyModifier::NONE, ScanCode::KP_7, Action::MOVE_FIRST);
+    self::bind(KeyModifier::NONE, ScanCode::END, Action::MOVE_LAST);
+    self::bind(KeyModifier::NONE, ScanCode::KP_1, Action::MOVE_LAST);
+    self::bind(KeyModifier::PRIMARY, ScanCode::HOME, Action::MOVE_START);
+    self::bind(KeyModifier::PRIMARY, ScanCode::KP_7, Action::MOVE_START);
+    self::bind(KeyModifier::PRIMARY, ScanCode::END, Action::MOVE_END);
+    self::bind(KeyModifier::PRIMARY, ScanCode::KP_1, Action::MOVE_END);
     self::bind(KeyModifier::NONE, ScanCode::PAGEUP, Action::PAGE_UP);
     self::bind(KeyModifier::NONE, ScanCode::PAGEDOWN, Action::PAGE_DOWN);
     self::bind(KeyModifier::PRIMARY, ScanCode::PAGEUP, Action::LEVEL_UP);
@@ -35,10 +39,18 @@ class KeyCombo {
     self::bind(KeyModifier::SHIFT, ScanCode::RIGHT, Action::SELECT_RIGHT);
     self::bind(KeyModifier::SHIFT, ScanCode::UP, Action::SELECT_UP);
     self::bind(KeyModifier::SHIFT, ScanCode::DOWN, Action::SELECT_DOWN);
-    self::bind(KeyModifier::SHIFT, ScanCode::HOME, Action::SELECT_START);
-    self::bind(KeyModifier::SHIFT, ScanCode::KP_7, Action::SELECT_START);
-    self::bind(KeyModifier::SHIFT, ScanCode::END, Action::SELECT_END);
-    self::bind(KeyModifier::SHIFT, ScanCode::KP_1, Action::SELECT_END);
+    self::bind(KeyModifier::SHIFT, ScanCode::HOME, Action::SELECT_FIRST);
+    self::bind(KeyModifier::SHIFT, ScanCode::KP_7, Action::SELECT_FIRST);
+    self::bind(KeyModifier::SHIFT, ScanCode::END, Action::SELECT_LAST);
+    self::bind(KeyModifier::SHIFT, ScanCode::KP_1, Action::SELECT_LAST);
+    self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::HOME, Action::SELECT_START);
+    self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::KP_7, Action::SELECT_START);
+    self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::END, Action::SELECT_END);
+    self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::KP_1, Action::SELECT_END);
+    self::bind(KeyModifier::SHIFT, ScanCode::PAGEUP, Action::SELECT_PAGE_UP);
+    self::bind(KeyModifier::SHIFT, ScanCode::PAGEDOWN, Action::SELECT_PAGE_DOWN);
+    self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::PAGEUP, Action::SELECT_LEVEL_UP);
+    self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::PAGEDOWN, Action::SELECT_LEVEL_DOWN);
 
     // Switch fields
     self::bind(KeyModifier::PRIMARY, ScanCode::LEFT, Action::SWITCH_LEFT);

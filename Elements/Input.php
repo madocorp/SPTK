@@ -102,6 +102,94 @@ class Input extends Element {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_ITEM:
         return true;
+      case Action::SELECT_LEFT:
+        if ($this->selectDirection > 0) {
+          if (mb_strlen($this->selected) > 1) {
+            $this->after = mb_substr($this->selected, -1) . $this->after;
+            $this->selected = mb_substr($this->selected, 0, -1);
+          } else {
+            $this->selectDirection = 0;
+          }
+        } else {
+          if ($this->before !== '') {
+            $this->selected = mb_substr($this->before, -1) . $this->selected;
+            $this->before = mb_substr($this->before, 0, -1);
+            $this->selectDirection = -1;
+          }
+        }
+        $this->refreshValue();
+        return true;
+      case Action::SELECT_RIGHT:
+        if ($this->selectDirection < 0) {
+          if (mb_strlen($this->selected) > 1) {
+            $this->before .= mb_substr($this->selected, 0, 1);
+            $this->selected = mb_substr($this->selected, 1);
+          } else {
+            $this->selectDirection = 0;
+          }
+        } else {
+          if ($this->after !== '') {
+            $this->selected .= mb_substr($this->after, 0, 1);
+            $this->after = mb_substr($this->after, 1);
+            $this->selectDirection = 1;
+          }
+        }
+        $this->refreshValue();
+        return true;
+      case Action::SELECT_FIRST:
+        $this->selected = $this->before . $this->selected ;
+        $this->before = '';
+        $this->selectDirection = -1;
+        $this->refreshValue();
+        return true;
+      case Action::SELECT_LAST:
+        $this->selected = $this->selected . $this->after;
+        $this->after = '';
+        $this->selectDirection = 1;
+        $this->refreshValue();
+        return true;
+      case Action::MOVE_LEFT:
+        if ($this->selected !== '') {
+          $this->after = $this->selected . $this->after;
+          $this->selected = '';
+        }
+        if ($this->before !== '') {
+          $this->selected = mb_substr($this->before, -1);
+          $this->before = mb_substr($this->before, 0, -1);
+        } else if ($this->after !== '') {
+          $this->selected = mb_substr($this->after, 0, 1);
+          $this->after = mb_substr($this->after, 1);
+        }
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
+      case Action::MOVE_RIGHT:
+        if ($this->selected !== '') {
+          $this->before =  $this->before . $this->selected;
+          $this->selected = '';
+        }
+        if ($this->after !== '') {
+          $this->selected = mb_substr($this->after, 0, 1);
+          $this->after = mb_substr($this->after, 1);
+        }
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
+      case Action::MOVE_FIRST:
+        $this->after = $this->before . $this->selected . $this->after;
+        $this->before = '';
+        $this->selected = mb_substr($this->after, 0, 1);
+        $this->after = mb_substr($this->after, 1);
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
+      case Action::MOVE_LAST:
+        $this->before = $this->before . $this->selected . $this->after;
+        $this->after = '';
+        $this->selected = '';
+        $this->selectDirection = 0;
+        $this->refreshValue();
+        return true;
       case Action::DELETE_BACK:
         if (mb_strlen($this->selected) > 1) {
           $this->selected = '';
@@ -122,94 +210,6 @@ class Input extends Element {
         } else {
           $this->selected = '';
         }
-        $this->selectDirection = 0;
-        $this->refreshValue();
-        return true;
-      case Action::SELECT_LEFT:
-        if ($this->selectDirection > 0) {
-          if (mb_strlen($this->selected) > 1) {
-            $this->after = mb_substr($this->selected, -1) . $this->after;
-            $this->selected = mb_substr($this->selected, 0, -1);
-          } else {
-            $this->selectDirection = 0;
-          }
-        } else {
-          if ($this->before !== '') {
-            $this->selected = mb_substr($this->before, -1) . $this->selected;
-            $this->before = mb_substr($this->before, 0, -1);
-            $this->selectDirection = -1;
-          }
-        }
-        $this->refreshValue();
-        return true;
-      case Action::MOVE_LEFT:
-        if ($this->selected !== '') {
-          $this->after = $this->selected . $this->after;
-          $this->selected = '';
-        }
-        if ($this->before !== '') {
-          $this->selected = mb_substr($this->before, -1);
-          $this->before = mb_substr($this->before, 0, -1);
-        } else if ($this->after !== '') {
-          $this->selected = mb_substr($this->after, 0, 1);
-          $this->after = mb_substr($this->after, 1);
-        }
-        $this->selectDirection = 0;
-        $this->refreshValue();
-        return true;
-      case Action::SELECT_RIGHT:
-        if ($this->selectDirection < 0) {
-          if (mb_strlen($this->selected) > 1) {
-            $this->before .= mb_substr($this->selected, 0, 1);
-            $this->selected = mb_substr($this->selected, 1);
-          } else {
-            $this->selectDirection = 0;
-          }
-        } else {
-          if ($this->after !== '') {
-            $this->selected .= mb_substr($this->after, 0, 1);
-            $this->after = mb_substr($this->after, 1);
-            $this->selectDirection = 1;
-          }
-        }
-        $this->refreshValue();
-        return true;
-      case Action::MOVE_RIGHT:
-        if ($this->selected !== '') {
-          $this->before =  $this->before . $this->selected;
-          $this->selected = '';
-        }
-        if ($this->after !== '') {
-          $this->selected = mb_substr($this->after, 0, 1);
-          $this->after = mb_substr($this->after, 1);
-        }
-        $this->selectDirection = 0;
-        $this->refreshValue();
-        return true;
-      case Action::SELECT_START:
-        $this->selected = $this->before . $this->selected ;
-        $this->before = '';
-        $this->selectDirection = -1;
-        $this->refreshValue();
-        return true;
-      case Action::MOVE_START:
-        $this->after = $this->before . $this->selected . $this->after;
-        $this->before = '';
-        $this->selected = mb_substr($this->after, 0, 1);
-        $this->after = mb_substr($this->after, 1);
-        $this->selectDirection = 0;
-        $this->refreshValue();
-        return true;
-      case Action::SELECT_END:
-        $this->selected = $this->selected . $this->after;
-        $this->after = '';
-        $this->selectDirection = 1;
-        $this->refreshValue();
-        return true;
-      case Action::MOVE_END:
-        $this->before = $this->before . $this->selected . $this->after;
-        $this->after = '';
-        $this->selected = '';
         $this->selectDirection = 0;
         $this->refreshValue();
         return true;
