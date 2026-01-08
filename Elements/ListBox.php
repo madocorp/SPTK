@@ -352,12 +352,12 @@ class ListBox extends Element {
         $this->activateItem(1);
         Element::immediateRender($this, false);
         return true;
-      case Action::MOVE_START:
+      case Action::MOVE_FIRST:
         $this->activeItem = 0;
         $this->activateItem(1);
         Element::immediateRender($this, false);
         return true;
-      case Action::MOVE_END:
+      case Action::MOVE_LAST:
         $this->activeItem = $this->num - 1;
         $this->activateItem(-1);
         Element::immediateRender($this, false);

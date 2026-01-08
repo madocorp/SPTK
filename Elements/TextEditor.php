@@ -146,13 +146,26 @@ class TextEditor extends Element {
         $iv->setValue($token['value']);
         $j += $token['length'];
       }
-      if ($this->row[1] === $i && $this->col[1] == $j) {
-       $selected = false;
+      if ($this->row[0] === $i && $this->col[0] === $j) {
+        $selected = true;
       }
-      if ($this->row[1] === $i && $this->col[1] > $j) {
-        $iv = new InputValue($row, false, 'InputValue:selected');
-        $iv->setValue(' ');
+      if ($this->row[1] === $i && $this->col[1] === $j) {
+        $selected = false;
       }
+      $style = false;
+      if ($selected) {
+        $style = 'InputValue:selected';
+        if ($this->row[0] != $this->row[1] || $this->row[0] < $this->row[1] - 1) {
+          $style = 'InputValue:newline';
+        }
+      }
+      $iv = new InputValue($row, false, $style);
+      $iv->setValue(' ');
+      $j++;
+      if ($this->row[1] === $i && $this->col[1] === $j) {
+        $selected = false;
+      }
+
     }
   }
 
@@ -226,14 +239,14 @@ echo 'tree: ', microtime(true) - $t, "\n";
 
   protected function checkLineLength($c) {
     $len = mb_strlen($this->lines[$this->row[$c]]);
-    if ($this->col[$c] > $len) {
-      $this->col[$c] = $len;
+    if ($this->col[$c] > $len + $c) {
+      $this->col[$c] = $len + $c;
     }
   }
 
-  protected function moveForward($c, $newline = 0) {
-    $len = mb_strlen($this->lines[$this->row[$c]]) - $newline;
-    if ($this->col[$c] < $len) {
+  protected function moveForward($c) {
+    $len = mb_strlen($this->lines[$this->row[$c]]);
+    if ($this->col[$c] < $len + $c) {
       $this->col[$c]++;
     } else {
       $lcnt = count($this->lines);
@@ -244,13 +257,13 @@ echo 'tree: ', microtime(true) - $t, "\n";
     }
   }
 
-  protected function moveBackward($c, $newline = 0) {
+  protected function moveBackward($c) {
     if ($this->col[$c] > $c) {
       $this->col[$c]--;
     } else {
       if ($this->row[$c] > 0) {
         $this->row[$c]--;
-        $this->col[$c] = mb_strlen($this->lines[$this->row[$c]]) - $newline;
+        $this->col[$c] = mb_strlen($this->lines[$this->row[$c]]) + $c;
       }
     }
   }
@@ -260,6 +273,23 @@ echo 'tree: ', microtime(true) - $t, "\n";
     $this->col[1] = $this->col[0] + 1;
     $this->selectDirection[0] = 0;
     $this->selectDirection[1] = 0;
+  }
+
+  protected function checkSelection() {
+    if ($this->row[0] === $this->row[1] && $this->col[0] === $this->col[1]) {
+      $this->col[1]++;
+    }
+    if ($this->row[0] === $this->row[1]) {
+      $this->selectDirection[0] = 0;
+      if ($this->col[1] < $this->col[0]) {
+        $tmp = $this->col[1];
+        $this->col[1] = $this->col[0];
+        $this->col[0] = $tmp;
+      }
+      if ($this->col[0] === $this->col[1] - 1) {
+        $this->selectDirection[1] = 0;
+      }
+    }
   }
 
   protected function replaceSelection($newLines) {
@@ -275,41 +305,7 @@ echo 'tree: ', microtime(true) - $t, "\n";
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_ITEM:
         return true;
-      case Action::SELECT_LEFT:
-        if ($this->selectDirection[1] == 0 && $this->col[1] > mb_strlen($this->lines[$this->row[1]])) {
-          $this->col[1]--;
-        }
-        if ($this->selectDirection[1] <= 0) {
-          $this->moveBackward(0, 1);
-          $this->selectDirection[1] = -1;
-        } else {
-          $this->moveBackward(1, 0);
-          if ($this->row[0] === $this->row[1] && $this->col[0] === $this->col[1] - 1) {
-            $this->selectDirection[0] = 0;
-            $this->selectDirection[1] = 0;
-          }
-        }
-        break;
-      case Action::SELECT_RIGHT:
-        if ($this->selectDirection[1] == 0 && $this->col[1] >  mb_strlen($this->lines[$this->row[1]])) {
-          $this->row[0]++;
-          $this->col[0] = 0;
-        }
-        if ($this->selectDirection[1] >= 0) {
-          $this->moveForward(1, 0);
-          $this->selectDirection[1] = 1;
-        } else {
-          $this->moveForward(0, 1);
-          if ($this->row[0] === $this->row[1] && $this->col[0] === $this->col[1] - 1) {
-            $this->selectDirection[0] = 0;
-            $this->selectDirection[1] = 0;
-          }
-        }
-        break;;
       case Action::SELECT_UP:
-        if ($this->selectDirection[0] == 0 && $this->col[1] >  mb_strlen($this->lines[$this->row[1]])) {
-          $this->col[1]--;
-        }
         if ($this->selectDirection[0] <= 0) {
           $this->row[0]--;
           $this->checkDocStart(0, 1);
@@ -319,20 +315,10 @@ echo 'tree: ', microtime(true) - $t, "\n";
         } else {
           $this->row[1]--;
           $this->checkLineLength(1, 1);
-          if ($this->row[0] === $this->row[1]) {
-            $this->selectDirection[0] = 0;
-            if ($this->col[1] <= $this->col[0]) {
-              $this->col[1] = $this->col[0] + 1;
-            }
-          }
         }
+        $this->checkSelection();
         break;
       case Action::SELECT_DOWN:
-        if ($this->selectDirection[0] == 0 && $this->col[1] >  mb_strlen($this->lines[$this->row[1]])) {
-echo "A\n";
-          $this->row[0]++;
-          $this->col[0] = 0;
-        }
         if ($this->selectDirection[0] >= 0) {
           $this->row[1]++;
           $this->checkDocEnd(1);
@@ -342,26 +328,101 @@ echo "A\n";
         } else {
           $this->row[0]++;
           $this->checkLineLength(0, 1);
-          if ($this->row[0] === $this->row[1]) {
-            $this->selectDirection[0] = 0;
-          }
         }
+        $this->checkSelection();
         break;
-      case Action::SELECT_START:
-        $this->col[0] = 0;
-        $this->selectDirection[1] = -1;
+      case Action::SELECT_PAGE_DOWN:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->row[0] += $linesOnScreen;
+        $this->checkDocEnd(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
         break;
-      case Action::SELECT_END:
-        $this->col[1] = mb_strlen($this->lines[$this->row[0]]);
+      case Action::SELECT_PAGE_UP:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->row[0] -= $linesOnScreen;
+        $this->checkDocStart(0);
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::SELECT_LEVEL_DOWN:
+        if ($this->selectDirection[0] < 0 || $this->selectDirection[1] < 0) {
+          $tmp = $this->col[1]; $this->col[1] = $this->col[0]; $this->col[0] = $tmp;
+          $tmp = $this->row[1]; $this->row[1] = $this->row[0]; $this->row[0] = $tmp;
+        }
+        $lines = count($this->lines) - 1;
+        $this->row[1] = $lines;
+        $this->col[1] = mb_strlen($this->lines[$lines]) + 1;
+        $this->selectDirection[0] = 1;
         $this->selectDirection[1] = 1;
         break;
-      case Action::MOVE_LEFT:
-        $this->moveBackward(0);
-        $this->resetSelection();
+      case Action::SELECT_LEVEL_UP:
+        if ($this->selectDirection[0] > 0 || $this->selectDirection[1] > 0) {
+          $tmp = $this->col[1]; $this->col[1] = $this->col[0]; $this->col[0] = $tmp;
+          $tmp = $this->row[1]; $this->row[1] = $this->row[0]; $this->row[0] = $tmp;
+        }
+        $this->row[0] = 0;
+        $this->col[0] = 0;
+        $this->selectDirection[0] = -1;
+        $this->selectDirection[1] = -1;
         break;
-      case Action::MOVE_RIGHT:
-        $this->moveForward(0);
-        $this->resetSelection();
+      case Action::SELECT_LEFT:
+        if ($this->selectDirection[1] <= 0) {
+          $this->moveBackward(0);
+          $this->selectDirection[1] = -1;
+        } else {
+          $this->moveBackward(1);
+        }
+        $this->checkSelection();
+        break;
+      case Action::SELECT_RIGHT:
+        if ($this->selectDirection[1] >= 0) {
+          $this->moveForward(1);
+          $this->selectDirection[1] = 1;
+        } else {
+          $this->moveForward(0);
+        }
+        $this->checkSelection();
+        break;;
+      case Action::SELECT_FIRST:
+        $lettersOnScreen = (int)($this->geometry->width / $this->letterWidth) - 1;
+        if ($this->selectDirection[1] <= 0) {
+          $this->col[0] = max(0, $this->col[0] - $lettersOnScreen + 1);
+          $this->selectDirection[1] = -1;
+        } else {
+          $this->col[1] = max(1, $this->col[1] - $lettersOnScreen);
+        }
+        $this->checkSelection();
+        break;
+      case Action::SELECT_START:
+        if ($this->selectDirection[1] <= 0) {
+          $this->col[0] = 0;
+          $this->selectDirection[1] = -1;
+        } else {
+          $this->col[1] = 1;
+        }
+        $this->checkSelection();
+        break;
+      case Action::SELECT_LAST:
+        $lettersOnScreen = (int)($this->geometry->width / $this->letterWidth) - 1;
+        if ($this->selectDirection[1] >= 0) {
+          $this->col[1] += $lettersOnScreen - 1;
+          $this->checkLineLength(1);
+          $this->selectDirection[1] = 1;
+        } else {
+          $this->col[0] += $lettersOnScreen;
+          $this->checkLineLength(0);
+        }
+        $this->checkSelection();
+        break;
+      case Action::SELECT_END:
+        if ($this->selectDirection[1] >= 0) {
+          $this->col[1] = mb_strlen($this->lines[$this->row[1]]) + 1;
+          $this->selectDirection[1] = 1;
+        } else {
+          $this->col[0] = mb_strlen($this->lines[$this->row[0]]);
+        }
+        $this->checkSelection();
         break;
       case Action::MOVE_UP:
         $this->row[0]--;
@@ -373,14 +434,6 @@ echo "A\n";
         $this->row[0]++;
         $this->checkDocEnd(0);
         $this->checkLineLength(0);
-        $this->resetSelection();
-        break;
-      case Action::MOVE_START:
-        $this->col[0] = 0;
-        $this->resetSelection();
-        break;
-      case Action::MOVE_END:
-        $this->col[0] = mb_strlen($this->lines[$this->row[0]]);
         $this->resetSelection();
         break;
       case Action::PAGE_DOWN:
@@ -395,6 +448,45 @@ echo "A\n";
         $this->row[0] -= $linesOnScreen;
         $this->checkDocStart(0);
         $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::LEVEL_DOWN:
+        $lines = count($this->lines) - 1;
+        $this->row[0] = $lines;
+        $this->col[0] = mb_strlen($this->lines[$lines]);
+        $this->resetSelection();
+        break;
+      case Action::LEVEL_UP:
+        $this->row[0] = 0;
+        $this->col[0] = 0;
+        $this->resetSelection();
+        break;
+      case Action::MOVE_LEFT:
+        $this->moveBackward(0);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_RIGHT:
+        $this->moveForward(0);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_FIRST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->col[0] = max(0, $this->col[0] - $lettersOnScreen);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_START:
+        $this->col[0] = 0;
+        $this->resetSelection();
+        break;
+      case Action::MOVE_LAST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->col[0] += $lettersOnScreen;
+        $this->checkLineLength(0);
+        $this->resetSelection();
+        break;
+      case Action::MOVE_END:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
+        $this->col[0] = mb_strlen($this->lines[$this->row[0]]);
         $this->resetSelection();
         break;
       case Action::DELETE_BACK:

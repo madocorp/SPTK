@@ -12,6 +12,8 @@ enum Action {
   case MOVE_RIGHT;
   case MOVE_UP;
   case MOVE_DOWN;
+  case MOVE_FIRST;
+  case MOVE_LAST;
   case MOVE_START;
   case MOVE_END;
 
@@ -25,9 +27,15 @@ enum Action {
   case SELECT_RIGHT;
   case SELECT_UP;
   case SELECT_DOWN;
+  case SELECT_FIRST;
+  case SELECT_LAST;
   case SELECT_START;
   case SELECT_END;
   case SELECT_ITEM;
+  case SELECT_PAGE_UP;
+  case SELECT_PAGE_DOWN;
+  case SELECT_LEVEL_UP;
+  case SELECT_LEVEL_DOWN;
 
   case DELETE_FORWARD;
   case DELETE_BACK;
