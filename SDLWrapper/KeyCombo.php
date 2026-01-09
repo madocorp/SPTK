@@ -9,11 +9,11 @@ class KeyCombo {
   public static function init() {
 
     // Clipboard
-    self::bind(KeyModifier::PRIMARY, ScanCode::C, Action::COPY);
+    self::kbind(KeyModifier::PRIMARY, KeyCode::C, Action::COPY);
     self::bind(KeyModifier::PRIMARY, ScanCode::INSERT, Action::COPY);
-    self::bind(KeyModifier::PRIMARY, ScanCode::X, Action::CUT);
+    self::kbind(KeyModifier::PRIMARY, KeyCode::X, Action::CUT);
     self::bind(KeyModifier::PRIMARY, ScanCode::DELETE, Action::CUT);
-    self::bind(KeyModifier::PRIMARY, ScanCode::V, Action::PASTE);
+    self::kbind(KeyModifier::PRIMARY, KeyCode::V, Action::PASTE);
     self::bind(KeyModifier::SHIFT, ScanCode::INSERT, Action::PASTE);
 
     // Move
@@ -72,18 +72,33 @@ class KeyCombo {
     self::bind(KeyModifier::NONE, ScanCode::RETURN, Action::DO_IT);
     self::bind(KeyModifier::NONE, ScanCode::SPACE, Action::SELECT_ITEM);
 
+    self::kbind(KeyModifier::PRIMARY, KeyCode::Z, Action::UNDO);
+    self::kbind(KeyModifier::PRIMARY, KeyCode::Y, Action::REDO);
   }
 
   private static function bind($modifier, $scancode, $action) {
     $modifier = self::normalizeModifier($modifier);
-    $hash = "{$modifier}:{$scancode}";
+    $hash = "s:{$modifier}:{$scancode}";
+    self::$map[$hash] = $action;
+  }
+
+  private static function kbind($modifier, $keycode, $action) {
+    $modifier = self::normalizeModifier($modifier);
+    $hash = "k:{$modifier}:{$keycode}";
     self::$map[$hash] = $action;
   }
 
   public static function resolve($modifier, $scancode, $keycode = false) {
     $modifier = self::normalizeModifier($modifier);
-    $hash = "{$modifier}:{$scancode}";
-    return self::$map[$hash] ?? $keycode;
+    $hash = "s:{$modifier}:{$scancode}";
+    if (isset(self::$map[$hash])) {
+      return self::$map[$hash];
+    }
+    $hash = "k:{$modifier}:{$keycode}";
+    if (isset(self::$map[$hash])) {
+      return self::$map[$hash];
+    }
+    return $keycode;
   }
 
   private static function normalizeModifier($modifier) {

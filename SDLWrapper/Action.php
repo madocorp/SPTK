@@ -40,6 +40,9 @@ enum Action {
   case DELETE_FORWARD;
   case DELETE_BACK;
 
+  case UNDO;
+  case REDO;
+
   case CLOSE;
   case DO_IT;
 
