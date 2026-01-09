@@ -5,14 +5,19 @@ namespace SPTK;
 class TextEditor extends Element {
 
   protected $lines = [];
-  protected $anchor = [0, 0];
   protected $caret = [0, 0];
+  protected $anchor = [0, 0];
+  protected $newcaret;
+  protected $newanchor;
   protected $lineHeight;
   protected $letterWidth;
   protected $tokenizer;
   protected $lineContexts = [];
   protected $lineUnderConstruction = false;
   protected $originalLine = false;
+  protected $originalCursor = false;
+  protected $undo = [];
+  protected $redo = [];
 
   protected function init() {
     $this->acceptInput = true;
@@ -187,7 +192,6 @@ class TextEditor extends Element {
       if ($row2 === $i && $col2 === $j) {
         $selected = false;
       }
-
     }
   }
 
@@ -236,52 +240,100 @@ echo 'tree: ', microtime(true) - $t, "\n";
     Element::refresh();
   }
 
-  protected function lineSplice($offset, $length, $replacement) {
-    // fill undo stack
+  protected function lineSplice($offset, $length, $replacement, $undo = true) {
+    if ($undo) {
+      $save = true;
+      if ($length === 1 && count($replacement) === 1) {
+        if ($this->lineUnderConstruction === false) {
+          $this->originalLine = $this->lines[$offset];
+          $this->originalCursor = [$this->caret, $this->anchor];
+          $this->lineUnderConstruction = $offset;
+        } else if ($this->lineUnderConstruction !== $offset) {
+          $this->undo[] = [$this->lineUnderConstruction, [$this->originalLine], [$this->lines[$this->lineUnderConstruction]], $this->originalCursor, [$this->newcaret, $this->newanchor]];
+          $this->originalLine = $this->lines[$offset];
+          $this->originalCursor = [$this->caret, $this->anchor];
+          $this->lineUnderConstruction = $offset;
+        }
+        $save = false;
+      } else if ($this->lineUnderConstruction !== false) {
+        $this->undo[] = [$this->lineUnderConstruction, [$this->originalLine], [$this->lines[$this->lineUnderConstruction]], $this->originalCursor, [$this->newcaret, $this->newanchor]];
+        $this->originalLine = false;
+        $this->originalCursor = false;
+        $this->lineUnderConstruction = false;
+      }
+      $this->redo = [];
+      if ($save) {
+        $original = array_slice($this->lines, $offset, $length);
+        $this->undo[] = [$offset, $original, $replacement, [$this->caret, $this->anchor], [$this->newcaret, $this->newanchor]];
+      }
+    }
+echo "=== UNDO ===\n";
+foreach ($this->undo as $undo) {
+  echo "--- {$undo[0]} ---\n";
+  echo "<<< ", implode(' | ', $undo[1]), "\n";
+  echo ">>> ", implode(' | ', $undo[2]), "\n";
+}
+echo "under construction: {$this->lineUnderConstruction} ({$this->originalLine})\n";
     array_splice($this->lines, $offset, $length, $replacement);
   }
 
   protected function checkDocStart() {
-    $this->caret[0] = max(0, $this->caret[0]);
+    $this->newcaret[0] = max(0, $this->newcaret[0]);
   }
 
   protected function checkDocEnd() {
     $lcnt = count($this->lines);
-    $this->caret[0] = min($lcnt - 1, $this->caret[0]);
+    $this->newcaret[0] = min($lcnt - 1, $this->newcaret[0]);
   }
 
   protected function checkLineLength() {
-    $len = mb_strlen($this->lines[$this->caret[0]]);
-    $this->caret[1] = min($len, $this->caret[1]);
+    $len = mb_strlen($this->lines[$this->newcaret[0]]);
+    $this->newcaret[1] = min($len, $this->newcaret[1]);
   }
 
   protected function moveForward() {
-    $len = mb_strlen($this->lines[$this->caret[0]]);
-    if ($this->caret[1] < $len) {
-      $this->caret[1]++;
+    $len = mb_strlen($this->lines[$this->newcaret[0]]);
+    if ($this->newcaret[1] < $len) {
+      $this->newcaret[1]++;
     } else {
       $lcnt = count($this->lines);
-      if ($this->caret[0] < $lcnt - 1) {
-        $this->caret[0]++;
-        $this->caret[1] = 0;
+      if ($this->newcaret[0] < $lcnt - 1) {
+        $this->newcaret[0]++;
+        $this->newcaret[1] = 0;
       }
     }
   }
 
   protected function moveBackward() {
-    if ($this->caret[1] > 0) {
-      $this->caret[1]--;
+    if ($this->newcaret[1] > 0) {
+      $this->newcaret[1]--;
     } else {
-      if ($this->caret[0] > 0) {
-        $this->caret[0]--;
-        $this->caret[1] = mb_strlen($this->lines[$this->caret[0]]);
+      if ($this->newcaret[0] > 0) {
+        $this->newcaret[0]--;
+        $this->newcaret[1] = mb_strlen($this->lines[$this->newcaret[0]]);
       }
     }
   }
 
   protected function resetSelection() {
-    $this->anchor[0] = $this->caret[0];
-    $this->anchor[1] = $this->caret[1];
+    $this->newanchor[0] = $this->newcaret[0];
+    $this->newanchor[1] = $this->newcaret[1];
+  }
+
+  protected function getSelection() {
+    $this->selectionToCoordinates($row1, $col1, $row2, $col2);
+    $lines = [];
+    for ($i = $row1; $i <= $row2; $i++) {
+      $line = $this->lines[$i];
+      if ($i === $row2) {
+        $line = mb_substr($line, 0, $col2);
+      }
+      if ($i === $row1) {
+        $line = mb_substr($line, $col1);
+      }
+      $lines[] = $line;
+    }
+    return implode("\n", $lines);
   }
 
   protected function replaceSelection($newLines, $allowInsert = true) {
@@ -297,7 +349,18 @@ echo 'tree: ', microtime(true) - $t, "\n";
     $this->lineSplice($row1, $row2 - $row1 + 1, $newLines);
   }
 
+  protected function initNewCursor() {
+    $this->newcaret = $this->caret;
+    $this->newanchor = $this->anchor;
+  }
+
+  protected function saveCursor() {
+    $this->caret = $this->newcaret;
+    $this->anchor = $this->newanchor;
+  }
+
   public function keyPressHandler($element, $event) {
+    $this->initNewCursor();
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       /* SPACE, NEW LINE */
       case Action::SELECT_ITEM:
@@ -305,79 +368,79 @@ echo 'tree: ', microtime(true) - $t, "\n";
       case Action::DO_IT:
         $this->selectionToCoordinates($row1, $col1, $row2, $col2);
         $this->replaceSelection(['', '']);
-        $this->caret[0] = $row1 + 1;
-        $this->caret[1] = 0;
+        $this->newcaret[0] = $row1 + 1;
+        $this->newcaret[1] = 0;
         $this->resetSelection();
         break;
       /* UP */
       case Action::MOVE_UP:
-        $this->caret[0]--;
+        $this->newcaret[0]--;
         $this->checkDocStart();
         $this->checkLineLength();
         $this->resetSelection();
         break;
       case Action::PAGE_UP:
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->caret[0] -= $linesOnScreen;
+        $this->newcaret[0] -= $linesOnScreen;
         $this->checkDocStart();
         $this->checkLineLength();
         $this->resetSelection();
         break;
       case Action::LEVEL_UP:
-        $this->caret[0] = 0;
-        $this->caret[1] = 0;
+        $this->newcaret[0] = 0;
+        $this->newcaret[1] = 0;
         $this->resetSelection();
         break;
       case Action::SELECT_UP:
-        $this->caret[0]--;
+        $this->newcaret[0]--;
         $this->checkDocStart();
         $this->checkLineLength();
         break;
       case Action::SELECT_PAGE_UP:
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->caret[0] -= $linesOnScreen;
+        $this->newcaret[0] -= $linesOnScreen;
         $this->checkDocStart();
         $this->checkLineLength();
         break;
       case Action::SELECT_LEVEL_UP:
-        $this->caret[0] = 0;
-        $this->caret[1] = 0;
+        $this->newcaret[0] = 0;
+        $this->newcaret[1] = 0;
         break;
       /* DOWN */
       case Action::MOVE_DOWN:
-        $this->caret[0]++;
+        $this->newcaret[0]++;
         $this->checkDocEnd();
         $this->checkLineLength();
         $this->resetSelection();
         break;
       case Action::PAGE_DOWN:
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->caret[0] += $linesOnScreen;
+        $this->newcaret[0] += $linesOnScreen;
         $this->checkDocEnd();
         $this->checkLineLength();
         $this->resetSelection();
         break;
       case Action::LEVEL_DOWN:
         $lines = count($this->lines) - 1;
-        $this->caret[0] = $lines;
-        $this->caret[1] = mb_strlen($this->lines[$lines]);
+        $this->newcaret[0] = $lines;
+        $this->newcaret[1] = mb_strlen($this->lines[$lines]);
         $this->resetSelection();
         break;
       case Action::SELECT_DOWN:
-        $this->caret[0]++;
+        $this->newcaret[0]++;
         $this->checkDocEnd();
         $this->checkLineLength();
         break;
       case Action::SELECT_PAGE_DOWN:
         $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->caret[0] += $linesOnScreen;
+        $this->newcaret[0] += $linesOnScreen;
         $this->checkDocEnd();
         $this->checkLineLength();
         break;
       case Action::SELECT_LEVEL_DOWN:
         $lines = count($this->lines) - 1;
-        $this->caret[0] = $lines;
-        $this->caret[1] = mb_strlen($this->lines[$lines]);
+        $this->newcaret[0] = $lines;
+        $this->newcaret[1] = mb_strlen($this->lines[$lines]);
         break;
       /* LEFT */
       case Action::MOVE_LEFT:
@@ -386,11 +449,11 @@ echo 'tree: ', microtime(true) - $t, "\n";
         break;
       case Action::MOVE_FIRST:
         $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->caret[1] = max(0, $this->caret[1] - $lettersOnScreen);
+        $this->newcaret[1] = max(0, $this->newcaret[1] - $lettersOnScreen);
         $this->resetSelection();
         break;
       case Action::MOVE_START:
-        $this->caret[1] = 0;
+        $this->newcaret[1] = 0;
         $this->resetSelection();
         break;
       case Action::SELECT_LEFT:
@@ -398,10 +461,10 @@ echo 'tree: ', microtime(true) - $t, "\n";
         break;
       case Action::SELECT_FIRST:
         $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->caret[1] = max(0, $this->caret[1] - $lettersOnScreen);
+        $this->newcaret[1] = max(0, $this->newcaret[1] - $lettersOnScreen);
         break;
       case Action::SELECT_START:
-        $this->caret[1] = 0;
+        $this->newcaret[1] = 0;
         break;
       /* RIGHT */
       case Action::MOVE_RIGHT:
@@ -410,13 +473,13 @@ echo 'tree: ', microtime(true) - $t, "\n";
         break;
       case Action::MOVE_LAST:
         $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->caret[1] += $lettersOnScreen;
+        $this->newcaret[1] += $lettersOnScreen;
         $this->checkLineLength();
         $this->resetSelection();
         break;
       case Action::MOVE_END:
         $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
-        $this->caret[1] = mb_strlen($this->lines[$this->caret[0]]);
+        $this->newcaret[1] = mb_strlen($this->lines[$this->newcaret[0]]);
         $this->resetSelection();
         break;
       case Action::SELECT_RIGHT:
@@ -424,12 +487,12 @@ echo 'tree: ', microtime(true) - $t, "\n";
         break;;
       case Action::SELECT_LAST:
         $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->caret[1] += $lettersOnScreen;
+        $this->newcaret[1] += $lettersOnScreen;
         $this->checkLineLength();
         break;
       case Action::SELECT_END:
         $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
-        $this->caret[1] = mb_strlen($this->lines[$this->caret[0]]);
+        $this->newcaret[1] = mb_strlen($this->lines[$this->newcaret[0]]);
         break;
       /* DELETE */
       case Action::DELETE_BACK:
@@ -440,18 +503,18 @@ echo 'tree: ', microtime(true) - $t, "\n";
             $row1--;
             $line2 = $this->lines[$row1];
             $len = mb_strlen($line2);
-            $this->lineSplice($row1, 2, $line2 . $line);
-            $this->caret[0]--;
-            $this->caret[1] = $len;
+            $this->lineSplice($row1, 2, [$line2 . $line]);
+            $this->newcaret[0]--;
+            $this->newcaret[1] = $len;
           }
         } else if ($row1 === $row2 && $col1 === $col2 - 1) {
-          $this->caret[1]--;
-          $this->anchor[1]--;
+          $this->newcaret[1]--;
+          $this->newanchor[1]--;
           $this->replaceSelection([''], false);
         } else {
           $this->replaceSelection([''], false);
-          $this->caret[0] = $row1;
-          $this->caret[1] = $col1;
+          $this->newcaret[0] = $row1;
+          $this->newcaret[1] = $col1;
         }
         $this->resetSelection();
         break;
@@ -463,36 +526,80 @@ echo 'tree: ', microtime(true) - $t, "\n";
           $lcnt = count($this->lines);
           if ($row1 < $lcnt) {
             $line2 = $this->lines[$row1 + 1];
-            $this->lineSplice($row1, 2, $line . $line2);
+            $this->lineSplice($row1, 2, [$line . $line2]);
           }
         } else {
           $this->replaceSelection([''], false);
-          $this->caret[0] = $row1;
-          $this->caret[1] = $col1;
+          $this->newcaret[0] = $row1;
+          $this->newcaret[1] = $col1;
         }
         $this->resetSelection();
         break;
-      /* COPY-PASTE*/
+      /* COPY-PASTE */
       case Action::CUT:
-        return true;
+        $this->selectionToCoordinates($row1, $col1, $row2, $col2);
+        Clipboard::set($this->getSelection());
+        $this->replaceSelection([''], false);
+        $this->newcaret[0] = $row1;
+        $this->newcaret[1] = $col1;
+        $this->resetSelection();
+        break;
       case Action::COPY:
-        return true;
+        Clipboard::set($this->getSelection());
+        $this->resetSelection();
+        break;
       case Action::PASTE:
-        return true;
+        $paste = Clipboard::get();
+        if ($paste !== false) {
+          $lines = explode("\n", $paste);
+          $this->replaceSelection($lines);
+        }
+        break;
+      /* UNDO-REDO */
+      case Action::UNDO:
+        if ($this->lineUnderConstruction !== false) {
+          $this->newcaret = $this->originalCursor[0];
+          $this->newanchor = $this->originalCursor[1];
+          $this->redo[] = [$this->lineUnderConstruction, [$this->originalLine], [$this->lines[$this->lineUnderConstruction]], $this->originalCursor, [$this->caret, $this->anchor]];
+          $this->lineSplice($this->lineUnderConstruction, 1, [$this->originalLine], false);
+          $this->originalLine = false;
+          $this->originalCursor = false;
+          $this->lineUnderConstruction = false;
+        } else if (!empty($this->undo)) {
+          $splice = array_pop($this->undo);
+          $this->redo[] = $splice;
+          $this->lineSplice($splice[0], count($splice[2]), $splice[1], false);
+          $this->newcaret = $splice[3][0];
+          $this->newanchor = $splice[3][1];
+        }
+        break;
+      case Action::REDO:
+        if (!empty($this->redo)) {
+          $splice = array_pop($this->redo);
+          $this->undo[] = $splice;
+          $this->lineSplice($splice[0], count($splice[1]), $splice[2], false);
+          $this->newcaret = $splice[4][0];
+          $this->newanchor = $splice[4][1];
+          $this->resetSelection();
+        }
+        break;
       default:
         return false;
     }
+    $this->saveCursor();
     $this->update();
     return true;
   }
 
   public function textInputHandler($element, $event) {
+    $this->initNewCursor();
     $this->selectionToCoordinates($row1, $col1, $row2, $col2);
     $this->replaceSelection([$event['text']]);
-    $this->caret[0] = $row1;
-    $this->caret[1] = $col1;
-    $this->caret[1]++;
+    $this->newcaret[0] = $row1;
+    $this->newcaret[1] = $col1;
+    $this->newcaret[1]++;
     $this->resetSelection();
+    $this->saveCursor();
     $this->update();
     return true;
   }
