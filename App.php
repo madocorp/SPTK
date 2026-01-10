@@ -80,7 +80,9 @@ class App {
     if ($class[0] == 'SPTK') {
       $class[1] = str_replace('\\', '/', $class[1]);
       $path = __DIR__ . "/Elements/{$class[1]}.php";
-echo "AUTOLOAD: $path\n";
+      if (DEBUG) {
+        echo "AUTOLOAD: $path\n";
+      }
       if (file_exists($path)) {
         require_once $path;
       }
