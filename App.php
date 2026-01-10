@@ -76,10 +76,13 @@ class App {
   }
 
   public function autoload($class) {
-    $class = explode('\\', $class);
+    $class = explode('\\', $class, 2);
     if ($class[0] == 'SPTK') {
-      if (file_exists(__DIR__ . "/Elements/{$class[1]}.php")) {
-        require_once "Elements/{$class[1]}.php";
+      $class[1] = str_replace('\\', '/', $class[1]);
+      $path = __DIR__ . "/Elements/{$class[1]}.php";
+echo "AUTOLOAD: $path\n";
+      if (file_exists($path)) {
+        require_once $path;
       }
     }
   }

@@ -1,13 +1,13 @@
 <Window title="Editor">
   <TextEditor tokenizer="SqlTokenizer"><![CDATA[
-aaa
-bbb
-ccc
-ddd
-eee
-fff
-ggg
-hhh
+aaa aaa aaa
+bbb bbb bbb
+ccc ccc ccc
+ddd ddd ddd
+eee eee eee
+fff fff fff
+ggg ggg ggg
+hhh hhh hhh
 0  SELECT
 1    `testfield1`,
 2    `testfield2`, -- line comment
