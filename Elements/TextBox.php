@@ -4,18 +4,33 @@ namespace SPTK;
 
 class TextBox extends Element {
 
-  private $fontSize;
-  private $lineHeight;
+  protected $lines = [];
+  protected $cursor;
+  protected $lineHeight;
+  protected $letterWidth;
+  protected $tokenizer;
+  protected $lineContexts = [];
 
   protected function init() {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
-    $this->fontSize = $this->style->get('fontSize', $this->ancestor->geometry);
-    $this->lineHeight = $this->style->get('lineHeight', $this->ancestor->geometry);
+    $fontSize = $this->style->get('fontSize');
+    $fontName = $this->style->get('font');
+    $font = new Font($fontName, $fontSize);
+    $this->letterWidth = $font->letterWidth;
+    $this->lineHeight = $font->height;
+    $this->cursor = new \SPTK\TextEditor\Cursor($this->lines);
   }
 
   public function getAttributeList() {
-    return ['file'];
+    return ['tokenizer', 'file'];
+  }
+
+  public function setTokenizer($value) {
+    if ($value === 'false' || $value === false) {
+      $value = '\SPTK\Tokenizer';
+    }
+    $this->tokenizer = $value;
   }
 
   public function setFile($file) {
@@ -32,58 +47,284 @@ class TextBox extends Element {
     if (!file_exists($file)) {
       return;
     }
-    $content = file($file, FILE_IGNORE_NEW_LINES);
+    $content = file_get_contents($file);
     if ($content === false) {
       return;
     }
-    foreach ($content as $line) {
-      $words = explode(' ', $line);
-      foreach ($words as $word) {
-        $w = new Word($this);
-        $w->setValue($word);
-      }
-      new Element($this, false, false, 'NL');
+    $this->setValue($content);
+  }
+
+  public function setValue($value) {
+    $this->lines = explode("\n", $value);
+    $this->measure();
+    $this->update();
+  }
+
+  protected function calculateWidths() {
+    if ($this->display === false) {
+      return;
+    }
+    foreach ($this->descendants as $descendant) {
+      $descendant->calculateWidths();
     }
   }
 
-  public function keyPressHandler($element, $event) {
-    if (!$this->display) {
-      return false;
+  protected function calculateHeights() {
+    if ($this->display === false) {
+      return;
     }
-    switch ($a = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+    foreach ($this->descendants as $descendant) {
+      $descendant->calculateHeights();
+    }
+    $maxY = count($this->lines) * $this->lineHeight;
+    $ascent = $this->style->get('ascent', $this->geometry);
+    $this->geometry->setContentHeight($ascent, $maxY);
+  }
 
-      case Action::MOVE_LEFT:
-        $this->scrollX -= $this->fontSize;
-        if ($this->scrollX < 0) {
-          $this->scrollX = 0;
-        }
-        Element::refresh();
-        return true;
-      case Action::MOVE_RIGHT:
-        $this->scrollX += $this->fontSize;
-        $maxScrollX = $this->geometry->contentWidth + $this->geometry->paddingRight - ($this->geometry->width - $this->geometry->borderLeft - $this->geometry->borderRight);
-        if ($this->scrollX > $maxScrollX) {
-          $this->scrollX = $maxScrollX;
-        }
-        Element::refresh();
-        return true;
-      case Action::MOVE_UP:
-        $this->scrollY -= $this->lineHeight;
-        if ($this->scrollY < 0) {
-          $this->scrollY = 0;
-        }
-        Element::refresh();
-        return true;
-      case Action::MOVE_DOWN:
-        $this->scrollY += $this->lineHeight;
-        $maxScrollY = $this->geometry->contentHeight + $this->geometry->paddingBottom - ($this->geometry->height - $this->geometry->borderTop - $this->geometry->borderBottom);
-        if ($this->scrollY > $maxScrollY) {
-          $this->scrollY = $maxScrollY;
-        }
-        Element::refresh();
-        return true;
+  protected function layout() {
+    if ($this->display === false) {
+      return;
     }
-    return false;
+    foreach ($this->descendants as $descendant) {
+      $descendant->layout();
+    }
+    if ($this->geometry->position === 'absolute') {
+      $this->geometry->setAbsolutePosition($this->ancestor->geometry, $this->style);
+    }
+    $maxLen = 0;
+    foreach ($this->lines as $line) {
+      $maxLen = max($maxLen, mb_strlen($line));
+    }
+    $this->geometry->contentWidth = $maxLen * $this->letterWidth;
+  }
+
+  protected function tokenize($from, $to) {
+    $context = $this->tokenizer;
+    $tokenizeFrom = count($this->lineContexts);
+    if ($from < $tokenizeFrom) {
+      $tokenizeFrom = $from;
+    }
+    if ($tokenizeFrom > 0) {
+      $context = $this->lineContexts[$tokenizeFrom - 1];
+    }
+    $lines = array_slice($this->lines, $tokenizeFrom, $to - $tokenizeFrom);
+    $tokens = Tokenizer::start($lines, $context);
+    $result = [];
+    for ($i = $tokenizeFrom; $i < $to; $i++) {
+      $lineTokens = array_shift($tokens);
+      $this->lineContexts[$i] = $lineTokens['context'];
+      if ($i >= $from) {
+        $result[$i] = $lineTokens['tokens'];
+      }
+    }
+    return $result;
+  }
+
+  protected function splitToken($token, $split, $selected, $row) {
+    $style = $token['style'];
+    if ($selected) {
+      $style .= ' InputValue:selected';
+    }
+    $iv = new InputValue($row, false, $style);
+    $iv->setValue(mb_substr($token['value'], 0, $split));
+    $token['value'] = mb_substr($token['value'], $split);
+    $token['length'] -= $split;
+    return $token;
+  }
+
+  protected function buildTree($firstOnScreen, $tokens) {
+    $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
+    $this->clear();
+    $selected = ($row1 < $firstOnScreen && $row2 >= $firstOnScreen);
+    foreach ($tokens as $i => $line) {
+      $row = new InputRow($this);
+      $row->setPos($i, $this->lineHeight);
+      $j = 0;
+      foreach ($line as $token) {
+        if ($i === $row1 && $col1 > $j && $col1 < $j + $token['length']) {
+          $split = $col1 - $j;
+          $token = $this->splitToken($token, $split, $selected, $row);
+          $j += $split;
+        }
+        if ($i === $row1 && $j === $col1) {
+          $selected = true;
+        }
+        if ($i === $row2 && $col2 > $j && $col2 < $j + $token['length']) {
+          $split = $col2 - $j;
+          $token = $this->splitToken($token, $split, $selected, $row);
+          $j += $split;
+        }
+        if ($i === $row2 && $j === $col2) {
+          $selected = false;
+        }
+        if ($selected) {
+          $token['style'] .= ' InputValue:selected';
+        }
+        $iv = new InputValue($row, false, $token['style']);
+        $iv->setValue($token['value']);
+        $j += $token['length'];
+      }
+      if ($row1 === $i && $col1 === $j) {
+        $selected = true;
+      }
+      if ($row2 === $i && $col2 === $j) {
+        $selected = false;
+      }
+      $style = false;
+      if ($selected) {
+        $style = 'InputValue:selected';
+        if ($row1 != $row2 || $row1 < $row2 - 1) {
+          $style = 'InputValue:newline';
+        }
+      }
+      $iv = new InputValue($row, false, $style);
+      $iv->setValue(' ');
+      $j++;
+      if ($row2 === $i && $col2 === $j) {
+        $selected = false;
+      }
+    }
+  }
+
+  protected function setScroll() {
+    $cursor = $this->cursor->get();
+    $row = $cursor[0];
+    $col = $cursor[1];
+    if ($row === 0) {
+      $this->scrollY = 0;
+    } else {
+      $ryBottom = ($row + 1) * $this->lineHeight;
+      $ryTop = $row * $this->lineHeight;
+      if ($ryBottom > $this->scrollY + $this->geometry->innerHeight) {
+        $this->scrollY = $ryBottom - $this->geometry->innerHeight;
+      } else if ($ryTop < $this->scrollY) {
+        $this->scrollY = $ryTop;
+      }
+    }
+    if ($col === 0) {
+      $this->scrollX = 0;
+    } else {
+      $rxLeft = $col * $this->letterWidth;
+      $rxRight = ($col + 1) * $this->letterWidth;
+      if ($rxRight > $this->scrollX + $this->geometry->innerWidth) {
+        $this->scrollX = $rxRight - $this->geometry->innerWidth;
+      } else if ($rxLeft < $this->scrollX) {
+        $this->scrollX = $rxLeft;
+      }
+    }
+  }
+
+  protected function update() {
+    $this->cursor->save();
+    $this->setScroll();
+    if ($this->geometry->height == 0) {
+      $firstOnScreen = 0;
+      $lastOnScreen = min(300, count($this->lines));
+    } else {
+      $firstOnScreen = max(0, (int)(($this->scrollY + $this->geometry->paddingTop) / $this->lineHeight) - 1);
+      $lastOnScreen = min($firstOnScreen + (int)($this->geometry->height / $this->lineHeight) + 1, count($this->lines));
+    }
+    $tokens = $this->tokenize($firstOnScreen, $lastOnScreen);
+    $this->buildTree($firstOnScreen, $tokens);
+    Element::immediateRender($this);
+  }
+
+  public function keyPressHandler($element, $event) {
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      /* UP */
+      case Action::MOVE_UP:
+        $this->cursor->moveUp();
+        break;
+      case Action::PAGE_UP:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->cursor->movePageUp($linesOnScreen);
+        break;
+      case Action::LEVEL_UP:
+        $this->cursor->moveDocStart();
+        break;
+      case Action::SELECT_UP:
+        $this->cursor->moveUp(true);
+        break;
+      case Action::SELECT_PAGE_UP:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->cursor->movePageUp($linesOnScreen, true);
+        break;
+      case Action::SELECT_LEVEL_UP:
+        $this->cursor->moveDocStart(true);
+        break;
+      /* DOWN */
+      case Action::MOVE_DOWN:
+        $this->cursor->moveDown();
+        break;
+      case Action::PAGE_DOWN:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->cursor->movePageDown($linesOnScreen);
+        break;
+      case Action::LEVEL_DOWN:
+        $this->cursor->moveDocEnd();
+        break;
+      case Action::SELECT_DOWN:
+        $this->cursor->moveDown(true);
+        break;
+      case Action::SELECT_PAGE_DOWN:
+        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+        $this->cursor->movePageDown($linesOnScreen, true);
+        break;
+      case Action::SELECT_LEVEL_DOWN:
+        $this->cursor->moveDocEnd(true);
+        break;
+      /* LEFT */
+      case Action::MOVE_LEFT:
+        $this->cursor->moveBackward();
+        break;
+      case Action::MOVE_FIRST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->cursor->moveScreenStart($lettersOnScreen);
+        break;
+      case Action::MOVE_START:
+        $this->cursor->moveLineStart();
+        break;
+      case Action::SELECT_LEFT:
+        $this->cursor->moveBackward(true);
+        break;
+      case Action::SELECT_FIRST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->cursor->moveScreenStart($lettersOnScreen, true);
+        break;
+      case Action::SELECT_START:
+        $this->cursor->moveLineStart(true);
+        break;
+      /* RIGHT */
+      case Action::MOVE_RIGHT:
+        $this->cursor->moveForward();
+        break;
+      case Action::MOVE_LAST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->cursor->moveScreenEnd($lettersOnScreen);
+        break;
+      case Action::MOVE_END:
+        $this->cursor->moveLineEnd();
+        break;
+      case Action::SELECT_RIGHT:
+        $this->cursor->moveForward(true);
+        break;;
+      case Action::SELECT_LAST:
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $this->cursor->moveScreenEnd($lettersOnScreen, true);
+        break;
+      case Action::SELECT_END:
+        $this->cursor->moveLineEnd(true);
+        break;
+      /* COPY */
+      case Action::COPY:
+        Clipboard::set($this->cursor->getSelection());
+        $this->cursor->resetSelection();
+        break;
+      default:
+        return false;
+    }
+    $this->update();
+    return true;
   }
 
 }
