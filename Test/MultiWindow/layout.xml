@@ -1,0 +1,18 @@
+<Root>
+
+  <Window title="HelloWorld 1">
+    <Event type="KeyPress">Controller::refresh</Event>
+    Hello World 1!
+  </Window>
+
+  <Window class="a" title="HelloWorld 2">
+    <Event type="KeyPress">Controller::refresh</Event>
+    Hello World 2!
+  </Window>
+
+  <Window class="b" title="HelloWorld 3">
+    <Event type="KeyPress">Controller::refresh</Event>
+    Hello World 3!
+  </Window>
+
+</Root>

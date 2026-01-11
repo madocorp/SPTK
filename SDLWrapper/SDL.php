@@ -12,6 +12,7 @@ class SDL {
   const SDL_EVENT_WINDOW_RESIZED = 0x206;
   const SDL_EVENT_WINDOW_MAXIMIZED = 0x20a;
   const SDL_EVENT_WINDOW_RESTORED = 0x20b;
+  const SDL_EVENT_WINDOW_CLOSE_REQUESTED = 0x210;
 
   const SDL_EVENT_KEY_DOWN = 0x300;
   const SDL_EVENT_KEY_UP = 0x301;
@@ -107,6 +108,14 @@ class SDL {
         $parsedEvent = $this->textInputEventToArray($event->text);
         $parsedEvent['name'] = 'TextInput';
         break;
+      case SDL::SDL_EVENT_WINDOW_EXPOSED:
+      case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
+      case SDL::SDL_EVENT_WINDOW_RESTORED:
+      case SDL::SDL_EVENT_WINDOW_RESIZED:
+      case SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        $parsedEvent = $this->windowEventToArray($event->window);
+        $parsedEvent['name'] = 'WindowEvent';
+        break;
       default:
         $parsedEvent['type'] = $event->type;
         break;
@@ -135,6 +144,16 @@ class SDL {
       'timestamp' => $textInputEvent->timestamp,
       'windowID' => $textInputEvent->windowID,
       'text' => $textInputEvent->text
+    ];
+  }
+
+  private function windowEventToArray($windowEvent) {
+    return [
+      'type' => $windowEvent->type,
+      'timestamp' => $windowEvent->timestamp,
+      'windowID' => $windowEvent->windowID,
+      'data1' => $windowEvent->data1,
+      'data2' => $windowEvent->data2
     ];
   }
 

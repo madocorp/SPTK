@@ -52,11 +52,21 @@ typedef struct SDL_TextInputEvent
   SDL_WindowID windowID;
   const char *text;
 } SDL_TextInputEvent;
+typedef struct SDL_WindowEvent
+{
+  SDL_EventType type;
+  Uint32 reserved;
+  Uint64 timestamp;
+  SDL_WindowID windowID;
+  Sint32 data1;
+  Sint32 data2;
+} SDL_WindowEvent;
 typedef union SDL_Event
 {
   Uint32 type;
   SDL_KeyboardEvent key;
   SDL_TextInputEvent text;
+  SDL_WindowEvent window;
   Uint8 padding[128];
 } SDL_Event;
 typedef struct SDL_Rect
@@ -100,6 +110,9 @@ void SDL_GetWindowSize(SDL_Window* window, int* w, int* h);
 bool SDL_SetRenderViewport(SDL_Renderer* renderer, const SDL_Rect* rect);
 bool SDL_SetWindowPosition(SDL_Window* window, int x, int y);
 SDL_Window* SDL_CreateWindow(const char* title, int w, int h, SDL_WindowFlags flags);
+SDL_WindowID SDL_GetWindowID(SDL_Window *window);
+bool SDL_ShowWindow(SDL_Window *window);
+bool SDL_HideWindow(SDL_Window *window);
 SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, const char* name);
 bool SDL_SetRenderDrawColor(SDL_Renderer* renderer, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 bool SDL_RenderClear(SDL_Renderer* renderer);
