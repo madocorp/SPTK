@@ -47,6 +47,12 @@ class Controller {
     return false;
   }
 
+  public static function refresh() {
+    SPTK\Element::refresh();
+    SPTK\Element::$root->debug();
+    return false;
+  }
+
 }
 
 if (isset($argv[1])) {

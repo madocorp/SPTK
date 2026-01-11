@@ -12,6 +12,7 @@ class Window extends Element {
 
   protected $sdl;
   protected $window;
+  protected $windowId;
   protected $tmpTexture = false;
   protected $ffiWidth;
   protected $ffiHeight;
@@ -24,6 +25,7 @@ class Window extends Element {
     $this->display = false;
     $this->sdl = SDL::$instance->sdl;
     $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
+    $this->windowId = $this->sdl->SDL_GetWindowID($this->window);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, 0, 0, 0, 0xff);
@@ -48,8 +50,20 @@ class Window extends Element {
     }
     $this->setSize();
     $this->getSize();
-    $this->geometry->x = $this->style->get('x', $this->ancestor->geometry) + $this->ancestor->geometry->x + $this->geometry->x;
-    $this->geometry->y = $this->style->get('y', $this->ancestor->geometry) + $this->ancestor->geometry->y + $this->geometry->y;
+    $x = $this->style->get('x', $this->ancestor->geometry, $isNegative);
+    if ($isNegative) {
+      $width = $this->style->get('width', $this->ancestor->geometry);
+      $this->geometry->x = $this->ancestor->geometry->x + $this->ancestor->geometry->width - $width - $x;
+    } else {
+      $this->geometry->x = $x + $this->ancestor->geometry->x + $this->geometry->x;
+    }
+    $y = $this->style->get('y', $this->ancestor->geometry, $isNegative);
+    if ($isNegative) {
+      $height = $this->style->get('height', $this->ancestor->geometry);
+      $this->geometry->y = $this->ancestor->geometry->y + $this->ancestor->geometry->height - $height - $y;
+    } else {
+      $this->geometry->y = $this->style->get('y', $this->ancestor->geometry) + $this->ancestor->geometry->y + $this->geometry->y;
+    }
     $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
     $this->sdl->SDL_StartTextInput($this->window);
     $this->draw();
@@ -133,13 +147,25 @@ class Window extends Element {
     return;
   }
 
+  public function show() {
+    $this->sdl->SDL_ShowWindow($this->window);
+    $this->display = true;
+  }
+
+  public function hide() {
+    $this->sdl->SDL_HideWindow($this->window);
+    $this->display = false;
+  }
 
   public function eventHandler($event) {
     if ($this->display === false) {
       return false;
     }
-    if (true) { // check window id
+    if (isset($event['windowID']) && $event['windowID'] === $this->windowId) {
       switch ($event['type']) {
+        case SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+          $this->hide();
+          return true;
         case SDL::SDL_EVENT_WINDOW_EXPOSED:
           Element::refresh();
           return true;
