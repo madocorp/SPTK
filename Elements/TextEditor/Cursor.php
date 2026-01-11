@@ -2,6 +2,8 @@
 
 namespace SPTK\TextEditor;
 
+use \SPTK\Action;
+
 class Cursor {
 
   private $lines;
@@ -192,6 +194,90 @@ class Cursor {
   public function moveLineStart($select = false) {
     $this->caret[1] = 0;
     $this->resetSelection($select);
+  }
+
+  public function handleKeys($keycombo, $linesOnScreen, $lettersOnScreen) {
+    switch ($keycombo) {
+      /* UP */
+      case Action::MOVE_UP:
+        $this->moveUp();
+        break;
+      case Action::PAGE_UP:
+        $this->movePageUp($linesOnScreen);
+        break;
+      case Action::LEVEL_UP:
+        $this->moveDocStart();
+        break;
+      case Action::SELECT_UP:
+        $this->moveUp(true);
+        break;
+      case Action::SELECT_PAGE_UP:
+        $this->movePageUp($linesOnScreen, true);
+        break;
+      case Action::SELECT_LEVEL_UP:
+        $this->moveDocStart(true);
+        break;
+      /* DOWN */
+      case Action::MOVE_DOWN:
+        $this->moveDown();
+        break;
+      case Action::PAGE_DOWN:
+        $this->movePageDown($linesOnScreen);
+        break;
+      case Action::LEVEL_DOWN:
+        $this->moveDocEnd();
+        break;
+      case Action::SELECT_DOWN:
+        $this->moveDown(true);
+        break;
+      case Action::SELECT_PAGE_DOWN:
+        $this->movePageDown($linesOnScreen, true);
+        break;
+      case Action::SELECT_LEVEL_DOWN:
+        $this->moveDocEnd(true);
+        break;
+      /* LEFT */
+      case Action::MOVE_LEFT:
+        $this->moveBackward();
+        break;
+      case Action::MOVE_FIRST:
+        $this->moveScreenStart($lettersOnScreen);
+        break;
+      case Action::MOVE_START:
+        $this->moveLineStart();
+        break;
+      case Action::SELECT_LEFT:
+        $this->moveBackward(true);
+        break;
+      case Action::SELECT_FIRST:
+        $this->moveScreenStart($lettersOnScreen, true);
+        break;
+      case Action::SELECT_START:
+        $this->moveLineStart(true);
+        break;
+      /* RIGHT */
+      case Action::MOVE_RIGHT:
+        $this->moveForward();
+        break;
+      case Action::MOVE_LAST:
+        $this->moveScreenEnd($lettersOnScreen);
+        break;
+      case Action::MOVE_END:
+        $this->moveLineEnd();
+        break;
+      case Action::SELECT_RIGHT:
+        $this->moveForward(true);
+        break;;
+      case Action::SELECT_LAST:
+        $this->moveScreenEnd($lettersOnScreen, true);
+        break;
+      case Action::SELECT_END:
+        $this->moveLineEnd(true);
+        break;
+      default:
+        return false;
+    }
+    return true;
   }
 
 }
