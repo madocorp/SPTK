@@ -230,98 +230,20 @@ class TextBox extends Element {
   }
 
   public function keyPressHandler($element, $event) {
-    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
-      /* UP */
-      case Action::MOVE_UP:
-        $this->cursor->moveUp();
-        break;
-      case Action::PAGE_UP:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->cursor->movePageUp($linesOnScreen);
-        break;
-      case Action::LEVEL_UP:
-        $this->cursor->moveDocStart();
-        break;
-      case Action::SELECT_UP:
-        $this->cursor->moveUp(true);
-        break;
-      case Action::SELECT_PAGE_UP:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->cursor->movePageUp($linesOnScreen, true);
-        break;
-      case Action::SELECT_LEVEL_UP:
-        $this->cursor->moveDocStart(true);
-        break;
-      /* DOWN */
-      case Action::MOVE_DOWN:
-        $this->cursor->moveDown();
-        break;
-      case Action::PAGE_DOWN:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->cursor->movePageDown($linesOnScreen);
-        break;
-      case Action::LEVEL_DOWN:
-        $this->cursor->moveDocEnd();
-        break;
-      case Action::SELECT_DOWN:
-        $this->cursor->moveDown(true);
-        break;
-      case Action::SELECT_PAGE_DOWN:
-        $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-        $this->cursor->movePageDown($linesOnScreen, true);
-        break;
-      case Action::SELECT_LEVEL_DOWN:
-        $this->cursor->moveDocEnd(true);
-        break;
-      /* LEFT */
-      case Action::MOVE_LEFT:
-        $this->cursor->moveBackward();
-        break;
-      case Action::MOVE_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->cursor->moveScreenStart($lettersOnScreen);
-        break;
-      case Action::MOVE_START:
-        $this->cursor->moveLineStart();
-        break;
-      case Action::SELECT_LEFT:
-        $this->cursor->moveBackward(true);
-        break;
-      case Action::SELECT_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->cursor->moveScreenStart($lettersOnScreen, true);
-        break;
-      case Action::SELECT_START:
-        $this->cursor->moveLineStart(true);
-        break;
-      /* RIGHT */
-      case Action::MOVE_RIGHT:
-        $this->cursor->moveForward();
-        break;
-      case Action::MOVE_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->cursor->moveScreenEnd($lettersOnScreen);
-        break;
-      case Action::MOVE_END:
-        $this->cursor->moveLineEnd();
-        break;
-      case Action::SELECT_RIGHT:
-        $this->cursor->moveForward(true);
-        break;;
-      case Action::SELECT_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
-        $this->cursor->moveScreenEnd($lettersOnScreen, true);
-        break;
-      case Action::SELECT_END:
-        $this->cursor->moveLineEnd(true);
-        break;
-      /* COPY */
-      case Action::COPY:
-        Clipboard::set($this->cursor->getSelection());
-        $this->cursor->resetSelection();
-        break;
-      default:
-        return false;
+    $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
+    $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
+    $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+    $handled = $this->cursor->handleKeys($keycombo, $linesOnScreen, $lettersOnScreen);
+    if (!$handled) {
+      switch ($keycombo) {
+        /* COPY */
+        case Action::COPY:
+          Clipboard::set($this->cursor->getSelection());
+          $this->cursor->resetSelection();
+          break;
+        default:
+          return false;
+      }
     }
     $this->update();
     return true;

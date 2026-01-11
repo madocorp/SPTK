@@ -4,7 +4,7 @@ namespace SPTK\TextEditor;
 
 class History {
 
-  const TYPE_TIMEOUT = 1000000;
+  const TYPE_TIMEOUT = 500000;
 
   private $lines;
   private $cursor;
@@ -74,7 +74,9 @@ class History {
       $shortDiff = $this->differsByAtMostOneChar($this->lines[$offset], $replacement[0]);
       if ($shortDiff) {
         if ($this->lineUnderConstruction !== false) {
-          $timeDiff = (microtime(true) - $this->lastChange) * 1000000;
+          $now = microtime(true);
+          $timeDiff = ($now - $this->lastChange) * 1000000;
+          $this->lastChange = $now;
           if ($timeDiff > self::TYPE_TIMEOUT) {
             $this->saveEditedLine();
           }
