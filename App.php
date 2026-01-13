@@ -114,4 +114,8 @@ class App {
     return $this->dir;
   }
 
+  public function quit() {
+    SDL::$instance->end();
+  }
+
 }

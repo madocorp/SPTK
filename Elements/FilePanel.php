@@ -30,6 +30,7 @@ class FilePanel extends Panel {
     $this->fileNameLabel->addText('New name:');
     $this->fileNameInput = new Input($this->fileNameLabel, 'fileName');
     $this->fileNameInput->setOnChange([$this, 'changed']);
+    $this->fileNameInput->addEvent('KeyPress', [$this, 'handleReturn']);
     $buttons = new Element($content, false, false, 'ButtonBox');
     $cancel = new Button($buttons);
     $cancel->setHotKey('ESCAPE');
@@ -38,7 +39,7 @@ class FilePanel extends Panel {
     $this->createDirBtn->setHotKey('F7');
     $this->createDirBtn->addText('Create dir');
     $this->createDirBtn->setOnPress([$this, 'createDir']);
-    $this->okBtn = new Button($buttons);
+    $this->okBtn = new Button($buttons, 'okBtn');
     $this->okBtn->setHotKey('SPACE');
     $this->okBtn->addText('OK');
     $this->okBtn->setOnPress([$this, 'choose']);
@@ -101,6 +102,11 @@ class FilePanel extends Panel {
       return;
     }
     $this->fillUpTheList($dirs, $files, $selected);
+    $this->refreshPath();
+  }
+
+  public function show() {
+    parent::show();
     $this->refreshPath();
   }
 
@@ -224,6 +230,7 @@ class FilePanel extends Panel {
     }
     $this->hide();
     $this->remove();
+    Element::refresh();
     if ($this->onSelect !== false) {
       call_user_func($this->onSelect, $path);
     }
@@ -252,6 +259,16 @@ class FilePanel extends Panel {
         return true;
     }
     return parent::keyPressHandler($element, $event);
+  }
+
+  public function handleReturn($element, $event) {
+    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+      case Action::DO_IT:
+        $this->activateInput('okBtn');
+        Element::refresh();
+        return true;
+    }
+    return $element->keyPressHandler($element, $event);
   }
 
 }

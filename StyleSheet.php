@@ -12,7 +12,7 @@ class StyleSheet {
     'border', 'borderColor', 'margin', 'padding'
   ];
 
-  public static function load($path) {
+  public static function load($path, $overwrite = false) {
     if (!file_exists($path)) {
       throw new \Exception("File not found: {$path}");
     }
@@ -66,7 +66,7 @@ class StyleSheet {
         }
       }
       $style = new Style($processedRules);
-      if (isset(self::$styles[$selector])) {
+      if ($overwrite === false && isset(self::$styles[$selector])) {
         self::$styles[$selector]->merge($style);
       } else {
         self::$styles[$selector] = $style;
@@ -116,6 +116,10 @@ class StyleSheet {
       $inheritedStyle->inherit($ancestorStyle);
     }
     return $inheritedStyle;
+  }
+
+  public static function clearCache() {
+    self::$cache = [];
   }
 
 }

@@ -80,6 +80,7 @@ class ListBox extends Element {
     if ($value === false || $value === '') {
       $value = $descendant->getText();
     }
+    return $value;
   }
 
   public function getOrderValue() {
