@@ -9,7 +9,7 @@ class Input extends Element {
   protected $elementAfter;
   protected $placeholder = '';
   protected $onChange = false;
-  protected $lines = [];
+  protected $lines = [''];
   protected $cursor;
   protected $history;
 
@@ -35,7 +35,7 @@ class Input extends Element {
 
   public function setValue($value) {
     if ($value === false) {
-      return;
+      $value = '';
     }
     $this->lines = [$value];
   }
@@ -68,6 +68,7 @@ class Input extends Element {
       }
     }
     parent::addClass($class, $dynamic);
+    $this->update();
   }
 
   public function removeClass($class, $dynamic = false) {

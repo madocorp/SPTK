@@ -4,7 +4,7 @@ namespace SPTK;
 
 trait ElementStyle {
 
-  protected function recalculateStyle() {
+  public function recalculateStyle() {
     $defaultStyle = false;
     $ancestorStyle = false;
     if (isset(self::$root)) {

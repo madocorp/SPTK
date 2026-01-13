@@ -79,7 +79,7 @@ class MenuBox extends ListBox {
         $menu->nextMenu();
         return true;
       case Action::MOVE_RIGHT:
-        if ($this->descendants[$this->activeItem]->isSubmenu()) {
+        if (!empty($this->descendants) && $this->descendants[$this->activeItem]->isSubmenu()) {
           return $this->descendants[$this->activeItem]->openSubmenu();
         } else {
           $menu = $this->findAncestorByType('Menu');
