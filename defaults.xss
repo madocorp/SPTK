@@ -368,7 +368,7 @@ ButtonHotKey {
 ListBox {
   borderColor: #000000;
   border: 1px;
-  height: 200px;
+  height: 60%h;
   width: 100%;
   lineHeight: 100%;
   scrollable: true;
@@ -414,15 +414,19 @@ ListHeaderRow {
 }
 
 TextEditor {
-  borderColor: #000000;
-  color: #aaaaaa;
-  border: 1px;
+  backgroundColor: #00aaaa;
+  color: #000000;
   width: 100%;
   lineHeight: 100%;
-  height: 100%;
+  height: 20%h;
   padding: 10px;
   scrollable: true;
   textWrap: manual;
+  margin: 10px, 0px;
+}
+
+TextEditor:active {
+  backgroundColor: #00cccc;
 }
 
 TextBox {

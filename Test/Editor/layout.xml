@@ -1,5 +1,5 @@
 <Window title="Editor">
-  <TextEditor tokenizer="SqlTokenizer"><![CDATA[
+  <TextEditor tokenizer="\SqlTokenizer"><![CDATA[
 aaa aaa aaa
 bbb bbb bbb
 ccc ccc ccc

@@ -12,6 +12,10 @@ class TextEditor extends TextBox {
     $this->history = new \SPTK\TextEditor\History($this->lines, $this->cursor);
   }
 
+  public function getValue() {
+    return $this->lines;
+  }
+
   protected function lineSplice($offset, $length, $replacement) {
     $this->history->store($offset, $length, $replacement);
     array_splice($this->lines, $offset, $length, $replacement);

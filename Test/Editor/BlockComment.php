@@ -12,3 +12,5 @@ class BlockComment extends \SPTK\Tokenizer {
   ];
 
 }
+
+(new BlockComment)->initialize();

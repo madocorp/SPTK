@@ -9,6 +9,11 @@ Window {
   fontSize: 30px;
 }
 
+TextEditor {
+  height: 100%;
+
+}
+
 .red { color: #ff0000; }
 .blue { color: #0000ff; }
 .brightblue { color: #55aaff; }
