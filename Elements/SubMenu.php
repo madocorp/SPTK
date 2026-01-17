@@ -6,7 +6,7 @@ class SubMenu extends Element {
 
   public function showMenuBox($name, $x, $y, $closeOthers) {
     foreach ($this->descendants as $element) {
-      if ($element->type == 'MenuBox' || $element->type == 'MenuBox2') {
+      if ($element->type == 'MenuBox') {
         if ($element->belongsTo == $name) {
           $element->show();
           $element->recalculateGeometry();

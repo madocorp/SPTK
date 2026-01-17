@@ -88,7 +88,7 @@ class ListBox extends Element {
     foreach ($this->descendants as $descendant) {
       $values[] = $descendant->getValue();
     }
-    return $value;
+    return $values;
   }
 
   public function getSelectedValue() {
@@ -251,6 +251,9 @@ class ListBox extends Element {
       $lastMatchIndex = false;
       $matchCount = 0;
       foreach ($this->descendants as $i => $descendant) {
+        if (!$descendant->isFilterable()) {
+          continue;
+        }
         if ($descendant->match($this->typed)) {
           if ($firstMatchIndex === false) {
             $firstMatchIndex = $i;
@@ -410,6 +413,7 @@ class ListBox extends Element {
           if ($this->onSelect !== false) {
             call_user_func($this->onSelect, $item);
           }
+          return true;
         } else if ($selectable !== false) {
           foreach ($this->descendants as $descendant) {
             if ($descendant->id === $item->id) {
@@ -422,6 +426,7 @@ class ListBox extends Element {
             }
           }
           Element::immediateRender($this);
+          return true;
         }
         return false;
     }

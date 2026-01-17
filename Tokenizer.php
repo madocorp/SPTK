@@ -20,24 +20,21 @@ class Tokenizer {
     ['type' => 'TEXT', 'regexp' => '/^.*/']
   ];
 
-  protected function __construct($context) {
-    if (is_string($context)) {
-      $tokenizer = $context;
-      if (!isset(self::$initializedTokenizers[$tokenizer])) {
-        $this->initialize($tokenizer);
-      }
-      $contextId = self::$initializedTokenizers[$tokenizer];
-      $this->stack = [$contextId];
-    } else {
-      $this->stack = $context;
-      $contextId = end($this->stack);
-    }
+  public function setStack($stack) {
+    $this->stack = $stack;
+    $contextId = end($this->stack);
     $this->context = self::$contexts[$contextId];
-    $this->setSwitcherIds($contextId);
+    $tokenizer = $this->context['tokenizer'];
+    $tokenizerId = self::$initializedTokenizers[$tokenizer];
+    $this->setSwitcherIds($tokenizerId);
   }
 
-  protected function initialize($tokenizer) {
+  public function initialize() {
+    $tokenizer = '\\' . get_class($this);
     $id = count(self::$contexts);
+    if (isset(self::$initializedTokenizers[$tokenizer])) {
+      throw new \Exception("Tokenizer is already initialized ({$tokenizer})");
+    }
     self::$initializedTokenizers[$tokenizer] = $id;
     self::$contexts[$id] = [
       'id' => $id,
@@ -66,9 +63,10 @@ class Tokenizer {
 
   protected static function setContext($context) {
     $stack = self::$tokenizer->stack;
-    $stack[] = $context['id'];
     $className = $context['tokenizer'];
-    self::$tokenizer = new $className($stack);
+    $stack[] = $context['id'];
+    self::$tokenizer = new $className;
+    self::$tokenizer->setStack($stack);
   }
 
   protected static function restorePreviousContext() {
@@ -76,21 +74,49 @@ class Tokenizer {
     array_pop($stack);
     $prevContextId = end($stack);
     $className = self::$contexts[$prevContextId]['tokenizer'];
-    self::$tokenizer = new $className($stack);
+    self::$tokenizer = new $className;
+    self::$tokenizer->setStack($stack);
+  }
+
+  protected static function contextEnd($str, $first, $tokenizer) {
+    if (isset($tokenizer->context['endFirst']) && $tokenizer->context['endFirst'] !== false && $first === false) {
+      return false;
+    }
+    if (isset($tokenizer->context['endRegexp'])) {
+      if (preg_match($tokenizer->context['endRegexp'], $str, $matches)) {
+        return $match[0];
+      }
+    } else if (isset($tokenizer->context['end'])) {
+      if (str_starts_with($str, $tokenizer->context['end'])) {
+        return $tokenizer->context['end'];
+      }
+    }
+    return false;
+  }
+
+  protected static function contextStart($str, $first, $tokenizer, &$newContext) {
+    foreach ($tokenizer->contextSwitchers as $context) {
+      if (isset($context['startFirst']) && $context['startFirst'] !== false && $first === false) {
+        continue;
+      }
+      if (isset($context['startRegexp'])) {
+        if (preg_match($context['startRegexp'], $str, $matches)) {
+          $newContext = $context;
+          return $matches[0];
+        }
+      } else if (isset($context['start'])) {
+        if (str_starts_with($str, $context['start'])) {
+          $newContext = $context;
+          return $context['start'];
+        }
+      }
+    }
+    return false;
   }
 
   protected static function getNextToken($str, $first) {
     $tokenizer = self::$tokenizer;
-    $contextEnd = false;
-    if (isset($tokenizer->context['endRegexp'])) {
-      if (preg_match($tokenizer->context['endRegexp'], $str, $matches)) {
-        $contextEnd = $match[0];
-      }
-    } else if (isset($tokenizer->context['end'])) {
-      if (str_starts_with($str, $tokenizer->context['end'])) {
-        $contextEnd = $tokenizer->context['end'];
-      }
-    }
+    $contextEnd = self::contextEnd($str, $first, $tokenizer);
     if ($contextEnd !== false) {
       self::restorePreviousContext();
       $type = $tokenizer->context['type'];
@@ -101,26 +127,15 @@ class Tokenizer {
         'length' => mb_strlen($contextEnd),
       ];
     }
-    $contextStart = false;
-    foreach ($tokenizer->contextSwitchers as $context) {
-      if (isset($context['startRegexp'])) {
-        if (preg_match($context['startRegexp'], $str, $matches)) {
-          $contextStart = $match[0];
-        }
-      } else if (isset($context['start'])) {
-        if (str_starts_with($str, $context['start'])) {
-          $contextStart = $context['start'];
-        }
-      }
-      if ($contextStart !== false) {
-        self::setContext($context);
-        return [
-          'type' => $context['type'],
-          'style' => $tokenizer->getStyle($context['type']),
-          'value' => $contextStart,
-          'length' => mb_strlen($contextStart),
-        ];
-      }
+    $contextStart = self::contextStart($str, $first, $tokenizer, $newContext);
+    if ($contextStart !== false) {
+      self::setContext($newContext);
+      return [
+        'type' => $newContext['type'],
+        'style' => $tokenizer->getStyle($newContext['type']),
+        'value' => $contextStart,
+        'length' => mb_strlen($contextStart),
+      ];
     }
     $chr = $str[0];
     if (isset($tokenizer->charRules[$chr])) {
@@ -133,7 +148,7 @@ class Tokenizer {
       ];
     }
     foreach ($tokenizer->regexpRules as $rule) {
-      if (isset($rule['first']) && $rule['first'] === true && $first !== true) {
+      if (isset($rule['first']) && $rule['first'] === true && $first === false) {
         continue;
       }
       if (preg_match($rule['regexp'], $str, $matches)) {
@@ -164,6 +179,9 @@ class Tokenizer {
       $length = mb_strlen($line);
       $token = false;
       $first = true;
+      if ($length === 0 && isset(self::$tokenizer->context['end']) && self::$tokenizer->context['end'] === 'empty') {
+        self::restorePreviousContext();
+      }
       while ($length > 0) {
         $token = self::getNextToken($line, $first);
         $first = false;
@@ -183,14 +201,21 @@ class Tokenizer {
     self::$tokens = [];
     if (is_string($context)) {
       $className = $context;
+      if (!isset(self::$initializedTokenizers[$className])) {
+        throw new \Exception("Uninitialized tokenizer: {$className}");
+      }
+      $contextId = self::$initializedTokenizers[$className];
+      $stack = [$contextId];
     } else {
-      $contextId = end($context);
+      $stack = $context;
+      $contextId = end($stack);
       if (!isset(self::$contexts[$contextId])) {
         throw new \Exception("Tokenizer not found!");
       }
       $className = self::$contexts[$contextId]['tokenizer'];
     }
-    self::$tokenizer = new $className($context);
+    self::$tokenizer = new $className;
+    self::$tokenizer->setStack($stack);
     self::tokenize();
     $tokens = self::$tokens;
     self::$tokens = [];
@@ -198,3 +223,5 @@ class Tokenizer {
   }
 
 }
+
+(new Tokenizer)->initialize();

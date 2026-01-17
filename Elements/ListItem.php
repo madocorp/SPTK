@@ -14,8 +14,8 @@ class ListItem extends Element {
   protected $valueField;
   protected $matchField;
   protected $afterMatchField = '';
-  private $matched = false;
-  private $text = '';
+  protected $matched = false;
+  protected $text = '';
 
   protected function init() {
     $this->itemLeft = new Element($this, false, false, 'ItemLeft');
@@ -87,8 +87,17 @@ class ListItem extends Element {
     }
   }
 
+  public function setText($text) {
+    $this->text = $text;
+    $this->valueField->setValue($this->text);
+  }
+
   public function isSelectable() {
     return $this->selectable;
+  }
+
+  public function isFilterable() {
+    return $this->filterable;
   }
 
   public function getValue() {
@@ -119,7 +128,7 @@ class ListItem extends Element {
 
   public function match($search) {
     if ($this->filterable === false) {
-      return true;
+      return false;
     }
     if ($this->text !== '' && $search !== false) {
       $pos = strpos($this->text, $search);

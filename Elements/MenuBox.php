@@ -101,8 +101,6 @@ class MenuBox extends ListBox {
           return $this->openSubmenu();
         }
         break;
-
-
     }
     return parent::keyPressHandler($element, $event);
   }

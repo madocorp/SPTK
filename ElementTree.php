@@ -123,4 +123,11 @@ trait ElementTree {
     return $this->ancestor->findAncestorByType($type);
   }
 
+  public function nthChild($n) {
+    if (isset($this->descendants[$n])) {
+      return $this->descendants[$n];
+    }
+    return false;
+  }
+
 }

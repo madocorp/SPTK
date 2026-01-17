@@ -13,3 +13,5 @@ class DoubleQuotedString extends \SPTK\Tokenizer {
   ];
 
 }
+
+(new DoubleQuotedString)->initialize();

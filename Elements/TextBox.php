@@ -4,7 +4,7 @@ namespace SPTK;
 
 class TextBox extends Element {
 
-  protected $lines = [];
+  protected $lines = [''];
   protected $cursor;
   protected $lineHeight;
   protected $letterWidth;

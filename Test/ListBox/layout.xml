@@ -22,7 +22,7 @@
           <ListItem filterable="true">pear</ListItem>
           <ListItem filterable="true">pear</ListItem>
           <ListItem filterable="true">pear</ListItem>
-          <ListItem filterable="true">pear</ListItem>
+          <ListItem value="VALUE" filterable="true">pear</ListItem>
         </ListBox>
       </Label>
     </PanelContent>

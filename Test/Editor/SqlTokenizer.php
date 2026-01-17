@@ -25,7 +25,7 @@ class SqlTokenizer extends \SPTK\Tokenizer {
       'end' => '"',
       'escape' => '\\',
       'escapeItself' => true,
-      'tokenizer' => 'DoubleQuotedString',
+      'tokenizer' => '\DoubleQuotedString',
       'type' => 'STRING'
     ],
     [
@@ -33,7 +33,7 @@ class SqlTokenizer extends \SPTK\Tokenizer {
       'end' => "'",
       'escape' => '\\',
       'escapeItself' => true,
-      'tokenizer' => 'SingleQuotedString',
+      'tokenizer' => '\SingleQuotedString',
       'type' => 'STRING'
     ],
     [
@@ -63,3 +63,5 @@ class SqlTokenizer extends \SPTK\Tokenizer {
   ];
 
 }
+
+(new SqlTokenizer)->initialize();

@@ -13,3 +13,5 @@ class SingleQuotedString extends \SPTK\Tokenizer {
   ];
 
 }
+
+(new SingleQuotedString)->initialize();
