@@ -17,8 +17,9 @@ class Image extends Element {
 
   public function setValue($value) {
     if (strpos($value, '/') !== 0) {
-      if (defined('APP_DIR')) {
-        $this->value = APP_DIR . '/' . $value;
+      if (defined('APP_PATH')) {
+        $dir = dirname(APP_PATH);
+        $this->value = "{$dir}/{$value}";
       } else {
         $this->value = getcwd() . '/' . $value;
       }

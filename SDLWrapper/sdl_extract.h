@@ -107,6 +107,7 @@ bool SDL_GetDisplayUsableBounds(SDL_DisplayID displayID, SDL_Rect *rect);
 bool SDL_GetWindowBordersSize(SDL_Window* window, int* top, int* left, int* bottom, int* right);
 bool SDL_SetWindowSize(SDL_Window *window, int w, int h);
 void SDL_GetWindowSize(SDL_Window* window, int* w, int* h);
+bool SDL_SetWindowFullscreen(SDL_Window *window, bool fullscreen);
 bool SDL_SetRenderViewport(SDL_Renderer* renderer, const SDL_Rect* rect);
 bool SDL_SetWindowPosition(SDL_Window* window, int x, int y);
 SDL_Window* SDL_CreateWindow(const char* title, int w, int h, SDL_WindowFlags flags);
@@ -147,6 +148,4 @@ SDL_Surface* SDL_CreateSurface(int width, int height, SDL_PixelFormat format);
 void SDL_DestroySurface(SDL_Surface* surface);
 bool SDL_LockSurface(SDL_Surface* surface);
 void SDL_UnlockSurface(SDL_Surface *surface);
-
-
 

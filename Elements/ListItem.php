@@ -100,6 +100,10 @@ class ListItem extends Element {
     return $this->filterable;
   }
 
+  public function isSelected() {
+    return $this->selected;
+  }
+
   public function getValue() {
     if ($this->value === false || $this->value === '') {
       return $this->text;

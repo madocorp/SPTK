@@ -7,6 +7,7 @@ class MenuBox extends ListBox {
   public $belongsTo = false;
   public $submenu = false;
   protected $num = 0;
+  protected $jumpToSelected = false;
 
   protected function init() {
     $this->display = false;
@@ -15,7 +16,7 @@ class MenuBox extends ListBox {
 
   public function getAttributeList() {
     $attributeList = parent::getAttributeList();
-    return array_merge($attributeList, ['belongsTo', 'submenu']);
+    return array_merge($attributeList, ['belongsTo', 'submenu', 'jumpToSelected']);
   }
 
   public function setBelongsTo($value) {
@@ -28,9 +29,29 @@ class MenuBox extends ListBox {
     }
   }
 
+  public function setJumpToSelected($value) {
+    if ($value === true || $value === 'true') {
+      $this->jumpToSelected = true;
+    }
+  }
+
+  public function gotoSelected() {
+    if (!$this->jumpToSelected) {
+      return;
+    }
+    foreach ($this->descendants as $i => $descendant) {
+      if ($descendant->isSelected()) {
+        $this->activeItem = $i;
+        return;
+      }
+    }
+  }
+
   protected function measure() {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->calculateWidth();
+    if ($this->geometry->width === 'calculated') {
+      $this->calculateWidth();
+    }
     $this->geometry->setDerivedWidths();
     foreach ($this->descendants as $descendant) {
       $descendant->measure();

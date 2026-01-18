@@ -20,6 +20,7 @@ class StyleSheet {
     if ($file === false) {
       throw new \Exception("Couldn't read file: {$path}");
     }
+    $file = preg_replace("/\/\/[^\n]\n/", "", $file);
     $file = str_replace(["\n", " "], '', $file);
     $file = trim($file, "}");
     $styles = explode("}", $file);

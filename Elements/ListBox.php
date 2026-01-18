@@ -227,6 +227,9 @@ class ListBox extends Element {
     if ($this->geometry->innerHeight === 'content' || $item->geometry->fullHeight == 'content') {
       return;
     }
+    if ($this->geometry->innerHeight === 'calculated' || $item->geometry->fullHeight == 'calculated') {
+      return;
+    }
     $this->pageSize = (int)($this->geometry->innerHeight / $item->geometry->fullHeight);
   }
 
