@@ -60,7 +60,7 @@ class Word extends Element {
       $this->width = 0;
       $this->height = 0;
       $this->ascent = $font->ascent;
-      $this->descent = $font->descent;
+      $this->descent = $font->height - $font->ascent;
       return;
     }
     $ttf = TTF::$instance->ttf;
@@ -85,7 +85,7 @@ class Word extends Element {
     $this->width = $this->surface->w;
     $this->height = $this->surface->h;
     $this->ascent = $font->ascent;
-    $this->descent = $font->descent;
+    $this->descent = $font->height - $font->ascent;
     $sdl = SDL::$instance->sdl;
     $surface = $sdl->cast("SDL_Surface *", $this->surface);
     $this->texture = new Texture($this->renderer, $this->width, $this->height, $bgcolor, $surface);

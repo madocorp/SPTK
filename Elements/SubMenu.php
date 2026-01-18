@@ -10,6 +10,7 @@ class SubMenu extends Element {
         if ($element->belongsTo == $name) {
           $element->show();
           $element->recalculateGeometry();
+          $element->gotoSelected();
           $element->activateItem();
           $element->style->set('x', "{$x}px");
           $element->style->set('y', "{$y}px");

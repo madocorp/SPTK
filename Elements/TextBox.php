@@ -38,8 +38,9 @@ class TextBox extends Element {
       return;
     }
     if (strpos($file, '/') !== 0) {
-      if (defined('APP_DIR')) {
-        $file = APP_DIR . '/' . $file;
+      if (defined('APP_PATH')) {
+        $dir = dirname(APP_PATH);
+        $file = "{$dir}/{$file}";
       } else {
         $file = getcwd() . '/' . $file;
       }

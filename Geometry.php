@@ -75,21 +75,20 @@ class Geometry {
     $this->maxHeight = $style->get('maxHeight', $ancestorGeometry);
     $this->minWidth = $style->get('minWidth', $ancestorGeometry);
     $this->minHeight = $style->get('minHeight', $ancestorGeometry);
-    if ($this->width === 'content') {
-      $this->innerWidth = 'content';
-      $this->fullWidth = 'content';
+    if ($this->width === 'content' || $this->width === 'calculated') {
+      $this->innerWidth = $this->width;
+      $this->fullWidth = $this->width;
     } else {
       if ($this->width < 0) {
         $this->width = $ancestorGeometry->innerWidth + $this->width;
       }
-
       $this->limitateWidth();
       $this->setDerivedWidths();
     }
     $this->height = $style->get('height', $ancestorGeometry);
-    if ($this->height === 'content') {
-      $this->innerHeight = 'content';
-      $this->fullHeight = 'content';
+    if ($this->height === 'content' || $this->height === 'calculated') {
+      $this->innerHeight = $this->width;
+      $this->fullHeight = $this->width;
     } else {
       if ($this->height < 0) {
         $this->height = $ancestorGeometry->innerHeight + $this->height;

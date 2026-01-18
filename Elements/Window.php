@@ -157,6 +157,14 @@ class Window extends Element {
     $this->display = false;
   }
 
+  public function fullscreenOn() {
+    $this->sdl->SDL_SetWindowFullscreen($this->window, true);
+  }
+
+  public function fullscreenOff() {
+    $this->sdl->SDL_SetWindowFullscreen($this->window, false);
+  }
+
   public function eventHandler($event) {
     if ($this->display === false) {
       return false;
