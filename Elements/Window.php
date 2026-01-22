@@ -148,13 +148,18 @@ class Window extends Element {
   }
 
   public function show() {
-    $this->sdl->SDL_ShowWindow($this->window);
+    $this->sdl->SDL_RestoreWindow($this->window);
     $this->display = true;
   }
 
   public function hide() {
-    $this->sdl->SDL_HideWindow($this->window);
+    $this->sdl->SDL_MinimizeWindow($this->window);
     $this->display = false;
+  }
+
+  public function remove() {
+    parent::remove();
+    $this->sdl->SDL_DestroyWindow($this->window);
   }
 
   public function fullscreenOn() {
@@ -172,7 +177,7 @@ class Window extends Element {
     if (isset($event['windowID']) && $event['windowID'] === $this->windowId) {
       switch ($event['type']) {
         case SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-          $this->hide();
+          $this->remove();
           return true;
         case SDL::SDL_EVENT_WINDOW_EXPOSED:
           Element::refresh();

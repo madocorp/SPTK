@@ -73,7 +73,8 @@ class MenuBox extends ListBox {
     if (!$this->display) {
       return false;
     }
-    switch ($a = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+    $keyCombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
+    switch ($keyCombo) {
       case Action::CLOSE:
         if ($this->submenu) {
           $this->hide();
@@ -123,7 +124,18 @@ class MenuBox extends ListBox {
         }
         break;
     }
-    return parent::keyPressHandler($element, $event);
+    $handled = parent::keyPressHandler($element, $event);
+    if (!$handled) {
+      if (in_array($keyCombo, [
+        KeyCode::F1, KeyCode::F2, KeyCode::F3, KeyCode::F4,
+        KeyCode::F5, KeyCode::F6, KeyCode::F7, KeyCode::F8,
+        KeyCode::F9, KeyCode::F10, KeyCode::F11, KeyCode::F12,
+        Action::CLOSE
+      ])) {
+        return false;
+      }
+    }
+    return true;
   }
 
 }

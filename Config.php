@@ -35,6 +35,9 @@ class Config {
   }
 
   public static function load($file) {
+    if (!file_exists($file)) {
+      return [];
+    }
     $reader = new XmlReader();
     $reader->open($file);
     $stack = [];
