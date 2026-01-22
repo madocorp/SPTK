@@ -12,10 +12,6 @@ trait ElementAssistant {
     ;
   }
 
-  public function isWord() {
-    return false;
-  }
-
   public function getId() {
     return $this->id;
   }
@@ -66,10 +62,6 @@ trait ElementAssistant {
 
   public function hide() {
     $this->display = false;
-  }
-
-  public function lineBreak() {
-    return false;
   }
 
   public function scrollToLeft() {

@@ -48,10 +48,6 @@ class Button extends Element {
     }
   }
 
-  public function isWord() {
-    return true;
-  }
-
   public function keyPressHandler($element, $event) {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::DO_IT:
