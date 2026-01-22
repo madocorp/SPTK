@@ -112,8 +112,8 @@ bool SDL_SetRenderViewport(SDL_Renderer* renderer, const SDL_Rect* rect);
 bool SDL_SetWindowPosition(SDL_Window* window, int x, int y);
 SDL_Window* SDL_CreateWindow(const char* title, int w, int h, SDL_WindowFlags flags);
 SDL_WindowID SDL_GetWindowID(SDL_Window *window);
-bool SDL_ShowWindow(SDL_Window *window);
-bool SDL_HideWindow(SDL_Window *window);
+bool SDL_MinimizeWindow(SDL_Window *window);
+bool SDL_RestoreWindow(SDL_Window *window);
 SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, const char* name);
 bool SDL_SetRenderDrawColor(SDL_Renderer* renderer, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 bool SDL_RenderClear(SDL_Renderer* renderer);
@@ -145,7 +145,6 @@ char* SDL_GetClipboardText(void);
 bool SDL_HasClipboardText(void);
 void SDL_free(void* mem);
 SDL_Surface* SDL_CreateSurface(int width, int height, SDL_PixelFormat format);
-void SDL_DestroySurface(SDL_Surface* surface);
 bool SDL_LockSurface(SDL_Surface* surface);
 void SDL_UnlockSurface(SDL_Surface *surface);
 

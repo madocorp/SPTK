@@ -10,7 +10,7 @@ class Input extends Element {
   protected $placeholder = '';
   protected $onChange = false;
   protected $lines = [''];
-  protected $cursor;
+  protected $cursor = false;
   protected $history;
 
   protected function init() {
@@ -38,6 +38,12 @@ class Input extends Element {
       $value = '';
     }
     $this->lines = [$value];
+    $this->elementBefore->setValue($value);
+    $this->elementSelected->setValue(' ');
+    $this->elementAfter->setValue('');
+    if ($this->cursor !== false) {
+      $this->cursor->moveLineEnd();
+    }
   }
 
   public function getValue() {
