@@ -29,22 +29,15 @@ trait ElementLayout {
     if ($this->geometry->width === 'content') {
       $width = 0;
       $spaceCount = 0;
-      $previousIsWord = false;
       foreach ($this->descendants as $descendant) {
         if ($descendant->display === false) {
           continue;
         }
-        if ($descendant->geometry->position === 'inline') {
-          if ($descendant->isWord()) {
-            if ($previousIsWord) {
-              $spaceCount++;
-            }
-            $previousIsWord = true;
-          } else {
-            $previousIsWord = false;
-          }
-          $width += $descendant->geometry->fullWidth;
+        if ($descendant->type === 'Space') {
+          $spaceCount++;
+          continue;
         }
+        $width += $descendant->geometry->fullWidth;
       }
       $this->geometry->width =
         $this->geometry->borderLeft +
@@ -68,8 +61,8 @@ trait ElementLayout {
     $lines = [];
     $line = ['ascent' => 0, 'descent' => 0, 'width' => 0, 'spaceCount' => 0, 'elements' => []];
     $lineWidth = 0;
-    $previousIsWord = false;
     $maxY = 0;
+    $space = 0;
     foreach ($this->descendants as $descendant) {
       if ($descendant->geometry->position === 'absolute') {
         if ($descendant->display) {
@@ -80,14 +73,10 @@ trait ElementLayout {
       if ($descendant->display === false) {
         continue;
       }
-      $space = 0;
-      if ($descendant->isWord()) {
-        if ($previousIsWord) {
-          $space = $this->geometry->wordSpacing;
-        }
-        $previousIsWord = true;
-      } else {
-        $previousIsWord = false;
+      if ($descendant->type === 'Space') {
+        $space = $this->geometry->wordSpacing;
+        $line['elements'][] = $descendant;
+        continue;
       }
       if (
         (
@@ -95,7 +84,7 @@ trait ElementLayout {
           $line['width'] > 0 &&
           $lineWidth + $space + $descendant->geometry->fullWidth > $this->geometry->innerWidth
         ) ||
-        $descendant->lineBreak()
+        $descendant->getType() === 'NL'
       ) {
         if ($line['ascent'] + $line['descent'] < $this->geometry->lineHeight) {
           $line['descent'] = $this->geometry->lineHeight - $line['ascent'];
@@ -112,6 +101,7 @@ trait ElementLayout {
       $line['descent'] = max($line['descent'], $descendant->geometry->descent);
       $line['width'] += $descendant->geometry->fullWidth;
       $line['spaceCount'] += ($space > 0 ? 1 : 0);
+      $space = 0;
     }
     if (count($line['elements']) > 0) {
       if ($line['ascent'] + $line['descent'] < $this->geometry->lineHeight) {
@@ -147,21 +137,17 @@ trait ElementLayout {
         $x += $this->geometry->innerWidth - $line['width'] - $line['spaceCount'] * $space;
       } else if ($this->geometry->textAlign === 'center') {
         $x += (int)(($this->geometry->innerWidth - $line['width'] - $line['spaceCount'] * $space) / 2);
-      } if ($this->geometry->textAlign === 'justify') {
+      } else if ($this->geometry->textAlign === 'justify') {
         if ($line['spaceCount'] > 0) {
           $space = (int)(($this->geometry->innerWidth - $line['width']) / $line['spaceCount']);
         } else {
           $space = 0;
         }
       }
-      $previousIsWord = false;
       foreach ($line['elements'] as $element) {
         $element->geometry->y = $y - $element->geometry->ascent + $element->geometry->marginTop;
-        if ($element->isWord()) {
-          if ($previousIsWord) {
-            $x += $space;
-          }
-          $previousIsWord = true;
+        if ($element->type === 'Space') {
+          $x += $space;
         }
         $element->geometry->x = $x + $element->geometry->marginLeft;
         $x += $element->geometry->fullWidth;

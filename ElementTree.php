@@ -66,9 +66,13 @@ trait ElementTree {
         new Element($this, false, false, 'NL');
       }
       $row = explode(' ', $row);
-      foreach ($row as $word) {
+      foreach ($row as $i => $word) {
+        if ($i !== 0) {
+          new Space($this);
+        }
         $element = new Word($this);
         $element->setValue($word);
+
       }
     }
     $this->changed = true;

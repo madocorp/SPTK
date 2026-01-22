@@ -19,10 +19,6 @@ class Word extends Element {
     $this->draw();
   }
 
-  public function isWord() {
-    return true;
-  }
-
   public function getWidth() {
     return $this->width;
   }

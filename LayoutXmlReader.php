@@ -96,6 +96,9 @@ class LayoutXmlReader {
           $txt = preg_replace('/ +/', ' ', $txt);
           $words = explode(' ', $txt);
           foreach ($words as $i => $word) {
+            if ($i > 0) {
+              new Space($this->current);
+            }
             $w = new Word($this->current);
             $w->setValue($word);
             unset($w);
