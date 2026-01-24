@@ -35,6 +35,8 @@ class MenuBoxItem extends ListItem {
 
   public function getWidth() {
     $width = $this->valueField->getWidth();
+    $width += $this->matchField->getWidth();
+    $width += $this->afterMatchField->getWidth();
     return $width + 30;
   }
 

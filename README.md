@@ -1,4 +1,4 @@
-# SDL based tooklkit for PHP
+# SDL-based PHP Toolkit
 
 This is a graphical toolkit written in php.
 

@@ -7,17 +7,25 @@ use \XmlReader;
 class Config {
 
   private static $path = false;
+  private static $home = false;
 
   private static function setPath() {
     $appName = basename(APP_PATH, '.php');
-    $home = getenv('HOME') ?: getenv('USERPROFILE');
-    if (!$home) {
-      $home = getcwd();
+    self::$home = getenv('HOME') ?: getenv('USERPROFILE');
+    if (!self::$home) {
+      self::$home = getcwd();
     }
-    self::$path = realpath($home) . "/.{$appName}";
+    self::$path = realpath(self::$home) . "/.{$appName}";
     if (!is_dir(self::$path)) {
       mkdir(self::$path);
     }
+  }
+
+  public static function getHome() {
+    if (self::$home === false) {
+      self::setPath();
+    }
+    return self::$home;
   }
 
   public static function getPath() {

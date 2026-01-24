@@ -27,8 +27,17 @@ class Window extends Element {
     $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
     $this->windowId = $this->sdl->SDL_GetWindowID($this->window);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
-    $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, 0, 0, 0, 0xff);
+    $this->configure();
+    $this->sdl->SDL_StartTextInput($this->window);
+    $this->draw();
+    $this->display = true;
+  }
+
+  public function configure() {
+    $this->geometry->x = 0;
+    $this->geometry->y = 0;
+    $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->ffiWidth = \FFI::new("int");
     $this->ffiHeight = \FFI::new("int");
     $frameTop = \FFI::new("int");
@@ -65,9 +74,6 @@ class Window extends Element {
       $this->geometry->y = $this->style->get('y', $this->ancestor->geometry) + $this->ancestor->geometry->y + $this->geometry->y;
     }
     $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
-    $this->sdl->SDL_StartTextInput($this->window);
-    $this->draw();
-    $this->display = true;
   }
 
   public function getAttributeList() {

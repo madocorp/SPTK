@@ -184,8 +184,9 @@ class ListBox extends Element {
     if ($this->scrollY < 0) {
       $this->scrollY = 0;
     }
-    if ($this->geometry->contentHeight > $this->geometry->height && $this->scrollY > $this->geometry->contentHeight - $this->geometry->height + $this->geometry->borderTop) {
-      $this->scrollY = $this->geometry->contentHeight - $this->geometry->height + $this->geometry->borderTop;
+    $maxSY = $this->geometry->contentHeight - $this->geometry->height + $this->geometry->borderTop + $this->geometry->borderBottom;
+    if ($this->scrollY > $maxSY) {
+      $this->scrollY = $maxSY;
     }
   }
 
