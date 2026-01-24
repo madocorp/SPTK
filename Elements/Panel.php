@@ -343,6 +343,7 @@ class Panel extends Element {
           }
         }
         $buttonElement->addText($button['text']);
+        new Space($buttonBoxElement);
       }
     }
     $panel->show();

@@ -35,10 +35,12 @@ class FilePanel extends Panel {
     $cancel = new Button($buttons);
     $cancel->setHotKey('ESCAPE');
     $cancel->addText('Cancel');
+    new Space($buttons);
     $this->createDirBtn = new Button($buttons);
     $this->createDirBtn->setHotKey('F7');
     $this->createDirBtn->addText('Create dir');
     $this->createDirBtn->setOnPress([$this, 'createDir']);
+    new Space($buttons);
     $this->okBtn = new Button($buttons, 'okBtn');
     $this->okBtn->setHotKey('SPACE');
     $this->okBtn->addText('OK');
