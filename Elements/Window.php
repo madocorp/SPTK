@@ -21,6 +21,11 @@ class Window extends Element {
   protected $borderBottom = 0;
   protected $borderRight = 0;
 
+  public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
+    $display = $ancestor->getPrimaryDisplay();
+    parent::__construct($display, $name, $class, $type);
+  }
+
   protected function init() {
     $this->display = false;
     $this->sdl = SDL::$instance->sdl;
@@ -44,6 +49,7 @@ class Window extends Element {
     $frameBottom = \FFI::new("int");
     $frameLeft = \FFI::new("int");
     $frameRight = \FFI::new("int");
+    $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y); // forces update border size
     if ($this->sdl->SDL_GetWindowBordersSize($this->window, \FFI::addr($frameTop), \FFI::addr($frameLeft), \FFI::addr($frameBottom), \FFI::addr($frameRight))) {
       $this->borderTop = $frameTop->cdata;
       $this->borderLeft = $frameLeft->cdata;
@@ -187,6 +193,8 @@ class Window extends Element {
           return true;
         case SDL::SDL_EVENT_WINDOW_EXPOSED:
           Element::refresh();
+          return true;
+        case SDL::SDL_EVENT_WINDOW_DISPLAY_CHANGED:
           return true;
         case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
         case SDL::SDL_EVENT_WINDOW_RESTORED:

@@ -146,5 +146,7 @@ bool SDL_HasClipboardText(void);
 void SDL_free(void* mem);
 SDL_Surface* SDL_CreateSurface(int width, int height, SDL_PixelFormat format);
 bool SDL_LockSurface(SDL_Surface* surface);
-void SDL_UnlockSurface(SDL_Surface *surface);
-
+void SDL_UnlockSurface(SDL_Surface* surface);
+bool SDL_DisableScreenSaver(void);
+bool SDL_EnableScreenSaver(void);
+SDL_DisplayID* SDL_GetDisplays(int* count);
