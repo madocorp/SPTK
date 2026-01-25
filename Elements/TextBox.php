@@ -10,6 +10,7 @@ class TextBox extends Element {
   protected $letterWidth;
   protected $tokenizer;
   protected $lineContexts = [];
+  protected $active = false;
 
   protected function init() {
     $this->acceptInput = true;
@@ -58,6 +59,22 @@ class TextBox extends Element {
   public function setValue($value) {
     $this->lines = explode("\n", $value);
     $this->measure();
+    $this->update();
+  }
+
+  public function addClass($class, $dynamic = false) {
+    if ($dynamic && $class == 'active') {
+      $this->active = true;
+    }
+    parent::addClass($class, $dynamic);
+    $this->update();
+  }
+
+  public function removeClass($class, $dynamic = false) {
+    if ($dynamic && $class == 'active') {
+      $this->active = false;
+    }
+    parent::removeClass($class, $dynamic);
     $this->update();
   }
 
@@ -123,7 +140,7 @@ class TextBox extends Element {
 
   protected function splitToken($token, $split, $selected, $row) {
     $style = $token['style'];
-    if ($selected) {
+    if ($selected && $this->active) {
       $style .= ' InputValue:selected';
     }
     $iv = new InputValue($row, false, $style);
@@ -158,7 +175,7 @@ class TextBox extends Element {
         if ($i === $row2 && $j === $col2) {
           $selected = false;
         }
-        if ($selected) {
+        if ($selected && $this->active) {
           $token['style'] .= ' InputValue:selected';
         }
         $iv = new InputValue($row, false, $token['style']);
@@ -172,7 +189,7 @@ class TextBox extends Element {
         $selected = false;
       }
       $style = false;
-      if ($selected) {
+      if ($selected && $this->active) {
         $style = 'InputValue:selected';
         if ($row1 != $row2 || $row1 < $row2 - 1) {
           $style = 'InputValue:newline';

@@ -165,10 +165,16 @@ var_dump($name);
       return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }
     if ($type == self::T_WINDOW_WPERCENT) {
+      if ($reference === false) {
+        return 0;
+      }
       $referenceValue = $reference->windowWidth;
       return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }
     if ($type == self::T_WINDOW_HPERCENT) {
+      if ($reference === false) {
+        return 0;
+      }
       $referenceValue = $reference->windowHeight;
       return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }

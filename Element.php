@@ -57,7 +57,7 @@ class Element {
       $this->sclass = array_merge($this->sclass, $ancestor->childClass);
     }
     $this->ancestor = $ancestor;
-    $this->geometry = new Geometry;
+    $this->geometry = new Geometry($this->ancestor->geometry ?? null);
     $this->recalculateStyle();
     if (is_null($this->ancestor)) {
       if (!is_null(self::$root)) {

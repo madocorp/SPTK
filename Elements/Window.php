@@ -140,6 +140,8 @@ class Window extends Element {
   }
 
   protected function measure() {
+    $this->geometry->windowWidth = $this->geometry->width;
+    $this->geometry->windowHeight = $this->geometry->height;
     foreach ($this->descendants as $descendant) {
       $descendant->measure();
     }

@@ -59,12 +59,4 @@ if (isset($argv[1])) {
   $test = $argv[1];
   echo "Test: {$test}\n";
   new SPTK\App("{$test}/layout.xml", "{$test}/style.xss");
-} else {
-  $dir = new DirectoryIterator(dirname(__FILE__));
-  foreach ($dir as $fileinfo) {
-    if ($fileinfo->isDir() && !$fileinfo->isDot()) {
-      $test = $fileinfo->getFilename();
-      passthru("php test.php {$test}");
-    }
-  }
 }

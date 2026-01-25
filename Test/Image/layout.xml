@@ -1,3 +1,4 @@
 <Window title="HelloWorld">
-  <Image value="Image/image.png"></Image>
+  Text berore the image. <Image value="Image/image.png"></Image> Text after the image.
+  <Image class="flexi" value="Image/image.png"></Image>
 </Window>

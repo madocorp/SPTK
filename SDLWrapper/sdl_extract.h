@@ -135,6 +135,7 @@ bool SDL_SetTextureScaleMode(SDL_Texture* texture, int scaleMode);
 bool SDL_SetRenderTarget(SDL_Renderer* renderer, SDL_Texture* texture);
 SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface);
 void SDL_DestroySurface(SDL_Surface* surface);
+bool SDL_ClearSurface(SDL_Surface* surface, float r, float g, float b, float a);
 bool SDL_RenderLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2);
 bool SDL_RenderRect(SDL_Renderer* renderer, const SDL_FRect* rect);
 bool SDL_RenderFillRect(SDL_Renderer* renderer, const SDL_FRect* rect);

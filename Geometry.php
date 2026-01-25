@@ -48,12 +48,20 @@ class Geometry {
 
   public $lines = [];
 
+  public function __construct($ancestorGeometry) {
+    if ($ancestorGeometry === null) {
+      return;
+    }
+    $this->windowWidth = $ancestorGeometry->windowWidth;
+    $this->windowHeight = $ancestorGeometry->windowHeight;
+  }
+
   public function setValues($ancestorGeometry, $style) {
     $this->windowWidth = $ancestorGeometry->windowWidth;
     $this->windowHeight = $ancestorGeometry->windowHeight;
     $this->originalWidth = $this->width;
     $this->originalHeight = $this->height;
-    $this->fontSize = $style->get('fontSize');
+    $this->fontSize = $style->get('fontSize', $this);
     $this->textAlign = $style->get('textAlign');
     $this->textWrap = $style->get('textWrap');
     $this->lineHeight = $style->get('lineHeight', $this);
