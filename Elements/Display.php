@@ -36,6 +36,8 @@ class Display extends Element {
   }
 
   protected function measure() {
+    $this->geometry->windowWidth = $this->ancestor->geometry->windowWidth;
+    $this->geometry->windowHeight = $this->ancestor->geometry->windowHeight;
     foreach ($this->descendants as $descendant) {
       $descendant->measure();
     }

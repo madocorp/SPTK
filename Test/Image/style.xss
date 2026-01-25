@@ -5,9 +5,21 @@ Window {
   y: 30%;
   backgroundColor: #000000;
   color: #ffff00;
-  fontSize: 30px;
+  fontSize: 16px;
 }
 
 Image {
   backgroundColor: #ff0000;
+  padding: 10px;
+  border: 3px;
+  borderColor: #ffffff;
+  margin: 5px;
+}
+
+.flexi {
+  position: absolute;
+  y: -10px;
+  x: -10px;
+  width: calculated;
+  height: 20%;
 }

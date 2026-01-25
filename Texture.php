@@ -27,15 +27,16 @@ class Texture {
     $this->renderer = $renderer;
     $this->width = $width;
     $this->height = $height;
-    if ($fromSurface === false) {
-      $this->texture = $this->sdl->SDL_CreateTexture($this->renderer, SDL::SDL_PIXELFORMAT_RGBA8888, SDL::SDL_TEXTUREACCESS_TARGET, $this->width, $this->height);
-      $this->sdl->SDL_SetTextureBlendMode($this->texture, SDL::SDL_BLENDMODE_BLEND);
-      $this->sdl->SDL_SetTextureScaleMode($this->texture, SDL::SDL_SCALE_MODE_NEAREST);
-      $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
-      $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
-      $this->sdl->SDL_RenderClear($this->renderer);
-    } else {
-      $this->texture = $this->sdl->SDL_CreateTextureFromSurface($this->renderer, $fromSurface);
+    $this->texture = $this->sdl->SDL_CreateTexture($this->renderer, SDL::SDL_PIXELFORMAT_RGBA8888, SDL::SDL_TEXTUREACCESS_TARGET, $this->width, $this->height);
+    $this->sdl->SDL_SetTextureBlendMode($this->texture, SDL::SDL_BLENDMODE_BLEND);
+    $this->sdl->SDL_SetTextureScaleMode($this->texture, SDL::SDL_SCALE_MODE_NEAREST);
+    $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
+    $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
+    $this->sdl->SDL_RenderClear($this->renderer);
+    if ($fromSurface !== false) {
+      $tmpTexture = $this->sdl->SDL_CreateTextureFromSurface($this->renderer, $fromSurface);
+      $this->sdl->SDL_RenderTexture($this->renderer, $tmpTexture, null, null);
+      $this->sdl->SDL_DestroyTexture($tmpTexture);
     }
   }
 

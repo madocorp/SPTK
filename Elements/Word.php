@@ -24,6 +24,8 @@ class Word extends Element {
   }
 
   protected function measure() {
+    $this->windowWidth = $this->ancestor->geometry->windowWidth;
+    $this->windowHeight = $this->ancestor->geometry->windowHeight;
     $this->geometry->width = $this->width;
     $this->geometry->height = $this->height;
     $this->geometry->fullWidth = $this->width;
@@ -50,6 +52,9 @@ class Word extends Element {
   protected function draw() {
     $fontName = $this->style->get('font');
     $fontSize = $this->style->get('fontSize', $this->ancestor->geometry);
+    if ($fontSize === 0) {
+      return;
+    }
     $font = new Font($fontName, $fontSize);
     if ($this->value === false || $this->value === '') {
       $this->texture = false;
