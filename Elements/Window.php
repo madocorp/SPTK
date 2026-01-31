@@ -5,10 +5,12 @@ namespace SPTK;
 class Window extends Element {
 
   const SDL_RENDERER_ACCELERATED = 0x00000002;
-  const SDL_SCALE_MODE_NEAREST= 0;
+  const SDL_SCALE_MODE_NEAREST = 0;
   const SDL_PIXELFORMAT_RGBA8888 = ((1 << 28) | (6 << 24) | (4 << 20) | (6 << 16) | (32 << 8) | (4 << 0));
-  const SDL_WINDOW_FULLSCREEN_DESKTOP = 0x1;
   const SDL_WINDOW_RESIZABLE = 0x20;
+  const SDL_WINDOW_HIDDEN = 0x8;
+  const SDL_WINDOW_MAXIMIZED = 0x80;
+  const SDL_WINDOW_FULLSCREEN = 0x01;
 
   protected $sdl;
   protected $window;
@@ -16,70 +18,33 @@ class Window extends Element {
   protected $tmpTexture = false;
   protected $ffiWidth;
   protected $ffiHeight;
-  protected $borderTop = 0;
-  protected $borderLeft = 0;
-  protected $borderBottom = 0;
-  protected $borderRight = 0;
-
-  public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
-    $display = $ancestor->getPrimaryDisplay();
-    parent::__construct($display, $name, $class, $type);
-  }
 
   protected function init() {
     $this->display = false;
     $this->sdl = SDL::$instance->sdl;
-    $this->window = $this->sdl->SDL_CreateWindow('', 10, 10, self::SDL_WINDOW_RESIZABLE);
+    $this->ffiWidth = \FFI::new("int");
+    $this->ffiHeight = \FFI::new("int");
+    $this->geometry->setValues($this->ancestor->geometry, $this->style);
+    $width = $this->style->get('width', $this->ancestor->geometry);
+    $height = $this->style->get('height', $this->ancestor->geometry);
+    $maximized = 0;
+    if ($width === 'max' || $height === 'max') {
+      $maximized = self::SDL_WINDOW_MAXIMIZED;
+      $this->geometry->windowWidth = $this->ancestor->geometry->width;
+      $this->geometry->windowHeight = $this->ancestor->geometry->height;
+    } else {
+      $this->geometry->windowWidth = $width;
+      $this->geometry->windowHeight = $height;
+    }
+    $this->setDerivedSizes();
+    $this->window = $this->sdl->SDL_CreateWindow('', $this->geometry->windowWidth, $this->geometry->windowHeight, self::SDL_WINDOW_RESIZABLE | self::SDL_WINDOW_HIDDEN | $maximized);
     $this->windowId = $this->sdl->SDL_GetWindowID($this->window);
     $this->renderer = $this->sdl->SDL_CreateRenderer($this->window, null);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, 0, 0, 0, 0xff);
-    $this->configure();
+    $this->sdl->SDL_ShowWindow($this->window);
     $this->sdl->SDL_StartTextInput($this->window);
-    $this->draw();
+    $this->changed = true;
     $this->display = true;
-  }
-
-  public function configure() {
-    $this->geometry->x = 0;
-    $this->geometry->y = 0;
-    $this->geometry->setValues($this->ancestor->geometry, $this->style);
-    $this->ffiWidth = \FFI::new("int");
-    $this->ffiHeight = \FFI::new("int");
-    $frameTop = \FFI::new("int");
-    $frameBottom = \FFI::new("int");
-    $frameLeft = \FFI::new("int");
-    $frameRight = \FFI::new("int");
-    $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y); // forces update border size
-    if ($this->sdl->SDL_GetWindowBordersSize($this->window, \FFI::addr($frameTop), \FFI::addr($frameLeft), \FFI::addr($frameBottom), \FFI::addr($frameRight))) {
-      $this->borderTop = $frameTop->cdata;
-      $this->borderLeft = $frameLeft->cdata;
-      $this->borderBottom = $frameBottom->cdata;
-      $this->borderRight = $frameRight->cdata;
-      $this->geometry->width = $this->style->get('width', $this->ancestor->geometry);
-      $this->geometry->height = $this->style->get('height', $this->ancestor->geometry);
-      $this->geometry->x += $frameLeft->cdata;
-      $this->geometry->y += $frameTop->cdata;
-    } else {
-      $this->geometry->width = $this->style->get('width', $this->ancestor->geometry);
-      $this->geometry->height = $this->style->get('height', $this->ancestor->geometry);
-    }
-    $this->setSize();
-    $this->getSize();
-    $x = $this->style->get('x', $this->ancestor->geometry, $isNegative);
-    if ($isNegative) {
-      $width = $this->style->get('width', $this->ancestor->geometry);
-      $this->geometry->x = $this->ancestor->geometry->x + $this->ancestor->geometry->width - $width - $x;
-    } else {
-      $this->geometry->x = $x + $this->ancestor->geometry->x + $this->geometry->x;
-    }
-    $y = $this->style->get('y', $this->ancestor->geometry, $isNegative);
-    if ($isNegative) {
-      $height = $this->style->get('height', $this->ancestor->geometry);
-      $this->geometry->y = $this->ancestor->geometry->y + $this->ancestor->geometry->height - $height - $y;
-    } else {
-      $this->geometry->y = $this->style->get('y', $this->ancestor->geometry) + $this->ancestor->geometry->y + $this->geometry->y;
-    }
-    $this->sdl->SDL_SetWindowPosition($this->window, $this->geometry->x, $this->geometry->y);
   }
 
   public function getAttributeList() {
@@ -90,26 +55,43 @@ class Window extends Element {
     $this->sdl->SDL_SetWindowTitle($this->window, $title);
   }
 
-  protected function setSize() {
-    $this->sdl->SDL_SetWindowSize(
-      $this->window,
-      $this->geometry->width - $this->borderLeft - $this->borderRight,
-      $this->geometry->height - $this->borderTop - $this->borderBottom
-    );
-    $this->sdl->SDL_SetRenderViewport($this->renderer, null);
+  public function setSize() {
+    $width = $this->style->get('width', $this->ancestor->geometry);
+    $height = $this->style->get('height', $this->ancestor->geometry);
+    if ($width === 'max' || $height === 'max') {
+      $this->maximize();
+      $this->geometry->windowWidth = $this->ancestor->geometry->width;
+      $this->geometry->windowHeight = $this->ancestor->geometry->height;
+    } else {
+      $this->restore();
+      $this->geometry->windowWidth = $width;
+      $this->geometry->windowHeight = $height;
+      $this->sdl->SDL_SetWindowSize(
+        $this->window,
+        $this->geometry->windowWidth,
+        $this->geometry->windowHeight
+      );
+      $this->sdl->SDL_SetRenderViewport($this->renderer, null);
+      $this->setDerivedSizes();
+    }
   }
 
   protected function getSize() {
     $this->sdl->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
-    $this->geometry->width = $this->ffiWidth->cdata;
-    $this->geometry->height = $this->ffiHeight->cdata;
-    $this->geometry->windowWidth = $this->geometry->width;
-    $this->geometry->windowHeight = $this->geometry->height;
-    $this->geometry->innerWidth = $this->geometry->width - $this->geometry->paddingLeft - $this->geometry->paddingRight;
-    $this->geometry->fullWidth = $this->geometry->width;
-    $this->geometry->innerHeight = $this->geometry->height - $this->geometry->paddingTop - $this->geometry->paddingBottom;
-    $this->geometry->fullHeight = $this->geometry->height;
+    $this->geometry->windowWidth = $this->ffiWidth->cdata;
+    $this->geometry->windowHeight =  $this->ffiHeight->cdata;
+    $this->setDerivedSizes();
   }
+
+  protected function setDerivedSizes() {
+    $this->geometry->width = $this->geometry->windowWidth;
+    $this->geometry->height =  $this->geometry->windowHeight;
+    $this->geometry->innerWidth = $this->geometry->windowWidth - $this->geometry->paddingLeft - $this->geometry->paddingRight;
+    $this->geometry->innerHeight = $this->geometry->windowHeight - $this->geometry->paddingTop - $this->geometry->paddingBottom;
+    $this->geometry->fullWidth = $this->geometry->windowWidth;
+    $this->geometry->fullHeight = $this->geometry->windowHeight;
+  }
+
 
   public function draw() {
     $color = $this->style->get('backgroundColor');
@@ -120,8 +102,8 @@ class Window extends Element {
     if ($this->texture === false) {
       return false;
     }
-    $width = $this->geometry->width - $this->geometry->borderLeft - $this->geometry->borderRight;
-    $height = $this->geometry->height - $this->geometry->borderTop - $this->geometry->borderBottom;
+    $width = $this->geometry->width;
+    $height = $this->geometry->height;
     if ($this->tmpTexture === false) {
       $this->tmpTexture = new Texture($this->renderer, $width, $height, [0, 0, 0, 0]);
     }
@@ -176,12 +158,38 @@ class Window extends Element {
     $this->sdl->SDL_DestroyWindow($this->window);
   }
 
+  public function maximize() {
+    $flags = $this->sdl->SDL_GetWindowFlags($this->window);
+    if ($flags & self::SDL_WINDOW_MAXIMIZED) {
+      return;
+    }
+    $this->sdl->SDL_MaximizeWindow($this->window);
+    $this->sdl->SDL_SyncWindow($this->window);
+  }
+
+  public function restore() {
+    $flags = $this->sdl->SDL_GetWindowFlags($this->window);
+    if ($flags & self::SDL_WINDOW_MAXIMIZED) {
+      $this->sdl->SDL_RestoreWindow($this->window);
+      $this->sdl->SDL_SyncWindow($this->window);
+    }
+  }
+
   public function fullscreenOn() {
+    $flags = $this->sdl->SDL_GetWindowFlags($this->window);
+    if ($flags & self::SDL_WINDOW_FULLSCREEN) {
+      return;
+    }
     $this->sdl->SDL_SetWindowFullscreen($this->window, true);
+    $this->sdl->SDL_SyncWindow($this->window);
   }
 
   public function fullscreenOff() {
-    $this->sdl->SDL_SetWindowFullscreen($this->window, false);
+    $flags = $this->sdl->SDL_GetWindowFlags($this->window);
+    if ($flags & self::SDL_WINDOW_FULLSCREEN) {
+      $this->sdl->SDL_SetWindowFullscreen($this->window, false);
+      $this->sdl->SDL_SyncWindow($this->window);
+    }
   }
 
   public function eventHandler($event) {
@@ -191,12 +199,14 @@ class Window extends Element {
     if (isset($event['windowID']) && $event['windowID'] === $this->windowId) {
       switch ($event['type']) {
         case SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+          $this->tmpTexture = false;
           $this->remove();
           return true;
         case SDL::SDL_EVENT_WINDOW_EXPOSED:
+          $this->tmpTexture = false;
+          $this->getSize();
+          $this->draw();
           Element::refresh();
-          return true;
-        case SDL::SDL_EVENT_WINDOW_DISPLAY_CHANGED:
           return true;
         case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
         case SDL::SDL_EVENT_WINDOW_RESTORED:

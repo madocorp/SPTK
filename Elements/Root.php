@@ -4,51 +4,21 @@ namespace SPTK;
 
 class Root extends Element {
 
-  protected $primaryIndex = 0;
-
   protected function init() {
-    $this->resetDisplays();
-  }
-
-  protected function resetDisplays() {
-    $currentDisplays = $this->descendants;
-    $this->clear();
     $sdl = SDL::$instance->sdl;
-    $displayCount = $sdl->new('int');
-    $displays = $sdl->SDL_GetDisplays(\FFI::addr($displayCount));
+    $workArea = $sdl->new('SDL_Rect');
     $primaryId = $sdl->SDL_GetPrimaryDisplay();
-    for ($i = 0; $i < $displayCount->cdata; $i++) {
-      $displayId = $displays[$i];
-      $displayIndex = $this->searchDisplay($currentDisplays, $displayId);
-      if ($displayIndex === false) {
-        $element = new Display($this);
-        $element->setDisplayId($displayId);
-        $element->setDisplaySize();
-      } else {
-        $this->descendants[] = $currentDisplays[$displayIndex];
-        $this->stack[] = $currentDisplays[$displayIndex];
-        unset($currentDisplays[$displayIndex]);
-      }
-      if ($displayId === $primaryId) {
-        $this->primaryIndex = $i;
-      }
-    }
-    foreach ($currentDisplays as $i => $display) {
-      // move all windows on it to primary
-    }
-  }
-
-  protected function searchDisplay($displays, $id) {
-    foreach ($displays as $i => $display) {
-      if ($display->getDisplayId() === $id) {
-        return $i;
-      }
-    }
-    return false;
-  }
-
-  public function getPrimaryDisplay() {
-    return $this->descendants[$this->primaryIndex];
+    $sdl->SDL_GetDisplayUsableBounds($primaryId, \FFI::addr($workArea));
+    $this->geometry->x = $workArea->x;
+    $this->geometry->y = $workArea->y;
+    $this->geometry->width = $workArea->w;
+    $this->geometry->height = $workArea->h;
+    $this->geometry->innerWidth = $this->geometry->width;
+    $this->geometry->innerHeight = $this->geometry->height;
+    $this->geometry->fullWidth = $this->geometry->width;
+    $this->geometry->fullHeight = $this->geometry->height;
+    $this->geometry->windowWidth = $this->geometry->width;
+    $this->geometry->windowHeight = $this->geometry->height;
   }
 
   protected function render() {
@@ -91,14 +61,6 @@ class Root extends Element {
 
   public function eventHandler($event) {
     $handled = false;
-    switch ($event['type']) {
-      case SDL::SDL_EVENT_DISPLAY_ORIENTATION:
-      case SDL::SDL_EVENT_DISPLAY_ADDED:
-      case SDL::SDL_EVENT_DISPLAY_REMOVED:
-      case SDL::SDL_EVENT_DISPLAY_MOVED:
-        $this->resetDisplays();
-        return true;
-    }
     foreach (self::$root->stack as $display) {
       $handled = $display->eventHandler($event);
       if ($handled) {
