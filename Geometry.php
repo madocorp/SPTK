@@ -189,7 +189,7 @@ class Geometry {
     $x = $style->get('x', $ancestorGeometry, $isNegative);
     if ($x !== 'calculated') {
       if ($x === 'middle') {
-        $this->x = (int)(($ancestorGeometry->width - $this->fullWidth) / 2);
+        $this->x = (int)(($ancestorGeometry->width - $this->fullWidth) / 2) + $this->marginLeft;
       } else if ($isNegative) {
         $this->x = $ancestorGeometry->width - $ancestorGeometry->paddingRight - $ancestorGeometry->borderRight - $this->fullWidth + $x - $this->marginRight;
       } else {
@@ -199,7 +199,7 @@ class Geometry {
     $y = $style->get('y', $ancestorGeometry, $isNegative);
     if ($y !== 'calculated') {
       if ($y === 'middle') {
-        $this->y = (int)(($ancestorGeometry->height - $this->fullHeight) / 2);
+        $this->y = (int)(($ancestorGeometry->height - $this->fullHeight) / 2) + $this->marginTop;
       } else if ($isNegative) {
         $this->y = $ancestorGeometry->height - $ancestorGeometry->paddingBottom - $ancestorGeometry->borderBottom - $this->fullHeight + $y - $this->marginBottom;
       } else {
