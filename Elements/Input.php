@@ -90,7 +90,7 @@ class Input extends Element {
 
   protected function setScroll() {
     $selected = $this->elementSelected;
-    if ($selected->geometry->x + $selected->geometry->width > $this->scrollX + $this->geometry->width - $this->geometry->borderLeft) {
+    if ($this->geometry->width > 0 && $selected->geometry->x + $selected->geometry->width > $this->scrollX + $this->geometry->width  - $this->geometry->borderLeft) {
       $this->scrollX = $selected->geometry->x + $selected->geometry->width - $this->geometry->width + $this->geometry->borderLeft;
     } else if ($selected->geometry->x < $this->scrollX) {
       $this->scrollX = $selected->geometry->x;

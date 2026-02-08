@@ -156,3 +156,5 @@ bool SDL_DisableScreenSaver(void);
 bool SDL_EnableScreenSaver(void);
 SDL_DisplayID *SDL_GetDisplays(int *count);
 bool SDL_GetDisplayBounds(SDL_DisplayID displayID, SDL_Rect *rect);
+bool SDL_BlitSurface(SDL_Surface *src, const SDL_Rect *srcrect, SDL_Surface *dst, const SDL_Rect *dstrect);
+bool SDL_FillSurfaceRect(SDL_Surface *dst, const SDL_Rect *rect, Uint32 color);
