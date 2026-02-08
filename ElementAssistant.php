@@ -96,7 +96,6 @@ trait ElementAssistant {
     }
     echo "{$pad}{$this->type}@{$this->id}" . ($this->name !== 0 ? "#{$this->name}" : '') ."{$class}{$value}";
     echo "  {$this->geometry->width}x{$this->geometry->height} {$this->geometry->x}:{$this->geometry->y}\n";
-echo "{$pad}" . $this->geometry->windowHeight, "\n";
     foreach ($this->events as $event => $handler) {
       echo "{$pad}  - {$event} > " . (is_array($handler) ? (is_object($handler[0]) ? get_class($handler[0]) : $handler[0]) . '::' . $handler[1] : implode('::', $handler)) . "\n";
     }

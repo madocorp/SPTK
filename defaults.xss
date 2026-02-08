@@ -445,6 +445,13 @@ TextBox:active {
   color: #000000;
 }
 
+Terminal {
+  width: 640px;
+  height: 480px;
+  color: #00ff00;
+  backgroundColor: #ff0000;
+}
+
 .w10 { width: 10%; }
 .w20 { width: 20%; }
 .w25 { width: 25%; }
