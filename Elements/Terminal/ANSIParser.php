@@ -8,63 +8,108 @@ class ANSIParser {
   const ESCAPE = 1;
   const CSI = 2;
   const OSC = 3;
+  const CHARSET = 4;
+
+  const ASCII = 0;
+  const DEC = 1;
 
   public $screen;
   public $state = self::GROUND;
   public $buffer = '';
   public $seqLen = 0;
+  public $charset = self::ASCII;
 
   public $colors = [0x000000, 0xbb0000, 0x00bb00, 0xbbbb00, 0x0000bb, 0xbb00bb, 0x00bbbb, 0xbbbbbb];
   public $brightColors = [0x555555, 0xff5555, 0x55ff55, 0xffff55, 0x5555ff, 0xff55ff, 0x55ffff, 0xffffff];
+  public $decMap = [
+    '`' => '◆', 'a' => '▒', 'b' => '␉', 'c' => '␌',
+    'd' => '␍', 'e' => '␊', 'f' => '°', 'g' => '±',
+    'h' => '␤', 'i' => '␋', 'j' => '┘', 'k' => '┐',
+    'l' => '┌', 'm' => '└', 'n' => '┼', 'o' => '⎺',
+    'p' => '⎻', 'q' => '─', 'r' => '⎼', 's' => '⎽',
+    't' => '├', 'u' => '┤', 'v' => '┴', 'w' => '┬',
+    'x' => '│', 'y' => '≤', 'z' => '≥', '{' => 'π',
+    '|' => '≠', '}' => '£', '~' => '·'
+  ];
 
   public function __construct($screenBuffer) {
     $this->screen = $screenBuffer;
   }
 
   public function parse($str) {
-    $codepoints = $this->decodeUTF8($str);
-    foreach ($codepoints as $cp) {
+    $parseUnits = $this->parseUTF8($str);
+    foreach ($parseUnits as $pu) {
       switch ($this->state) {
         case self::GROUND:
-          if ($cp === "\e") { // ESC
+          if ($pu === "\e") { // ESC
             $this->state = self::ESCAPE;
-          } elseif ($this->isPrintable($cp)) {
-            $this->screen->putChar($cp);
+          } elseif ($this->isPrintable($pu)) {
+            if (
+              $this->charset === self::DEC &&
+              strlen($pu) === 1 &&
+              ord($pu) > 0x20 &&
+              ord($pu) < 0x7F &&
+              isset($this->decMap[$pu])
+            ) {
+              $pu = $this->decMap[$pu];
+            }
+            $this->screen->putChar($pu);
           } else {
-            $this->handleControl($cp);
+            $this->handleControl($pu);
           }
           break;
         case self::ESCAPE:
-          if ($cp === '[') {
+          $this->buffer = '';
+          if ($pu === '[') {
+echo "CSI\n";
             $this->state = self::CSI;
-            $this->buffer = '';
-          } elseif ($cp === ']') {
+          } elseif ($pu === ']') {
+echo "OSC\n";
             $this->state = self::OSC;
-            $this->buffer = '';
+          } elseif ($pu === '(') {
+echo "SCS\n";
+            $this->state = self::CHARSET;
           } else {
+echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
             $this->state = self::GROUND;
           }
           break;
         case self::CSI:
-          $this->buffer .= $cp;
-          if ($this->isFinalByte($cp)) {
+          $this->buffer .= $pu;
+          if ($this->isFinalByte($pu)) {
             $this->executeCSI();
             $this->state = self::GROUND;
             $this->buffer = '';
           }
           break;
+        case self::CHARSET:
+          $this->buffer .= $pu;
+          if ($this->buffer == '0') {
+            $this->charset = self::DEC;
+          } else if ($this->buffer == 'B') {
+            $this->charset = self::ASCII;
+          }
+          $this->state = self::GROUND;
+          $this->buffer = '';
+          break;
         case self::OSC:
-          if ($cp === 0x07) { // BEL
+          if (ord($pu) === 0x07 || ord($pu) === 0x9c) { // BEL or ST
+echo "  {$this->buffer}\n";
             $this->state = self::GROUND;
+            $this->buffer = '';
+          } else if (ord($pu) === 0x5c && ord(substr($this->buffer, -1)) === 0x1b) { // ST
+echo "  {$this->buffer}\n";
+            $this->state = self::GROUND;
+            $this->buffer = '';
           } else {
-            $this->buffer .= $cp;
+            $this->buffer .= $pu;
           }
           break;
       }
     }
   }
 
-  public function decodeUTF8($str) {
+  public function parseUTF8($str) {
     $out = [];
     $this->buffer .= $str;
     $i = 0;
@@ -111,8 +156,16 @@ class ANSIParser {
   }
 
   public function executeCSI() {
+echo "  {$this->buffer}\n";
     $final = substr($this->buffer, -1);
     $params = explode(';', substr($this->buffer, 0, -1));
+    foreach ($params as $i => &$param) {
+      if ($param === '') {
+        $param = null;
+      } else if (ctype_digit($param)) {
+        $param = (int)$param;
+      }
+    }
     switch ($final) {
       case 'm':
         foreach ($params as $i => $param) {
@@ -163,52 +216,72 @@ class ANSIParser {
         }
         break;
       case 'A':
-        $this->sceen->cursorUp($params[0] ?? 1);
+        $this->screen->cursorUp($params[0] ?? 1);
         break;
       case 'B':
-        $this->sceen->cursorDown($params[0] ?? 1);
+        $this->screen->cursorDown($params[0] ?? 1);
         break;
       case 'C':
-        $this->sceen->cursorLeft($params[0] ?? 1);
+        $this->screen->cursorLeft($params[0] ?? 1);
         break;
       case 'D':
-        $this->sceen->cursorRight($params[0] ?? 1);
+        $this->screen->cursorRight($params[0] ?? 1);
+        break;
+      case 'E':
+        $this->screen->cursorDown($params[0] ?? 1);
+        $this->screen->cursorPos(false, 1);
+        break;
+      case 'F':
+        $this->screen->cursorUp($params[0] ?? 1);
+        $this->screen->cursorPos(false, 1);
+        break;
+      case 'G':
+        $this->screen->cursorPos(false, $params[0] ?? 1);
         break;
       case 'H':
-        $this->sceen->cursorPos($params[0] ?? 1, $params[1] ?? 1);
+      case 'f':
+        $this->screen->cursorPos($params[0] ?? 1, $params[1] ?? 1);
         break;
       case 'J':
-        $this->sceen->eraseDisplay($params[0] ?? 0);
+        $this->screen->eraseDisplay($params[0] ?? 0);
         break;
       case 'K':
-        $this->sceen->eraseLine($params[0] ?? 0);
+        $this->screen->eraseLine($params[0] ?? 0);
         break;
       case 'L':
-        $this->sceen->insertLine($params[0] ?? 0);
+        $this->screen->insertLine($params[0] ?? 0);
         break;
       case 'M':
-        $this->sceen->deleteLine($params[0] ?? 0);
+        $this->screen->deleteLine($params[0] ?? 0);
         break;
       case '@':
-        $this->sceen->insertChars($params[0] ?? 0);
+        $this->screen->insertChars($params[0] ?? 0);
         break;
       case 'S':
-        $this->sceen->scrollUp($params[0] ?? 0);
+        $this->screen->scrollUp($params[0] ?? 0);
         break;
       case 'T':
-        $this->sceen->scrollDown($params[0] ?? 0);
+        $this->screen->scrollDown($params[0] ?? 0);
         break;
       case 'r':
-        $this->sceen->scrollRegion($params[0] ?? 0);
+        $this->screen->scrollRegion($params[0] ?? 0, $params[1] ?? 0);
         break;
       // save cursor...
-      case 'h': // altbuffer on
-      case 'l': // altbuffer off
+      case 'h':
+        if ($params[0] == '?1049') {
+          $this->screen->setCurrentBuffer(1);
+        }
+        break;
+      case 'l':
+        if ($params[0] == '?1049') {
+          $this->screen->setCurrentBuffer(0);
+        }
+        break;
     }
   }
 
-  public function handleControl($cp) {
-    switch ($cp) {
+  public function handleControl($pu) {
+    switch ($pu) {
       case "\n":
         $this->screen->lineFeed();
         break;
@@ -222,12 +295,15 @@ class ANSIParser {
         $this->screen->backspace();
         break;
       case 0x07: // BEL
+echo "BEL\n";
         break;
+      default:
+echo "UNNKNOWN CONTROL: 0x", dechex(ord($pu)), "\n";
     }
   }
 
-  public function isPrintable($cp) {
-    $code = mb_ord($cp, 'UTF-8');
+  public function isPrintable($pu) {
+    $code = mb_ord($pu, 'UTF-8');
     // C0 + DEL
     if ($code <= 0x1F || $code === 0x7F) {
       return false;
@@ -239,8 +315,8 @@ class ANSIParser {
     return true;
   }
 
-  public function isFinalByte($cp) {
-    $ord = ord($cp);
+  public function isFinalByte($pu) {
+    $ord = ord($pu);
     if ($ord >= 0x40 && $ord <= 0x7e) {
       return true;
     }
