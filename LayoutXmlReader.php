@@ -84,7 +84,7 @@ class LayoutXmlReader {
             $value = mb_substr($value, 1);
           }
           $value = preg_replace("/\n( |\t)+$/", "", $value);
-          $this->current->setValue($value);
+          $this->current->setText($value);
           break;
         case XMLReader::TEXT:
           if ($this->event !== false) {
@@ -92,7 +92,7 @@ class LayoutXmlReader {
             break;
           }
           $txt = trim($xml->value);
-          $txt = strtr($txt, ["\n" => ' ', "\t" => ' ']);
+          $txt = strtr($txt, ["\n" => ' ', "\r" => ' ', "\t" => ' ']);
           $txt = preg_replace('/ +/', ' ', $txt);
           $words = explode(' ', $txt);
           foreach ($words as $i => $word) {

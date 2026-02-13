@@ -33,7 +33,7 @@ Window {
   height: 480px;
   backgroundColor: #0000aa;
   fontSize: 16px;
-  font: LiberationMono-Bold;
+  font: DejaVuSansMono-Bold;
 }
 
 Word {
