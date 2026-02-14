@@ -23,6 +23,7 @@ class ScreenBuffer {
   protected $bg = 0x000000;
   protected $attrs = 0;
   protected $parser;
+  protected $applicationCursor = false;
 
   public function __construct() {
     $this->mainScreen = [];
@@ -319,6 +320,13 @@ echo "  => ERASE LINE\n";
 
   }
 
+  public function applicationCursor($state) {
+    $this->applicationCursor = $state;
+  }
+
+  public function getApplicationCursorState() {
+    return $this->applicationCursor;
+  }
 
   public function getLines() {
     return $this->currentScreen;

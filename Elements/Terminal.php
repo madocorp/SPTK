@@ -18,8 +18,13 @@ class Terminal extends Element {
   protected $font;
   protected $letterWidth;
   protected $linHeight;
+  protected $inputCallback;
+  protected $inputGrab = false;
 
   public function init() {
+    $this->acceptInput = true;
+    $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+    $this->addEvent('TextInput', [$this, 'textInputHandler']);
     $ttf = TTF::$instance->ttf;
     if (self::$fgColor === false) {
       self::$fgColor = $ttf->new("SDL_Color");
@@ -45,6 +50,11 @@ class Terminal extends Element {
 
   public function setBuffer($buffer) {
     $this->buffer = $buffer;
+  }
+
+  public function setInputCallback($callback) {
+    $this->inputCallback = $callback;
+    $this->inputGrab = true;
   }
 
   protected function calculateHeights() {
@@ -161,6 +171,49 @@ class Terminal extends Element {
       ];
     }
     return self::$glyphCache[$char];
+  }
+
+  public function keyPressHandler($element, $event) {
+    $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
+    if ($keycombo === KeyCode::F12) {
+      $this->inputGrab = !$this->inputGrab;
+      return true;
+    }
+    if ($this->inputGrab) {
+      $stream = Terminal\InputTranslator::translate($event['key'], $event['mod'], $this->buffer->getApplicationCursorState());
+      if ($stream !== null) {
+        call_user_func($this->inputCallback, $stream);
+      }
+      return true;
+    }
+    switch ($keycombo) {
+      /* SPACE */
+      case Action::SELECT_ITEM:
+        return true;
+      /* MOVE and SELECT*/
+      /* COPY */
+      case Action::COPY:
+        Clipboard::set($this->cursor->getSelection());
+        $this->cursor->resetSelection();
+        break;
+      case Action::PASTE:
+        $paste = Clipboard::get();
+        if ($paste !== false) {
+          call_user_func($this->inputCallback, $paster);
+        }
+        break;
+      default:
+        return false;
+    }
+    return true;
+  }
+
+  public function textInputHandler($element, $event) {
+    if (!$this->inputGrab) {
+      return false;
+    }
+    call_user_func($this->inputCallback, $event['text']);
+    return true;
   }
 
 }
