@@ -268,11 +268,17 @@ echo "  {$this->buffer}\n";
         break;
       // save cursor...
       case 'h':
+        if ($params[0] == '?1') {
+          $this->screen->applicationCursor(true);
+        }
         if ($params[0] == '?1049') {
           $this->screen->setCurrentBuffer(1);
         }
         break;
       case 'l':
+        if ($params[0] == '?1') {
+          $this->screen->applicationCursor(false);
+        }
         if ($params[0] == '?1049') {
           $this->screen->setCurrentBuffer(0);
         }
