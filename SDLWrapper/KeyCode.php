@@ -112,4 +112,21 @@ class KeyCode {
   const DOWN  = self::SCANCODE_MASK | 81;
   const UP  = self::SCANCODE_MASK | 82;
 
+  const KP_DIVIDE   = 0x40000054;
+  const KP_MULTIPLY = 0x40000055;
+  const KP_MINUS    = 0x40000056;
+  const KP_PLUS     = 0x40000057;
+  const KP_ENTER    = 0x40000058;
+  const KP_1        = 0x40000059;
+  const KP_2        = 0x4000005a;
+  const KP_3        = 0x4000005b;
+  const KP_4        = 0x4000005c;
+  const KP_5        = 0x4000005d;
+  const KP_6        = 0x4000005e;
+  const KP_7        = 0x4000005f;
+  const KP_8        = 0x40000060;
+  const KP_9        = 0x40000061;
+  const KP_0        = 0x40000062;
+  const KP_PERIOD   = 0x40000063;
+
 }

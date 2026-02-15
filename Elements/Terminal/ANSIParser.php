@@ -37,12 +37,15 @@ class ANSIParser {
   }
 
   public function parse($str) {
+$c = false;
+$pc = false;
     $parseUnits = $this->parseUTF8($str);
     foreach ($parseUnits as $pu) {
       switch ($this->state) {
         case self::GROUND:
           if ($pu === "\e") { // ESC
             $this->state = self::ESCAPE;
+$c = false;
           } elseif ($this->isPrintable($pu)) {
             if (
               $this->charset === self::DEC &&
@@ -54,27 +57,38 @@ class ANSIParser {
               $pu = $this->decMap[$pu];
             }
             $this->screen->putChar($pu);
+$c = true;
           } else {
             $this->handleControl($pu);
+$c = false;
           }
           break;
         case self::ESCAPE:
+$c = false;
           $this->buffer = '';
           if ($pu === '[') {
-echo "CSI\n";
             $this->state = self::CSI;
           } elseif ($pu === ']') {
-echo "OSC\n";
             $this->state = self::OSC;
           } elseif ($pu === '(') {
-echo "SCS\n";
             $this->state = self::CHARSET;
+          } elseif ($pu === '>') {
+            $this->screen->applicationKeyPad(false);
+            $this->state = self::GROUND;
+          } elseif ($pu === '=') {
+            $this->screen->applicationKeypad(true);
+            $this->state = self::GROUND;
+          } elseif ($pu === '7') {
+            $this->screen->saveCursor(true);
+          } elseif ($pu === '8') {
+            $this->screen->restoreCursor(true);
           } else {
-echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
+            echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
             $this->state = self::GROUND;
           }
           break;
         case self::CSI:
+$c = false;
           $this->buffer .= $pu;
           if ($this->isFinalByte($pu)) {
             $this->executeCSI();
@@ -83,6 +97,7 @@ echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
           }
           break;
         case self::CHARSET:
+$c = false;
           $this->buffer .= $pu;
           if ($this->buffer == '0') {
             $this->charset = self::DEC;
@@ -93,12 +108,11 @@ echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
           $this->buffer = '';
           break;
         case self::OSC:
+$c = false;
           if (ord($pu) === 0x07 || ord($pu) === 0x9c) { // BEL or ST
-echo "  {$this->buffer}\n";
             $this->state = self::GROUND;
             $this->buffer = '';
           } else if (ord($pu) === 0x5c && ord(substr($this->buffer, -1)) === 0x1b) { // ST
-echo "  {$this->buffer}\n";
             $this->state = self::GROUND;
             $this->buffer = '';
           } else {
@@ -106,6 +120,17 @@ echo "  {$this->buffer}\n";
           }
           break;
       }
+
+if ($c !== $pc) {
+  echo "\n";
+}
+$pc = $c;
+if ($this->isPrintable($pu)) {
+  echo $pu;
+} else {
+  echo "0x" . dechex(ord($pu)) . " ";
+}
+
     }
   }
 
@@ -156,7 +181,7 @@ echo "  {$this->buffer}\n";
   }
 
   public function executeCSI() {
-echo "  {$this->buffer}\n";
+echo "\nCSI: {$this->buffer}\n";
     $final = substr($this->buffer, -1);
     $params = explode(';', substr($this->buffer, 0, -1));
     foreach ($params as $i => &$param) {
@@ -164,11 +189,19 @@ echo "  {$this->buffer}\n";
         $param = null;
       } else if (ctype_digit($param)) {
         $param = (int)$param;
+      } else {
+        if ($final != 'h' && $final != 'l') {
+echo "SKIP {$this->buffer} {$final}\n";
+          return;
+        }
       }
     }
     switch ($final) {
       case 'm':
         foreach ($params as $i => $param) {
+          if (!is_int($param)) {
+            continue;
+          }
           if ($param == 0) {
             $this->screen->setForeground($this->colors[7]);
             $this->screen->setBackground($this->colors[0]);
@@ -222,10 +255,10 @@ echo "  {$this->buffer}\n";
         $this->screen->cursorDown($params[0] ?? 1);
         break;
       case 'C':
-        $this->screen->cursorLeft($params[0] ?? 1);
+        $this->screen->cursorRight($params[0] ?? 1);
         break;
       case 'D':
-        $this->screen->cursorRight($params[0] ?? 1);
+        $this->screen->cursorLeft($params[0] ?? 1);
         break;
       case 'E':
         $this->screen->cursorDown($params[0] ?? 1);
@@ -238,6 +271,9 @@ echo "  {$this->buffer}\n";
       case 'G':
         $this->screen->cursorPos(false, $params[0] ?? 1);
         break;
+      case 'd':
+        $this->screen->cursorPos($params[0] ?? 1, false);
+        break;
       case 'H':
       case 'f':
         $this->screen->cursorPos($params[0] ?? 1, $params[1] ?? 1);
@@ -249,24 +285,35 @@ echo "  {$this->buffer}\n";
         $this->screen->eraseLine($params[0] ?? 0);
         break;
       case 'L':
-        $this->screen->insertLine($params[0] ?? 0);
+        $this->screen->insertLine($params[0] ?? 1);
         break;
       case 'M':
-        $this->screen->deleteLine($params[0] ?? 0);
+        $this->screen->deleteLine($params[0] ?? 1);
         break;
       case '@':
-        $this->screen->insertChars($params[0] ?? 0);
+        $this->screen->insertChars($params[0] ?? 1);
+        break;
+      case 'P':
+        $this->screen->deleteChars($params[0] ?? 1);
+        break;
+      case 'X':
+        $this->screen->eraseChars($params[0] ?? 1);
         break;
       case 'S':
-        $this->screen->scrollUp($params[0] ?? 0);
+        $this->screen->scrollUp($params[0] ?? 1);
         break;
       case 'T':
-        $this->screen->scrollDown($params[0] ?? 0);
+        $this->screen->scrollDown($params[0] ?? 1);
         break;
       case 'r':
         $this->screen->scrollRegion($params[0] ?? 0, $params[1] ?? 0);
         break;
-      // save cursor...
+      case 's':
+        $this->screen->saveCursor();
+        break;
+      case 'u':
+        $this->screen->restoreCursor();
+        break;
       case 'h':
         if ($params[0] == '?1') {
           $this->screen->applicationCursor(true);
@@ -301,10 +348,9 @@ echo "  {$this->buffer}\n";
         $this->screen->backspace();
         break;
       case 0x07: // BEL
-echo "BEL\n";
         break;
       default:
-echo "UNNKNOWN CONTROL: 0x", dechex(ord($pu)), "\n";
+        echo "UNNKNOWN CONTROL: 0x", dechex(ord($pu)), "\n";
     }
   }
 
@@ -327,6 +373,14 @@ echo "UNNKNOWN CONTROL: 0x", dechex(ord($pu)), "\n";
       return true;
     }
     return false;
+  }
+
+  public function getCharset() {
+    return $this->charset;
+  }
+
+  public function setCharset($charset) {
+    $this->charset = $charset;
   }
 
 }
