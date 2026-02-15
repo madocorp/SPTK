@@ -16,7 +16,6 @@ class Texture {
 
   public static function init() {
     $sdl = SDL::$instance->sdl;
-    // SDL_FRect is same as SDL_Rect (because of incompatible arguments issue)
     self::$sdlRect = $sdl->new('SDL_FRect');
     self::$sdlRectAddr = \FFI::addr(self::$sdlRect);
   }

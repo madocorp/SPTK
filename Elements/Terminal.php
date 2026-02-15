@@ -102,13 +102,13 @@ class Terminal extends Element {
         self::$sdlRect2->x = 0;
         self::$sdlRect2->y = 0;
         if ($surfaceL->w != $this->letterWidth) {
-          $glyphMetrics = $this->glyphMetrics($glyph);
+          $glyphMetrics = $this->font->glyphMetrics($glyph);
           if ($glyphMetrics[0] < 0) {
             self::$sdlRect2->x = -$glyphMetrics[0];
           }
         }
         if ($surfaceL->h != $this->lineHeight) {
-          $glyphMetrics = $this->glyphMetrics($glyph);
+          $glyphMetrics = $this->font->glyphMetrics($glyph);
           if ($glyphMetrics[3] > $this->font->ascent) {
             self::$sdlRect2->y = $glyphMetrics[3] - $this->font->ascent;
           }
@@ -125,11 +125,6 @@ class Terminal extends Element {
     $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, [0, 0, 0, 0], $surface);
 //    $sdl->SDL_DestroySurface($surface);
 //    $sdl->SDL_DestroySurface($surfaceL);
-  }
-
-  public function __destruct() {
-//    $ttf = TTF::$instance->ttf;
-//    $ttf->SDL_DestroySurface($this->surface);
   }
 
   protected function render() {
@@ -180,7 +175,12 @@ class Terminal extends Element {
       return true;
     }
     if ($this->inputGrab) {
-      $stream = Terminal\InputTranslator::translate($event['key'], $event['mod'], $this->buffer->getApplicationCursorState());
+      $stream = Terminal\InputTranslator::translate(
+        $event['key'],
+        $event['mod'],
+        $this->buffer->getApplicationCursorState(),
+        $this->buffer->getApplicationKeypadState()
+      );
       if ($stream !== null) {
         call_user_func($this->inputCallback, $stream);
       }

@@ -6,13 +6,6 @@ typedef Uint32 SDL_SurfaceFlags;
 typedef Uint32 SDL_PixelFormat;
 
 typedef struct TTF_Font TTF_Font;
-typedef struct SDL_Rect
-{
-  int x;
-  int y;
-  int w;
-  int h;
-} SDL_Rect;
 typedef struct SDL_Color
 {
   Uint8 r;
