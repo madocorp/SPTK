@@ -186,9 +186,11 @@ class Input extends Element {
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
         $line = $this->lines[$row1];
         if ($col1 === $col2 - 1) {
-          $this->cursor->modify($row1, $col1 - 1, $row1, $col1 - 1);
-          $this->cursor->save();
-          $this->replace('');
+          if ($col1 > 0) {
+            $this->cursor->modify($row1, $col1 - 1, $row1, $col1 - 1);
+            $this->cursor->save();
+            $this->replace('');
+          }
         } else {
           $this->cursor->modify($row1, $col1, $row1, $col1);
           $this->replace('');

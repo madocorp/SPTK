@@ -74,7 +74,7 @@ class Terminal extends Element {
     $sdl->SDL_FillSurfaceRect($surface, null, 0x000000ff);
 
     $lines = $this->buffer->getLines();
-
+    $cursor = $this->buffer->getCursor();
     self::$sdlRect2->x = 0;
     self::$sdlRect2->y = 0;
     self::$sdlRect2->w = $this->letterWidth;
@@ -93,7 +93,11 @@ class Terminal extends Element {
         self::$bgColor->g = ($bgcolor >> 8) & 0xff;
         self::$bgColor->b = $bgcolor & 0xff;
         self::$bgColor->a = 0xff;
-        $surfaceL = $ttf->TTF_RenderText_Shaded($this->font->font, $glyph, strlen($glyph), self::$fgColor, self::$bgColor);
+        if ($cursor !== false && $i == $cursor[0] && $j == $cursor[1]) {
+          $surfaceL = $ttf->TTF_RenderText_Shaded($this->font->font, $glyph, strlen($glyph), self::$bgColor, self::$fgColor);
+        } else {
+          $surfaceL = $ttf->TTF_RenderText_Shaded($this->font->font, $glyph, strlen($glyph), self::$fgColor, self::$bgColor);
+        }
         $srcSurface = \FFI::cast(
           $sdl->type("SDL_Surface*"),
           $surfaceL
@@ -119,12 +123,12 @@ class Terminal extends Element {
         self::$sdlRect->w = $surfaceL->w;
         self::$sdlRect->h = $surfaceL->h;
         $sdl->SDL_BlitSurface($srcSurface, self::$sdlRect2Addr, $surface, self::$sdlRectAddr);
+        $ttf->SDL_DestroySurface($surfaceL);
       }
     }
     // create a Texture from the surface
     $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, [0, 0, 0, 0], $surface);
-//    $sdl->SDL_DestroySurface($surface);
-//    $sdl->SDL_DestroySurface($surfaceL);
+    $sdl->SDL_DestroySurface($surface);
   }
 
   protected function render() {
@@ -182,6 +186,12 @@ class Terminal extends Element {
         $this->buffer->getApplicationKeypadState()
       );
       if ($stream !== null) {
+$a = str_split($stream);
+echo "INPUT: ";
+foreach ($a as $c) {
+  echo '0x', dechex(ord($c)), ' ';
+}
+echo "\n";
         call_user_func($this->inputCallback, $stream);
       }
       return true;

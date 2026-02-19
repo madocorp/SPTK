@@ -13,7 +13,7 @@ class ScreenBuffer {
   protected $altScreen;
   protected $currentScreen;
   protected $scrollBuffer = [];
-  protected $rows = 25;
+  protected $rows = 24;
   protected $cols = 80;
   protected $row = 0;
   protected $col = 0;
@@ -28,16 +28,18 @@ class ScreenBuffer {
   protected $applicationCursor = false;
   protected $applicationKeypad = false;
   protected $otherScreenState = false;
+  protected $mainHeight = 1;
 
   public function __construct() {
-    $this->mainScreen = [];
-    $this->currentScreen = &$this->mainScreen;
     $this->parser = new ANSIParser($this);
     $this->fg = $this->parser->colors[7];
     $this->bg = $this->parser->colors[0];
     $this->scrollRegionStart = 0;
-    $this->scrollRegionEnd = $this->rows;
-    $this->initAltScreen();
+    $this->scrollRegionEnd = $this->rows - 1;
+    $this->currentScreen = &$this->altScreen;
+    $this->initScreen();
+    $this->currentScreen = &$this->mainScreen;
+    $this->initScreen();
   }
 
   public function parse($output) {
@@ -61,10 +63,10 @@ class ScreenBuffer {
     return $line;
   }
 
-  protected function initAltScreen() {
-    $this->altScreen = [];
+  protected function initScreen() {
+    $this->currentScreen = [];
     for ($i = 0; $i < $this->rows; $i++) {
-      $this->altScreen[$i] = $this->emptyLine();
+      $this->currentScreen[$i] = $this->emptyLine();
     }
   }
 
@@ -82,7 +84,7 @@ class ScreenBuffer {
       $this->currentScreen = &$this->altScreen;
     }
     if ($this->otherScreenState !== false) {
-      $this->row = $this->otherScreenState['row'];
+      $this->setRow($this->otherScreenState['row']);
       $this->col = $this->otherScreenState['col'];
       $this->scrollRegionStart = $this->otherScreenState['scrollRegionStart'];
       $this->scrollRegionEnd = $this->otherScreenState['scrollRegionEnd'];
@@ -106,14 +108,14 @@ class ScreenBuffer {
 
   public function lineFeed() {
     if ($this->row < $this->scrollRegionEnd) {
-      $this->row++;
+      $this->setRow($this->row + 1);
     } else if ($this->row == $this->scrollRegionEnd) {
       if ($this->currentScreen === $this->mainScreen) {
         $this->scrollBuffer[] = $this->currentScreen[$this->scrollRegionStart];
       }
       $this->scrollUp(1);
     } else if ($this->row < $this->rows) {
-      $this->row++;
+      $this->setRow($this->row + 1);
     }
     $this->col = 0;
   }
@@ -123,16 +125,15 @@ class ScreenBuffer {
   }
 
   public function backSpace() {
-    $this->col--;
-    if ($this->col < 0) {
-      $this->col = 0;
+    if ($this->col > 0) {
+      $this->col--;
     }
   }
 
   public function tab() {
     $this->col = (int)($this->col / 8) * 8 + 8;
     if ($this->col > $this->cols) {
-      $this->row++;
+      $this->setRow($this->row + 1);
       $this->col = 0;
     }
   }
@@ -179,22 +180,22 @@ class ScreenBuffer {
 
   public function cursorUp($n) {
     if ($this->row >= $n) {
-      $this->row -= $n;
+      $this->setRow($this->row - $n);
     } else {
-      $this->row = 0;
+      $this->setRow(0);
     }
   }
 
   public function cursorDown($n) {
     if ($this->row < $this->rows - $n - 1) {
-      $this->row += $n;
+      $this->setRow($this->row + $n);
     } else {
-      $this->row = $this->rows - 1;
+      $this->setRow($this->rows - 1);
     }
   }
 
   public function cursorLeft($n) {
-echo "  cursorLeft {$n}\n";
+echo "cursorLeft {$n}";
     if ($this->col >= $n) {
       $this->col -= $n;
     } else {
@@ -211,14 +212,14 @@ echo "  cursorLeft {$n}\n";
   }
 
   public function cursorPos($n, $m) {
-echo "  cursorPos {$n} {$m}\n";
+echo "cursorPos {$n} {$m}";
     if ($n !== false) {
-      $this->row = $n - 1;
+      $this->setRow($n - 1);
       if ($this->row < 0) {
-        $this->row = 0;
+        $this->setRow(0);
       }
       if ($this->row > $this->rows - 1) {
-        $this->row = $this->rows - 1;
+        $this->setRow($this->rows - 1);
       }
     }
     if ($m !== false) {
@@ -272,7 +273,7 @@ echo "  cursorPos {$n} {$m}\n";
   }
 
   public function eraseLine($n) {
-echo "eraseLine {$n}\n";
+echo "eraseLine {$n}";
     switch ($n) {
       case 1: // erase start of line to the cursor
         $start = 0;
@@ -293,29 +294,35 @@ echo "eraseLine {$n}\n";
   }
 
   public function insertLine($n) {
-echo "insertLine {$n}\n";
-    for ($i = $this->scrollRegionEnd; $i >= $this->scrollRegionStart; $i--) {
-      if ($i < $this->scrollRegionStart + $n) {
-        $this->currentScreen[$i] = $this->emptyLine();
-      } else {
-        $this->currentScreen[$i] = $this->currentScreen[$i - $n];
-      }
+    if ($this->row < $this->scrollRegionStart || $this->row > $this->scrollRegionEnd) {
+      return;
+    }
+    $height = $this->scrollRegionEnd - $this->scrollRegionStart + 1;
+    $n = max(1, min($n, $height));
+    for ($i = $this->scrollRegionEnd; $i >= $this->row + $n; $i--) {
+      $this->currentScreen[$i] = $this->currentScreen[$i - $n];
+    }
+    for ($i = $this->row; $i < $this->row + $n; $i++) {
+      $this->currentScreen[$i] = $this->emptyLine();
     }
   }
 
   public function deleteLine($n) {
-echo "deleteLine {$n}\n";
-    for ($i = $this->row; $i < $this->scrollRegionEnd; $i++) {
-      if ($i < $this->row + $n && $this->row + $n < $this->scrollRegionEnd) {
-        $this->currentScreen[$i] = $this->currentScreen[$i + $n];
-      } else {
-        $this->currentScreen[$i] = $this->emptyLine();
-      }
+    if ($this->row < $this->scrollRegionStart || $this->row > $this->scrollRegionEnd) {
+      return;
+    }
+    $height = $this->scrollRegionEnd - $this->scrollRegionStart + 1;
+    $n = max(1, min($n, $height));
+    for ($i = $this->row; $i <= $this->scrollRegionEnd - $n; $i++) {
+      $this->currentScreen[$i] = $this->currentScreen[$i + $n];
+    }
+    for ($i = $this->scrollRegionEnd - $n + 1; $i <= $this->scrollRegionEnd; $i++) {
+      $this->currentScreen[$i] = $this->emptyLine();
     }
   }
 
   public function insertChars($n) {
-echo "insertChars {$n}\n";
+    $n = max(1, min($n, $this->cols - $this->col));
     $i = $this->row;
     for ($j = $this->cols - 1; $j >= $this->col; $j--) {
       if ($j < $this->col + $n) {
@@ -327,10 +334,10 @@ echo "insertChars {$n}\n";
   }
 
   public function deleteChars($n) {
-echo "deleteChars {$n}\n";
+    $n = max(1, min($n, $this->cols - $this->col));
     $i = $this->row;
     for ($j = $this->col; $j < $this->cols; $j++) {
-      if ($j < $this->col + $n && $this->col + $n < $this->cols) {
+      if ($j + $n < $this->cols) {
         $this->currentScreen[$i][$j] = $this->currentScreen[$i][$j + $n];
       } else {
         $this->currentScreen[$i][$j] = $this->emptyCell();
@@ -339,7 +346,7 @@ echo "deleteChars {$n}\n";
   }
 
   public function eraseChars($n) {
-echo "eraseChars {$n}\n";
+    $n = max(1, min($n, $this->cols - $this->col));
     $i = $this->row;
     for ($j = $this->col; $j < $this->cols && $j < $this->col + $n; $j++) {
       $this->currentScreen[$i][$j] = $this->emptyCell();
@@ -347,7 +354,7 @@ echo "eraseChars {$n}\n";
   }
 
   public function scrollUp($n) {
-echo "scrollUp {$n}\n";
+echo "scrollUp {$n}";
     for ($i = $this->scrollRegionStart; $i <= $this->scrollRegionEnd; $i++) {
       if ($i + $n <= $this->scrollRegionEnd) {
         $this->currentScreen[$i] = $this->currentScreen[$i + $n];
@@ -355,11 +362,10 @@ echo "scrollUp {$n}\n";
         $this->currentScreen[$i] = $this->emptyLine();
       }
     }
-$this->debug();
   }
 
   public function scrollDown($n) {
-echo "scrollDown {$n}\n";
+echo "scrollDown {$n}";
     for ($i = $this->scrollRegionEnd; $i >= $this->scrollRegionStart; $i--) {
       if ($i < $this->scrollRegionStart + $n) {
         $this->currentScreen[$i] = $this->emptyLine();
@@ -379,8 +385,8 @@ echo "scrollDown {$n}\n";
     if ($n > $m) {
       $n = $m - 1;
     }
-    $this->scrollRegionStart = $n;
-    $this->scrollRegionEnd = $m;
+    $this->scrollRegionStart = $n - 1;
+    $this->scrollRegionEnd = $m - 1;
   }
 
   public function applicationCursor($state) {
@@ -400,15 +406,22 @@ echo "scrollDown {$n}\n";
   }
 
   public function getLines() {
-    return $this->currentScreen;
+    if ($this->currentScreen === $this->mainScreen) {
+      return $this->currentScreen; // scroll
+    } else {
+      return $this->currentScreen;
+    }
   }
 
   public function countLines() {
-    return count($this->currentScreen);
+    if ($this->currentScreen === $this->mainScreen) {
+      return min($this->rows, $this->mainHeight + 1);
+    }
+    return $this->rows;
   }
 
   public function saveCursor($saveState = false) {
-echo "saveCursor: {$this->row}, {$this->col}\n";
+echo "saveCursor: {$this->row}, {$this->col}";
     $this->savedCursor[0] = $this->row;
     $this->savedCursor[1] = $this->col;
     if ($saveState) {
@@ -423,8 +436,8 @@ echo "saveCursor: {$this->row}, {$this->col}\n";
     if (empty($this->savedCursor)) {
       return;
     }
-echo "restoreCursor: {$this->row}, {$this->col}\n";
-    $this->row = $this->savedCursor[0];
+echo "restoreCursor: {$this->row}, {$this->col}";
+    $this->setRow($this->savedCursor[0]);
     $this->col = $this->savedCursor[1];
     if ($restoreState && count($this->savedCursor) > 2) {
       $this->attrs = $this->savedCursor[2];
@@ -432,6 +445,29 @@ echo "restoreCursor: {$this->row}, {$this->col}\n";
       $this->applicationCursor = $this->savedCursor[4];
       $this->applicationKeypad = $this->savedCursor[5];
     }
+  }
+
+  public function setRow($row) {
+    $this->row = $row;
+    if ($this->currentScreen === $this->mainScreen) {
+      $this->mainHeight = max($row, $this->mainHeight);
+    }
+  }
+
+  public function cursor($show) {
+    $this->showCursor = $show;
+  }
+
+  public function getCursor() {
+    if ($this->showCursor) {
+      return [$this->row, $this->col];
+    }
+    return false;
+  }
+
+  public function setSize($rows, $cols) {
+    $this->rows = $rows;
+    $this->cols = $col;
   }
 
 }

@@ -37,15 +37,15 @@ class ANSIParser {
   }
 
   public function parse($str) {
-$c = false;
-$pc = false;
     $parseUnits = $this->parseUTF8($str);
+$pc = false;
     foreach ($parseUnits as $pu) {
+$c = false;
       switch ($this->state) {
         case self::GROUND:
           if ($pu === "\e") { // ESC
             $this->state = self::ESCAPE;
-$c = false;
+echo "\nESC ";
           } elseif ($this->isPrintable($pu)) {
             if (
               $this->charset === self::DEC &&
@@ -57,14 +57,21 @@ $c = false;
               $pu = $this->decMap[$pu];
             }
             $this->screen->putChar($pu);
+if (!$pc) {
+  echo "\n";
+}
+if ($pu === ' ') {
+  echo '·';
+} else {
+  echo $pu;
+}
 $c = true;
           } else {
             $this->handleControl($pu);
-$c = false;
+echo "\n", "0x", dechex(ord($pu));
           }
           break;
         case self::ESCAPE:
-$c = false;
           $this->buffer = '';
           if ($pu === '[') {
             $this->state = self::CSI;
@@ -73,46 +80,54 @@ $c = false;
           } elseif ($pu === '(') {
             $this->state = self::CHARSET;
           } elseif ($pu === '>') {
+echo "> applicationKeyPad OFF";
             $this->screen->applicationKeyPad(false);
             $this->state = self::GROUND;
           } elseif ($pu === '=') {
+echo "= napplicationKeyPad ON";
             $this->screen->applicationKeypad(true);
             $this->state = self::GROUND;
           } elseif ($pu === '7') {
+echo "7 saveCursor";
             $this->screen->saveCursor(true);
+            $this->state = self::GROUND;
           } elseif ($pu === '8') {
+echo "8 restorCursor";
             $this->screen->restoreCursor(true);
+            $this->state = self::GROUND;
           } else {
             echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
             $this->state = self::GROUND;
           }
           break;
         case self::CSI:
-$c = false;
           $this->buffer .= $pu;
           if ($this->isFinalByte($pu)) {
+echo "{$this->buffer} CSI ";
             $this->executeCSI();
             $this->state = self::GROUND;
             $this->buffer = '';
           }
           break;
         case self::CHARSET:
-$c = false;
           $this->buffer .= $pu;
           if ($this->buffer == '0') {
             $this->charset = self::DEC;
+echo "(0 CHARSET: DEC";
           } else if ($this->buffer == 'B') {
             $this->charset = self::ASCII;
+echo "(B CHARSET: ASCII";
           }
           $this->state = self::GROUND;
           $this->buffer = '';
           break;
         case self::OSC:
-$c = false;
           if (ord($pu) === 0x07 || ord($pu) === 0x9c) { // BEL or ST
+echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
             $this->state = self::GROUND;
             $this->buffer = '';
           } else if (ord($pu) === 0x5c && ord(substr($this->buffer, -1)) === 0x1b) { // ST
+echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
             $this->state = self::GROUND;
             $this->buffer = '';
           } else {
@@ -120,17 +135,7 @@ $c = false;
           }
           break;
       }
-
-if ($c !== $pc) {
-  echo "\n";
-}
-$pc = $c;
-if ($this->isPrintable($pu)) {
-  echo $pu;
-} else {
-  echo "0x" . dechex(ord($pu)) . " ";
-}
-
+      $pc = $c;
     }
   }
 
@@ -181,17 +186,16 @@ if ($this->isPrintable($pu)) {
   }
 
   public function executeCSI() {
-echo "\nCSI: {$this->buffer}\n";
     $final = substr($this->buffer, -1);
     $params = explode(';', substr($this->buffer, 0, -1));
-    foreach ($params as $i => &$param) {
+    foreach ($params as $i => $param) {
       if ($param === '') {
-        $param = null;
+        $params[$i] = null;
       } else if (ctype_digit($param)) {
-        $param = (int)$param;
+        $params[$i] = (int)$param;
       } else {
         if ($final != 'h' && $final != 'l') {
-echo "SKIP {$this->buffer} {$final}\n";
+echo "SKIP";
           return;
         }
       }
@@ -318,6 +322,9 @@ echo "SKIP {$this->buffer} {$final}\n";
         if ($params[0] == '?1') {
           $this->screen->applicationCursor(true);
         }
+        if ($params[0] == '?25') {
+          $this->screen->cursor(true);
+        }
         if ($params[0] == '?1049') {
           $this->screen->setCurrentBuffer(1);
         }
@@ -325,6 +332,9 @@ echo "SKIP {$this->buffer} {$final}\n";
       case 'l':
         if ($params[0] == '?1') {
           $this->screen->applicationCursor(false);
+        }
+        if ($params[0] == '?25') {
+          $this->screen->cursor(false);
         }
         if ($params[0] == '?1049') {
           $this->screen->setCurrentBuffer(0);
@@ -334,17 +344,18 @@ echo "SKIP {$this->buffer} {$final}\n";
   }
 
   public function handleControl($pu) {
-    switch ($pu) {
-      case "\n":
+    $code = ord($pu);
+    switch ($code) {
+      case 0x0a: // LF
         $this->screen->lineFeed();
         break;
-      case "\r":
+      case 0x0d: // CR
         $this->screen->carriageReturn();
         break;
-      case "\t":
+      case 0x09: // TAN
         $this->screen->tab();
         break;
-      case "\b":
+      case 0x08: // BS
         $this->screen->backspace();
         break;
       case 0x07: // BEL
