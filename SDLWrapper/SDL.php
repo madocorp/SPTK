@@ -45,7 +45,7 @@ class SDL {
     self::$instance = $this;
     pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
     $dir = \SPTK\App::$instance->getDir();
-    $this->sdl = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_extract.h"), "{$dir}/SDLWrapper/libSDL3.so");
+    $this->sdl = \FFI::cdef(file_get_contents("{$dir}/SPTK/SDLWrapper/sdl_extract.h"), "{$dir}/SPTK/SDLWrapper/libSDL3.so");
     $this->sdl->SDL_Init(self::SDL_INIT_VIDEO);
     KeyCombo::init();
     if ($initCallback !== false) {

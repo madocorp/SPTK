@@ -73,15 +73,13 @@ class StyleSheet {
         self::$styles[$selector] = $style;
       }
     }
-    if (DEBUG) {
-      foreach (self::$styles as $selector => $style) {
-        echo "----------------\n";
-        echo $selector, "\n";
-        echo "----------------\n";
-        $style->debug();
-        echo "\n";
-      }
-    }
+    //  DEBUG:5 foreach (self::$styles as $selector => $style) {
+    //  DEBUG:5   echo "----------------\n";
+    //  DEBUG:5   echo $selector, "\n";
+    //  DEBUG:5   echo "----------------\n";
+    //  DEBUG:5   $style->debug();
+    //  DEBUG:5   echo "\n";
+    //  DEBUG:5 }
   }
 
   public static function get($defaultStyle, $ancestorStyle, $type, $class = self::ANY, $name = self::ANY) {

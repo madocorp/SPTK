@@ -10,15 +10,21 @@ class Autoload {
   public static function init() {
     self::$appNamespace = APP_NAMESPACE;
     self::$appDir = dirname(APP_PATH);
+    if (DEBUG !== false) {
+      require_once self::$appDir . "/SPTK/DebugStream.php";
+      stream_wrapper_register('debug', DebugStream::class);
+    }
     spl_autoload_register(['\SPTK\Autoload', 'autoload']);
   }
 
   public static function autoload($class) {
     $path = self::getPath($class);
-    if (DEBUG) {
+    if (DEBUG !== false) {
       echo "AUTOLOAD: $path\n";
+      require_once "debug://{$path}";
+    } else {
+      require_once self::$appDir . '/' . $path;
     }
-    require_once $path;
   }
 
   public static function exists($class) {
@@ -28,8 +34,9 @@ class Autoload {
 
   public static function getPath($class) {
     $namespace = str_replace(self::$appNamespace . '\\', '', $class);
-    return self::$appDir . '/' . trim(str_replace('\\', '/', $namespace), '/') . '.php';
+    return trim(str_replace('\\', '/', $namespace), '/') . '.php';
   }
+
 
 }
 

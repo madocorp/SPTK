@@ -211,6 +211,7 @@ class Window extends Element {
           $this->getSize();
           $this->draw();
           Element::refresh();
+          // DEBUG:5 $this->debug();
           return true;
         case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
         case SDL::SDL_EVENT_WINDOW_RESTORED:
