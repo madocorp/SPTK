@@ -1,6 +1,11 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\Action;
 
 class Button extends Element {
 
@@ -18,7 +23,7 @@ class Button extends Element {
   }
 
   public function setHotKey($hotKeyStr) {
-    if (!defined("\SPTK\KeyCode::{$hotKeyStr}")) {
+    if (!defined("\SPTK\SDLWrapper\KeyCode::{$hotKeyStr}")) {
       echo "KeyCode {$hotKeyStr} is not defined!";
       return;
     }
@@ -44,7 +49,7 @@ class Button extends Element {
           break;
         }
       }
-      $this->panel->addHotKey(constant("\SPTK\KeyCode::{$this->hotKeyStr}"), $this->onPress);
+      $this->panel->addHotKey(constant("\SPTK\SDLWrapper\KeyCode::{$this->hotKeyStr}"), $this->onPress);
     }
   }
 

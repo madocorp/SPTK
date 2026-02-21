@@ -14,7 +14,7 @@ class LayoutXmlReader {
     if (!file_exists($file)) {
       throw new \Exception("File not found: {$file}");
     }
-    $this->root = new Root();
+    $this->root = new Elements\Root();
     $this->current = $this->root;
     $xml = new XMLReader();
     if (!$xml->open($file)) {
@@ -42,10 +42,10 @@ class LayoutXmlReader {
             $this->current->addChildClass($xml->getAttribute('class'));
           } else {
             $type = str_replace('_', '', ucwords($xml->name, '_'));
-            $element = 'SPTK\\' . $type;
+            $element = 'SPTK\\Elements\\' . $type;
             $name = $xml->getAttribute('name') ?? false;
             $class = $xml->getAttribute('class') ?? false;
-            if (!class_exists($element)) {
+            if (!Autoload::exists($element)) {
               $element = 'SPTK\\Element';
             }
             $this->current = new $element($this->current, $name, $class, $type);
@@ -97,9 +97,9 @@ class LayoutXmlReader {
           $words = explode(' ', $txt);
           foreach ($words as $i => $word) {
             if ($i > 0) {
-              new Space($this->current);
+              new Elements\Space($this->current);
             }
-            $w = new Word($this->current);
+            $w = new Elements\Word($this->current);
             $w->setValue($word);
             unset($w);
           }

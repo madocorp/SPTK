@@ -68,9 +68,9 @@ trait ElementTree {
       $row = explode(' ', $row);
       foreach ($row as $i => $word) {
         if ($i !== 0) {
-          new Space($this);
+          new Elements\Space($this);
         }
-        $element = new Word($this);
+        $element = new Elements\Word($this);
         $element->setValue($word);
 
       }

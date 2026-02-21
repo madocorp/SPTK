@@ -1,6 +1,12 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\Font;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\Action;
 
 class TextBox extends Element {
 
@@ -20,7 +26,7 @@ class TextBox extends Element {
     $font = new Font($fontName, $fontSize);
     $this->letterWidth = $font->letterWidth;
     $this->lineHeight = $font->height;
-    $this->cursor = new \SPTK\TextEditor\Cursor($this->lines);
+    $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
   }
 
   public function getAttributeList() {
@@ -126,7 +132,7 @@ class TextBox extends Element {
       $context = $this->lineContexts[$tokenizeFrom - 1];
     }
     $lines = array_slice($this->lines, $tokenizeFrom, $to - $tokenizeFrom);
-    $tokens = Tokenizer::start($lines, $context);
+    $tokens = \SPTK\Tokenizer::start($lines, $context);
     $result = [];
     for ($i = $tokenizeFrom; $i < $to; $i++) {
       $lineTokens = array_shift($tokens);

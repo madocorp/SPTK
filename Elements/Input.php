@@ -1,6 +1,12 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\Font;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\Action;
 
 class Input extends Element {
 
@@ -25,8 +31,8 @@ class Input extends Element {
     $fontName = $this->style->get('font');
     $font = new Font($fontName, $fontSize);
     $this->letterWidth = $font->letterWidth;
-    $this->cursor = new \SPTK\TextEditor\Cursor($this->lines);
-    $this->history = new \SPTK\TextEditor\History($this->lines, $this->cursor);
+    $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
+    $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
   }
 
   public function getAttributeList() {

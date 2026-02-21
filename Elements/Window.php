@@ -1,6 +1,10 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\Texture;
+use \SPTK\SDLWrapper\SDL;
 
 class Window extends Element {
 

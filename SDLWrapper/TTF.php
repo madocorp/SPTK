@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\SDLWrapper;
 
 class TTF {
 
@@ -15,7 +15,7 @@ class TTF {
       throw new \Exception("SPTK\\SDL is a singleton, you can't instantiate more than once");
     }
     self::$instance = $this;
-    $dir = App::$instance->getDir();
+    $dir = \SPTK\App::$instance->getDir();
     $this->ttf = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_ttf_extract.h"), "{$dir}/SDLWrapper/libSDL3_ttf.so");
     $this->ttf->TTF_Init();
   }

@@ -1,6 +1,11 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\Action;
 
 class ListBox extends Element {
 

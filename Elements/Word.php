@@ -1,6 +1,12 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\Font;
+use \SPTK\Texture;
+use \SPTK\SDLWrapper\TTF;
+use \SPTK\SDLWrapper\SDL;
 
 class Word extends Element {
 

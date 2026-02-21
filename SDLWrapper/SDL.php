@@ -1,6 +1,8 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\SDLWrapper;
+
+use \SPTK\SDLWrapper\KeyCombo;
 
 class SDL {
 
@@ -42,7 +44,7 @@ class SDL {
     }
     self::$instance = $this;
     pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-    $dir = App::$instance->getDir();
+    $dir = \SPTK\App::$instance->getDir();
     $this->sdl = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_extract.h"), "{$dir}/SDLWrapper/libSDL3.so");
     $this->sdl->SDL_Init(self::SDL_INIT_VIDEO);
     KeyCombo::init();

@@ -202,6 +202,9 @@ class Tokenizer {
     if (is_string($context)) {
       $className = $context;
       if (!isset(self::$initializedTokenizers[$className])) {
+        Autoload::autoload($className);
+      }
+      if (!isset(self::$initializedTokenizers[$className])) {
         throw new \Exception("Uninitialized tokenizer: {$className}");
       }
       $contextId = self::$initializedTokenizers[$className];

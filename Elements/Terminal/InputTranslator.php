@@ -1,9 +1,9 @@
 <?php
 
-namespace SPTK\Terminal;
+namespace SPTK\Elements\Terminal;
 
-use \SPTK\KeyCode;
-use \SPTK\KeyModifier;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyModifier;
 
 class InputTranslator {
 
