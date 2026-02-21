@@ -43,9 +43,7 @@ trait ElementStatic {
     $tmpTexture->copyTo($window->tmpTexture, $x, $y);
     $window->tmpTexture->copyTo(null, 0, 0);
     $window->sdl->SDL_RenderPresent($window->renderer);
-    if (DEBUG) {
-      echo "Immediate refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
-    }
+    // DEBUG:5  echo "Immediate refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
   }
 
   public static function byName($name, $element = false) {

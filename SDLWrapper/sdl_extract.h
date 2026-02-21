@@ -158,3 +158,9 @@ SDL_DisplayID *SDL_GetDisplays(int *count);
 bool SDL_GetDisplayBounds(SDL_DisplayID displayID, SDL_Rect *rect);
 bool SDL_BlitSurface(SDL_Surface *src, const SDL_Rect *srcrect, SDL_Surface *dst, const SDL_Rect *dstrect);
 bool SDL_FillSurfaceRect(SDL_Surface *dst, const SDL_Rect *rect, Uint32 color);
+bool SDL_UpdateTexture(SDL_Texture *texture, const SDL_Rect *rect, const void *pixels, int pitch);
+SDL_Surface *SDL_ConvertSurface(SDL_Surface *surface, SDL_PixelFormat format);
+bool SDL_SetTextureColorMod(SDL_Texture *texture, Uint8 r, Uint8 g, Uint8 b);
+bool SDL_SetTextureAlphaMod(SDL_Texture *texture, Uint8 alpha);
+
+

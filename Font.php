@@ -18,7 +18,6 @@ class Font {
   public $descent;
   public $height;
   public $letterWidth;
-  private $glyphCache = [];
 
   public function __construct($name, $size) {
     if (!isset(self::$fonts[$name][$size])) {
@@ -110,32 +109,28 @@ class Font {
   }
 
   public function glyphMetrics($char) {
-    if (!isset($this->glyphCache[$char])) {
-      $ttf = TTF::$instance->ttf;
-      $minx = \FFI::new("int");
-      $maxx = \FFI::new("int");
-      $miny = \FFI::new("int");
-      $maxy = \FFI::new("int");
-      $advance = \FFI::new("int");
-      $ttf->TTF_GetGlyphMetrics(
-        $this->font,
-        mb_ord($char),
-        \FFI::addr($minx),
-        \FFI::addr($maxx),
-        \FFI::addr($miny),
-        \FFI::addr($maxy),
-        \FFI::addr($advance)
-      );
-      $this->glyphCache[$char] = [
-        $minx->cdata,
-        $maxx->cdata,
-        $miny->cdata,
-        $maxy->cdata,
-        $advance->cdata
-      ];
-    }
-    return $this->glyphCache[$char];
+    $ttf = TTF::$instance->ttf;
+    $minx = \FFI::new("int");
+    $maxx = \FFI::new("int");
+    $miny = \FFI::new("int");
+    $maxy = \FFI::new("int");
+    $advance = \FFI::new("int");
+    $ttf->TTF_GetGlyphMetrics(
+      $this->font,
+      mb_ord($char),
+      \FFI::addr($minx),
+      \FFI::addr($maxx),
+      \FFI::addr($miny),
+      \FFI::addr($maxy),
+      \FFI::addr($advance)
+    );
+    return [
+      $minx->cdata,
+      $maxx->cdata,
+      $miny->cdata,
+      $maxy->cdata,
+      $advance->cdata
+    ];
   }
-
 
 }

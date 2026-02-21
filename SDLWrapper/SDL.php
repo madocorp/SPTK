@@ -25,7 +25,7 @@ class SDL {
   const SDL_TEXTUREACCESS_STREAMING = 1;
   const SDL_TEXTUREACCESS_TARGET = 2;
   const SDL_BLENDMODE_BLEND = 0x1;
-  const SDL_SCALE_MODE_NEAREST= 0;
+  const SDL_SCALE_MODE_NEAREST = 0;
 
   public static $instance;
 
