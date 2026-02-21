@@ -1,8 +1,8 @@
 <?php
 
-namespace SPTK\TextEditor;
+namespace SPTK\Elements\TextEditor;
 
-use \SPTK\Action;
+use \SPTK\SDLWrapper\Action;
 
 class Cursor {
 

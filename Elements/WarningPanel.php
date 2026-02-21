@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
 
 class WarningPanel extends Panel {
 

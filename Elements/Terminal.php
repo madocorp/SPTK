@@ -1,6 +1,15 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\Font;
+use \SPTK\Texture;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\Action;
+use \SPTK\SDLWrapper\SDL;
+use \SPTK\SDLWrapper\TTF;
 
 class Terminal extends Element {
 
@@ -54,7 +63,16 @@ class Terminal extends Element {
 
   public function setInputCallback($callback) {
     $this->inputCallback = $callback;
+  }
+
+  public function grabInput() {
+echo "GRAB\n";
     $this->inputGrab = true;
+  }
+
+  public function releaseInput() {
+echo "RELEASE\n";
+    $this->inputGrab = false;
   }
 
   protected function calculateHeights() {
@@ -138,7 +156,7 @@ class Terminal extends Element {
     if ($this->texture === false) {
       return false;
     }
-    new Border($this->texture, $this->geometry, $this->ancestor->geometry, $this->style);
+    new \SPTK\Border($this->texture, $this->geometry, $this->ancestor->geometry, $this->style);
     if ($this->style->get('scrollable')) {
       new Scrollbar($this->texture, $this->scrollX, $this->scrollY, $this->geometry->contentWidth, $this->geometry->contentHeight, $this->geometry, $this->style);
     }
@@ -175,8 +193,7 @@ class Terminal extends Element {
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     if ($keycombo === KeyCode::F12) {
-      $this->inputGrab = !$this->inputGrab;
-      return true;
+      return false;
     }
     if ($this->inputGrab) {
       $stream = Terminal\InputTranslator::translate(

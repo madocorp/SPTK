@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK\TextEditor;
+namespace SPTK\Elements\TextEditor;
 
 class History {
 

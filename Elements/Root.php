@@ -1,6 +1,9 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\SDLWrapper\SDL;
 
 class Root extends Element {
 

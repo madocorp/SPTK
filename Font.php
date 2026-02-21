@@ -2,6 +2,8 @@
 
 namespace SPTK;
 
+use \SPTK\SDLWrapper\TTF;
+
 class Font {
 
   private static $fonts = [];

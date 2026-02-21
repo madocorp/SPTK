@@ -1,6 +1,8 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
 
 class MenuBarItem extends Element {
 

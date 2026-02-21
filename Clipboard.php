@@ -2,6 +2,8 @@
 
 namespace SPTK;
 
+use \SPTK\SDLWrapper\SDL;
+
 class Clipboard {
 
   public static function set($value) {

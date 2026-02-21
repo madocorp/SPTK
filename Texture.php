@@ -2,6 +2,9 @@
 
 namespace SPTK;
 
+use \SPTK\SDLWrapper\SDL;
+use \SPTK\SDLWrapper\TTF;
+
 class Texture {
 
   protected $texture;

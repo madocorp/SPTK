@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\SDLWrapper;
 
 enum Action {
 

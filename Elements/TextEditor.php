@@ -1,6 +1,11 @@
 <?php
 
-namespace SPTK;
+namespace SPTK\Elements;
+
+use \SPTK\Element;
+use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\Action;
 
 class TextEditor extends TextBox {
 
@@ -9,7 +14,7 @@ class TextEditor extends TextBox {
   protected function init() {
     parent::init();
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
-    $this->history = new \SPTK\TextEditor\History($this->lines, $this->cursor);
+    $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
   }
 
   public function getValue() {

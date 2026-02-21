@@ -2,31 +2,8 @@
 
 namespace SPTK;
 
-require_once 'SDLWrapper/SDL.php';
-require_once 'SDLWrapper/TTF.php';
-require_once 'SDLWrapper/KeyCode.php';
-require_once 'SDLWrapper/KeyModifier.php';
-require_once 'SDLWrapper/ScanCode.php';
-require_once 'SDLWrapper/Action.php';
-require_once 'SDLWrapper/KeyCombo.php';
-require_once 'Config.php';
-require_once 'Font.php';
-require_once 'Texture.php';
-require_once 'Geometry.php';
-require_once 'ElementStatic.php';
-require_once 'ElementAssistant.php';
-require_once 'ElementLayout.php';
-require_once 'ElementTree.php';
-require_once 'ElementStyle.php';
-require_once 'ElementEvent.php';
-require_once 'Element.php';
-require_once 'LayoutXmlReader.php';
-require_once 'Style.php';
-require_once 'StyleSheet.php';
-require_once 'Border.php';
-require_once 'Scrollbar.php';
-require_once 'Clipboard.php';
-require_once 'Tokenizer.php';
+use \SPTK\SDLWrapper\SDL;
+use \SPTK\SDLWrapper\TTF;
 
 class App {
 
@@ -52,7 +29,6 @@ class App {
       throw new \Exception("SPTK\\App is a singleton, you can't instantiate more than once");
     }
     self::$instance = $this;
-    spl_autoload_register([$this, 'autoload']);
     new SDL([$this, 'init']);
   }
 
@@ -73,20 +49,6 @@ class App {
     }
     if ($this->initCallback !== false) {
       call_user_func($this->initCallback);
-    }
-  }
-
-  public function autoload($class) {
-    $class = explode('\\', $class, 2);
-    if ($class[0] == 'SPTK') {
-      $class[1] = str_replace('\\', '/', $class[1]);
-      $path = __DIR__ . "/Elements/{$class[1]}.php";
-      if (DEBUG) {
-        echo "AUTOLOAD: $path\n";
-      }
-      if (file_exists($path)) {
-        require_once $path;
-      }
     }
   }
 

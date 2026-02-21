@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK\Terminal;
+namespace SPTK\Elements\Terminal;
 
 class ANSIParser {
 
