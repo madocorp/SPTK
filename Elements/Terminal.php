@@ -13,15 +13,19 @@ use \SPTK\SDLWrapper\TTF;
 
 class Terminal extends Element {
 
+  const GLYPH_MAP_SIZE = 64;
+
   private static $fgColor = false;
   private static $bgColor = false;
   private static $sdlRect = false;
-  private static $sdlRect2 = false;
-  private static $sdlRectF = false;
   private static $sdlRectAddr = false;
-  private static $sdlRect2Addr = false;
-  private static $sdlRectFAddr = false;
+  private static $sdlFRect1 = false;
+  private static $sdlFRect1Addr = false;
+  private static $sdlFRect2 = false;
+  private static $sdlFRect2Addr = false;
   private static $glyphCache = [];
+  private static $nextGlyph = 0;
+  private static $atlas = false;
 
   protected $buffer;
   protected $font;
@@ -45,16 +49,31 @@ class Terminal extends Element {
     if (self::$sdlRect === false) {
       self::$sdlRect = $sdl->new('SDL_Rect');
       self::$sdlRectAddr = \FFI::addr(self::$sdlRect);
-      self::$sdlRect2 = $sdl->new('SDL_Rect');
-      self::$sdlRect2Addr = \FFI::addr(self::$sdlRect2);
-      self::$sdlRectF = $sdl->new('SDL_FRect');
-      self::$sdlRectFAddr = \FFI::addr(self::$sdlRectF);
+      self::$sdlFRect1 = $sdl->new('SDL_FRect');
+      self::$sdlFRect1Addr = \FFI::addr(self::$sdlFRect1);
+      self::$sdlFRect2 = $sdl->new('SDL_FRect');
+      self::$sdlFRect2Addr = \FFI::addr(self::$sdlFRect2);
     }
     $fontSize = $this->style->get('fontSize');
     $fontName = $this->style->get('font');
     $this->font = new Font($fontName, $fontSize);
     $this->letterWidth = $this->font->letterWidth;
     $this->lineHeight = $this->font->height;
+    if (self::$atlas === false) {
+      $aw = ($this->letterWidth + 2) * self::GLYPH_MAP_SIZE;
+      $ah = ($this->lineHeight + 2) * self::GLYPH_MAP_SIZE;
+      self::$atlas = $sdl->SDL_CreateTexture(
+        $this->renderer,
+        SDL::SDL_PIXELFORMAT_RGBA8888,
+        SDL::SDL_TEXTUREACCESS_STATIC,
+        $aw,
+        $ah
+      );
+      $zeroPixels = \FFI::new("uint8_t[" . ($aw * $ah * 4) . "]"); // FFI::new zero-initializes memory
+      $sdl->SDL_UpdateTexture(self::$atlas, null, $zeroPixels, $aw * 4);
+      $sdl->SDL_SetTextureBlendMode(self::$atlas, SDL::SDL_BLENDMODE_BLEND);
+      $sdl->SDL_SetTextureScaleMode(self::$atlas, SDL::SDL_SCALE_MODE_NEAREST);
+    }
   }
 
   public function setBuffer($buffer) {
@@ -82,64 +101,97 @@ class Terminal extends Element {
   }
 
   protected function draw() {
-    $ttf = TTF::$instance->ttf;
     $sdl = SDL::$instance->sdl;
-    $bgcolor = $this->style->get('backgroundColor');
-    $surface = $sdl->SDL_CreateSurface($this->geometry->width, $this->geometry->height, SDL::SDL_PIXELFORMAT_RGBA8888);
-    $sdl->SDL_FillSurfaceRect($surface, null, 0x000000ff);
+    $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, [0, 0, 0, 0xff]);
     $lines = $this->buffer->getLines();
     $cursor = $this->buffer->getCursor();
-    self::$sdlRect2->x = 0;
-    self::$sdlRect2->y = 0;
-    self::$sdlRect2->w = $this->letterWidth;
-    self::$sdlRect2->h = $this->lineHeight;
+    $gw = $this->letterWidth;
+    $gh = $this->lineHeight;
     foreach ($lines as $i => $row) {
-      foreach ($row as $j => $char) {
-        $glyph = $char[Terminal\ScreenBuffer::GLYPH];
-        $color = $char[Terminal\ScreenBuffer::FG];
-        self::$fgColor->r = ($color >> 16) & 0xff;
-        self::$fgColor->g = ($color >> 8) & 0xff;
-        self::$fgColor->b = $color & 0xff;
-        self::$fgColor->a = 0xff;
-        $bgcolor = $char[Terminal\ScreenBuffer::BG];
-        self::$bgColor->r = ($bgcolor >> 16) & 0xff;
-        self::$bgColor->g = ($bgcolor >> 8) & 0xff;
-        self::$bgColor->b = $bgcolor & 0xff;
-        self::$bgColor->a = 0xff;
+      foreach ($row as $j => $cell) {
+        $glyph = $cell[Terminal\ScreenBuffer::GLYPH];
         if ($cursor !== false && $i == $cursor[0] && $j == $cursor[1]) {
-          $surfaceL = $ttf->TTF_RenderText_Shaded($this->font->font, $glyph, strlen($glyph), self::$bgColor, self::$fgColor);
+          $fgcolor = $cell[Terminal\ScreenBuffer::BG];
+          $bgcolor = $cell[Terminal\ScreenBuffer::FG];
         } else {
-          $surfaceL = $ttf->TTF_RenderText_Shaded($this->font->font, $glyph, strlen($glyph), self::$fgColor, self::$bgColor);
+          $fgcolor = $cell[Terminal\ScreenBuffer::FG];
+          $bgcolor = $cell[Terminal\ScreenBuffer::BG];
         }
-        $srcSurface = \FFI::cast(
-          $sdl->type("SDL_Surface*"),
-          $surfaceL
-        );
-        self::$sdlRect2->x = 0;
-        self::$sdlRect2->y = 0;
-        if ($surfaceL->w != $this->letterWidth) {
-          $glyphMetrics = $this->font->glyphMetrics($glyph);
-          if ($glyphMetrics[0] < 0) {
-            self::$sdlRect2->x = -$glyphMetrics[0];
-          }
+        self::$sdlFRect2->x = (float)($j * $gw + $this->geometry->paddingLeft + $this->geometry->borderLeft);
+        self::$sdlFRect2->y = (float)($i * $gh + $this->geometry->paddingTop + $this->geometry->borderTop);
+        self::$sdlFRect2->w = (float)$gw;
+        self::$sdlFRect2->h = (float)$gh;
+        // BG
+        $r = ($bgcolor >> 16) & 0xff;
+        $g = ($bgcolor >> 8) & 0xff;
+        $b = $bgcolor & 0xff;
+        $a = 0xff;
+        $sdl->SDL_SetRenderDrawColor($this->renderer, $r, $g, $b, $a);
+        $sdl->SDL_RenderFillRect($this->renderer, self::$sdlFRect2Addr);
+        // FG
+        if ($glyph === ' ') {
+          continue;
         }
-        if ($surfaceL->h != $this->lineHeight) {
-          $glyphMetrics = $this->font->glyphMetrics($glyph);
-          if ($glyphMetrics[3] > $this->font->ascent) {
-            self::$sdlRect2->y = $glyphMetrics[3] - $this->font->ascent;
-          }
+        $r = ($fgcolor >> 16) & 0xff;
+        $g = ($fgcolor >> 8) & 0xff;
+        $b = $fgcolor & 0xff;
+        $a = 0xff;
+        $sdl->SDL_SetTextureColorMod(self::$atlas, $r, $g, $b);
+        $sdl->SDL_SetTextureAlphaMod(self::$atlas, $a);
+        if (!isset(self::$glyphCache[$glyph])) {
+          $this->renderGlyph($glyph);
         }
-        self::$sdlRect->x = $j * $this->letterWidth + $this->geometry->paddingLeft + $this->geometry->borderLeft;
-        self::$sdlRect->y = $i * $this->lineHeight + $this->geometry->paddingTop + $this->geometry->borderTop ;
-        self::$sdlRect->w = $surfaceL->w;
-        self::$sdlRect->h = $surfaceL->h;
-        $sdl->SDL_BlitSurface($srcSurface, self::$sdlRect2Addr, $surface, self::$sdlRectAddr);
-        $ttf->SDL_DestroySurface($surfaceL);
+        $glyphMap = self::$glyphCache[$glyph];
+        self::$sdlFRect1->x = (float)$glyphMap[0];
+        self::$sdlFRect1->y = (float)$glyphMap[1];
+        self::$sdlFRect1->w = (float)$gw;
+        self::$sdlFRect1->h = (float)$gh;
+        $sdl->SDL_RenderTexture($this->renderer, self::$atlas, self::$sdlFRect1Addr, self::$sdlFRect2Addr);
       }
     }
-    // create a Texture from the surface
-    $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, [0, 0, 0, 0], $surface);
-    $sdl->SDL_DestroySurface($surface);
+  }
+
+  protected function renderGlyph($glyph) {
+    $ttf = TTF::$instance->ttf;
+    $sdl = SDL::$instance->sdl;
+    self::$fgColor->r = 0xff;
+    self::$fgColor->g = 0xff;
+    self::$fgColor->b = 0xff;
+    self::$fgColor->a = 0xff;
+    $surface = $ttf->TTF_RenderText_Blended($this->font->font, $glyph, strlen($glyph), self::$fgColor);
+    $surface2 = \FFI::cast($sdl->type("SDL_Surface*"), $surface);
+    $srcSurface = $sdl->SDL_ConvertSurface($surface2, SDL::SDL_PIXELFORMAT_RGBA8888);
+    $index = self::$nextGlyph;
+    self::$nextGlyph++;
+    $gw = $this->letterWidth;
+    $gh = $this->lineHeight;
+    $y = (int)($index / self::GLYPH_MAP_SIZE);
+    $x = $index % self::GLYPH_MAP_SIZE;
+    $ox = 0;
+    $oy = 0;
+    if ($surface->w != $this->letterWidth || $surface->h != $this->lineHeight) {
+      $glyphMetrics = $this->font->glyphMetrics($glyph);
+      if ($surface->w != $this->letterWidth) {
+        if ($glyphMetrics[0] < 0) {
+          $ox = -$glyphMetrics[0];
+        }
+      }
+      if ($surface->h != $this->lineHeight) {
+        if ($glyphMetrics[3] > $this->font->ascent) {
+          $oy = $glyphMetrics[3] - $this->font->ascent;
+        }
+      }
+    }
+    self::$sdlRect->x = 1 + $x * ($gw + 2) - $ox;
+    self::$sdlRect->y = 1 + $y * ($gh + 2) - $oy;
+    self::$sdlRect->w = $surface->w;
+    self::$sdlRect->h = $surface->h;
+    $sdl->SDL_UpdateTexture(self::$atlas, self::$sdlRectAddr, $srcSurface->pixels, $srcSurface->pitch);
+    self::$glyphCache[$glyph] = [1 + $x * ($gw + 2), 1 + $y * ($gh + 2), $glyph];
+    $ttf->SDL_DestroySurface($surface);
+    $sdl->SDL_DestroySurface($surface2);
+    $sdl->SDL_DestroySurface($srcSurface);
+    // DEBUG:6 echo "New glyph on the atlas: {$glyph} [{$x}, {$y}]\n";
   }
 
   protected function render() {
@@ -154,33 +206,6 @@ class Terminal extends Element {
       new Scrollbar($this->texture, $this->scrollX, $this->scrollY, $this->geometry->contentWidth, $this->geometry->contentHeight, $this->geometry, $this->style);
     }
     return $this->texture;
-  }
-
-  protected function glyphMetrics($char) {
-    if (!isset(self::$glyphCache[$char])) {
-      $ttf = TTF::$instance->ttf;
-      $minx = \FFI::new("int");
-      $maxx = \FFI::new("int");
-      $miny = \FFI::new("int");
-      $maxy = \FFI::new("int");
-      $advance = \FFI::new("int");
-      $ttf->TTF_GetGlyphMetrics(
-        $this->font->font,
-        mb_ord($char),
-        \FFI::addr($minx),
-        \FFI::addr($maxx),
-        \FFI::addr($miny),
-        \FFI::addr($maxy),
-        \FFI::addr($advance)
-      );
-      self::$glyphCache[$char] = [
-        $minx->cdata,
-        $maxx->cdata,
-        $miny->cdata,
-        $maxy->cdata
-      ];
-    }
-    return self::$glyphCache[$char];
   }
 
   public function keyPressHandler($element, $event) {
