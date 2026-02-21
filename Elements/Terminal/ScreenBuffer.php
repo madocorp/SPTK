@@ -179,6 +179,7 @@ class ScreenBuffer {
   }
 
   public function cursorUp($n) {
+    // DEBUG:8 echo "cursorUp {$n}";
     if ($this->row >= $n) {
       $this->setRow($this->row - $n);
     } else {
@@ -187,6 +188,7 @@ class ScreenBuffer {
   }
 
   public function cursorDown($n) {
+    // DEBUG:8 echo "cursorDown {$n}";
     if ($this->row < $this->rows - $n - 1) {
       $this->setRow($this->row + $n);
     } else {
@@ -195,7 +197,7 @@ class ScreenBuffer {
   }
 
   public function cursorLeft($n) {
-echo "cursorLeft {$n}";
+    // DEBUG:8 echo "cursorLeft {$n}";
     if ($this->col >= $n) {
       $this->col -= $n;
     } else {
@@ -204,6 +206,7 @@ echo "cursorLeft {$n}";
   }
 
   public function cursorRight($n) {
+    // DEBUG:8 echo "cursorRight {$n}";
     if ($this->col < $this->cols - $n - 1) {
       $this->col += $n;
     } else {
@@ -212,7 +215,7 @@ echo "cursorLeft {$n}";
   }
 
   public function cursorPos($n, $m) {
-echo "cursorPos {$n} {$m}";
+    // DEBUG:8 echo "cursorPos {$n} {$m}";
     if ($n !== false) {
       $this->setRow($n - 1);
       if ($this->row < 0) {
@@ -273,7 +276,7 @@ echo "cursorPos {$n} {$m}";
   }
 
   public function eraseLine($n) {
-echo "eraseLine {$n}";
+    // DEBUG:8 echo "eraseLine {$n}";
     switch ($n) {
       case 1: // erase start of line to the cursor
         $start = 0;
@@ -354,7 +357,7 @@ echo "eraseLine {$n}";
   }
 
   public function scrollUp($n) {
-echo "scrollUp {$n}";
+    // DEBUG:8 echo "scrollUp {$n}";
     for ($i = $this->scrollRegionStart; $i <= $this->scrollRegionEnd; $i++) {
       if ($i + $n <= $this->scrollRegionEnd) {
         $this->currentScreen[$i] = $this->currentScreen[$i + $n];
@@ -365,7 +368,7 @@ echo "scrollUp {$n}";
   }
 
   public function scrollDown($n) {
-echo "scrollDown {$n}";
+    // DEBUG:8 echo "scrollDown {$n}";
     for ($i = $this->scrollRegionEnd; $i >= $this->scrollRegionStart; $i--) {
       if ($i < $this->scrollRegionStart + $n) {
         $this->currentScreen[$i] = $this->emptyLine();
@@ -421,7 +424,7 @@ echo "scrollDown {$n}";
   }
 
   public function saveCursor($saveState = false) {
-echo "saveCursor: {$this->row}, {$this->col}";
+    // DEBUG:8 echo "saveCursor: {$this->row}, {$this->col}";
     $this->savedCursor[0] = $this->row;
     $this->savedCursor[1] = $this->col;
     if ($saveState) {
@@ -436,7 +439,7 @@ echo "saveCursor: {$this->row}, {$this->col}";
     if (empty($this->savedCursor)) {
       return;
     }
-echo "restoreCursor: {$this->row}, {$this->col}";
+    // DEBUG:8 echo "restoreCursor: {$this->row}, {$this->col}";
     $this->setRow($this->savedCursor[0]);
     $this->col = $this->savedCursor[1];
     if ($restoreState && count($this->savedCursor) > 2) {

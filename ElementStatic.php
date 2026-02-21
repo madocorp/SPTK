@@ -17,9 +17,7 @@ trait ElementStatic {
     $t = microtime(true);
     static::$root->recalculateGeometry();
     static::$root->render();
-    if (DEBUG) {
-      echo "Refreshed:", microtime(true) - $t, "\n";
-    }
+    // DEBUG:5 echo "Refreshed:", microtime(true) - $t, "\n";
   }
 
   public static function immediateRender($element, $layout = true) {

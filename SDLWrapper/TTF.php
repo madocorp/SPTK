@@ -16,7 +16,7 @@ class TTF {
     }
     self::$instance = $this;
     $dir = \SPTK\App::$instance->getDir();
-    $this->ttf = \FFI::cdef(file_get_contents("{$dir}/SDLWrapper/sdl_ttf_extract.h"), "{$dir}/SDLWrapper/libSDL3_ttf.so");
+    $this->ttf = \FFI::cdef(file_get_contents($x = "{$dir}/SPTK/SDLWrapper/sdl_ttf_extract.h"), "{$dir}/SPTK/SDLWrapper/libSDL3_ttf.so");
     $this->ttf->TTF_Init();
   }
 

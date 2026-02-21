@@ -38,14 +38,14 @@ class ANSIParser {
 
   public function parse($str) {
     $parseUnits = $this->parseUTF8($str);
-$pc = false;
+    // DEBUG:9 $pc = false;
     foreach ($parseUnits as $pu) {
-$c = false;
+      // DEBUG:9 $c = false;
       switch ($this->state) {
         case self::GROUND:
           if ($pu === "\e") { // ESC
             $this->state = self::ESCAPE;
-echo "\nESC ";
+            // DEBUG:9 echo "\nESC ";
           } elseif ($this->isPrintable($pu)) {
             if (
               $this->charset === self::DEC &&
@@ -57,18 +57,18 @@ echo "\nESC ";
               $pu = $this->decMap[$pu];
             }
             $this->screen->putChar($pu);
-if (!$pc) {
-  echo "\n";
-}
-if ($pu === ' ') {
-  echo '·';
-} else {
-  echo $pu;
-}
-$c = true;
+            // DEBUG:9 if (!$pc) {
+            // DEBUG:9   echo "\n";
+            // DEBUG:9 }
+            // DEBUG:9 if ($pu === ' ') {
+            // DEBUG:9   echo '·';
+            // DEBUG:9 } else {
+            // DEBUG:9   echo $pu;
+            // DEBUG:9 }
+            // DEBUG:9 $c = true;
           } else {
             $this->handleControl($pu);
-echo "\n", "0x", dechex(ord($pu));
+            // DEBUG:9 echo "\n", "0x", dechex(ord($pu));
           }
           break;
         case self::ESCAPE:
@@ -80,30 +80,30 @@ echo "\n", "0x", dechex(ord($pu));
           } elseif ($pu === '(') {
             $this->state = self::CHARSET;
           } elseif ($pu === '>') {
-echo "> applicationKeyPad OFF";
+            // DEBUG:9 echo "> applicationKeyPad OFF";
             $this->screen->applicationKeyPad(false);
             $this->state = self::GROUND;
           } elseif ($pu === '=') {
-echo "= napplicationKeyPad ON";
+            // DEBUG:9 echo "= napplicationKeyPad ON";
             $this->screen->applicationKeypad(true);
             $this->state = self::GROUND;
           } elseif ($pu === '7') {
-echo "7 saveCursor";
+            // DEBUG:9 echo "7 saveCursor";
             $this->screen->saveCursor(true);
             $this->state = self::GROUND;
           } elseif ($pu === '8') {
-echo "8 restorCursor";
+            // DEBUG:9 echo "8 restorCursor";
             $this->screen->restoreCursor(true);
             $this->state = self::GROUND;
           } else {
-            echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
+            // DEBUG:9 echo "UKNOWN ESCAPE SEQUENCE {$pu}\n";
             $this->state = self::GROUND;
           }
           break;
         case self::CSI:
           $this->buffer .= $pu;
           if ($this->isFinalByte($pu)) {
-echo "{$this->buffer} CSI ";
+            // DEBUG:9 echo "{$this->buffer} CSI ";
             $this->executeCSI();
             $this->state = self::GROUND;
             $this->buffer = '';
@@ -113,21 +113,21 @@ echo "{$this->buffer} CSI ";
           $this->buffer .= $pu;
           if ($this->buffer == '0') {
             $this->charset = self::DEC;
-echo "(0 CHARSET: DEC";
+            // DEBUG:9 echo "(0 CHARSET: DEC";
           } else if ($this->buffer == 'B') {
             $this->charset = self::ASCII;
-echo "(B CHARSET: ASCII";
+            // DEBUG:9 echo "(B CHARSET: ASCII";
           }
           $this->state = self::GROUND;
           $this->buffer = '';
           break;
         case self::OSC:
           if (ord($pu) === 0x07 || ord($pu) === 0x9c) { // BEL or ST
-echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
+            // DEBUG:9 echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
             $this->state = self::GROUND;
             $this->buffer = '';
           } else if (ord($pu) === 0x5c && ord(substr($this->buffer, -1)) === 0x1b) { // ST
-echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
+            // DEBUG:9 echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
             $this->state = self::GROUND;
             $this->buffer = '';
           } else {
@@ -135,7 +135,7 @@ echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
           }
           break;
       }
-      $pc = $c;
+      // DEBUG:9 $pc = $c;
     }
   }
 
@@ -195,7 +195,7 @@ echo "{$this->buffer} ", "0x", dechex(ord($pu)), " OSC";
         $params[$i] = (int)$param;
       } else {
         if ($final != 'h' && $final != 'l') {
-echo "SKIP";
+          // DEBUG:9 echo "SKIP";
           return;
         }
       }

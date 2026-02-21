@@ -66,12 +66,10 @@ class Terminal extends Element {
   }
 
   public function grabInput() {
-echo "GRAB\n";
     $this->inputGrab = true;
   }
 
   public function releaseInput() {
-echo "RELEASE\n";
     $this->inputGrab = false;
   }
 
@@ -85,19 +83,16 @@ echo "RELEASE\n";
 
   protected function draw() {
     $ttf = TTF::$instance->ttf;
-
     $sdl = SDL::$instance->sdl;
     $bgcolor = $this->style->get('backgroundColor');
     $surface = $sdl->SDL_CreateSurface($this->geometry->width, $this->geometry->height, SDL::SDL_PIXELFORMAT_RGBA8888);
     $sdl->SDL_FillSurfaceRect($surface, null, 0x000000ff);
-
     $lines = $this->buffer->getLines();
     $cursor = $this->buffer->getCursor();
     self::$sdlRect2->x = 0;
     self::$sdlRect2->y = 0;
     self::$sdlRect2->w = $this->letterWidth;
     self::$sdlRect2->h = $this->lineHeight;
-
     foreach ($lines as $i => $row) {
       foreach ($row as $j => $char) {
         $glyph = $char[Terminal\ScreenBuffer::GLYPH];
@@ -120,7 +115,6 @@ echo "RELEASE\n";
           $sdl->type("SDL_Surface*"),
           $surfaceL
         );
-
         self::$sdlRect2->x = 0;
         self::$sdlRect2->y = 0;
         if ($surfaceL->w != $this->letterWidth) {
@@ -135,7 +129,6 @@ echo "RELEASE\n";
             self::$sdlRect2->y = $glyphMetrics[3] - $this->font->ascent;
           }
         }
-
         self::$sdlRect->x = $j * $this->letterWidth + $this->geometry->paddingLeft + $this->geometry->borderLeft;
         self::$sdlRect->y = $i * $this->lineHeight + $this->geometry->paddingTop + $this->geometry->borderTop ;
         self::$sdlRect->w = $surfaceL->w;
@@ -203,12 +196,12 @@ echo "RELEASE\n";
         $this->buffer->getApplicationKeypadState()
       );
       if ($stream !== null) {
-$a = str_split($stream);
-echo "INPUT: ";
-foreach ($a as $c) {
-  echo '0x', dechex(ord($c)), ' ';
-}
-echo "\n";
+        // DEBUG:8 $a = str_split($stream);
+        // DEBUG:8 echo "INPUT: ";
+        // DEBUG:8 foreach ($a as $c) {
+        // DEBUG:8   echo '0x', dechex(ord($c)), ' ';
+        // DEBUG:8 }
+        // DEBUG:8 echo "\n";
         call_user_func($this->inputCallback, $stream);
       }
       return true;

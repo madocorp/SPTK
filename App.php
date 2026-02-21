@@ -20,7 +20,7 @@ class App {
   public function __construct($xml, $xss, $init = false, $loop = false, $timer = false, $end = false) {
     $this->xml = $xml;
     $this->xss = $xss;
-    $this->dir = dirname(__FILE__);
+    $this->dir = dirname(APP_PATH);
     $this->initCallback = $init;
     $this->loopCallback = $loop;
     $this->timerCallback = $timer;
@@ -44,9 +44,6 @@ class App {
     $sdl->setLoopCallback($this->loopCallback);
     $sdl->setTimerCallback($this->timerCallback);
     $sdl->setEndCallback([$this, 'end']);
-    if (DEBUG) {
-      Element::$root->debug();
-    }
     if ($this->initCallback !== false) {
       call_user_func($this->initCallback);
     }
@@ -60,7 +57,7 @@ class App {
     if (!is_array($this->xss)) {
       $this->xss = [$this->xss];
     }
-    array_unshift($this->xss, __DIR__ . '/defaults.xss');
+    array_unshift($this->xss, "{$this->dir}/SPTK/defaults.xss");
     foreach ($this->xss as $xssi) {
       StyleSheet::load($xssi);
     }
