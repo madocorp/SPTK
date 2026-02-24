@@ -14,10 +14,10 @@ class Autoload {
       require_once self::$appDir . "/SPTK/DebugStream.php";
       stream_wrapper_register('debug', DebugStream::class);
     }
-    spl_autoload_register(['\SPTK\Autoload', 'autoload']);
+    spl_autoload_register(['\SPTK\Autoload', 'load']);
   }
 
-  public static function autoload($class) {
+  public static function load($class) {
     $path = self::getPath($class);
     if (DEBUG !== false) {
       echo "AUTOLOAD: $path\n";
