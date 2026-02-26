@@ -28,6 +28,7 @@ class Font {
     $this->descent = self::$fonts[$name][$size]['descent'];
     $this->height = self::$fonts[$name][$size]['height'];
     $this->letterWidth = self::$fonts[$name][$size]['letterWidth'];
+    $this->letterHeight = self::$fonts[$name][$size]['letterHeight'];
   }
 
   private function open($name, $size) {
@@ -48,7 +49,7 @@ class Font {
     self::$fonts[$name][$size]['handle'] = $font;
     $ascent = $ttf->TTF_GetFontAscent($font);
     $descent = $ttf->TTF_GetFontDescent($font);
-    $height = $ttf->TTF_GetFontHeight($font);
+    $height = $ttf->TTF_GetFontLineSkip($font);
     $minx = \FFI::new("int");
     $maxx = \FFI::new("int");
     $miny = \FFI::new("int");
@@ -67,6 +68,16 @@ class Font {
     self::$fonts[$name][$size]['descent'] = $descent;
     self::$fonts[$name][$size]['height'] = $height;
     self::$fonts[$name][$size]['letterWidth'] = $advance->cdata;
+    $ttf->TTF_GetGlyphMetrics(
+      $font,
+      0x2502, // light vertical box drawing char
+      \FFI::addr($minx),
+      \FFI::addr($maxx),
+      \FFI::addr($miny),
+      \FFI::addr($maxy),
+      \FFI::addr($advance)
+    );
+    self::$fonts[$name][$size]['letterHeight'] = $maxy->cdata - $miny->cdata;
   }
 
   private function getPath($name, $exact) {
