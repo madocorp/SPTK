@@ -4,7 +4,11 @@ namespace SPTK\SDLWrapper;
 
 class TTF {
 
+  const TTF_HINTING_NORMAL = 0;
+  const TTF_HINTING_LIGHT = 1;
+  const TTF_HINTING_MONO = 2;
   const TTF_HINTING_NONE = 3;
+  const TTF_HINTING_LIGHT_SUBPIXEL = 4;
 
   public static $instance;
 

@@ -4,5 +4,6 @@ Window {
   backgroundColor: #000000;
   color: #ffff00;
   fontSize: 30px;
+  font: LiberationMono-Bold;
 }
 

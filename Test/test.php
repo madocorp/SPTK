@@ -1,9 +1,10 @@
 <?php
 
-require_once '../App.php';
-require_once 'Editor/SqlTokenizer.php';
-
 define('SPTK\DEBUG', true);
+define('APP_PATH', __FILE__);
+define('APP_NAMESPACE', 'TEST');
+
+require_once 'SPTK/Autoload.php';
 
 class Controller {
 
