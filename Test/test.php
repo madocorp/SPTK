@@ -10,7 +10,7 @@ class Controller {
 
   public static function alterClass($element, $event) {
     if ($event['name'] == 'KeyPress') {
-      if ($event['key'] == SPTK\KeyCode::TAB) {
+      if ($event['key'] == SPTK\SdlWrapper\KeyCode::TAB) {
         $dynamicClassBox = SPTK\Element::byName('dynamic-class-box');
         if ($dynamicClassBox->hasClass('yellow')) {
           $dynamicClassBox->removeClass('yellow');
@@ -26,7 +26,7 @@ class Controller {
 
   public static function showPanel($element, $event) {
     if ($event['name'] == 'KeyPress') {
-      if ($event['key'] == SPTK\KeyCode::SPACE) {
+      if ($event['key'] == SPTK\SdlWrapper\KeyCode::SPACE) {
         $telement = SPTK\Element::byName('panel');
         $telement->show();
         SPTK\Element::refresh();
@@ -37,7 +37,7 @@ class Controller {
 
   public static function panelForge($element, $event) {
     if ($event['name'] == 'KeyPress') {
-      if ($event['key'] == SPTK\KeyCode::SPACE) {
+      if ($event['key'] == SPTK\SdlWrapper\KeyCode::SPACE) {
         SPTK\WarningPanel::forge('forged warning', 'test');
       }
     }
