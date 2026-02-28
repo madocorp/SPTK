@@ -16,17 +16,25 @@ class Cursor {
     $this->lines = &$lines;
   }
 
+  protected function getLineLength($i) {
+    return mb_strlen($this->lines[$i]);
+  }
+
+  protected function getLineCount() {
+    return count($this->lines);
+  }
+
   protected function checkDocStart() {
     $this->caret[0] = max(0, $this->caret[0]);
   }
 
   protected function checkDocEnd() {
-    $lcnt = count($this->lines);
+    $lcnt = $this->getLineCount();
     $this->caret[0] = min($lcnt - 1, $this->caret[0]);
   }
 
   protected function checkLineLength() {
-    $len = mb_strlen($this->lines[$this->caret[0]]);
+    $len = $this->getLineLength($this->caret[0]);
     $this->caret[1] = min($len, $this->caret[1]);
   }
 
@@ -143,18 +151,18 @@ class Cursor {
   }
 
   public function moveDocEnd($select = false) {
-    $lines = count($this->lines) - 1;
+    $lines = $this->getLineCount() - 1;
     $this->caret[0] = $lines;
-    $this->caret[1] = mb_strlen($this->lines[$lines]);
+    $this->caret[1] = $this->getLineLength($lines);
     $this->resetSelection($select);
   }
 
   public function moveForward($select = false) {
-    $len = mb_strlen($this->lines[$this->caret[0]]);
+    $len = $this->getLineLength($this->caret[0]);
     if ($this->caret[1] < $len) {
       $this->caret[1]++;
     } else {
-      $lcnt = count($this->lines);
+      $lcnt = $this->getLineCount();
       if ($this->caret[0] < $lcnt - 1) {
         $this->caret[0]++;
         $this->caret[1] = 0;
@@ -170,7 +178,7 @@ class Cursor {
   }
 
   public function moveLineEnd($select = false) {
-    $this->caret[1] = mb_strlen($this->lines[$this->caret[0]]);
+    $this->caret[1] = $this->getLineLength($this->caret[0]);
     $this->resetSelection($select);
   }
 
@@ -180,7 +188,7 @@ class Cursor {
     } else {
       if ($this->caret[0] > 0) {
         $this->caret[0]--;
-        $this->caret[1] = mb_strlen($this->lines[$this->caret[0]]);
+        $this->caret[1] = $this->getLineLength($this->caret[0]);
       }
     }
     $this->resetSelection($select);
