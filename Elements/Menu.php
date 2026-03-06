@@ -17,7 +17,7 @@ class Menu extends Element {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  protected function addDescendant($element) {
+  public function addDescendant($element) {
     parent::addDescendant($element);
     if ($element->type == 'MenuBar') {
       $this->bar = $element;

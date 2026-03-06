@@ -8,7 +8,7 @@ class MenuBar extends Element {
 
   protected $num = 0;
 
-  protected function addDescendant($element) {
+  public function addDescendant($element) {
     if ($element->type !== 'MenuBarItem') {
       throw new \Exception("In MenuBar only MenuBarItem elements are allowed!");
     }

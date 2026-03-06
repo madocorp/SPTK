@@ -4,12 +4,15 @@ namespace SPTK;
 
 trait ElementTree {
 
-  protected function addDescendant($element) {
+  public function addDescendant($element) {
     $this->descendants[] = $element;
     $this->stack[] = $element;
+    if ($element->ancestor !== $this) {
+      $element->ancestor = $this;
+    }
   }
 
-  protected function removeDescendant($element) {
+  public function removeDescendant($element) {
     foreach ($this->descendants as $i => $descendant) {
       if ($element->id === $descendant->id) {
         unset($this->descendants[$i]);
