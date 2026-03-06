@@ -126,12 +126,12 @@ class ListBox extends Element {
     return $groups;
   }
 
-  protected function addDescendant($element) {
+  public function addDescendant($element) {
     $this->num++;
     parent::addDescendant($element);
   }
 
-  protected function removeDescendant($element) {
+  public function removeDescendant($element) {
     $this->num--;
     parent::removeDescendant($element);
     if ($this->activeItem >= $this->num) {
