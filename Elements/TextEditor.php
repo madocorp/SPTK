@@ -6,6 +6,7 @@ use \SPTK\Element;
 use \SPTK\SDLWrapper\KeyCode;
 use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\Action;
+use \SPTK\Clipboard;
 
 class TextEditor extends TextBox {
 

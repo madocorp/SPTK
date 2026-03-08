@@ -3,6 +3,7 @@
 namespace SPTK\Elements;
 
 use \SPTK\Element;
+use \SPTK\Clipboard;
 use \SPTK\Font;
 use \SPTK\SDLWrapper\KeyCode;
 use \SPTK\SDLWrapper\KeyCombo;
@@ -49,6 +50,7 @@ class Input extends Element {
     $this->elementAfter->setValue('');
     if ($this->cursor !== false) {
       $this->cursor->moveLineEnd();
+      $this->cursor->save();
     }
   }
 
@@ -190,7 +192,6 @@ class Input extends Element {
       /* DELETE */
       case Action::DELETE_BACK:
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
-        $line = $this->lines[$row1];
         if ($col1 === $col2 - 1) {
           if ($col1 > 0) {
             $this->cursor->modify($row1, $col1 - 1, $row1, $col1 - 1);

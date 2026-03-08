@@ -7,6 +7,7 @@ use \SPTK\Font;
 use \SPTK\SDLWrapper\KeyCode;
 use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\Action;
+use \SPTK\Clipboard;
 
 class TextBox extends Element {
 
