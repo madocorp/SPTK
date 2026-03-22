@@ -137,4 +137,8 @@ trait ElementTree {
     return false;
   }
 
+  public function countDescendants() {
+    return count($this->descendants);
+  }
+
 }

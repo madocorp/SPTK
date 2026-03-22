@@ -33,6 +33,9 @@ class StyleSheet {
       $rules = explode(";", $rules);
       $processedRules = [];
       foreach ($rules as $rule) {
+        if (strpos($rule, ':') === false) {
+          continue;
+        }
         list($name, $value) = explode(':', $rule);
         if (in_array($name, self::$around)) {
           $values = explode(',', $value);

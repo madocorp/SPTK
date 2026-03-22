@@ -22,6 +22,7 @@ class Window extends Element {
   protected $tmpTexture = false;
   protected $ffiWidth;
   protected $ffiHeight;
+  protected $ready = false;
 
   protected function init() {
     $this->display = false;
@@ -220,6 +221,12 @@ class Window extends Element {
           $this->getSize();
           $this->draw();
           Element::refresh();
+          if (!$this->ready) {
+            $this->ready = true;
+            if (isset($this->events['WindowReady'])) {
+              return call_user_func($this->events['WindowReady'], $this, $event);
+            }
+          }
           return true;
         case SDL::SDL_EVENT_KEY_DOWN:
         case SDL::SDL_EVENT_KEY_UP:
