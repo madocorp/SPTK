@@ -145,7 +145,6 @@ class Geometry {
         $this->borderTop +
         $this->paddingTop +
         $this->contentHeight +
-        $this->paddingBottom +
         $this->borderBottom;
       $this->limitateHeight();
       $this->setDerivedHeights();
