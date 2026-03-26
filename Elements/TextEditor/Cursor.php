@@ -6,11 +6,11 @@ use \SPTK\SDLWrapper\Action;
 
 class Cursor {
 
-  private $lines;
-  private $caret = [0, 0];
-  private $anchor = [0, 0];
-  private $caretBefore = [0, 0];
-  private $anchorBefore = [0, 0];
+  protected $lines;
+  protected $caret = [0, 0];
+  protected $anchor = [0, 0];
+  protected $caretBefore = [0, 0];
+  protected $anchorBefore = [0, 0];
 
   public function __construct(&$lines) {
     $this->lines = &$lines;
