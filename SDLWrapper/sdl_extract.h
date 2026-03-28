@@ -162,5 +162,3 @@ bool SDL_UpdateTexture(SDL_Texture *texture, const SDL_Rect *rect, const void *p
 SDL_Surface *SDL_ConvertSurface(SDL_Surface *surface, SDL_PixelFormat format);
 bool SDL_SetTextureColorMod(SDL_Texture *texture, Uint8 r, Uint8 g, Uint8 b);
 bool SDL_SetTextureAlphaMod(SDL_Texture *texture, Uint8 alpha);
-
-
