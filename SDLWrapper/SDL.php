@@ -31,7 +31,7 @@ class SDL {
 
   public $sdl;
   private $waitForEvent = 100; // ms
-  private $timerPeriod = 1000000;
+  private $timerPeriod = 1000; // ms
   private $eventCallback = false;
   private $loopCallback = false;
   private $timerCallback = false;
@@ -69,7 +69,7 @@ class SDL {
 
   protected function eventLoop() {
     $event = $this->sdl->new('SDL_Event');
-    $timer = microtime(true) * 1000000;
+    $timer = microtime(true) * 1000;
     while (!$this->end) {
       $hasEvent = $this->sdl->SDL_WaitEventTimeout(\FFI::addr($event), $this->waitForEvent);
       if ($hasEvent) {
@@ -84,7 +84,7 @@ class SDL {
         call_user_func($this->loopCallback);
       }
       pcntl_signal_dispatch();
-      $now = microtime(true) * 1000000;
+      $now = microtime(true) * 1000;
       if ($now > $timer + $this->timerPeriod) {
         if ($this->timerCallback !== false) {
           call_user_func($this->timerCallback, $now);
@@ -163,12 +163,18 @@ class SDL {
     $this->end = true;
   }
 
-  public function setTimer(int $timerPeriod, int $waitForEvent) {
-    if ($timerPeriod < $waitForEvent) {
-      throw new Exception('TimerPeriod must be greater than waitForEvent!');
-    }
+  public function setTimer(int $timerPeriod) {
     $this->timerPeriod = $timerPeriod;
+    if ($this->timerPeriod < $this->waitForEvent) {
+      throw new \Exception('TimerPeriod must be greater than waitForEvent!');
+    }
+  }
+
+  public function setWaitTime(int $waitForEvent) {
     $this->waitForEvent = $waitForEvent;
+    if ($this->timerPeriod < $this->waitForEvent) {
+      throw new \Exception('TimerPeriod must be greater than waitForEvent!');
+    }
   }
 
   public function setEventCallback($callback) {

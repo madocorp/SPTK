@@ -42,6 +42,10 @@ class Texture {
     }
   }
 
+  public function activate() {
+    $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
+  }
+
   public function __destruct() {
     $this->sdl->SDL_DestroyTexture($this->texture);
   }
