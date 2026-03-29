@@ -51,6 +51,7 @@ class KeyCombo {
     self::bind(KeyModifier::SHIFT, ScanCode::PAGEDOWN, Action::SELECT_PAGE_DOWN);
     self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::PAGEUP, Action::SELECT_LEVEL_UP);
     self::bind(KeyModifier::PRIMARY|KeyModifier::SHIFT, ScanCode::PAGEDOWN, Action::SELECT_LEVEL_DOWN);
+    self::kbind(KeyModifier::PRIMARY, KeyCode::A, Action::SELECT_ALL);
 
     // Switch fields
     self::bind(KeyModifier::PRIMARY, ScanCode::LEFT, Action::SWITCH_LEFT);

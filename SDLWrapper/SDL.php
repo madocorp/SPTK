@@ -84,9 +84,9 @@ class SDL {
         call_user_func($this->loopCallback);
       }
       pcntl_signal_dispatch();
-      $now = microtime(true) * 1000;
-      if ($now > $timer + $this->timerPeriod) {
-        if ($this->timerCallback !== false) {
+      if ($this->timerCallback !== false) {
+        $now = microtime(true) * 1000;
+        if ($now > $timer + $this->timerPeriod) {
           call_user_func($this->timerCallback, $now);
         }
         $timer = $now;

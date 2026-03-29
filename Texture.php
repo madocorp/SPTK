@@ -17,13 +17,13 @@ class Texture {
   private static $sdlRect;
   private static $sdlRectAddr;
 
-  public static function init() {
+  public static function init(): void {
     $sdl = SDL::$instance->sdl;
     self::$sdlRect = $sdl->new('SDL_FRect');
     self::$sdlRectAddr = \FFI::addr(self::$sdlRect);
   }
 
-  public function __construct($renderer, $width, $height, $color, $fromSurface = false) {
+  public function __construct(\FFI\CData $renderer, int $width, int $height, array $color, \FFI\CData|bool $fromSurface = false) {
     $this->sdl = SDL::$instance->sdl;
     $this->ttf = TTF::$instance->ttf;
     $this->renderer = $renderer;
@@ -42,7 +42,7 @@ class Texture {
     }
   }
 
-  public function activate() {
+  public function activate(): void {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
   }
 
@@ -50,13 +50,13 @@ class Texture {
     $this->sdl->SDL_DestroyTexture($this->texture);
   }
 
-  public function drawLine($x1, $y1, $x2, $y2, $color) {
+  public function drawLine(int $x1, int $y1, int $x2, int $y2, array $color): void {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
     $this->sdl->SDL_RenderLine($this->renderer, $x1, $y1, $x2, $y2);
   }
 
-  public function drawRect($x1, $y1, $x2, $y2, $color) {
+  public function drawRect(int $x1, int $y1, int $x2, int $y2, array $color): void {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
     self::$sdlRect->x = $x1;
@@ -66,7 +66,7 @@ class Texture {
     $this->sdl->SDL_RenderRect($this->renderer, self::$sdlRectAddr);
   }
 
-  public function drawFillRect($x1, $y1, $x2, $y2, $color) {
+  public function drawFillRect(int $x1, int $y1, int $x2, int $y2, array $color): void {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
     $this->sdl->SDL_SetRenderDrawColor($this->renderer, $color[0], $color[1], $color[2], $color[3] ?? 0xff);
     self::$sdlRect->x = $x1;
@@ -76,7 +76,7 @@ class Texture {
     $this->sdl->SDL_RenderFillRect($this->renderer, self::$sdlRectAddr);
   }
 
-  public function copyTo($target, $x, $y) {
+  public function copyTo(?Texture $target, int $x, int $y): void {
     $this->sdl->SDL_SetRenderTarget($this->renderer, $target->texture ?? null);
     self::$sdlRect->x = $x;
     self::$sdlRect->y = $y;
@@ -85,7 +85,7 @@ class Texture {
     $this->sdl->SDL_RenderTexture($this->renderer, $this->texture, null, self::$sdlRectAddr);
   }
 
-  public function copy($texture, $x, $y, $w, $h) {
+  public function copy(Texture $texture, int $x, int $y, int $w, int $h) {
     self::$sdlRect->x = $x;
     self::$sdlRect->y = $y;
     self::$sdlRect->w = $w;

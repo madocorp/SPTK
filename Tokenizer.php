@@ -20,7 +20,7 @@ class Tokenizer {
     ['type' => 'TEXT', 'regexp' => '/^.*/']
   ];
 
-  public function setStack($stack) {
+  public function setStack(array $stack): void {
     $this->stack = $stack;
     $contextId = end($this->stack);
     $this->context = self::$contexts[$contextId];
@@ -29,7 +29,7 @@ class Tokenizer {
     $this->setSwitcherIds($tokenizerId);
   }
 
-  public function initialize() {
+  public function initialize(): void {
     $tokenizer = '\\' . get_class($this);
     $id = count(self::$contexts);
     if (isset(self::$initializedTokenizers[$tokenizer])) {
@@ -47,21 +47,21 @@ class Tokenizer {
     }
   }
 
-  protected function setSwitcherIds($id) {
+  protected function setSwitcherIds(int $id): void {
     foreach ($this->contextSwitchers as &$context) {
       $id++;
       $context['id'] = $id;
     }
   }
 
-  protected function getStyle($type) {
+  protected function getStyle(string $type): string {
     if (isset($this->styleMap[$type])) {
       return $this->stylePrefix . $this->styleMap[$type];
     }
-    return false;
+    return '';
   }
 
-  protected static function setContext($context) {
+  protected static function setContext(array $context): void {
     $stack = self::$tokenizer->stack;
     $className = $context['tokenizer'];
     $stack[] = $context['id'];
@@ -69,7 +69,7 @@ class Tokenizer {
     self::$tokenizer->setStack($stack);
   }
 
-  protected static function restorePreviousContext() {
+  protected static function restorePreviousContext(): void {
     $stack = self::$tokenizer->stack;
     array_pop($stack);
     $prevContextId = end($stack);
@@ -78,9 +78,9 @@ class Tokenizer {
     self::$tokenizer->setStack($stack);
   }
 
-  protected static function contextEnd($str, $first, $tokenizer) {
+  protected static function contextEnd(string $str, bool $first, Tokenizer $tokenizer): ?string {
     if (isset($tokenizer->context['endFirst']) && $tokenizer->context['endFirst'] !== false && $first === false) {
-      return false;
+      return null;
     }
     if (isset($tokenizer->context['endRegexp'])) {
       if (preg_match($tokenizer->context['endRegexp'], $str, $matches)) {
@@ -91,10 +91,10 @@ class Tokenizer {
         return $tokenizer->context['end'];
       }
     }
-    return false;
+    return null;
   }
 
-  protected static function contextStart($str, $first, $tokenizer, &$newContext) {
+  protected static function contextStart(string $str, bool $first, Tokenizer $tokenizer, ?array &$newContext): ?string {
     foreach ($tokenizer->contextSwitchers as $context) {
       if (isset($context['startFirst']) && $context['startFirst'] !== false && $first === false) {
         continue;
@@ -111,13 +111,13 @@ class Tokenizer {
         }
       }
     }
-    return false;
+    return null;
   }
 
-  protected static function getNextToken($str, $first) {
+  protected static function getNextToken(string $str, bool $first): array {
     $tokenizer = self::$tokenizer;
     $contextEnd = self::contextEnd($str, $first, $tokenizer);
-    if ($contextEnd !== false) {
+    if ($contextEnd !== null) {
       self::restorePreviousContext();
       $type = $tokenizer->context['type'];
       return [
@@ -128,7 +128,7 @@ class Tokenizer {
       ];
     }
     $contextStart = self::contextStart($str, $first, $tokenizer, $newContext);
-    if ($contextStart !== false) {
+    if ($contextStart !== null) {
       self::setContext($newContext);
       return [
         'type' => $newContext['type'],
@@ -173,7 +173,7 @@ class Tokenizer {
     ];
   }
 
-  protected static function tokenize() {
+  protected static function tokenize(): void {
     while (($line = array_shift(self::$lines)) !== null) {
       $lineTokens = [];
       $length = mb_strlen($line);
@@ -196,13 +196,13 @@ class Tokenizer {
     }
   }
 
-  public static function start($lines, $context) {
+  public static function start(array $lines, string|array $context): array {
     self::$lines = $lines;
     self::$tokens = [];
     if (is_string($context)) {
       $className = $context;
       if (!isset(self::$initializedTokenizers[$className])) {
-        Autoload::autoload($className);
+        Autoload::load($className);
       }
       if (!isset(self::$initializedTokenizers[$className])) {
         throw new \Exception("Uninitialized tokenizer: {$className}");
