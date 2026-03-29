@@ -36,6 +36,7 @@ enum Action {
   case SELECT_PAGE_DOWN;
   case SELECT_LEVEL_UP;
   case SELECT_LEVEL_DOWN;
+  case SELECT_ALL;
 
   case DELETE_FORWARD;
   case DELETE_BACK;

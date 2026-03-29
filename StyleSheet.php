@@ -12,7 +12,7 @@ class StyleSheet {
     'border', 'borderColor', 'margin', 'padding'
   ];
 
-  public static function load($path, $overwrite = false) {
+  public static function load(string $path, bool $overwrite = false): void {
     if (!file_exists($path)) {
       throw new \Exception("File not found: {$path}");
     }
@@ -85,7 +85,7 @@ class StyleSheet {
     //  DEBUG:5 }
   }
 
-  public static function get($defaultStyle, $ancestorStyle, $type, $class = self::ANY, $name = self::ANY) {
+  public static function get(Style|array|null $defaultStyle, Style|array|null $ancestorStyle, string $type, string|array|int $class = self::ANY, string|int $name = self::ANY): Style {
     if (is_array($class)) {
       $classStr = implode('.', $class);
     } else if ($class !== self::ANY) {
@@ -114,13 +114,13 @@ class StyleSheet {
       $style = self::$cache[$type][$name][$classStr];
     }
     $inheritedStyle = clone $style;
-    if ($ancestorStyle !== false) {
+    if ($ancestorStyle !== null) {
       $inheritedStyle->inherit($ancestorStyle);
     }
     return $inheritedStyle;
   }
 
-  public static function clearCache() {
+  public static function clearCache(): void {
     self::$cache = [];
   }
 

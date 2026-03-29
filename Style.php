@@ -45,12 +45,12 @@ class Style {
     'minHeight' => 'innerHeight'
   ];
 
-  public function __construct($init = false) {
+  public function __construct($init = null) {
     if (is_array($init)) {
       foreach ($init as $name => $value) {
         $this->rules[$name] = $this->parseValue($value);
       }
-    } else if ($init !== false) {
+    } else if ($init !== null) {
       foreach ($init->rules as $name => $value) {
         $this->rules[$name] = $init->rules[$name];
       }
