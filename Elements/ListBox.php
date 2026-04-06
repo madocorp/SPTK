@@ -220,8 +220,37 @@ class ListBox extends Element {
     }
   }
 
+  public function inactivateItem() {
+    foreach ($this->descendants as $descendant) {
+      $descendant->removeClass('selected', true);
+      $descendant->removeClass('active', true);
+    }
+  }
+
   public function getActive() {
     return $this->descendants[$this->activeItem];
+  }
+
+  protected function measure() {
+    $this->geometry->setValues($this->ancestor->geometry, $this->style);
+    if ($this->geometry->width === 'calculated') {
+      $this->calculateWidth();
+    }
+    $this->geometry->setDerivedWidths();
+    foreach ($this->descendants as $descendant) {
+      $descendant->measure();
+    }
+  }
+
+  protected function calculateWidth() {
+    $width = 0;
+    foreach ($this->descendants as $descendant) {
+      $dwidth = $descendant->getWidth();
+      if ($dwidth > $width) {
+        $width = $dwidth;
+      }
+    }
+    $this->geometry->width = $width + 30; // ...
   }
 
   protected function calculateHeights() {
