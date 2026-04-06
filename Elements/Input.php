@@ -264,4 +264,9 @@ class Input extends Element {
     return true;
   }
 
+  public function getCursorPos() {
+    [$caretRow, $caretCol, $anchorRow, $anchorCol] = $this->cursor->get();
+    return $caretCol;
+  }
+
 }

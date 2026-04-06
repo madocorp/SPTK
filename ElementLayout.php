@@ -28,6 +28,7 @@ trait ElementLayout {
     }
     if ($this->geometry->width === 'content') {
       $width = 0;
+      $lineWidth = 0;
       $spaceCount = 0;
       foreach ($this->descendants as $descendant) {
         if ($descendant->display === false) {
@@ -37,13 +38,22 @@ trait ElementLayout {
           $spaceCount++;
           continue;
         }
-        $width += $descendant->geometry->fullWidth;
+        if ($descendant->type === 'NL') {
+          if ($lineWidth + $spaceCount * $this->geometry->wordSpacing > $width) {
+            $width = $lineWidth + $spaceCount * $this->geometry->wordSpacing;
+            $lineWidth = 0;
+            $spaceCount = 0;
+          }
+        }
+        $lineWidth += $descendant->geometry->fullWidth;
+      }
+      if ($lineWidth + $spaceCount * $this->geometry->wordSpacing > $width) {
+        $width = $lineWidth + $spaceCount * $this->geometry->wordSpacing;
       }
       $this->geometry->width =
         $this->geometry->borderLeft +
         $this->geometry->paddingLeft +
         $width +
-        $spaceCount * $this->geometry->wordSpacing +
         $this->geometry->paddingRight +
         $this->geometry->borderRight;
       $this->geometry->limitateWidth();
