@@ -127,8 +127,9 @@ class ListBox extends Element {
   }
 
   public function addDescendant($element) {
-    $this->num++;
     parent::addDescendant($element);
+    $this->activateItem(0);
+    $this->num++;
   }
 
   public function removeDescendant($element) {

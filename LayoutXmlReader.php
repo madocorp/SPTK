@@ -6,16 +6,18 @@ use XMLReader;
 
 class LayoutXmlReader {
 
-  private $root;
   private $event = false;
   private $current;
 
-  public function __construct($file) {
+  public function __construct($file, $parent = false) {
     if (!file_exists($file)) {
       throw new \Exception("File not found: {$file}");
     }
-    $this->root = new Elements\Root();
-    $this->current = $this->root;
+    if ($parent === false) {
+      $this->current = new Elements\Root();
+    } else {
+      $this->current = $parent;
+    }
     $xml = new XMLReader();
     if (!$xml->open($file)) {
       throw new \Exception("Couldn't open file: {$file}");

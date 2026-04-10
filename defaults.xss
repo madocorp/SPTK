@@ -445,6 +445,20 @@ TextBox:active {
   color: #000000;
 }
 
+Tabs {
+  width: 100%;
+}
+
+Tab {
+  padding: 5px, 20px;
+}
+
+Tab:active {
+  backgroundColor: #555555;
+  color: #ffffff;
+}
+
+
 .w10 { width: 10%; }
 .w20 { width: 20%; }
 .w25 { width: 25%; }
