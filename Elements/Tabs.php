@@ -22,7 +22,7 @@ class Tabs extends Element {
     foreach ($this->descendants as $element) {
       if ($element->type !== 'Tab') {
         $ci++;
-        if ($ci === $selected) {
+        if ($ci === $this->currentTab) {
           return $element;
         }
       }

@@ -128,7 +128,10 @@ class ListBox extends Element {
 
   public function addDescendant($element) {
     parent::addDescendant($element);
-    $this->activateItem(0);
+    if ($this->num === 0) {
+      $element->addClass('selected', true);
+      $element->addClass('active', true);
+    }
     $this->num++;
   }
 
