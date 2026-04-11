@@ -18,6 +18,7 @@ class ListItem extends Element {
   protected $afterMatchField = '';
   protected $matched = false;
   protected $text = '';
+  protected $initialized = false;
 
   protected function init() {
     $this->itemLeft = new Element($this, false, false, 'ItemLeft');
@@ -26,6 +27,7 @@ class ListItem extends Element {
     $this->matchField = new InputValue($this);
     $this->matchField->addClass('matched', true);
     $this->afterMatchField = new InputValue($this);
+    $this->initialized = true;
   }
 
   public function postInit() {
@@ -163,6 +165,13 @@ class ListItem extends Element {
       $this->afterMatchField->setValue('');
     }
     return false;
+  }
+
+  public function addDescendant($element) {
+    parent::addDescendant($element);
+    if ($this->initialized) {
+      $this->valueField->setValue('');
+    }
   }
 
 }
