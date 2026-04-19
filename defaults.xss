@@ -458,6 +458,27 @@ Tab:active {
   color: #ffffff;
 }
 
+CheckBox {
+  height: 30px;
+  padding: 5px, 0px, 10px, 0px;
+  marginRight: 30px;
+}
+
+CheckBoxValue {
+  width: 22px;
+  height: 22px;
+  ascent: 16px;
+  border: 2px;
+  borderColor: #000000;
+  marginRight: 10px;
+  textAlign: center;
+}
+
+CheckBoxValue:active {
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
 
 .w10 { width: 10%; }
 .w20 { width: 20%; }

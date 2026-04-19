@@ -128,10 +128,6 @@ class ListBox extends Element {
 
   public function addDescendant($element) {
     parent::addDescendant($element);
-    if ($this->num === 0) {
-      $element->addClass('selected', true);
-      $element->addClass('active', true);
-    }
     $this->num++;
   }
 
@@ -171,6 +167,11 @@ class ListBox extends Element {
       }
     }
     parent::removeClass($class, $dynamic);
+  }
+
+  public function raise() {
+    parent::raise();
+    $this->activateItem();
   }
 
   public function moveCursor($n, $relative = false) {
@@ -255,6 +256,8 @@ class ListBox extends Element {
       }
     }
     $this->geometry->width = $width + 30; // ...
+    $this->geometry->limitateWidth();
+    $this->geometry->setDerivedWidths();
   }
 
   protected function calculateHeights() {

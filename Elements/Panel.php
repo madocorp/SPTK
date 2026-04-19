@@ -95,8 +95,6 @@ class Panel extends Element {
     $details['y1'] = $y;
     $details['x2'] = $x + $element->geometry->width;
     $details['y2'] = $y + $element->geometry->height;
-    $details['xm'] = $x + $element->geometry->width / 2;
-    $details['ym'] = $y + $element->geometry->height / 2;
     return $details;
   }
 
@@ -143,24 +141,76 @@ class Panel extends Element {
       $valid = false;
       switch ($direction) {
         case 'left':
-          $valid = $input['x2'] < $focus['x1'];
-          $primary = abs($input['ym'] - $focus['ym']);
-          $secondary = abs($input['x2'] - $focus['x1']);
+          $valid = $input['x2'] <= $focus['x1'];
+          if ($input['y1'] === $focus['y1']) {
+            $primary = 0;
+            $secondary = abs($focus['x1'] - $input['x1']);
+          } else {
+            $primary = $focus['x1'] - $input['x2'];
+            if (
+              ($input['y1'] >= $focus['y1'] && $input['y2'] <= $focus['y2']) ||
+              ($input['y1'] <= $focus['y1'] && $input['y2'] >= $focus['y2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['y1'] - $input['y1']) * $multiplier;
+          }
           break;
         case 'right':
-          $valid = $input['x1'] > $focus['x2'];
-          $primary = abs($input['ym'] - $focus['ym']);
-          $secondary = abs($input['x1'] - $focus['x2']);
+          $valid = $input['x1'] >= $focus['x2'];
+          if ($input['y1'] === $focus['y1']) {
+            $primary = 0;
+            $secondary = abs($focus['x1'] - $input['x1']);
+          } else {
+            $primary = $input['x1'] - $focus['x2'] ;
+            if (
+              ($input['y1'] >= $focus['y1'] && $input['y2'] <= $focus['y2']) ||
+              ($input['y1'] <= $focus['y1'] && $input['y2'] >= $focus['y2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['y1'] - $input['y1']) * $multiplier;
+          }
           break;
         case 'up':
-          $valid = $input['y2'] < $focus['y1'];
-          $primary = abs($input['xm'] - $focus['xm']);
-          $secondary = abs($input['y2'] - $focus['y1']);
+          $valid = $input['y2'] <= $focus['y1'];
+          if ($input['x1'] === $focus['x1']) {
+            $primary = 0;
+            $secondary = abs($focus['y1'] - $input['y1']);
+          } else {
+            $primary = $focus['y1'] - $input['y2'];
+            if (
+              ($input['x1'] >= $focus['x1'] && $input['x2'] <= $focus['x2']) ||
+              ($input['x1'] <= $focus['x1'] && $input['x2'] >= $focus['x2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['x1'] - $input['x1']) * $multiplier;
+          }
           break;
         case 'down':
-          $valid = $input['y1'] > $focus['y2'];
-          $primary = abs($input['xm'] - $focus['xm']);
-          $secondary = abs($input['y1'] - $focus['y2']);
+          $valid = $input['y1'] >= $focus['y2'];
+          $primary = $input['y1'] - $focus['y2'];
+          if ($input['x1'] === $focus['x1']) {
+            $primary = 0;
+            $secondary = abs($focus['y1'] - $input['y1']);
+          } else {
+            if (
+              ($input['x1'] >= $focus['x1'] && $input['x2'] <= $focus['x2']) ||
+              ($input['x1'] <= $focus['x1'] && $input['x2'] >= $focus['x2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['x1'] - $input['x1']) * $multiplier;
+          }
           break;
         default:
           throw new \Exception("Invalid direction: {$direction}");
@@ -187,23 +237,75 @@ class Panel extends Element {
       switch ($direction) {
         case 'left':
           $valid = $input['x2'] > $focus['x1'];
-          $primary = abs($input['ym'] - $focus['ym']);
-          $secondary = abs($input['x2'] - $focus['x1']);
+          if ($input['y1'] === $focus['y1']) {
+            $primary = 0;
+            $secondary = abs($focus['x1'] - $input['x1']);
+          } else {
+            $primary = $input['x2'] - $focus['x1'];
+            if (
+              ($input['y1'] >= $focus['y1'] && $input['y2'] <= $focus['y2']) ||
+              ($input['y1'] <= $focus['y1'] && $input['y2'] >= $focus['y2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['y1'] - $input['y1']) * $multiplier;
+          }
           break;
         case 'right':
           $valid = $input['x1'] < $focus['x2'];
-          $primary = abs($input['ym'] - $focus['ym']);
-          $secondary = abs($input['x1'] - $focus['x2']);
+          if ($input['y1'] === $focus['y1']) {
+            $primary = 0;
+            $secondary = abs($focus['x1'] - $input['x1']);
+          } else {
+            $primary = $focus['x2'] - $input['x1'];
+            if (
+              ($input['y1'] >= $focus['y1'] && $input['y2'] <= $focus['y2']) ||
+              ($input['y1'] <= $focus['y1'] && $input['y2'] >= $focus['y2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['y1'] - $input['y1']) * $multiplier;
+          }
           break;
         case 'up':
           $valid = $input['y1'] > $focus['y2'];
-          $primary = abs($input['xm'] - $focus['xm']);
-          $secondary = abs($input['y1'] - $focus['y2']);
+          if ($input['x1'] === $focus['x1']) {
+            $primary = 0;
+            $secondary = abs($focus['y1'] - $input['y1']);
+          } else {
+            $primary = $input['y1'] - $focus['y2'];
+            if (
+              ($input['x1'] >= $focus['x1'] && $input['x2'] <= $focus['x2']) ||
+              ($input['x1'] <= $focus['x1'] && $input['x2'] >= $focus['x2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['x1'] - $input['x1']) * $multiplier;
+          }
           break;
         case 'down':
           $valid = $input['y2'] < $focus['y1'];
-          $primary = abs($input['xm'] - $focus['xm']);
-          $secondary = abs($input['y2'] - $focus['y1']);
+          if ($input['x1'] === $focus['x1']) {
+            $primary = 0;
+            $secondary = abs($focus['y1'] - $input['y1']);
+          } else {
+            $primary = $input['y2'] - $focus['y1'];
+            if (
+              ($input['x1'] >= $focus['x1'] && $input['x2'] <= $focus['x2']) ||
+              ($input['x1'] <= $focus['x1'] && $input['x2'] >= $focus['x2'])
+            ) {
+              $multiplier = 1;
+            } else {
+              $multiplier = 1000;
+            }
+            $secondary = abs($focus['x1'] - $input['x1']) * $multiplier;
+          }
           break;
         default:
           throw new \Exception("Invalid direction: {$direction}");

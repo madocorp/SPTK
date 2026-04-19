@@ -117,17 +117,12 @@ class MenuBox extends ListBox {
       case Action::DO_IT:
         parent::keyPressHandler($element, $event);
         if ($this->descendants[$this->activeItem]->isSubmenu()) {
-          return $this->openSubmenu();
+          return $this->descendants[$this->activeItem]->openSubmenu();
         }
         $menu = $this->findAncestorByType('Menu');
         $menu->closeMenu();
         $this->descendants[$this->activeItem]->open();
         return true;
-      case Action::MOVE_RIGHT:
-        if ($this->descendants[$this->activeItem]->isSubmenu()) {
-          return $this->openSubmenu();
-        }
-        break;
     }
     $handled = parent::keyPressHandler($element, $event);
     if (!$handled) {

@@ -47,7 +47,7 @@ class Scrollbar {
   }
 
   private function horizontal($geometry, $sx, $mx, $size, $hasVertical) {
-    $x1 = $geometry->borderLeft;
+    $x1 = $geometry->borderLeft + $geometry->paddingLeft;
     $x2 = $geometry->width - $geometry->borderRight - ($hasVertical ? $size : 0);
     $barWidth = $x2 - $x1;
     if ($mx <= 0) {
@@ -58,7 +58,7 @@ class Scrollbar {
     }
     $y1 = $geometry->height - $geometry->borderBottom - $size;
     $y2 = $geometry->height - $geometry->borderBottom;
-    $handlePos = round($barWidth * $sx / $mx) + $geometry->borderLeft;
+    $handlePos = round($barWidth * $sx / $mx) + $geometry->borderLeft + $geometry->paddingLeft;
     $handleWidth = round($barWidth * $geometry->innerWidth / $mx);
     if ($handlePos + $handleWidth > $x2) {
       $handleWidth = $x2 - $handlePos;

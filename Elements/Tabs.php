@@ -59,6 +59,7 @@ class Tabs extends Element {
         $ci++;
         if ($ci === $selected) {
           $element->show();
+          $element->recalculateGeometry();
           $element->raise();
         } else {
           $element->hide();
