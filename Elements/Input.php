@@ -52,6 +52,8 @@ class Input extends Element {
       $this->cursor->moveLineEnd();
       $this->cursor->save();
     }
+    $this->scrollX = 0;
+    $this->scrollY = 0;
   }
 
   public function getValue() {
@@ -98,10 +100,10 @@ class Input extends Element {
 
   protected function setScroll() {
     $selected = $this->elementSelected;
-    if ($this->geometry->width > 0 && $selected->geometry->x + $selected->geometry->width > $this->scrollX + $this->geometry->width  - $this->geometry->borderLeft) {
-      $this->scrollX = $selected->geometry->x + $selected->geometry->width - $this->geometry->width + $this->geometry->borderLeft;
+    if ($this->geometry->width > 0 && $selected->geometry->x + $selected->geometry->width > $this->scrollX + $this->geometry->width - $this->geometry->borderLeft - $this->geometry->paddingLeft) {
+      $this->scrollX = $selected->geometry->x + $selected->geometry->width - $this->geometry->width + $this->geometry->borderLeft + $this->geometry->paddingLeft;
     } else if ($selected->geometry->x < $this->scrollX) {
-      $this->scrollX = $selected->geometry->x;
+      $this->scrollX = $selected->geometry->x - $this->geometry->paddingLeft;
     }
   }
 
@@ -152,7 +154,7 @@ class Input extends Element {
         $this->cursor->moveBackward();
         break;
       case Action::MOVE_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
         $this->cursor->moveScreenStart($lettersOnScreen);
         break;
       case Action::MOVE_START:
@@ -162,7 +164,7 @@ class Input extends Element {
         $this->cursor->moveBackward(true);
         break;
       case Action::SELECT_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
         $this->cursor->moveScreenStart($lettersOnScreen, true);
         break;
       case Action::SELECT_START:
@@ -173,7 +175,7 @@ class Input extends Element {
         $this->cursor->moveForward();
         break;
       case Action::MOVE_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
         $this->cursor->moveScreenEnd($lettersOnScreen);
         break;
       case Action::MOVE_END:
@@ -183,7 +185,7 @@ class Input extends Element {
         $this->cursor->moveForward(true);
         break;;
       case Action::SELECT_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
         $this->cursor->moveScreenEnd($lettersOnScreen, true);
         break;
       case Action::SELECT_END:
