@@ -37,6 +37,7 @@ class SDL {
   private $timerCallback = false;
   private $endCallback = false;
   private $end = false;
+  private $supressTextInput;
 
   public function __construct($initCallback) {
     if (!is_null(self::$instance)) {
@@ -75,6 +76,9 @@ class SDL {
       if ($hasEvent) {
         do {
           $parsedEvent = $this->parseEvent($event);
+          if ($this->supressTextInput && $parsedEvent['name'] === 'TextInput') {
+            continue;
+          }
           if ($this->eventCallback !== false) {
             call_user_func($this->eventCallback, $parsedEvent);
           }
@@ -91,7 +95,12 @@ class SDL {
         }
         $timer = $now;
       }
+      $this->supressTextInput = false;
     }
+  }
+
+  public function supressTextInput() {
+    $this->supressTextInput = true;
   }
 
   public function parseEvent($event) {

@@ -15,7 +15,21 @@ class CheckBox extends Element {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->valueBox = new Element($this, false, false, 'CheckBoxValue');
-$this->valueBox->setText('X');
+
+  }
+
+  public function getAttributeList() {
+    return ['value'];
+  }
+
+  public function setValue($value) {
+    if ($value === true || $value === 'true' || $value === 1 || $value === '1') {
+      $this->value = true;
+      $this->valueBox->setText('X');
+    } else {
+      $this->value = false;
+      $this->valueBox->setText('');
+    }
   }
 
   public function addClass($class, $dynamic = false) {
@@ -35,8 +49,12 @@ $this->valueBox->setText('X');
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     switch ($keycombo) {
-      case KeyCode::SPACE:
-echo "toogle checkbox\n";
+      case Action::SELECT_ITEM:
+        if ($this->value === true) {
+          $this->setValue(false);
+        } else {
+          $this->setValue(true);
+        }
         \SPTK\Element::refresh();
         return true;
     }
