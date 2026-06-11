@@ -90,10 +90,16 @@ class SDL {
       pcntl_signal_dispatch();
       if ($this->timerCallback !== false) {
         $now = microtime(true) * 1000;
-        if ($now > $timer + $this->timerPeriod) {
-          call_user_func($this->timerCallback, $now);
+        if ($this->syncEvents) {
+          while ($now < $timer + $this->timerPeriod) {
+            usleep($timer + $this->timerPeriod - $now);
+            $now = microtime(true) * 1000;
+          }
         }
-        $timer = $now;
+        if ($now >= $timer + $this->timerPeriod) {
+          call_user_func($this->timerCallback, $now);
+          $timer = $now;
+        }
       }
       $this->supressTextInput = false;
     }

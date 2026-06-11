@@ -109,5 +109,8 @@ class ScanCode {
   const KP_0 = 98;
   const KP_PERIOD = 99;
 
+  const LSHIFT = 225;
+  const RSHIFT = 229;
+
 }
 

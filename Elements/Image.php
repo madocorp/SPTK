@@ -25,6 +25,8 @@ class Image extends Element {
       } else {
         $this->value = getcwd() . '/' . $value;
       }
+    } else {
+      $this->value = $value;
     }
     if (file_exists($this->value)) {
       $this->load();
