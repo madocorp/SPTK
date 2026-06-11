@@ -77,19 +77,19 @@ class KeyCombo {
     self::kbind(KeyModifier::PRIMARY, KeyCode::Y, Action::REDO);
   }
 
-  private static function bind($modifier, $scancode, $action) {
+  private static function bind(int $modifier, int $scancode, Action $action): void {
     $modifier = self::normalizeModifier($modifier);
     $hash = "s:{$modifier}:{$scancode}";
     self::$map[$hash] = $action;
   }
 
-  private static function kbind($modifier, $keycode, $action) {
+  private static function kbind(int $modifier, int $keycode, Action $action): void {
     $modifier = self::normalizeModifier($modifier);
     $hash = "k:{$modifier}:{$keycode}";
     self::$map[$hash] = $action;
   }
 
-  public static function resolve($modifier, $scancode, $keycode = false) {
+  public static function resolve(int $modifier, int $scancode, ?int $keycode = null): Action|int {
     $modifier = self::normalizeModifier($modifier);
     $hash = "s:{$modifier}:{$scancode}";
     if (isset(self::$map[$hash])) {
@@ -102,7 +102,7 @@ class KeyCombo {
     return $keycode;
   }
 
-  private static function normalizeModifier($modifier) {
+  private static function normalizeModifier(int $modifier): int {
     $result = 0;
     if ($modifier & KeyModifier::CTRL) {
       $result |= 1;

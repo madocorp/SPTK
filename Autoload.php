@@ -7,7 +7,7 @@ class Autoload {
   private static $appDir;
   private static $appNamespace;
 
-  public static function init() {
+  public static function init(): void {
     self::$appNamespace = APP_NAMESPACE;
     self::$appDir = dirname(APP_PATH);
     if (DEBUG !== false) {
@@ -17,7 +17,7 @@ class Autoload {
     spl_autoload_register(['\SPTK\Autoload', 'load']);
   }
 
-  public static function load($class) {
+  public static function load(string $class): void {
     $path = self::getPath($class);
     if (DEBUG !== false) {
       echo "AUTOLOAD: $path\n";
@@ -27,12 +27,12 @@ class Autoload {
     }
   }
 
-  public static function exists($class) {
+  public static function exists(string $class): bool {
     $path = self::getPath($class);
     return file_exists($path);
   }
 
-  public static function getPath($class) {
+  public static function getPath(string $class): string {
     $namespace = str_replace(self::$appNamespace . '\\', '', $class);
     return trim(str_replace('\\', '/', $namespace), '/') . '.php';
   }
