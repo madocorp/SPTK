@@ -85,13 +85,17 @@ class Texture {
     $this->sdl->SDL_RenderTexture($this->renderer, $this->texture, null, self::$sdlRectAddr);
   }
 
-  public function copy(Texture $texture, int $x, int $y, int $w, int $h) {
-    self::$sdlRect->x = $x;
-    self::$sdlRect->y = $y;
+  public function copy(Texture $target, int $sx, int $sy, int $dx, int $dy, int $w, int $h): void {
+    $this->sdl->SDL_SetRenderTarget($this->renderer, $target->texture ?? null);
+    self::$sdlRect->x = $sx;
+    self::$sdlRect->y = $sy;
     self::$sdlRect->w = $w;
     self::$sdlRect->h = $h;
-    $this->sdl->SDL_SetRenderTarget($this->renderer, $this->texture);
-    $this->sdl->SDL_RenderTexture($this->renderer, $texture, null, self::$sdlRectAddr);
+    self::$sdlRect2->x = $dx;
+    self::$sdlRect2->y = $dy;
+    self::$sdlRect2->w = $w;
+    self::$sdlRect2->h = $h;
+    $this->sdl->SDL_RenderTexture($this->renderer, $this->texture, self::$sdlRectAddr, self::$sdlRectAddr2);
   }
 
 }

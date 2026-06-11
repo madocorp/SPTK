@@ -53,11 +53,19 @@ class Window extends Element {
   }
 
   public function getAttributeList() {
-    return ['title'];
+    return ['title', 'fullscreen'];
   }
 
   public function setTitle($title) {
-    $this->sdl->SDL_SetWindowTitle($this->window, $title);
+    if ($title !== false) {
+      $this->sdl->SDL_SetWindowTitle($this->window, $title);
+    }
+  }
+
+  public function setFullscreen($full) {
+    if ($full === 'true') {
+      $this->fullscreenOn();
+    }
   }
 
   public function setSize() {
