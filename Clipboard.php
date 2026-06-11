@@ -6,7 +6,7 @@ use \SPTK\SDLWrapper\SDL;
 
 class Clipboard {
 
-  public static function set($value) {
+  public static function set(string $value): void {
     $sdl = SDL::$instance->sdl;
     $len = strlen($value);
     $text = \FFI::new('char[' . ($len + 1) . ']');
@@ -15,7 +15,7 @@ class Clipboard {
     $sdl->SDL_SetClipboardText($text);
   }
 
-  public static function get() {
+  public static function get(): string|false {
     $sdl = SDL::$instance->sdl;
     if (!$sdl->SDL_HasClipboardText()) {
       return false;

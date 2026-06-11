@@ -17,7 +17,7 @@ class App {
   private $timerCallback;
   private $endCallback;
 
-  public function __construct($xml, $xss, $init = false, $loop = false, $timer = false, $end = false) {
+  public function __construct(string $xml, string $xss, ?callable $init = null, ?callable $loop = null, ?callable $timer = null, ?callable $end = null) {
     $this->xml = $xml;
     $this->xss = $xss;
     $this->dir = dirname(APP_PATH);
@@ -32,7 +32,7 @@ class App {
     new SDL([$this, 'init']);
   }
 
-  public function init($sdl) {
+  public function init(SDL $sdl): void {
     if (!defined('DEBUG')) {
       define('DEBUG', false);
     }
@@ -44,16 +44,16 @@ class App {
     $sdl->setLoopCallback($this->loopCallback);
     $sdl->setTimerCallback($this->timerCallback);
     $sdl->setEndCallback([$this, 'end']);
-    if ($this->initCallback !== false) {
+    if ($this->initCallback !== null) {
       call_user_func($this->initCallback);
     }
   }
 
-  public function loadXml() {
+  public function loadXml(): void {
     new LayoutXmlReader($this->xml);
   }
 
-  public function loadXss() {
+  public function loadXss(): void {
     if (!is_array($this->xss)) {
       $this->xss = [$this->xss];
     }
@@ -63,18 +63,18 @@ class App {
     }
   }
 
-  public function end() {
-    if ($this->endCallback !== false) {
+  public function end(): void {
+    if ($this->endCallback !== null) {
       call_user_func($this->endCallback);
     }
     Font::closeAll();
   }
 
-  public function getDir() {
+  public function getDir(): string {
     return $this->dir;
   }
 
-  public function quit() {
+  public function quit(): void {
     SDL::$instance->end();
   }
 
