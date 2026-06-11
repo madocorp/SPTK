@@ -265,4 +265,16 @@ class Window extends Element {
     return false;
   }
 
+  public function getRenderer() {
+    return $this->renderer;
+  }
+
+  public function getTexture() {
+    return $this->texture;
+  }
+
+  public function publicRender() {
+    $this->render();
+  }
+
 }

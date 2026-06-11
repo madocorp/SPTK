@@ -23,6 +23,9 @@ class Button extends Element {
   }
 
   public function setHotKey($hotKeyStr) {
+    if ($hotKeyStr === false) {
+      return;
+    }
     if (!defined("\SPTK\SDLWrapper\KeyCode::{$hotKeyStr}")) {
       echo "KeyCode {$hotKeyStr} is not defined!";
       return;
