@@ -38,6 +38,7 @@ class SDL {
   private $endCallback = false;
   private $end = false;
   private $supressTextInput;
+  private $syncEvents = false;
 
   public function __construct($initCallback) {
     if (!is_null(self::$instance)) {
@@ -103,6 +104,10 @@ class SDL {
       }
       $this->supressTextInput = false;
     }
+  }
+
+  public function syncEvents() {
+    $this->syncEvents = true;
   }
 
   public function supressTextInput() {

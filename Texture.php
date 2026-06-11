@@ -15,12 +15,16 @@ class Texture {
   protected $height;
 
   private static $sdlRect;
+  private static $sdlRect2;
   private static $sdlRectAddr;
+  private static $sdlRectAddr2;
 
   public static function init(): void {
     $sdl = SDL::$instance->sdl;
     self::$sdlRect = $sdl->new('SDL_FRect');
     self::$sdlRectAddr = \FFI::addr(self::$sdlRect);
+    self::$sdlRect2 = $sdl->new('SDL_FRect');
+    self::$sdlRectAddr2 = \FFI::addr(self::$sdlRect2);
   }
 
   public function __construct(\FFI\CData $renderer, int $width, int $height, array $color, \FFI\CData|bool $fromSurface = false) {
