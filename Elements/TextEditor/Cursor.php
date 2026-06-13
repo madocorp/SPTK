@@ -7,16 +7,25 @@ use \SPTK\SDLWrapper\Action;
 class Cursor {
 
   protected $lines;
+  protected $longestLine;
   protected $caret = [0, 0];
   protected $anchor = [0, 0];
   protected $caretBefore = [0, 0];
   protected $anchorBefore = [0, 0];
+  protected $freeSelectionMode = false;
 
   public function __construct(&$lines) {
     $this->lines = &$lines;
   }
 
   protected function getLineLength($i) {
+    if ($this->freeSelectionMode) {
+      $this->longestLine = 0;
+      foreach ($this->lines as $line) {
+        $this->longestLine = max($this->longestLine, mb_strlen($line));
+      }
+      return $this->longestLine;
+    }
     return mb_strlen($this->lines[$i]);
   }
 
@@ -54,7 +63,12 @@ class Cursor {
   public function toCoordinates(&$row1, &$col1, &$row2, &$col2) {
     $caret = $this->caretBefore;
     $anchor = $this->anchorBefore;
-    if (
+    if ($this->freeSelectionMode) {
+      $row1 = min($caret[0], $anchor[0]);
+      $row2 = max($caret[0], $anchor[0]);
+      $col1 = min($caret[1], $anchor[1]);
+      $col2 = max($caret[1] + 1, $anchor[1] + 1);
+    } else if (
       $caret[0] < $anchor[0] ||
       ($caret[0] == $anchor[0] && $caret[1] <= $anchor[1])
     ) {
@@ -114,6 +128,13 @@ class Cursor {
     }
     $this->anchor[0] = $this->caret[0];
     $this->anchor[1] = $this->caret[1];
+  }
+
+  public function freeSelection(?bool $mode = null): bool {
+    if ($mode !== null) {
+      $this->freeSelectionMode = $mode;
+    }
+    return $this->freeSelectionMode;
   }
 
   public function moveUp($select = false) {
