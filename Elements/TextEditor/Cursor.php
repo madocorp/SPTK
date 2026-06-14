@@ -111,11 +111,15 @@ class Cursor {
     $lines = [];
     for ($i = $row1; $i <= $row2; $i++) {
       $line = $this->lines[$i];
-      if ($i === $row2) {
-        $line = mb_substr($line, 0, $col2);
-      }
-      if ($i === $row1) {
-        $line = mb_substr($line, $col1);
+      if ($this->freeSelectionMode) {
+        $line = mb_substr($line, min($col1, $col2), abs($col2 - $col1));
+      } else {
+        if ($i === $row2) {
+          $line = mb_substr($line, 0, $col2);
+        }
+        if ($i === $row1) {
+          $line = mb_substr($line, $col1);
+        }
       }
       $lines[] = $line;
     }
