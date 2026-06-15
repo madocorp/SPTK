@@ -9,7 +9,7 @@ use \SPTK\SDLWrapper\SDL;
 class Image extends Element {
 
   public $value = false;
-  protected $img;
+  protected \GdImage $img;
   protected $width;
   protected $height;
 
@@ -31,6 +31,26 @@ class Image extends Element {
     if (file_exists($this->value)) {
       $this->load();
     }
+  }
+
+  public function setBase64($data) {
+    if (strpos($data, 'data:') === 0) {
+      $separator = strpos($data, ',');
+      if ($separator === false) {
+        throw new \InvalidArgumentException('Invalid image data URI.');
+      }
+      $data = substr($data, $separator + 1);
+    }
+    $decoded = base64_decode($data, true);
+    if ($decoded === false) {
+      throw new \InvalidArgumentException('Invalid base64 image data.');
+    }
+    $img = imagecreatefromstring($decoded);
+    if ($img === false) {
+      throw new \InvalidArgumentException('Unsupported or invalid image data.');
+    }
+    $this->value = false;
+    $this->setImage($img);
   }
 
   protected function calculateWidths() {
@@ -121,13 +141,18 @@ class Image extends Element {
   }
 
   protected function load() {
-    $this->img = imagecreatefrompng($this->value);
-    if (!$this->img) {
+    $img = imagecreatefrompng($this->value);
+    if ($img === false) {
       throw new \Exception("Failed to load image: {$this->value}");
     }
+    $this->setImage($img);
+  }
+
+  private function setImage(\GdImage $img) {
+    $this->img = $img;
     imagepalettetotruecolor($this->img);
     imagesavealpha($this->img, true);
-    $this->width  = imagesx($this->img);
+    $this->width = imagesx($this->img);
     $this->height = imagesy($this->img);
   }
 
