@@ -11,7 +11,7 @@ use \SPTK\SDLWrapper\SDL;
 class Word extends Element {
 
   public $value = false;
-  protected $surface;
+  protected $surface = null;
   protected $width;
   protected $height;
   protected $ascent;
@@ -99,6 +99,9 @@ class Word extends Element {
   }
 
   public function __destruct() {
+    if ($this->surface === null || TTF::$instance === null) {
+      return;
+    }
     $ttf = TTF::$instance->ttf;
     $ttf->SDL_DestroySurface($this->surface);
   }

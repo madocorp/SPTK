@@ -41,6 +41,8 @@ class Tabs extends Element {
   public function selectTab($selected = null) {
     if ($selected === null) {
       $selected = $this->currentTab;
+    } else {
+      $this->currentTab = $selected;
     }
     $ti = -1;
     foreach ($this->descendants as $element) {

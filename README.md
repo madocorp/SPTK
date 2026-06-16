@@ -89,6 +89,22 @@ application/
 Use an absolute path when the application and SPTK are installed in unrelated
 locations. The link name must be exactly `SPTK`.
 
+## Examples and Tests
+
+Runnable examples are organized under `Examples/Interactive/`:
+
+```sh
+php Examples/run.php HelloWorld
+php Examples/run.php Interactive/Menus/Menu
+```
+
+Headless regression tests for XML layouts, XSS styles, and element behavior can
+be run without SDL:
+
+```sh
+php Examples/Tests/run.php
+```
+
 ## Updating
 
 Update the shared SPTK installation from its directory:
