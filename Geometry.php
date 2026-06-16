@@ -48,7 +48,7 @@ class Geometry {
 
   public $lines = [];
 
-  public function __construct(Geometry $ancestorGeometry) {
+  public function __construct(?Geometry $ancestorGeometry) {
     if ($ancestorGeometry === null) {
       return;
     }

@@ -85,7 +85,7 @@ trait ElementTree {
     $this->addText($text);
   }
 
-  public function getText(?string &$text = null): string {
+  public function getText(?array &$text = null): string {
     if ($text === null) {
       $text = [];
     }
@@ -122,9 +122,12 @@ trait ElementTree {
     array_splice($ancestor->descendants, $after + 1, 0, [$this]);
   }
 
-  public function findAncestorByType(string $type): Element {
+  public function findAncestorByType(string $type): Element|false {
     if ($this->type == $type) {
       return $this;
+    }
+    if ($this->ancestor === null) {
+      return false;
     }
     return $this->ancestor->findAncestorByType($type);
   }

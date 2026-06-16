@@ -24,7 +24,7 @@ trait ElementAssistant {
     return $this->type;
   }
 
-  public function getClass(): string {
+  public function getClass(): array {
     return $this->sclass;
   }
 
@@ -40,7 +40,7 @@ trait ElementAssistant {
     return $this->descendants;
   }
 
-  public function getAncestor(): Element {
+  public function getAncestor(): ?Element {
     return $this->ancestor;
   }
 
@@ -105,4 +105,3 @@ trait ElementAssistant {
   }
 
 }
-
