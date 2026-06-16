@@ -22,12 +22,12 @@ class ListBox extends Element {
   protected $activeBeforeType = 0;
   protected $nextMatch = 0;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['movable', 'onChange', 'typing', 'onSelect', 'valueType'];
   }
 
@@ -67,7 +67,7 @@ class ListBox extends Element {
     $this->valueType = $value;
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     switch ($this->valueType) {
       case 'order': return $this->getOrderValue();
       case 'select': return $this->getSelectedValue();
@@ -126,12 +126,12 @@ class ListBox extends Element {
     return $groups;
   }
 
-  public function addDescendant($element) {
+  public function addDescendant($element): void {
     parent::addDescendant($element);
     $this->num++;
   }
 
-  public function removeDescendant($element) {
+  public function removeDescendant($element): void {
     $this->num--;
     parent::removeDescendant($element);
     if ($this->activeItem >= $this->num) {
@@ -140,14 +140,14 @@ class ListBox extends Element {
     $this->activateItem();
   }
 
-  public function clear() {
+  public function clear(): void {
     parent::clear();
     $this->activeItem = 0;
     $this->num = 0;
     $this->scrollY = 0;
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
@@ -158,7 +158,7 @@ class ListBox extends Element {
     parent::addClass($class, $dynamic);
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
@@ -169,7 +169,7 @@ class ListBox extends Element {
     parent::removeClass($class, $dynamic);
   }
 
-  public function raise() {
+  public function raise(): void {
     parent::raise();
     $this->activateItem();
   }
@@ -236,7 +236,7 @@ class ListBox extends Element {
     return $this->descendants[$this->activeItem];
   }
 
-  protected function measure() {
+  protected function measure(): void {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     if ($this->geometry->width === 'calculated') {
       $this->calculateWidth();
@@ -260,7 +260,7 @@ class ListBox extends Element {
     $this->geometry->setDerivedWidths();
   }
 
-  protected function calculateHeights() {
+  protected function calculateHeights(): void {
     parent::calculateHeights();
     if (!isset($this->descendants[0])) {
       return;

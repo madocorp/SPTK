@@ -12,13 +12,13 @@ class TextEditor extends TextBox {
 
   protected $history;
 
-  protected function init() {
+  protected function init(): void {
     parent::init();
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
     $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     return $this->lines;
   }
 

@@ -13,7 +13,7 @@ class ConfirmationCode extends Element {
   private $elementCode;
   private $elementSelected;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
@@ -27,18 +27,18 @@ class ConfirmationCode extends Element {
     $this->code = $code;
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     return ($this->elementCode->getValue() === $this->code);
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->elementSelected->addClass('selected', true);
     }
     parent::addClass($class, $dynamic);
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->elementSelected->removeClass('selected', true);
     }

@@ -9,7 +9,7 @@ class MenuBoxItem extends ListItem {
   protected $submenu = false;
   protected $onOpen = false;
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     $attributeList = parent::getAttributeList();
     return array_merge($attributeList, ['submenu', 'onOpen']);
   }

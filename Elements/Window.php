@@ -24,7 +24,7 @@ class Window extends Element {
   protected $ffiHeight;
   protected $ready = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->display = false;
     $this->sdl = SDL::$instance->sdl;
     $this->ffiWidth = \FFI::new("int");
@@ -52,7 +52,7 @@ class Window extends Element {
     $this->display = true;
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['title', 'fullscreen'];
   }
 
@@ -106,12 +106,12 @@ class Window extends Element {
   }
 
 
-  public function draw() {
+  public function draw(): void {
     $color = $this->style->get('backgroundColor');
     $this->texture = new Texture($this->renderer, $this->geometry->width, $this->geometry->height, $color);
   }
 
-  protected function render() {
+  protected function render(): Texture|false {
     if ($this->texture === false) {
       return false;
     }
@@ -134,7 +134,7 @@ class Window extends Element {
     return false;
   }
 
-  protected function measure() {
+  protected function measure(): void {
     $this->geometry->windowWidth = $this->geometry->width;
     $this->geometry->windowHeight = $this->geometry->height;
     foreach ($this->descendants as $descendant) {
@@ -142,31 +142,31 @@ class Window extends Element {
     }
   }
 
-  protected function redraw() {
+  protected function redraw(): void {
     foreach ($this->descendants as $descendant) {
       $descendant->redraw();
     }
   }
 
-  public function raise() {
+  public function raise(): void {
     return;
   }
 
-  public function lower() {
+  public function lower(): void {
     return;
   }
 
-  public function show() {
+  public function show(): void {
     $this->sdl->SDL_RestoreWindow($this->window);
     $this->display = true;
   }
 
-  public function hide() {
+  public function hide(): void {
     $this->sdl->SDL_MinimizeWindow($this->window);
     $this->display = false;
   }
 
-  public function remove() {
+  public function remove(): void {
     parent::remove();
     $this->sdl->SDL_DestroyWindow($this->window);
   }
@@ -205,7 +205,7 @@ class Window extends Element {
     }
   }
 
-  public function eventHandler($event) {
+  public function eventHandler(array $event): bool {
     if ($this->display === false) {
       return false;
     }
@@ -232,7 +232,7 @@ class Window extends Element {
           if (!$this->ready) {
             $this->ready = true;
             if (isset($this->events['WindowReady'])) {
-              return call_user_func($this->events['WindowReady'], $this, $event);
+              return (bool)call_user_func($this->events['WindowReady'], $this, $event);
             }
           }
           return true;
@@ -258,7 +258,7 @@ class Window extends Element {
         }
       }
       if (isset($event['name']) && isset($this->events[$event['name']])) {
-        return call_user_func($this->events[$event['name']], $this, $event);
+        return (bool)call_user_func($this->events[$event['name']], $this, $event);
       }
       return false;
     }

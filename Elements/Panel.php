@@ -15,13 +15,13 @@ class Panel extends Element {
   protected $destroyAtClose = false;
   protected $pin = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->display = false;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->focusIndex = -1;
   }
 
-  public function show() {
+  public function show(): void {
     $this->display = true;
     $this->inputList = [];
     $this->recalculateGeometry();
@@ -39,7 +39,7 @@ class Panel extends Element {
     }
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     $value = [];
     foreach ($this->inputList as $input) {
       $key = $input['element']->getName();
@@ -50,7 +50,7 @@ class Panel extends Element {
     return $value;
   }
 
-  public function setValue($values) {
+  public function setValue($values): void {
     foreach ($values as $name => $value) {
       $element = Element::byName($name, $this);
       if ($element !== false) {
@@ -59,7 +59,7 @@ class Panel extends Element {
     }
   }
 
-  public function setText($text) {
+  public function setText($text): void {
     $content = Element::firstByType('PanelContent', $this);
     if ($content === false) {
       $content = Element::firstByType('WarningPanelContent', $this);
@@ -98,7 +98,7 @@ class Panel extends Element {
     return $details;
   }
 
-  public function hide() {
+  public function hide(): void {
     $this->display = false;
     $this->lower();
   }
@@ -407,9 +407,9 @@ class Panel extends Element {
     $className = static::class;
     $panelName = basename(str_replace('\\', '/', $className));
     $panel = new $className($parent, $name, $sclass);
-    $titleElement = new Element($panel, false, false, "{$panelName}Title");
+    $titleElement = new Element($panel, null, null, "{$panelName}Title");
     $titleElement->addText($title);
-    $conetentElement = new Element($panel, false, false, "{$panelName}Content");
+    $conetentElement = new Element($panel, null, null, "{$panelName}Content");
     if (strpos($text, '%CONFIRMATION%') !== false) {
       $code = sprintf('%03d', rand(0, 999));
       $confirmMessages = [
@@ -428,7 +428,7 @@ class Panel extends Element {
       $confirmText = str_replace('%CONFIRMATION_CODE%', $code, $confirmText);
       $text = str_replace('%CONFIRMATION%', $confirmText, $text);
       $conetentElement->addText($text);
-      $labelElement = new Element($conetentElement, false, false, 'Label');
+      $labelElement = new Element($conetentElement, null, null, 'Label');
       $labelElement->addText('Code:');
       $codeElement = new ConfirmationCode($labelElement, 'confirmed');
       $codeElement->setCode($code);
@@ -436,7 +436,7 @@ class Panel extends Element {
       $conetentElement->addText($text);
     }
     if (is_array($buttons)) {
-      $buttonBoxElement = new Element($conetentElement, false, false, 'ButtonBox');
+      $buttonBoxElement = new Element($conetentElement, null, null, 'ButtonBox');
       foreach ($buttons as $button) {
         $buttonElement = new Button($buttonBoxElement);
         if (isset($button['hotKey'])) {

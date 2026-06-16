@@ -51,7 +51,7 @@ function resetToolkit(): void {
 
 function root(): HeadlessRoot {
   resetToolkit();
-  return new HeadlessRoot(null, false, false, 'Root');
+  return new HeadlessRoot(null, null, null, 'Root');
 }
 
 function tempFile(string $contents, string $suffix): string {

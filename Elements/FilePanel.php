@@ -22,21 +22,21 @@ class FilePanel extends Panel {
   private $fileFilter = true;
   private $create = false;
 
-  protected function init() {
+  protected function init(): void {
     parent::init();
-    $this->title = new Element($this, false, false, 'PanelTitle');
-    $content = new Element($this, false, false, 'PanelContent');
-    $this->path = new Element($content, false, 'w100', 'Path');
-    $label = new Element($content, false, false, 'Label');
-    $this->theList = new ListBox($label, false, 'wh50');
+    $this->title = new Element($this, null, null, 'PanelTitle');
+    $content = new Element($this, null, null, 'PanelContent');
+    $this->path = new Element($content, null, 'w100', 'Path');
+    $label = new Element($content, null, null, 'Label');
+    $this->theList = new ListBox($label, null, 'wh50');
     $this->theList->setOnChange([$this, 'changed']);
     $this->theList->setTyping('search');
-    $this->fileNameLabel = new Element($content, false, false, 'Label');
+    $this->fileNameLabel = new Element($content, null, null, 'Label');
     $this->fileNameLabel->addText('New name:');
     $this->fileNameInput = new Input($this->fileNameLabel, 'fileName');
     $this->fileNameInput->setOnChange([$this, 'changed']);
     $this->fileNameInput->addEvent('KeyPress', [$this, 'handleReturn']);
-    $buttons = new Element($content, false, false, 'ButtonBox');
+    $buttons = new Element($content, null, null, 'ButtonBox');
     $cancel = new Button($buttons);
     $cancel->setHotKey('ESCAPE');
     $cancel->addText('Cancel');
@@ -74,11 +74,11 @@ class FilePanel extends Panel {
     }
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     $this->value = $value;
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     return $this->value;
   }
 
@@ -112,7 +112,7 @@ class FilePanel extends Panel {
     $this->refreshPath();
   }
 
-  public function show() {
+  public function show(): void {
     parent::show();
     $this->refreshPath();
   }
