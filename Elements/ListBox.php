@@ -100,7 +100,7 @@ class ListBox extends Element {
     $selected = [];
     foreach ($this->descendants as $item) {
       if ($item->isSelectable() === true && $item->isSelected()) {
-        $selected[] = $item->getValue;
+        $selected[] = $item->getValue();
       }
     }
     return $selected;
