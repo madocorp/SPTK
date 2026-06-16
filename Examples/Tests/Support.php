@@ -10,7 +10,7 @@ class TestFailure extends \Exception {
 
 class HeadlessRoot extends Element {
 
-  protected function init() {
+  protected function init(): void {
     $this->geometry->width = 800;
     $this->geometry->height = 600;
     $this->geometry->innerWidth = 800;
@@ -21,11 +21,11 @@ class HeadlessRoot extends Element {
     $this->geometry->windowHeight = 600;
   }
 
-  public function raise() {
+  public function raise(): void {
     ;
   }
 
-  public function findAncestorByType($type) {
+  public function findAncestorByType(string $type): Element|false {
     return false;
   }
 
@@ -51,7 +51,7 @@ function resetToolkit(): void {
 
 function root(): HeadlessRoot {
   resetToolkit();
-  return new HeadlessRoot(null, false, false, 'Root');
+  return new HeadlessRoot(null, null, null, 'Root');
 }
 
 function tempFile(string $contents, string $suffix): string {

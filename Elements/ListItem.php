@@ -20,9 +20,9 @@ class ListItem extends Element {
   protected $text = '';
   protected $initialized = false;
 
-  protected function init() {
-    $this->itemLeft = new Element($this, false, false, 'ItemLeft');
-    $this->itemRight = new Element($this, false, false, 'ItemRight');
+  protected function init(): void {
+    $this->itemLeft = new Element($this, null, null, 'ItemLeft');
+    $this->itemRight = new Element($this, null, null, 'ItemRight');
     $this->valueField = new InputValue($this);
     $this->matchField = new InputValue($this);
     $this->matchField->addClass('matched', true);
@@ -30,7 +30,7 @@ class ListItem extends Element {
     $this->initialized = true;
   }
 
-  public function postInit() {
+  public function postInit(): void {
     $text = [];
     foreach ($this->descendants as $descendant) {
       if ($descendant->type === 'Word') {
@@ -44,11 +44,11 @@ class ListItem extends Element {
     }
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['value', 'selectable', 'selected', 'filterable', 'left', 'right'];
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     $this->value = $value;
     $this->text = $value;
     $this->valueField->setValue($this->text);
@@ -91,7 +91,7 @@ class ListItem extends Element {
     }
   }
 
-  public function setText($text) {
+  public function setText($text): void {
     $this->text = $text;
     $this->valueField->setValue($this->text);
   }
@@ -108,7 +108,7 @@ class ListItem extends Element {
     return $this->selected;
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     if ($this->value === false || $this->value === '') {
       return $this->text;
     }
@@ -167,7 +167,7 @@ class ListItem extends Element {
     return false;
   }
 
-  public function addDescendant($element) {
+  public function addDescendant($element): void {
     parent::addDescendant($element);
     if ($this->initialized) {
       $this->valueField->setValue('');

@@ -13,12 +13,12 @@ class Button extends Element {
   protected $hotKeyStr = false;
   protected $panel = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['hotKey', 'onPress'];
   }
 
@@ -30,7 +30,7 @@ class Button extends Element {
       echo "KeyCode {$hotKeyStr} is not defined!";
       return;
     }
-    $hotKey = new Element($this, false, false, 'ButtonHotKey');
+    $hotKey = new Element($this, null, null, 'ButtonHotKey');
     $text = new Word($hotKey);
     $text->setValue($hotKeyStr);
     $this->hotKeyStr = $hotKeyStr;

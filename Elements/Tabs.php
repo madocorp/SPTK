@@ -12,7 +12,7 @@ class Tabs extends Element {
   protected $tabs = 0;
   protected $currentTab = 0;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
@@ -30,7 +30,7 @@ class Tabs extends Element {
     return false;
   }
 
-  public function addDescendant($element) {
+  public function addDescendant($element): void {
     parent::addDescendant($element);
     if ($element->type === 'Tab') {
       $this->tabs++;

@@ -19,7 +19,7 @@ class TextBox extends Element {
   protected $lineContexts = [];
   protected $active = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $fontSize = $this->style->get('fontSize');
@@ -30,7 +30,7 @@ class TextBox extends Element {
     $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['tokenizer', 'file'];
   }
 
@@ -63,13 +63,13 @@ class TextBox extends Element {
     $this->setValue($content);
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     $this->lines = explode("\n", $value);
     $this->measure();
     $this->update();
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->active = true;
     }
@@ -77,7 +77,7 @@ class TextBox extends Element {
     $this->update();
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->active = false;
     }
@@ -85,7 +85,7 @@ class TextBox extends Element {
     $this->update();
   }
 
-  protected function calculateWidths() {
+  protected function calculateWidths(): void {
     if ($this->display === false) {
       return;
     }
@@ -94,7 +94,7 @@ class TextBox extends Element {
     }
   }
 
-  protected function calculateHeights() {
+  protected function calculateHeights(): void {
     if ($this->display === false) {
       return;
     }
@@ -106,7 +106,7 @@ class TextBox extends Element {
     $this->geometry->setContentHeight($ascent, $maxY);
   }
 
-  protected function layout() {
+  protected function layout(): void {
     if ($this->display === false) {
       return;
     }
@@ -150,7 +150,7 @@ class TextBox extends Element {
     if ($selected && $this->active) {
       $style .= ' InputValue:selected';
     }
-    $iv = new InputValue($row, false, $style);
+    $iv = new InputValue($row, null, $style);
     $iv->setValue(mb_substr($token['value'], 0, $split));
     $token['value'] = mb_substr($token['value'], $split);
     $token['length'] -= $split;
@@ -185,7 +185,7 @@ class TextBox extends Element {
         if ($selected && $this->active) {
           $token['style'] .= ' InputValue:selected';
         }
-        $iv = new InputValue($row, false, $token['style']);
+        $iv = new InputValue($row, null, $token['style']);
         $iv->setValue($token['value']);
         $j += $token['length'];
       }
@@ -202,7 +202,7 @@ class TextBox extends Element {
           $style = 'InputValue:newline';
         }
       }
-      $iv = new InputValue($row, false, $style);
+      $iv = new InputValue($row, null, $style);
       $iv->setValue(' ');
       $j++;
       if ($row2 === $i && $col2 === $j) {

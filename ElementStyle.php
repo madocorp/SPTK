@@ -4,7 +4,7 @@ namespace SPTK;
 
 trait ElementStyle {
 
-  public function recalculateStyle() {
+  public function recalculateStyle(): void {
     $defaultStyle = null;
     $ancestorStyle = null;
     if (isset(self::$root)) {
@@ -21,7 +21,7 @@ trait ElementStyle {
     }
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass(string $class, bool $dynamic = false): void {
     if ($dynamic) {
       $class = $this->type . ':' . $class;
     }
@@ -31,7 +31,7 @@ trait ElementStyle {
     }
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass(string $class, bool $dynamic = false): void {
     if ($dynamic) {
       $class = $this->type . ':' . $class;
     }
@@ -42,18 +42,18 @@ trait ElementStyle {
     }
   }
 
-  public function hasClass($class, $dynamic = false) {
+  public function hasClass(string $class, bool $dynamic = false): bool {
     if ($dynamic) {
       $class = $this->type . ':' . $class;
     }
     return in_array($class, $this->sclass);
   }
 
-  public function addChildClass($class) {
+  public function addChildClass(string $class): void {
     array_push($this->childClass, $class);
   }
 
-  public function removeChildClass($class) {
+  public function removeChildClass(string $class): void {
     array_pop($this->childClass);
   }
 

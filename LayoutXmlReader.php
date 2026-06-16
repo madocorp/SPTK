@@ -9,11 +9,11 @@ class LayoutXmlReader {
   private $event = false;
   private $current;
 
-  public function __construct($file, $parent = false) {
+  public function __construct(string $file, ?Element $parent = null) {
     if (!file_exists($file)) {
       throw new \Exception("File not found: {$file}");
     }
-    if ($parent === false) {
+    if ($parent === null) {
       $this->current = new Elements\Root();
     } else {
       $this->current = $parent;
@@ -26,7 +26,7 @@ class LayoutXmlReader {
     $xml->close();
   }
 
-  private function parseWithIncludes($xml) {
+  private function parseWithIncludes(XMLReader $xml): void {
     while ($xml->read()) {
       switch ($xml->nodeType) {
         case XMLReader::ELEMENT:
@@ -45,8 +45,8 @@ class LayoutXmlReader {
           } else {
             $type = str_replace('_', '', ucwords($xml->name, '_'));
             $element = 'SPTK\\Elements\\' . $type;
-            $name = $xml->getAttribute('name') ?? false;
-            $class = $xml->getAttribute('class') ?? false;
+            $name = $xml->getAttribute('name') ?? null;
+            $class = $xml->getAttribute('class') ?? null;
             if (!Autoload::exists($element)) {
               $element = 'SPTK\\Element';
             }
