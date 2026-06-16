@@ -60,7 +60,7 @@ class Cursor {
     return [$this->caretBefore[0], $this->caretBefore[1], $this->anchorBefore[0], $this->anchorBefore[1]];
   }
 
-  public function toCoordinates(int &$row1, int &$col1, int &$row2, int &$col2): void {
+  public function toCoordinates(?int &$row1, ?int &$col1, ?int &$row2, ?int &$col2): void {
     $caret = $this->caretBefore;
     $anchor = $this->anchorBefore;
     if ($this->freeSelectionMode) {
