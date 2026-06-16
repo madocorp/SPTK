@@ -14,12 +14,12 @@ class MenuBox extends ListBox {
   protected $num = 0;
   protected $jumpToSelected = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->display = false;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     $attributeList = parent::getAttributeList();
     return array_merge($attributeList, ['belongsTo', 'submenu', 'jumpToSelected']);
   }
@@ -52,7 +52,7 @@ class MenuBox extends ListBox {
     }
   }
 
-  protected function measure() {
+  protected function measure(): void {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     if ($this->geometry->width === 'calculated') {
       $this->calculateWidth();

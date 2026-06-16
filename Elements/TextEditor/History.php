@@ -6,19 +6,19 @@ class History {
 
   const TYPE_TIMEOUT = 500000;
 
-  private $lines;
-  private $cursor;
-  private $undo = [];
-  private $redo = [];
-  private $lineUnderConstruction = false;
-  private $lastChange;
+  private array $lines;
+  private Cursor $cursor;
+  private array $undo = [];
+  private array $redo = [];
+  private array|false $lineUnderConstruction = false;
+  private float $lastChange = 0.0;
 
-  public function __construct(&$lines, $cursor) {
+  public function __construct(array &$lines, Cursor $cursor) {
     $this->lines = &$lines;
     $this->cursor = $cursor;
   }
 
-  private function startEditingLine($row) {
+  private function startEditingLine(int $row): void {
     $this->lineUnderConstruction = [
       'offset' => $row, 
       'linesBefore' => [$this->lines[$row]],
@@ -29,7 +29,7 @@ class History {
     $this->lastChange = microtime(true);
   }
 
-  private function saveEditedLine() {
+  private function saveEditedLine(): void {
     $row = $this->lineUnderConstruction['offset'];
     $this->lineUnderConstruction['linesAfter'] = [$this->lines[$row]];
     $this->lineUnderConstruction['cursorAfter'] = $this->cursor->getBefore();
@@ -37,7 +37,7 @@ class History {
     $this->lineUnderConstruction = false;
   }
 
-  function differsByAtMostOneChar(string $a, string $b): bool {
+  public function differsByAtMostOneChar(string $a, string $b): bool {
     $arrA = preg_split('//u', $a, -1, PREG_SPLIT_NO_EMPTY);
     $arrB = preg_split('//u', $b, -1, PREG_SPLIT_NO_EMPTY);
     $lenA = count($arrA);
@@ -68,7 +68,7 @@ class History {
     return true;
   }
 
-  public function store($offset, $length, $replacement) {
+  public function store(int $offset, int $length, array $replacement): void {
     $this->redo = [];
     if ($length === 1 && count($replacement) === 1) {
       $shortDiff = $this->differsByAtMostOneChar($this->lines[$offset], $replacement[0]);
@@ -103,7 +103,7 @@ class History {
     ];
   }
 
-  public function undo() {
+  public function undo(): void {
     if ($this->lineUnderConstruction !== false) {
       $this->saveEditedLine();
     }
@@ -120,7 +120,7 @@ class History {
     $this->cursor->set($cursor);
   }
 
-  public function redo() {
+  public function redo(): void {
     if (empty($this->redo)) {
       return;
     }

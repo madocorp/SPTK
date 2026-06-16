@@ -6,7 +6,7 @@ use \SPTK\Element;
 
 class Space extends Element {
 
-  public function draw() {
+  public function draw(): void {
 
   }
 

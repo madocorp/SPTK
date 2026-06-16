@@ -7,7 +7,7 @@ class Config {
   private static $path = false;
   private static $home = false;
 
-  private static function setPath() {
+  private static function setPath(): void {
     $appName = basename(APP_PATH, '.php');
     self::$home = getenv('HOME') ?: getenv('USERPROFILE');
     if (!self::$home) {
@@ -24,28 +24,28 @@ class Config {
     }
   }
 
-  public static function getHome() {
+  public static function getHome(): string {
     if (self::$home === false) {
       self::setPath();
     }
     return self::$home;
   }
 
-  public static function getPath() {
+  public static function getPath(): string {
     if (self::$path === false) {
       self::setPath();
     }
     return self::$path;
   }
 
-  public static function getFilePath($name) {
+  public static function getFilePath($name): string {
     if (self::$path === false) {
       self::setPath();
     }
     return self::$path . '/' . $name;
   }
 
-  public static function load($file) {
+  public static function load(string $file): array {
     if (!file_exists($file)) {
       return [];
     }
@@ -57,7 +57,7 @@ class Config {
     return is_array($data) ? $data : [];
   }
 
-  public static function save($file, $data, $rootName = null) {
+  public static function save(string $file, array $data, ?string $rootName = null): bool {
     $dir = dirname($file);
     if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
       return false;

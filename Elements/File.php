@@ -16,21 +16,21 @@ class File extends Element {
   private $fileFilter = true;
   private $create = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->value = '';
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
     $this->elementFile = new InputValue($this);
-    $this->elementBrowse = new Element($this, false, false, 'Browse');
+    $this->elementBrowse = new Element($this, null, null, 'Browse');
     $this->elementBrowse->addText('..');
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['value', 'placeholder', 'start', 'file', 'create'];
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     if ($value === false) {
       return;
     }
@@ -69,7 +69,7 @@ class File extends Element {
     $this->create = ($value === 'true');
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->elementBrowse->addClass('active', true);
       if ($this->value === '') {
@@ -80,7 +80,7 @@ class File extends Element {
     parent::addClass($class, $dynamic);
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->elementBrowse->removeClass('active', true);
       if ($this->value === '') {

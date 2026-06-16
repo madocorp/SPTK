@@ -13,11 +13,11 @@ class Menu extends Element {
   protected $sub;
   protected $openedIndex = false;
 
-  protected function init() {
+  protected function init(): void {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  public function addDescendant($element) {
+  public function addDescendant($element): void {
     parent::addDescendant($element);
     if ($element->type == 'MenuBar') {
       $this->bar = $element;

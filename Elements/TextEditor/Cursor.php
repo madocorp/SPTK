@@ -6,19 +6,19 @@ use \SPTK\SDLWrapper\Action;
 
 class Cursor {
 
-  protected $lines;
-  protected $longestLine;
-  protected $caret = [0, 0];
-  protected $anchor = [0, 0];
-  protected $caretBefore = [0, 0];
-  protected $anchorBefore = [0, 0];
-  protected $freeSelectionMode = false;
+  protected array $lines;
+  protected int $longestLine = 0;
+  protected array $caret = [0, 0];
+  protected array $anchor = [0, 0];
+  protected array $caretBefore = [0, 0];
+  protected array $anchorBefore = [0, 0];
+  protected bool $freeSelectionMode = false;
 
-  public function __construct(&$lines) {
+  public function __construct(array &$lines) {
     $this->lines = &$lines;
   }
 
-  protected function getLineLength($i) {
+  protected function getLineLength(int $i): int {
     if ($this->freeSelectionMode) {
       $this->longestLine = 0;
       foreach ($this->lines as $line) {
@@ -29,38 +29,38 @@ class Cursor {
     return mb_strlen($this->lines[$i]);
   }
 
-  protected function getLineCount() {
+  protected function getLineCount(): int {
     return count($this->lines);
   }
 
-  protected function checkDocStart() {
+  protected function checkDocStart(): void {
     $this->caret[0] = max(0, $this->caret[0]);
   }
 
-  protected function checkDocEnd() {
+  protected function checkDocEnd(): void {
     $lcnt = $this->getLineCount();
     $this->caret[0] = min($lcnt - 1, $this->caret[0]);
   }
 
-  protected function checkLineLength() {
+  protected function checkLineLength(): void {
     $len = $this->getLineLength($this->caret[0]);
     $this->caret[1] = min($len, $this->caret[1]);
   }
 
-  public function save() {
+  public function save(): void {
     $this->caretBefore = $this->caret;
     $this->anchorBefore = $this->anchor;
   }
 
-  public function get() {
+  public function get(): array {
     return [$this->caret[0], $this->caret[1], $this->anchor[0], $this->anchor[1]];
   }
 
-  public function getBefore() {
+  public function getBefore(): array {
     return [$this->caretBefore[0], $this->caretBefore[1], $this->anchorBefore[0], $this->anchorBefore[1]];
   }
 
-  public function toCoordinates(&$row1, &$col1, &$row2, &$col2) {
+  public function toCoordinates(?int &$row1, ?int &$col1, ?int &$row2, ?int &$col2): void {
     $caret = $this->caretBefore;
     $anchor = $this->anchorBefore;
     if ($this->freeSelectionMode) {
@@ -84,14 +84,14 @@ class Cursor {
     }
   }
 
-  public function set($cursor) {
+  public function set(array $cursor): void {
     $this->caret[0] = $cursor[0];
     $this->caret[1] = $cursor[1];
     $this->anchor[0] = $cursor[2];
     $this->anchor[1] = $cursor[3];
   }
 
-  public function modify($caretRow, $caretCol, $anchorRow, $anchorCol) {
+  public function modify(int|false $caretRow, int|false $caretCol, int|false $anchorRow, int|false $anchorCol): void {
     if ($caretRow !== false) {
       $this->caret[0] = $caretRow;
     }
@@ -106,7 +106,7 @@ class Cursor {
     }
   }
 
-  public function getSelection() {
+  public function getSelection(): string {
     $this->toCoordinates($row1, $col1, $row2, $col2);
     $lines = [];
     for ($i = $row1; $i <= $row2; $i++) {
@@ -126,7 +126,7 @@ class Cursor {
     return implode("\n", $lines);
   }
 
-  public function resetSelection($select = false) {
+  public function resetSelection(bool $select = false): void {
     if ($select) {
       return;
     }
@@ -141,48 +141,48 @@ class Cursor {
     return $this->freeSelectionMode;
   }
 
-  public function moveUp($select = false) {
+  public function moveUp(bool $select = false): void {
     $this->caret[0]--;
     $this->checkDocStart();
     $this->checkLineLength();
     $this->resetSelection($select);
   }
 
-  public function movePageUp($linesOnScreen, $select = false) {
+  public function movePageUp(int $linesOnScreen, bool $select = false): void {
     $this->caret[0] -= $linesOnScreen;
     $this->checkDocStart();
     $this->checkLineLength();
     $this->resetSelection($select);
   }
 
-  public function moveDocStart($select = false) {
+  public function moveDocStart(bool $select = false): void {
     $this->caret[0] = 0;
     $this->caret[1] = 0;
     $this->resetSelection($select);
   }
 
-  public function moveDown($select = false) {
+  public function moveDown(bool $select = false): void {
     $this->caret[0]++;
     $this->checkDocEnd();
     $this->checkLineLength();
     $this->resetSelection($select);
   }
 
-  public function movePageDown($linesOnScreen, $select = false) {
+  public function movePageDown(int $linesOnScreen, bool $select = false): void {
     $this->caret[0] += $linesOnScreen;
     $this->checkDocEnd();
     $this->checkLineLength();
     $this->resetSelection($select);
   }
 
-  public function moveDocEnd($select = false) {
+  public function moveDocEnd(bool $select = false): void {
     $lines = $this->getLineCount() - 1;
     $this->caret[0] = $lines;
     $this->caret[1] = $this->getLineLength($lines);
     $this->resetSelection($select);
   }
 
-  public function moveForward($select = false) {
+  public function moveForward(bool $select = false): void {
     $len = $this->getLineLength($this->caret[0]);
     if ($this->caret[1] < $len) {
       $this->caret[1]++;
@@ -196,18 +196,18 @@ class Cursor {
     $this->resetSelection($select);
   }
 
-  public function moveScreenEnd($lettersOnScreen, $select = false) {
+  public function moveScreenEnd(int $lettersOnScreen, bool $select = false): void {
     $this->caret[1] += $lettersOnScreen;
     $this->checkLineLength();
     $this->resetSelection($select);
   }
 
-  public function moveLineEnd($select = false) {
+  public function moveLineEnd(bool $select = false): void {
     $this->caret[1] = $this->getLineLength($this->caret[0]);
     $this->resetSelection($select);
   }
 
-  public function moveBackward($select = false) {
+  public function moveBackward(bool $select = false): void {
     if ($this->caret[1] > 0) {
       $this->caret[1]--;
     } else {
@@ -219,17 +219,17 @@ class Cursor {
     $this->resetSelection($select);
   }
 
-  public function moveScreenStart($lettersOnScreen, $select = false) {
+  public function moveScreenStart(int $lettersOnScreen, bool $select = false): void {
     $this->caret[1] = max(0, $this->caret[1] - $lettersOnScreen);
     $this->resetSelection($select);
   }
 
-  public function moveLineStart($select = false) {
+  public function moveLineStart(bool $select = false): void {
     $this->caret[1] = 0;
     $this->resetSelection($select);
   }
 
-  public function handleKeys($keycombo, $linesOnScreen, $lettersOnScreen) {
+  public function handleKeys(Action|int $keycombo, int $linesOnScreen, int $lettersOnScreen): bool {
     switch ($keycombo) {
       /* UP */
       case Action::MOVE_UP:

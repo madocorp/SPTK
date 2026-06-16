@@ -33,34 +33,34 @@ class Element {
   protected $changed = false;
   protected $clipped = false;
 
-  public function __construct($ancestor = null, $name = false, $class = false, $type = false) {
+  public function __construct(?Element $ancestor = null, ?string $name = null, ?string $class = null, ?string $type = null) {
     $this->id = self::getNextId();
-    if (!is_null($ancestor)) {
+    if ($ancestor !== null) {
       $this->renderer = $ancestor->renderer;
     }
-    if ($type) {
+    if ($type !== null) {
       $this->type = $type;
     } else {
       $this->type = basename(str_replace('\\', '/', get_class($this)));
     }
-    if ($name === false) {
+    if ($name === null) {
       $this->name = StyleSheet::ANY;
     } else {
       $this->name = $name;
     }
-    if ($class !== false) {
+    if ($class !== null) {
       $class = preg_replace('/ +/', ' ', $class);
       $class = explode(' ', $class);
       $this->sclass = $class;
     }
-    if (!is_null($ancestor) && !empty($ancestor->childClass)) {
+    if ($ancestor !== null && !empty($ancestor->childClass)) {
       $this->sclass = array_merge($this->sclass, $ancestor->childClass);
     }
     $this->ancestor = $ancestor;
     $this->geometry = new Geometry($this->ancestor->geometry ?? null);
     $this->recalculateStyle();
-    if (is_null($this->ancestor)) {
-      if (!is_null(self::$root)) {
+    if ($this->ancestor === null) {
+      if (self::$root !== null) {
         throw new \Exception("You have to define only one root element.");
       }
       self::$root = $this;
