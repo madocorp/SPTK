@@ -4,7 +4,7 @@ namespace SPTK;
 
 trait ElementTree {
 
-  public function addDescendant($element) {
+  public function addDescendant(Element $element): void {
     $this->descendants[] = $element;
     $this->stack[] = $element;
     if ($element->ancestor !== $this) {
@@ -12,7 +12,7 @@ trait ElementTree {
     }
   }
 
-  public function removeDescendant($element) {
+  public function removeDescendant(Element $element): void {
     foreach ($this->descendants as $i => $descendant) {
       if ($element->id === $descendant->id) {
         unset($this->descendants[$i]);
@@ -29,17 +29,17 @@ trait ElementTree {
     }
   }
 
-  public function remove() {
+  public function remove(): void {
     $this->ancestor->removeDescendant($this);
   }
 
-  public function clear() {
+  public function clear(): void {
     $this->descendants = [];
     $this->stack = [];
     $this->changed = true;
   }
 
-  public function raise() {
+  public function raise(): void {
     foreach ($this->ancestor->stack as $i => $element) {
       if ($element->id === $this->id) {
         unset($this->ancestor->stack[$i]);
@@ -51,7 +51,7 @@ trait ElementTree {
     $this->ancestor->raise();
   }
 
-  public function lower() {
+  public function lower(): void {
     foreach ($this->ancestor->stack as $i => $element) {
       if ($element->id === $this->id) {
         unset($this->ancestor->stack[$i]);
@@ -62,7 +62,7 @@ trait ElementTree {
     }
   }
 
-  public function addText($text) {
+  public function addText(string $text): void {
     $rows = explode("\n", $text);
     foreach ($rows as $i => $row) {
       if ($i > 0) {
@@ -75,18 +75,17 @@ trait ElementTree {
         }
         $element = new Elements\Word($this);
         $element->setValue($word);
-
       }
     }
     $this->changed = true;
   }
 
-  public function setText($text) {
+  public function setText(string $text): void {
     $this->clear();
     $this->addText($text);
   }
 
-  public function getText(&$text = null) {
+  public function getText(?string &$text = null): string {
     if ($text === null) {
       $text = [];
     }
@@ -100,7 +99,7 @@ trait ElementTree {
     return implode(' ', $text);
   }
 
-  public function moveAfter($element) {
+  public function moveAfter(Element $element): void {
     if ($element->id === $this->id) {
       return;
     }
@@ -123,21 +122,21 @@ trait ElementTree {
     array_splice($ancestor->descendants, $after + 1, 0, [$this]);
   }
 
-  public function findAncestorByType($type) {
+  public function findAncestorByType(string $type): Element {
     if ($this->type == $type) {
       return $this;
     }
     return $this->ancestor->findAncestorByType($type);
   }
 
-  public function nthChild($n) {
+  public function nthChild(int $n): Element|false {
     if (isset($this->descendants[$n])) {
       return $this->descendants[$n];
     }
     return false;
   }
 
-  public function countDescendants() {
+  public function countDescendants(): int {
     return count($this->descendants);
   }
 

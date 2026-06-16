@@ -6,7 +6,7 @@ class Scrollbar {
 
   protected $texture;
 
-  public function __construct($texture, $sx, $sy, $mx, $my, $geometry, $style) {
+  public function __construct(Texture $texture, int $sx, int $sy, int $mx, int $my, Geometry $geometry, Style $style) {
     $this->texture = $texture;
     $barColor = $style->get('scrollbarColor');
     $handleColor = $style->get('scrollhandleColor');
@@ -29,7 +29,7 @@ class Scrollbar {
     }
   }
 
-  private function vertical($geometry, $sy, $my, $size) {
+  private function vertical(Geometry $geometry, int $sy, int $my, int $size) {
     $y1 = $geometry->borderTop;
     $y2 = $geometry->height - $geometry->borderBottom;
     $barHeight = $y2 - $y1;
@@ -46,7 +46,7 @@ class Scrollbar {
     return [$x1, $x2, $y1, $y2, $handlePos, $handlePos + $handleHeight];
   }
 
-  private function horizontal($geometry, $sx, $mx, $size, $hasVertical) {
+  private function horizontal(Geometry $geometry, int $sx, int $mx, int $size, bool $hasVertical) {
     $x1 = $geometry->borderLeft + $geometry->paddingLeft;
     $x2 = $geometry->width - $geometry->borderRight - ($hasVertical ? $size : 0);
     $barWidth = $x2 - $x1;

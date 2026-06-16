@@ -8,7 +8,7 @@ class Border {
   protected $w;
   protected $h;
 
-  public function __construct($texture, $geometry, $ancestorGeometry, $style) {
+  public function __construct(Texture $texture, Geometry $geometry, Geometry $ancestorGeometry, Style $style) {
     $this->texture = $texture;
     $left = $style->get('borderLeft', $ancestorGeometry);
     $right = $style->get('borderRight', $ancestorGeometry);
@@ -44,7 +44,7 @@ class Border {
     }
   }
 
-  protected function borderLeft($left, $top, $bottom, $color) {
+  protected function borderLeft(int $left, int $top, int $bottom, array $color): void {
     $ts = $top / $left;
     $bs = $bottom / $left;
     for ($i = $ti = $bi = 0; $i < $left; $i++, $ti += $ts, $bi += $bs) {
@@ -52,7 +52,7 @@ class Border {
     }
   }
 
-  protected function borderRight($right, $top, $bottom, $color) {
+  protected function borderRight(int $right, int $top, int $bottom, array $color): void {
     $ts = $top / $right;
     $bs = $bottom / $right;
     for ($i = $ti = $bi = 0; $i < $right; $i++, $ti += $ts, $bi += $bs) {
@@ -60,7 +60,7 @@ class Border {
     }
   }
 
-  protected function borderTop($top, $left, $right, $color) {
+  protected function borderTop(int $top, int $left, int $right, array $color): void {
     $ls = $left / $top;
     $rs = $right / $top;
     for ($i = $li = $ri = 0; $i < $top; $i++, $li += $ls, $ri += $rs) {
@@ -68,7 +68,7 @@ class Border {
     }
   }
 
-  protected function borderBottom($bottom, $left, $right, $color) {
+  protected function borderBottom(int $bottom, int $left, int $right, array $color): void {
     $ls = $left / $bottom;
     $rs = $right / $bottom;
     for ($i = $li = $ri = 0; $i < $bottom; $i++, $li += $ls, $ri += $rs) {

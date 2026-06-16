@@ -4,7 +4,7 @@ namespace SPTK;
 
 trait ElementLayout {
 
-  public function recalculateGeometry() {
+  public function recalculateGeometry(): void {
     $this->measure();
     $this->calculateWidths();
     $this->calculateHeights();
@@ -12,14 +12,14 @@ trait ElementLayout {
     $this->redraw();
   }
 
-  protected function measure() {
+  protected function measure(): void {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     foreach ($this->descendants as $descendant) {
       $descendant->measure();
     }
   }
 
-  protected function calculateWidths() {
+  protected function calculateWidths(): void {
     if ($this->display === false) {
       return;
     }
@@ -61,7 +61,7 @@ trait ElementLayout {
     }
   }
 
-  protected function calculateHeights() {
+  protected function calculateHeights(): void {
     if ($this->display === false) {
       return;
     }
@@ -124,7 +124,7 @@ trait ElementLayout {
     $this->geometry->setContentHeight($ascent, $maxY);
   }
 
-  protected function layout() {
+  protected function layout(): void {
     if ($this->display === false) {
       return;
     }
@@ -168,9 +168,9 @@ trait ElementLayout {
     $this->geometry->contentWidth = $maxX;
   }
 
-  protected function redraw() {
+  protected function redraw(): void {
     if ($this->display === false) {
-      return false;
+      return;
     }
     if ($this->changed ||  $this->geometry->sizeChanged()) {
       $this->draw();
@@ -200,7 +200,7 @@ trait ElementLayout {
     }
   }
 
-  protected function draw() {
+  protected function draw(): void {
     $color = $this->style->get('backgroundColor');
     $width = $this->geometry->width;
     $height = $this->geometry->height;
@@ -208,7 +208,7 @@ trait ElementLayout {
     $this->changed = false;
   }
 
-  protected function render() {
+  protected function render(): Texture|false {
     if ($this->display === false) {
       return false;
     }

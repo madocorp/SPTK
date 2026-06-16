@@ -19,7 +19,7 @@ class Font {
   public $height;
   public $letterWidth;
 
-  public function __construct($name, $size) {
+  public function __construct(string $name, int $size) {
     if (!isset(self::$fonts[$name][$size])) {
       $this->open($name, $size);
     }
@@ -31,7 +31,7 @@ class Font {
     $this->letterHeight = self::$fonts[$name][$size]['letterHeight'];
   }
 
-  private function open($name, $size) {
+  private function open(string $name, int $size) {
     $path = $this->getPath($name, true);
     if ($path === false) {
       echo "Searching font that similar to {$name}\n";
@@ -80,7 +80,7 @@ class Font {
     self::$fonts[$name][$size]['letterHeight'] = $maxy->cdata - $miny->cdata;
   }
 
-  private function getPath($name, $exact) {
+  private function getPath(string $name, bool $exact): string|false {
     $clearName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $name));
     $minL = strlen($clearName);
     $closestPath = false;
@@ -110,7 +110,7 @@ class Font {
     return $closestPath;
   }
 
-  public static function closeAll() {
+  public static function closeAll(): void {
     $ttf = TTF::$instance->ttf;
     foreach (self::$fonts as $font) {
       foreach ($font as $size) {
@@ -119,7 +119,7 @@ class Font {
     }
   }
 
-  public function glyphMetrics($char) {
+  public function glyphMetrics(string $char): array {
     $ttf = TTF::$instance->ttf;
     $minx = \FFI::new("int");
     $maxx = \FFI::new("int");
