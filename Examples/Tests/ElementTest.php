@@ -11,7 +11,7 @@ use SPTK\Elements\Tabs;
 
 class HeadlessElement extends Element {
 
-  public function recalculateGeometry() {
+  public function recalculateGeometry(): void {
     ;
   }
 

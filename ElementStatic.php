@@ -82,7 +82,7 @@ trait ElementStatic {
 
   public static function allByType(string $type, ?Element $element = null): array {
     $elements = [];
-    if ($element === false) {
+    if ($element === null) {
       $element = static::$root;
     }
     $q = [$element];
@@ -108,12 +108,15 @@ trait ElementStatic {
   }
 
 
-  public static function parseCallback(string|array $value): \Callable|false {
+  public static function parseCallback(string|array $value): callable|false {
     if (empty($value)) {
       return false;
     }
+    if (is_array($value)) {
+      return $value;
+    }
     $function = explode('::', $value);
-    if (!is_array($function) || count($function) !== 2) {
+    if (count($function) !== 2) {
       throw new \Exception("Malformed callback function: '{$value}'");
     }
     return $function;

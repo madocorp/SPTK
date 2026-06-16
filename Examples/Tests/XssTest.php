@@ -3,6 +3,7 @@
 namespace Examples\Tests;
 
 use SPTK\Style;
+use SPTK\Geometry;
 use SPTK\StyleSheet;
 
 return [
@@ -73,12 +74,11 @@ XSS, 'xss');
 
     $ancestor = StyleSheet::get(null, null, 'Parent');
     $style = StyleSheet::get(null, $ancestor, 'Child');
-    $reference = (object)[
-      'innerWidth' => 200,
-      'innerHeight' => 100,
-      'windowWidth' => 800,
-      'windowHeight' => 600
-    ];
+    $reference = new Geometry(null);
+    $reference->innerWidth = 200;
+    $reference->innerHeight = 100;
+    $reference->windowWidth = 800;
+    $reference->windowHeight = 600;
 
     assertSame([18, 52, 86, 255], $style->get('color'), 'inherit copies the ancestor parsed value');
     assertSame([1, 2, 3, 4], $style->get('backgroundColor'), '8-digit colors include alpha');
