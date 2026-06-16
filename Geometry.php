@@ -133,7 +133,7 @@ class Geometry {
       $this->marginBottom;
   }
 
-  public function setContentHeight(int $ascent, int $maxY): void {
+  public function setContentHeight(int|string $ascent, int $maxY): void {
     $this->contentHeight = 0;
     foreach ($this->lines as $line) {
       $this->contentHeight += $line['ascent'] + $line['descent'];

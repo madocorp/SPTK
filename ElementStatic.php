@@ -98,7 +98,9 @@ trait ElementStatic {
     return $elements;
   }
 
-  public static function getRelativePos(int $referenceId, Element $element, int &$x, int &$y) {
+  public static function getRelativePos(int $referenceId, Element $element, ?int &$x, ?int &$y): void {
+    $x ??= 0;
+    $y ??= 0;
     if ($element->id == $referenceId) {
       return;
     }
