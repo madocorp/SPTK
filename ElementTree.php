@@ -66,7 +66,7 @@ trait ElementTree {
     $rows = explode("\n", $text);
     foreach ($rows as $i => $row) {
       if ($i > 0) {
-        new Element($this, false, false, 'NL');
+        new Element($this, null, null, 'NL');
       }
       $row = explode(' ', $row);
       foreach ($row as $i => $word) {

@@ -14,7 +14,7 @@ class InputRow extends Element {
     $this->x = $this->ancestor->geometry->paddingLeft + $this->ancestor->geometry->borderLeft;
   }
 
-  protected function measure() {
+  protected function measure(): void {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     $this->geometry->y = $this->y;
     $this->geometry->x = $this->x;

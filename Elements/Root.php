@@ -3,11 +3,12 @@
 namespace SPTK\Elements;
 
 use \SPTK\Element;
+use \SPTK\Texture;
 use \SPTK\SDLWrapper\SDL;
 
 class Root extends Element {
 
-  protected function init() {
+  protected function init(): void {
     $sdl = SDL::$instance->sdl;
     $workArea = $sdl->new('SDL_Rect');
     $primaryId = $sdl->SDL_GetPrimaryDisplay();
@@ -24,45 +25,45 @@ class Root extends Element {
     $this->geometry->windowHeight = $this->geometry->height;
   }
 
-  protected function render() {
+  protected function render(): Texture|false {
     foreach ($this->stack as $descendant) {
       $descendant->render();
     }
     return false;
   }
 
-  protected function measure() {
+  protected function measure(): void {
     foreach ($this->descendants as $descendant) {
       $descendant->measure();
     }
   }
 
 
-  protected function calculateWidths() {
+  protected function calculateWidths(): void {
     foreach ($this->descendants as $descendant) {
       $descendant->calculateWidths();
     }
   }
 
-  protected function calculateHeights() {
+  protected function calculateHeights(): void {
     foreach ($this->descendants as $descendant) {
       $descendant->calculateHeights();
     }
   }
 
-  protected function layout() {
+  protected function layout(): void {
     foreach ($this->descendants as $descendant) {
       $descendant->layout();
     }
   }
 
-  protected function redraw() {
+  protected function redraw(): void {
     foreach ($this->descendants as $descendant) {
       $descendant->redraw();
     }
   }
 
-  public function eventHandler($event) {
+  public function eventHandler(array $event): bool {
     $handled = false;
     foreach (self::$root->stack as $display) {
       $handled = $display->eventHandler($event);
@@ -73,13 +74,14 @@ class Root extends Element {
     if ($event['type'] == SDL::SDL_QUIT) {
       SDL::$instance->end();
     }
+    return $handled;
   }
 
   protected function isActive() {
     return true;
   }
 
-  public function findAncestorByType($type) {
+  public function findAncestorByType(string $type): Element|false {
     return false;
   }
 

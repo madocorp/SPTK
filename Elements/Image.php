@@ -13,11 +13,11 @@ class Image extends Element {
   protected $width;
   protected $height;
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['value'];
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     if (strpos($value, '/') !== 0) {
       if (defined('APP_PATH')) {
         $dir = dirname(APP_PATH);
@@ -53,7 +53,7 @@ class Image extends Element {
     $this->setImage($img);
   }
 
-  protected function calculateWidths() {
+  protected function calculateWidths(): void {
     if ($this->geometry->width < 0) {
       $this->geometry->width = $this->ancestor->geometry->innerWidth + $this->geometry->width;
     }
@@ -72,7 +72,7 @@ class Image extends Element {
     $this->geometry->setDerivedWidths();
   }
 
-  protected function calculateHeights() {
+  protected function calculateHeights(): void {
     if ($this->geometry->height < 0) {
       $this->geometry->height = $this->ancestor->geometry->innerHeight + $this->height;
     }
@@ -91,13 +91,13 @@ class Image extends Element {
     $this->geometry->setContentHeight($ascent, 0);
   }
 
-  protected function layout() {
+  protected function layout(): void {
     if ($this->geometry->position === 'absolute') {
       $this->geometry->setAbsolutePosition($this->ancestor->geometry, $this->style);
     }
   }
 
-  protected function draw() {
+  protected function draw(): void {
     $w = $this->geometry->innerWidth;
     $h = $this->geometry->innerHeight;
     $img = imagescale($this->img, $w, $h);

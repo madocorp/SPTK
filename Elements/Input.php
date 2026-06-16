@@ -20,7 +20,7 @@ class Input extends Element {
   protected $cursor = false;
   protected $history;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
@@ -36,11 +36,11 @@ class Input extends Element {
     $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['value', 'placeholder', 'onChange'];
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     if ($value === false) {
       $value = '';
     }
@@ -56,7 +56,7 @@ class Input extends Element {
     $this->scrollY = 0;
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     return $this->lines[0];
   }
 
@@ -75,7 +75,7 @@ class Input extends Element {
     }
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->elementSelected->addClass('selected', true);
       if ($this->getValue() === '') {
@@ -87,7 +87,7 @@ class Input extends Element {
     $this->update();
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->elementSelected->removeClass('selected', true);
     }

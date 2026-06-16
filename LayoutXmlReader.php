@@ -45,8 +45,8 @@ class LayoutXmlReader {
           } else {
             $type = str_replace('_', '', ucwords($xml->name, '_'));
             $element = 'SPTK\\Elements\\' . $type;
-            $name = $xml->getAttribute('name') ?? false;
-            $class = $xml->getAttribute('class') ?? false;
+            $name = $xml->getAttribute('name') ?? null;
+            $class = $xml->getAttribute('class') ?? null;
             if (!Autoload::exists($element)) {
               $element = 'SPTK\\Element';
             }

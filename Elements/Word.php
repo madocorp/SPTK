@@ -20,7 +20,7 @@ class Word extends Element {
   private static $fgColor = false;
   private static $bgColor = false;
 
-  public function setValue($value) {
+  public function setValue($value): void {
     $this->value = "{$value}";
     $this->draw();
   }
@@ -29,7 +29,7 @@ class Word extends Element {
     return $this->width;
   }
 
-  protected function measure() {
+  protected function measure(): void {
     $this->windowWidth = $this->ancestor->geometry->windowWidth;
     $this->windowHeight = $this->ancestor->geometry->windowHeight;
     $this->geometry->width = $this->width;
@@ -43,19 +43,19 @@ class Word extends Element {
     $this->geometry->position = 'inline';
   }
 
-  protected function calculateWidths() {
+  protected function calculateWidths(): void {
     ;
   }
 
-  protected function calculateHeights() {
+  protected function calculateHeights(): void {
     ;
   }
 
-  protected function layout() {
+  protected function layout(): void {
     ;
   }
 
-  protected function draw() {
+  protected function draw(): void {
     $fontName = $this->style->get('font');
     $fontSize = $this->style->get('fontSize', $this->ancestor->geometry);
     if ($fontSize === 0) {
@@ -106,7 +106,7 @@ class Word extends Element {
     $ttf->SDL_DestroySurface($this->surface);
   }
 
-  protected function render() {
+  protected function render(): Texture|false {
     return $this->texture;
   }
 

@@ -22,7 +22,7 @@ return [
     $root = root();
     $box = new Element($root, 'box', 'alpha beta', 'Box');
     $box->setText('hello world');
-    $child = new Element($box, 'child', false, 'Thing');
+    $child = new Element($box, 'child', null, 'Thing');
 
     assertSame(0, $root->getId(), 'root receives the first element id');
     assertSame(1, $box->getId(), 'child ids increment');
@@ -36,9 +36,9 @@ return [
 
   'base elements maintain descendant and stack order' => function (): void {
     $root = root();
-    $a = new Element($root, 'a', false, 'Box');
-    $b = new Element($root, 'b', false, 'Box');
-    $c = new Element($root, 'c', false, 'Box');
+    $a = new Element($root, 'a', null, 'Box');
+    $b = new Element($root, 'b', null, 'Box');
+    $c = new Element($root, 'c', null, 'Box');
 
     $a->raise();
     assertSame(['b', 'c', 'a'], array_map(fn($e) => $e->getName(), propertyValue($root, 'stack')), 'raise moves an element to the end of the render stack');
@@ -55,11 +55,11 @@ return [
 
   'child classes are inherited only while active' => function (): void {
     $root = root();
-    $parent = new Element($root, 'parent', false, 'Box');
+    $parent = new Element($root, 'parent', null, 'Box');
     $parent->addChildClass('temporary');
-    $inside = new Element($parent, 'inside', false, 'Thing');
+    $inside = new Element($parent, 'inside', null, 'Thing');
     $parent->removeChildClass('temporary');
-    $outside = new Element($parent, 'outside', false, 'Thing');
+    $outside = new Element($parent, 'outside', null, 'Thing');
 
     assertSame(['temporary'], $inside->getClass(), 'child class is inherited by new descendants');
     assertSame([], $outside->getClass(), 'removed child class is not inherited by later descendants');
@@ -108,10 +108,10 @@ return [
   'tabs select one content section at a time' => function (): void {
     $root = root();
     $tabs = new Tabs($root, 'tabs');
-    $tabA = new Element($tabs, false, false, 'Tab');
-    $contentA = new HeadlessElement($tabs, 'content-a', false, 'Box');
-    $tabB = new Element($tabs, false, false, 'Tab');
-    $contentB = new HeadlessElement($tabs, 'content-b', false, 'Box');
+    $tabA = new Element($tabs, null, null, 'Tab');
+    $contentA = new HeadlessElement($tabs, 'content-a', null, 'Box');
+    $tabB = new Element($tabs, null, null, 'Tab');
+    $contentB = new HeadlessElement($tabs, 'content-b', null, 'Box');
 
     $tabs->selectTab(1);
 

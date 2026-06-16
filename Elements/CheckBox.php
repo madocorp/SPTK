@@ -11,18 +11,18 @@ class CheckBox extends Element {
 
   protected $valueBox;
 
-  protected function init() {
+  protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
-    $this->valueBox = new Element($this, false, false, 'CheckBoxValue');
+    $this->valueBox = new Element($this, null, null, 'CheckBoxValue');
 
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return ['value'];
   }
 
-  public function setValue($value) {
+  public function setValue($value): void {
     if ($value === true || $value === 'true' || $value === 1 || $value === '1') {
       $this->value = true;
       $this->valueBox->setText('X');
@@ -32,14 +32,14 @@ class CheckBox extends Element {
     }
   }
 
-  public function addClass($class, $dynamic = false) {
+  public function addClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->valueBox->addClass($class, $dynamic);
     }
     parent::addClass($class, $dynamic);
   }
 
-  public function removeClass($class, $dynamic = false) {
+  public function removeClass($class, $dynamic = false): void {
     if ($dynamic && $class == 'active') {
       $this->valueBox->removeClass($class, $dynamic);
     }

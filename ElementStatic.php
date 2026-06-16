@@ -108,7 +108,7 @@ trait ElementStatic {
   }
 
 
-  public static function parseCallback(string|array $value): callable|false {
+  public static function parseCallback(string|array $value): array|false {
     if (empty($value)) {
       return false;
     }
