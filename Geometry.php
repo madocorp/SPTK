@@ -48,7 +48,7 @@ class Geometry {
 
   public $lines = [];
 
-  public function __construct($ancestorGeometry) {
+  public function __construct(Geometry $ancestorGeometry) {
     if ($ancestorGeometry === null) {
       return;
     }
@@ -56,7 +56,7 @@ class Geometry {
     $this->windowHeight = $ancestorGeometry->windowHeight;
   }
 
-  public function setValues($ancestorGeometry, $style) {
+  public function setValues(Geometry $ancestorGeometry, Style $style): void {
     $this->windowWidth = $ancestorGeometry->windowWidth;
     $this->windowHeight = $ancestorGeometry->windowHeight;
     $this->originalWidth = $this->width;
@@ -107,7 +107,7 @@ class Geometry {
     $this->position = $style->get('position');
   }
 
-  public function setDerivedWidths() {
+  public function setDerivedWidths(): void {
     $this->innerWidth =
       $this->width -
       $this->borderLeft -
@@ -120,7 +120,7 @@ class Geometry {
       $this->marginRight;
   }
 
-  public function setDerivedHeights() {
+  public function setDerivedHeights(): void {
     $this->innerHeight =
       $this->height -
       $this->borderTop -
@@ -133,7 +133,7 @@ class Geometry {
       $this->marginBottom;
   }
 
-  public function setContentHeight($ascent, $maxY) {
+  public function setContentHeight(int $ascent, int $maxY): void {
     $this->contentHeight = 0;
     foreach ($this->lines as $line) {
       $this->contentHeight += $line['ascent'] + $line['descent'];
@@ -166,7 +166,7 @@ class Geometry {
     }
   }
 
-  public function limitateWidth() {
+  public function limitateWidth(): void {
     if ($this->width < $this->minWidth) {
       $this->width = $this->minWidth;
     }
@@ -175,7 +175,7 @@ class Geometry {
     }
   }
 
-  public function limitateHeight() {
+  public function limitateHeight(): void {
     if ($this->height < $this->minHeight) {
       $this->height = $this->minHeight;
     }
@@ -184,7 +184,7 @@ class Geometry {
     }
   }
 
-  public function setAbsolutePosition($ancestorGeometry, $style) {
+  public function setAbsolutePosition(Geometry $ancestorGeometry, Style $style): void {
     $x = $style->get('x', $ancestorGeometry, $isNegative);
     if ($x !== 'calculated') {
       if ($x === 'middle') {
@@ -207,7 +207,7 @@ class Geometry {
     }
   }
 
-  public function sizeChanged() {
+  public function sizeChanged(): bool {
     return ($this->originalWidth !== $this->width || $this->originalHeight !== $this->height);
   }
 

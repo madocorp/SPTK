@@ -45,7 +45,7 @@ class Style {
     'minHeight' => 'innerHeight'
   ];
 
-  public function __construct($init = null) {
+  public function __construct(null|array|Style $init = null) {
     if (is_array($init)) {
       foreach ($init as $name => $value) {
         $this->rules[$name] = $this->parseValue($value);
@@ -57,13 +57,13 @@ class Style {
     }
   }
 
-  public function merge($style) {
+  public function merge(Style $style): void {
     foreach ($style->rules as $name => $value) {
       $this->rules[$name] = $value;
     }
   }
 
-  public function inherit($ancestor) {
+  public function inherit(Style $ancestor): void {
     foreach ($this->rules as $name => $value) {
       if ($value[self::F_VALUE] === 'inherit') {
         $this->rules[$name] = $ancestor->rules[$name];
@@ -71,7 +71,7 @@ class Style {
     }
   }
 
-  protected function parseValue($value) {
+  protected function parseValue(string $value): mixed {
     $original = $value;
     if (substr($value, 0, 1) === '#') {
       $type = self::T_COLOR;
@@ -134,14 +134,14 @@ class Style {
     ];
   }
 
-  public function debug() {
+  public function debug(): void {
     foreach ($this->rules as $name => $value) {
       $original = $value[self::F_ORIGINAL];
       echo "  {$name}: {$original}\n";
     }
   }
 
-  public function get($name, $reference = false, &$negative = null) {
+  public function get(string $name, ?Geometry $reference = null, bool &$negative = null): mixed {
     if (!isset($this->rules[$name])) {
       throw new \Exception("Unknown style rule: {$name}");
     }
@@ -152,7 +152,7 @@ class Style {
       if (!isset($this->referenceMap[$name])) {
         throw new \Exception("Percentage value not acepterd for this property: {$name}");
       }
-      if ($reference === false) {
+      if ($reference === null) {
         return 0;
       }
       $refPropertyName = $this->referenceMap[$name];
@@ -164,14 +164,14 @@ class Style {
       return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }
     if ($type == self::T_WINDOW_WPERCENT) {
-      if ($reference === false) {
+      if ($reference === null) {
         return 0;
       }
       $referenceValue = $reference->windowWidth;
       return (int)round(($referenceValue * $value - 0.001) / 100) * ($negative ? -1 : 1);
     }
     if ($type == self::T_WINDOW_HPERCENT) {
-      if ($reference === false) {
+      if ($reference === null) {
         return 0;
       }
       $referenceValue = $reference->windowHeight;
@@ -183,7 +183,7 @@ class Style {
     return $value;
   }
 
-  public function set($name, $value) {
+  public function set(string $name, mixed $value): void {
     $this->rules[$name] = $this->parseValue($value);
   }
 

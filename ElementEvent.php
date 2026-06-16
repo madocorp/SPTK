@@ -4,7 +4,7 @@ namespace SPTK;
 
 trait ElementEvent {
 
-  public function eventHandler($event) {
+  public function eventHandler(array $event): bool {
     if (!$this->display) {
       return false;
     }
@@ -26,14 +26,14 @@ trait ElementEvent {
     return false;
   }
 
-  public function addEvent($event, $handler) {
+  public function addEvent(string $event, array|string $handler): void {
     if (!is_array($handler)) {
       $handler = preg_split('/::/', $handler);
     }
     $this->events[$event] = $handler;
   }
 
-  public function removeEvent($event) {
+  public function removeEvent(string $event): void {
     unset($this->events[$event]);
   }
 

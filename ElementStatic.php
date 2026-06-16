@@ -7,20 +7,20 @@ trait ElementStatic {
   public static $root;
   private static $nextInternalId = 0;
 
-  protected static function getNextId() {
+  protected static function getNextId(): int {
     $id = static::$nextInternalId;
     static::$nextInternalId++;
     return $id;
   }
 
-  public static function refresh() {
+  public static function refresh(): void {
     $t = microtime(true);
     static::$root->recalculateGeometry();
     static::$root->render();
     // DEBUG:5 echo "Refreshed:", microtime(true) - $t, "\n";
   }
 
-  public static function immediateRender($element, $layout = true) {
+  public static function immediateRender(Element $element, bool $layout = true): void {
     $t = microtime(true);
     if ($layout) {
       $element->recalculateGeometry();
@@ -46,8 +46,8 @@ trait ElementStatic {
     // DEBUG:5  echo "Immediate refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
   }
 
-  public static function byName($name, $element = false) {
-    if ($element === false) {
+  public static function byName(string $name, ?Element $element = null): Element|false {
+    if ($element === null) {
       $element = static::$root;
     }
     $q = [$element];
@@ -63,8 +63,8 @@ trait ElementStatic {
     return false;
   }
 
-  public static function firstByType($type, $element = false) {
-    if ($element === false) {
+  public static function firstByType(string $type, ?Element $element = null): Element|false {
+    if ($element === null) {
       $element = static::$root;
     }
     $q = [$element];
@@ -80,7 +80,7 @@ trait ElementStatic {
     return false;
   }
 
-  public static function allByType($type, $element = false) {
+  public static function allByType(string $type, ?Element $element = null): array {
     $elements = [];
     if ($element === false) {
       $element = static::$root;
@@ -98,7 +98,7 @@ trait ElementStatic {
     return $elements;
   }
 
-  public static function getRelativePos($referenceId, $element, &$x, &$y) {
+  public static function getRelativePos(int $referenceId, Element $element, int &$x, int &$y) {
     if ($element->id == $referenceId) {
       return;
     }
@@ -108,7 +108,7 @@ trait ElementStatic {
   }
 
 
-  public static function parseCallback($value) {
+  public static function parseCallback(string|array $value): \Callable|false {
     if (empty($value)) {
       return false;
     }

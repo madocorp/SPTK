@@ -4,71 +4,71 @@ namespace SPTK;
 
 trait ElementAssistant {
 
-  protected function init() {
+  protected function init(): void {
     ;
   }
 
-  public function postInit() {
+  public function postInit(): void {
     ;
   }
 
-  public function getId() {
+  public function getId(): int {
     return $this->id;
   }
 
-  public function getName() {
+  public function getName(): string {
     return $this->name;
   }
 
-  public function getType() {
+  public function getType(): string {
     return $this->type;
   }
 
-  public function getClass() {
+  public function getClass(): string {
     return $this->sclass;
   }
 
-  public function getGeometry() {
+  public function getGeometry(): Geometry {
     return $this->geometry;
   }
 
-  public function getStyle() {
+  public function getStyle(): Style {
     return $this->style;
   }
 
-  public function getDescendants() {
+  public function getDescendants(): array {
     return $this->descendants;
   }
 
-  public function getAncestor() {
+  public function getAncestor(): Element {
     return $this->ancestor;
   }
 
-  public function getAttributeList() {
+  public function getAttributeList(): array {
     return [];
   }
 
-  public function setValue($value) {
+  public function setValue(mixed $value): void {
     $this->value = $value;
   }
 
-  public function getValue() {
+  public function getValue(): mixed {
     return $this->value;
   }
 
-  public function show() {
+  public function show(): void {
     $this->display = true;
   }
 
-  public function hide() {
+  public function hide(): void {
     $this->display = false;
   }
 
-  public function scrollToLeft() {
+  public function scrollToLeft(): void {
     $this->scrollX = 0;
   }
 
-  public function scrollToRight() {
+  public function scrollToRight(): void {
     if ($this->geometry->contentWidth > $this->geometry->innerWidth) {
       $this->scrollX = $this->geometry->contentWidth - $this->geometry->innerWidth;
     } else {
@@ -76,15 +76,15 @@ trait ElementAssistant {
     }
   }
 
-  public function scrollToTop() {
+  public function scrollToTop(): void {
     $this->scollY = 0;
   }
 
-  public function scrollToBottom() {
+  public function scrollToBottom(): void {
     // todo
   }
 
-  public function debug($level = 0) {
+  public function debug(int $level = 0): void {
     $pad = str_repeat(' ', $level * 4);
     $class = '';
     if (!empty($this->sclass)) {
