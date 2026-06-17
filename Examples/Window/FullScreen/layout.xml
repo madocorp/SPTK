@@ -1,0 +1,7 @@
+<Root>
+
+  <Window title="Fullscreen app" fullscreen="true">
+    Fullscreen
+  </Window>
+
+</Root>

@@ -45,7 +45,7 @@ function resetToolkit(): void {
     $property->setAccessible(true);
     $property->setValue([]);
   }
-  StyleSheet::load(__DIR__ . '/../../defaults.xss');
+  StyleSheet::load(__DIR__ . '/../defaults.xss');
   StyleSheet::load(__DIR__ . '/headless.xss');
 }
 

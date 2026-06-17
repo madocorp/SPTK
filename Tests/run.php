@@ -4,10 +4,11 @@ define('SPTK\DEBUG', false);
 define('DEBUG', false);
 define('APP_PATH', dirname(__DIR__) . '/run.php');
 define('APP_NAMESPACE', 'EXAMPLES');
+define('SPTK_PATH', dirname(__DIR__));
 
-chdir(dirname(__DIR__));
+chdir(SPTK_PATH);
 
-require_once __DIR__ . '/../SPTK/Autoload.php';
+require_once SPTK_PATH . '/Autoload.php';
 require_once __DIR__ . '/Support.php';
 
 $files = [
@@ -38,4 +39,3 @@ foreach ($tests as $name => $test) {
 
 echo "\n{$passed} passed, {$failed} failed\n";
 exit($failed === 0 ? 0 : 1);
-

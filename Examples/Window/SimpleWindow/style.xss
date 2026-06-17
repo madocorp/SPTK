@@ -1,0 +1,7 @@
+Window {
+  width: 640px;
+  height: 480px;
+  backgroundColor: #000000;
+  color: #ffff00;
+  fontSize: 30px;
+}
