@@ -1,17 +1,9 @@
 # SPTK Examples
 
-This directory contains runnable examples and small regression tests.
+This directory contains runnable examples.
 
-Interactive examples live under `Interactive/` and can be launched with:
-
-```sh
-php Examples/run.php Interactive/Layout/HelloWorld
-php Examples/run.php HelloWorld
-```
-
-Headless tests live under `Tests/` and can be run without SDL:
+Interactive examples can be launched this way:
 
 ```sh
-php Examples/Tests/run.php
+php Examples/Windows/SimpleWindow/SimpleWindow.php
 ```
-

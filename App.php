@@ -57,7 +57,7 @@ class App {
     if (!is_array($this->xss)) {
       $this->xss = [$this->xss];
     }
-    array_unshift($this->xss, "{$this->dir}/SPTK/defaults.xss");
+    array_unshift($this->xss, SPTK_PATH . "/defaults.xss");
     foreach ($this->xss as $xssi) {
       StyleSheet::load($xssi);
     }

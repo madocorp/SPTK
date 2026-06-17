@@ -11,9 +11,13 @@ class DebugStream {
   private int $pos = 0;
 
   public function stream_open(string $path, string $mode, int $options, ?string &$opened_path): bool {
-    $rel = preg_replace('~^debug://~', '', $path);
-    $appDir = dirname(APP_PATH);
-    $real = $appDir . '/' . $rel;
+    $relative = preg_replace('~^debug://~', '', $path);
+    if (strpos($relative, '/') === 0) {
+      $real = $relative;
+    } else {
+      $appDir = dirname(APP_PATH);
+      $real = $appDir . '/' . $relative;
+    }
     $php = @file_get_contents($real);
     if ($php === false) {
       return false;

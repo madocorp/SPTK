@@ -91,18 +91,17 @@ locations. The link name must be exactly `SPTK`.
 
 ## Examples and Tests
 
-Runnable examples are organized under `Examples/Interactive/`:
+Runnable examples are organized as standalone applications under `Examples/`:
 
 ```sh
-php Examples/run.php HelloWorld
-php Examples/run.php Interactive/Menus/Menu
+php Examples/Windows/SimpleWindow/SimpleWindow.php
 ```
 
 Headless regression tests for XML layouts, XSS styles, and element behavior can
 be run without SDL:
 
 ```sh
-php Examples/Tests/run.php
+php Tests/run.php
 ```
 
 ## Updating

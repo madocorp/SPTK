@@ -10,8 +10,11 @@ class Autoload {
   public static function init(): void {
     self::$appNamespace = APP_NAMESPACE;
     self::$appDir = dirname(APP_PATH);
+    if (!defined('SPTK_PATH')) {
+      define('SPTK_PATH', self::$appDir . "/SPTK");
+    }
     if (DEBUG !== false) {
-      require_once self::$appDir . "/SPTK/DebugStream.php";
+      require_once SPTK_PATH . "/DebugStream.php";
       stream_wrapper_register('debug', DebugStream::class);
     }
     spl_autoload_register(['\SPTK\Autoload', 'load']);
@@ -23,7 +26,7 @@ class Autoload {
       echo "AUTOLOAD: $path\n";
       require_once "debug://{$path}";
     } else {
-      require_once self::$appDir . '/' . $path;
+      require_once $path;
     }
   }
 
@@ -33,8 +36,14 @@ class Autoload {
   }
 
   public static function getPath(string $class): string {
+    if (strpos($class, 'SPTK\\') === 0 || strpos($class, '\\SPTK\\') === 0) {
+      $class = ltrim($class, '\\');
+      $class = substr($class, strlen('SPTK\\'));
+      $path = trim(str_replace('\\', '/', $class), '/') . '.php';
+      return SPTK_PATH . '/' . $path;
+    }
     $namespace = str_replace(self::$appNamespace . '\\', '', $class);
-    return trim(str_replace('\\', '/', $namespace), '/') . '.php';
+    return self::$appDir . '/' . trim(str_replace('\\', '/', $namespace), '/') . '.php';
   }
 
 
