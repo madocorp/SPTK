@@ -1,0 +1,26 @@
+Window {
+  width: 640px;
+  height: 480px;
+  backgroundColor: #ffffff;
+  color: #000000;
+  fontSize: 16px;
+  textAlign: left;
+  font: LiberationSans-Regular;
+}
+
+.serif {
+  font: LiberationSerif-Regular;
+}
+
+.bold {
+  font: LiberationSans-Bold;
+}
+
+.italic {
+  font: LiberationSans-Italic;
+}
+
+.mono {
+  font: LiberationMono-Regular;
+}
+

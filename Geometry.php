@@ -44,7 +44,7 @@ class Geometry {
   public $descent = 0;
   public $wordSpacing = 0;
   public $textAlign = 'left';
-  public $textWrap = 'left';
+  public $textWrap = 'no';
 
   public $lines = [];
 

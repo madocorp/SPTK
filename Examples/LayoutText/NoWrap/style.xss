@@ -1,0 +1,9 @@
+Window {
+  width: 640px;
+  height: 480px;
+  backgroundColor: #ffffff;
+  color: #000000;
+  fontSize: 16px;
+  textAlign: left;
+  textWrap: no;
+}

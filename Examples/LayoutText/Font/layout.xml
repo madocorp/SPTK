@@ -1,0 +1,19 @@
+<Root>
+
+  <Window title="Font">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+    <AC class="serif">Nulla sagittis erat est, ac porta ex egestas ut.</AC>
+    Donec tincidunt porttitor est, eu ultrices nisl congue laoreet.
+    Suspendisse eu sem faucibus, ornare quam id, ultricies nisi.
+    <AC class="italic">Aenean viverra vulputate auctor.</AC>
+    Sed hendrerit turpis nec tristique egestas.
+    Proin ac leo sagittis, rhoncus metus sed, semper orci.
+    <AC class="bold"> Phasellus erat nibh, vestibulum vel odio id, finibus porta neque.</AC>
+    Sed eu felis sit amet mauris lobortis fermentum.
+    Etiam eu pulvinar enim.
+    <AC class="mono">Praesent et felis ante. Etiam lorem nisi, tristique eu aliquet at, suscipit nec ligula.</AC>
+    Phasellus a velit eget nunc varius lacinia.
+    Integer tincidunt velit purus, sit amet mattis nisi posuere ac.
+  </Window>
+
+</Root>
