@@ -1,7 +1,6 @@
 <?php
 
 define('SPTK\DEBUG', true);
-define('DEBUG', true);
 define('APP_PATH', __FILE__);
 define('APP_NAMESPACE', 'EXAMPLES');
 define('SPTK_PATH', realpath(__DIR__ . '/../../..'));

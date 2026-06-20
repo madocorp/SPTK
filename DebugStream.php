@@ -84,25 +84,11 @@ class DebugStream {
   }
 
   private static function transform(string $php): string {
-    preg_match("~//\s*DEBUGLEVEL:(-?[0-9])~", $php, $m);
-    if (DEBUG === true && !isset($m[1])) {
-      return $php;
+    if (DEBUG === true) {
+      return preg_replace("~//\s*DEBUG:[a-z0-9_]+ ~", '', $php);
     }
-    $level = (int)($m[1] ?? DEBUG);
-    $only = false;
-    if ($level < 0) {
-      $level = -$level;
-      $only = true;
-    }
-    if ($level > 9) {
-      $level = 0;
-    }
-    if ($level == 0) {
-      $level = '(:0|)';
-    } else {
-      $level = $only ? "(:{$level})" : "(:[0-{$level}]|)";
-    }
-    return preg_replace("~//\s*DEBUG{$level} ~", '', $php);
+    $debugList = implode("|", DEBUG);
+    return preg_replace("~//\s*DEBUG:({$debugList}) ~", '', $php);
   }
 
 }
