@@ -1,0 +1,16 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffffff;
+  fontSize: 16px;
+}
+
+.big {
+  fontSize: 30px;
+  color: #ff0000;
+  width: 250px;
+}
+

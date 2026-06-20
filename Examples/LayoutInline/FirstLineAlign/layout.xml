@@ -1,0 +1,7 @@
+<Window title="FirstLineAlign">
+
+  Sed eu felis sit amet mauris lobortis fermentum. Etiam eu pulvinar enim. Praesent et felis ante. 
+  Lorem ipsum dolor sit amet, consectetur <IBox class="big">Nulla sagittis erat est ut.</IBox> adipiscing elit.
+  Donec tincidunt porttitor est, eu ultrices nisl congue laoreet. Suspendisse eu sem faucibus, ornare quam id, ultricies nisi.
+
+</Window>

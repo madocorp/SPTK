@@ -1,0 +1,40 @@
+Window {
+  width: 640px;
+  height: 480px;
+  x: 30%;
+  y: 30%;
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
+.a {
+  fontSize: 32px;
+  backgroundColor: #0000ff;
+}
+
+.b {
+  fontSize: 32px;
+  backgroundColor: #4444ff;
+  paddingTop: 20px;
+}
+
+.c {
+  fontSize: 32px;
+  backgroundColor: #8888ff;
+  paddingRight: 20px;
+}
+
+.d {
+  fontSize: 32px;
+  backgroundColor: #aaaaff;
+  color: #4444ff;
+  paddingBottom: 20px;
+}
+
+.e {
+  fontSize: 32px;
+  backgroundColor: #ffffffff;
+  color: #0000ff;
+  paddingLeft: 20px;
+}
+
