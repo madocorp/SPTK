@@ -12,6 +12,10 @@ class Image extends Element {
   protected \GdImage $img;
   protected $width;
   protected $height;
+  protected $sourceX = 0;
+  protected $sourceY = 0;
+  protected $sourceWidth = null;
+  protected $sourceHeight = null;
 
   public function getAttributeList(): array {
     return ['value'];
@@ -28,9 +32,10 @@ class Image extends Element {
     } else {
       $this->value = $value;
     }
-    if (file_exists($this->value)) {
-      $this->load();
+    if (!file_exists($this->value)) {
+      throw new \Exception("Image does not exist: {$this->value}");
     }
+    $this->load();
   }
 
   public function setBase64($data) {
@@ -51,6 +56,57 @@ class Image extends Element {
     }
     $this->value = false;
     $this->setImage($img);
+  }
+
+  public function setBytes(string $data): void {
+    $img = imagecreatefromstring($data);
+    if ($img === false) {
+      throw new \InvalidArgumentException('Unsupported or invalid image data.');
+    }
+    $this->value = false;
+    $this->setImage($img);
+  }
+
+  public function setRawPixels(string $data, int $width, int $height, int $channels): void {
+    if ($width <= 0 || $height <= 0 || !in_array($channels, [3, 4], true)) {
+      throw new \InvalidArgumentException('Invalid raw image dimensions.');
+    }
+    if (strlen($data) < $width * $height * $channels) {
+      throw new \InvalidArgumentException('Raw image data is shorter than expected.');
+    }
+    $img = imagecreatetruecolor($width, $height);
+    imagealphablending($img, false);
+    imagesavealpha($img, true);
+    $offset = 0;
+    for ($y = 0; $y < $height; $y++) {
+      for ($x = 0; $x < $width; $x++) {
+        $r = ord($data[$offset++]);
+        $g = ord($data[$offset++]);
+        $b = ord($data[$offset++]);
+        $alpha = 0;
+        if ($channels === 4) {
+          $alpha = 127 - intdiv(ord($data[$offset++]) * 127, 255);
+        }
+        imagesetpixel($img, $x, $y, imagecolorallocatealpha($img, $r, $g, $b, $alpha));
+      }
+    }
+    $this->value = false;
+    $this->setImage($img);
+  }
+
+  public function setSourceRect(int $x, int $y, ?int $width = null, ?int $height = null): void {
+    $this->sourceX = max(0, $x);
+    $this->sourceY = max(0, $y);
+    $this->sourceWidth = $width === null ? null : max(1, $width);
+    $this->sourceHeight = $height === null ? null : max(1, $height);
+  }
+
+  public function getSourceWidth(): int {
+    return $this->sourceWidth ?? max(1, $this->width - $this->sourceX);
+  }
+
+  public function getSourceHeight(): int {
+    return $this->sourceHeight ?? max(1, $this->height - $this->sourceY);
   }
 
   protected function calculateWidths(): void {
@@ -100,7 +156,18 @@ class Image extends Element {
   protected function draw(): void {
     $w = $this->geometry->innerWidth;
     $h = $this->geometry->innerHeight;
-    $img = imagescale($this->img, $w, $h);
+    $sourceWidth = $this->getSourceWidth();
+    $sourceHeight = $this->getSourceHeight();
+    $img = imagecrop($this->img, [
+      'x' => $this->sourceX,
+      'y' => $this->sourceY,
+      'width' => $sourceWidth,
+      'height' => $sourceHeight
+    ]);
+    if ($img === false) {
+      $img = $this->img;
+    }
+    $img = imagescale($img, $w, $h);
     // convert to RGBA (little-endian)
     $size = $w * $h * 4;
     $this->rgba = \FFI::new("uint8_t[{$size}]");
@@ -141,7 +208,11 @@ class Image extends Element {
   }
 
   protected function load() {
-    $img = imagecreatefrompng($this->value);
+    $data = file_get_contents($this->value);
+    if ($data === false) {
+      throw new \Exception("Failed to load image: {$this->value}");
+    }
+    $img = imagecreatefromstring($data);
     if ($img === false) {
       throw new \Exception("Failed to load image: {$this->value}");
     }
