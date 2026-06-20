@@ -146,6 +146,7 @@ bool SDL_RenderFillRect(SDL_Renderer *renderer, const SDL_FRect *rect);
 SDL_Keymod SDL_GetModState(void);
 bool SDL_StartTextInput(SDL_Window *window);
 bool SDL_SetClipboardText(const char *text);
+bool SDL_SetPrimarySelectionText(const char *text);
 char *SDL_GetClipboardText(void);
 bool SDL_HasClipboardText(void);
 void SDL_free(void *mem);

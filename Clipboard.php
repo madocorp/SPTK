@@ -13,6 +13,7 @@ class Clipboard {
     \FFI::memcpy($text, $value, $len);
     $text[$len] = "\0";
     $sdl->SDL_SetClipboardText($text);
+    $sdl->SDL_SetPrimarySelectionText($text);
   }
 
   public static function get(): string|false {
