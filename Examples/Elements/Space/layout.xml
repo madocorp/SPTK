@@ -1,0 +1,5 @@
+<Root>
+  <Window title="Space">
+    Before<Space />After
+  </Window>
+</Root>

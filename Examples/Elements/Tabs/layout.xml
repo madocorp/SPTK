@@ -1,0 +1,15 @@
+<Root>
+  <Window title="Tabs">
+    <Panel name="panel">
+      <PanelTitle>Tabs</PanelTitle>
+      <PanelContent>
+        <Tabs>
+          <Tab contentName="first">First</Tab>
+          <Tab contentName="second">Second</Tab>
+          <TabContent name="first">First tab</TabContent>
+          <TabContent name="second">Second tab</TabContent>
+        </Tabs>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

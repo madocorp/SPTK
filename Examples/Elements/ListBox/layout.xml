@@ -1,0 +1,14 @@
+<Root>
+  <Window title="ListBox">
+    <Panel name="panel">
+      <PanelTitle>ListBox</PanelTitle>
+      <PanelContent>
+        <ListBox>
+          <ListItem>First</ListItem>
+          <ListItem>Second</ListItem>
+          <ListItem>Third</ListItem>
+        </ListBox>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

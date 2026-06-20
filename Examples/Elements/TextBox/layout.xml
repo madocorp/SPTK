@@ -1,0 +1,10 @@
+<Root>
+  <Window title="TextBox">
+    <Panel name="panel">
+      <PanelTitle>TextBox</PanelTitle>
+      <PanelContent>
+        <TextBox file="sample.txt" />
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

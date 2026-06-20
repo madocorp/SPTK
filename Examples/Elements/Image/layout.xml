@@ -1,0 +1,5 @@
+<Root>
+  <Window title="Image">
+    <Image value="image.png" />
+  </Window>
+</Root>

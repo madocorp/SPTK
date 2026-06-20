@@ -1,0 +1,10 @@
+<Root>
+  <Window title="TextEditor">
+    <Panel name="panel">
+      <PanelTitle>TextEditor</PanelTitle>
+      <PanelContent>
+        <TextEditor file="sample.txt" />
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

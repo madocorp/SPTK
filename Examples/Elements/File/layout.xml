@@ -1,0 +1,10 @@
+<Root>
+  <Window title="File">
+    <Panel name="panel">
+      <PanelTitle>File</PanelTitle>
+      <PanelContent>
+        <Label>File: <File value="example.txt" /></Label>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

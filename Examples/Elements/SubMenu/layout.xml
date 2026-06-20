@@ -1,0 +1,14 @@
+<Root>
+  <Window title="SubMenu">
+    <Menu>
+      <MenuBar>
+        <MenuBarItem name="file">File</MenuBarItem>
+      </MenuBar>
+      <SubMenu>
+        <MenuBox belongsTo="file">
+          <MenuBoxItem>Open</MenuBoxItem>
+        </MenuBox>
+      </SubMenu>
+    </Menu>
+  </Window>
+</Root>

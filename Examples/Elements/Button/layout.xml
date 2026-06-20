@@ -1,0 +1,10 @@
+<Root>
+  <Window title="Button">
+    <Panel name="panel">
+      <PanelTitle>Button</PanelTitle>
+      <PanelContent>
+        <Button>Button</Button>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>
