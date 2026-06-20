@@ -69,31 +69,31 @@ class File extends Element {
     $this->create = ($value === 'true');
   }
 
-  public function addClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->elementBrowse->addClass('active', true);
+  public function addClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->elementBrowse->addVariant('active');
       if ($this->value === '') {
         $this->elementFile->setValue($this->placeholder);
-        $this->elementFile->addClass('placeholder', true);
+        $this->elementFile->addVariant('placeholder');
       }
     }
-    parent::addClass($class, $dynamic);
+    parent::addClass($class, $variant);
   }
 
-  public function removeClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->elementBrowse->removeClass('active', true);
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->elementBrowse->removeVariant('active');
       if ($this->value === '') {
         $this->elementFile->setValue($this->value);
-        $this->elementFile->removeClass('placeholder', true);
+        $this->elementFile->removeVariant('placeholder');
       }
     }
-    parent::removeClass($class, $dynamic);
+    parent::removeClass($class, $variant);
   }
 
   public function selected($path) {
     $this->setValue($path);
-    $this->addClass('active', true);
+    $this->addVariant('active');
     Element::refresh();
   }
 
@@ -111,7 +111,7 @@ class File extends Element {
     $panel->show();
     if ($this->value === '') {
       $this->elementFile->setValue($this->value);
-      $this->elementFile->removeClass('placeholder', true);
+      $this->elementFile->removeVariant('placeholder');
     }
     Element::refresh();
   }

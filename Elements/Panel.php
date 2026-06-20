@@ -35,7 +35,7 @@ class Panel extends Element {
       }
       $focusedElement = $this->inputList[$this->focusIndex]['element'];
       $focusedElement->raise();
-      $focusedElement->addClass('active', true);
+      $focusedElement->addVariant('active');
     }
   }
 
@@ -113,12 +113,12 @@ class Panel extends Element {
       }
     }
     $element = $this->inputList[$this->focusIndex]['element'];
-    $element->addClass('active', true);
+    $element->addVariant('active');
     $element->raise();
   }
 
   public function inactivateInput() {
-    $this->inputList[$this->focusIndex]['element']->removeClass('active', true);
+    $this->inputList[$this->focusIndex]['element']->removeVariant('active');
   }
 
   public function addHotKey($key, $callback) {

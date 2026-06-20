@@ -49,9 +49,9 @@ class Tabs extends Element {
       if ($element->type === 'Tab') {
         $ti++;
         if ($ti === $selected) {
-          $element->addClass('active', true);
+          $element->addVariant('active');
         } else {
-          $element->removeClass('active', true);
+          $element->removeVariant('active');
         }
       }
     }

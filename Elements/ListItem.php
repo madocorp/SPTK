@@ -25,7 +25,7 @@ class ListItem extends Element {
     $this->itemRight = new Element($this, null, null, 'ItemRight');
     $this->valueField = new InputValue($this);
     $this->matchField = new InputValue($this);
-    $this->matchField->addClass('matched', true);
+    $this->matchField->addVariant('matched');
     $this->afterMatchField = new InputValue($this);
     $this->initialized = true;
   }

@@ -147,26 +147,26 @@ class ListBox extends Element {
     $this->scrollY = 0;
   }
 
-  public function addClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
+  public function addClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
-          $descendant->addClass('active', true);
+          $descendant->addVariant('active');
         }
       }
     }
-    parent::addClass($class, $dynamic);
+    parent::addClass($class, $variant);
   }
 
-  public function removeClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
-          $descendant->removeClass('active', true);
+          $descendant->removeVariant('active');
         }
       }
     }
-    parent::removeClass($class, $dynamic);
+    parent::removeClass($class, $variant);
   }
 
   public function raise(): void {
@@ -202,16 +202,16 @@ class ListBox extends Element {
 
   public function activateItem($direction = 1) {
     foreach ($this->descendants as $descendant) {
-      $descendant->removeClass('selected', true);
-      $descendant->removeClass('active', true);
+      $descendant->removeVariant('selected');
+      $descendant->removeVariant('active');
     }
     for ($i = 0; $i < $this->num; $i++) {
       $idx = ($this->num + $this->activeItem + $i * $direction) % $this->num;
       $descendant = $this->descendants[$idx];
       if ($descendant->display) {
         $this->activeItem = $idx;
-        $descendant->addClass('selected', true);
-        $descendant->addClass('active', true);
+        $descendant->addVariant('selected');
+        $descendant->addVariant('active');
         if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
           $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
         } else if ($descendant->geometry->y < $this->scrollY) {
@@ -227,8 +227,8 @@ class ListBox extends Element {
 
   public function inactivateItem() {
     foreach ($this->descendants as $descendant) {
-      $descendant->removeClass('selected', true);
-      $descendant->removeClass('active', true);
+      $descendant->removeVariant('selected');
+      $descendant->removeVariant('active');
     }
   }
 

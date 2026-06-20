@@ -75,27 +75,27 @@ class Input extends Element {
     }
   }
 
-  public function addClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->elementSelected->addClass('selected', true);
+  public function addClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->elementSelected->addVariant('selected');
       if ($this->getValue() === '') {
         $this->elementBefore->setValue($this->placeholder);
-        $this->elementBefore->addClass('placeholder', true);
+        $this->elementBefore->addVariant('placeholder');
       }
     }
-    parent::addClass($class, $dynamic);
+    parent::addClass($class, $variant);
     $this->update();
   }
 
-  public function removeClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->elementSelected->removeClass('selected', true);
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->elementSelected->removeVariant('selected');
     }
     if ($this->getValue() === '') {
       $this->elementBefore->setValue('');
-      $this->elementBefore->removeClass('placeholder', true);
+      $this->elementBefore->removeVariant('placeholder');
     }
-    parent::removeClass($class, $dynamic);
+    parent::removeClass($class, $variant);
   }
 
   protected function setScroll() {
@@ -225,7 +225,7 @@ class Input extends Element {
         $paste = Clipboard::get();
         if ($paste !== false) {
           if ($this->lines[0] === '') {
-            $this->elementBefore->removeClass('placeholder', true);
+            $this->elementBefore->removeVariant('placeholder');
           }
           $lines = explode("\n", $paste, 2);
           $paste = $lines[0];
@@ -255,7 +255,7 @@ class Input extends Element {
 
   public function textInputHandler($element, $event) {
     if ($this->lines[0] === '') {
-      $this->elementBefore->removeClass('placeholder', true);
+      $this->elementBefore->removeVariant('placeholder');
     }
     $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
     if ($col1 === $col2 - 1) {

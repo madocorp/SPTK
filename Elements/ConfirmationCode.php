@@ -31,18 +31,18 @@ class ConfirmationCode extends Element {
     return ($this->elementCode->getValue() === $this->code);
   }
 
-  public function addClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->elementSelected->addClass('selected', true);
+  public function addClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->elementSelected->addVariant('selected');
     }
-    parent::addClass($class, $dynamic);
+    parent::addClass($class, $variant);
   }
 
-  public function removeClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->elementSelected->removeClass('selected', true);
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->elementSelected->removeVariant('selected');
     }
-    parent::removeClass($class, $dynamic);
+    parent::removeClass($class, $variant);
   }
 
   public function keyPressHandler($element, $event) {

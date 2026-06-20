@@ -32,18 +32,18 @@ class CheckBox extends Element {
     }
   }
 
-  public function addClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->valueBox->addClass($class, $dynamic);
+  public function addClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->valueBox->addClass($class, $variant);
     }
-    parent::addClass($class, $dynamic);
+    parent::addClass($class, $variant);
   }
 
-  public function removeClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
-      $this->valueBox->removeClass($class, $dynamic);
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
+      $this->valueBox->removeClass($class, $variant);
     }
-    parent::removeClass($class, $dynamic);
+    parent::removeClass($class, $variant);
   }
 
   public function keyPressHandler($element, $event) {

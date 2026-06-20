@@ -175,7 +175,7 @@ class FilePanel extends Panel {
           }
         }
         $li = new ListItem($this->theList);
-        $li->addClass('file', true);
+        $li->addVariant('file');
         $li->setFilterable(true);
         $li->setValue($file);
         if ($file === $selected) {
@@ -215,7 +215,7 @@ class FilePanel extends Panel {
   }
 
   public function createDir($element) {
-    if (!$this->fileNameInput->hasClass('active', true)) {
+    if (!$this->fileNameInput->hasVariant('active')) {
       $this->inactivateInput();
       $this->activateInput('fileName');
       Element::immediateRender($this);
