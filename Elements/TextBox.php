@@ -98,6 +98,9 @@ class TextBox extends Element {
     if ($this->display === false) {
       return;
     }
+if ($this->height === 'content') {
+  $this->height = '100';
+}
     foreach ($this->descendants as $descendant) {
       $descendant->calculateHeights();
     }
@@ -243,6 +246,10 @@ class TextBox extends Element {
     $this->cursor->save();
     $this->setScroll();
     if ($this->geometry->height == 0) {
+      $firstOnScreen = 0;
+      $lastOnScreen = min(300, count($this->lines));
+    } else if ($this->geometry->height === 'content') {
+      $this->height = count($this->lines) * $this->lineHeight + $this->geometry->paddingTop + $this->geometry->paddingBottom + $this->geometry->borderTop + $this->geometry->borderBottom;
       $firstOnScreen = 0;
       $lastOnScreen = min(300, count($this->lines));
     } else {

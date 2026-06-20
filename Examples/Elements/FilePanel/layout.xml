@@ -1,0 +1,5 @@
+<Root>
+  <Window title="FilePanel">
+    <FilePanel name="filePanel" />
+  </Window>
+</Root>

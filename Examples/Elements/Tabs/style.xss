@@ -1,0 +1,11 @@
+Window {
+  width: 640px;
+  height: 480px;
+}
+
+TabContent {
+  width: 100%;
+  padding: 10px;
+  borderTop: 1px;
+  borderColor: #000000;
+}

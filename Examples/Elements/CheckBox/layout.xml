@@ -1,0 +1,10 @@
+<Root>
+  <Window title="CheckBox">
+    <Panel name="panel">
+      <PanelTitle>CheckBox</PanelTitle>
+      <PanelContent>
+        <CheckBox value="true">CheckBox</CheckBox>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

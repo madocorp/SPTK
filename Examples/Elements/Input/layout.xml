@@ -1,0 +1,10 @@
+<Root>
+  <Window title="Input">
+    <Panel name="panel">
+      <PanelTitle>Input</PanelTitle>
+      <PanelContent>
+        <Label>Input: <Input value="Input" /></Label>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

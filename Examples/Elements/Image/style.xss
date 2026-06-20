@@ -1,0 +1,9 @@
+Window {
+  width: 640px;
+  height: 480px;
+}
+
+Image {
+  width: 64px;
+  height: 64px;
+}

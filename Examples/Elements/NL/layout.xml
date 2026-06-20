@@ -1,0 +1,5 @@
+<Root>
+  <Window title="NL">
+    Before<NL />After
+  </Window>
+</Root>
