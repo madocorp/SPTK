@@ -224,6 +224,9 @@ class Input extends Element {
       case Action::PASTE:
         $paste = Clipboard::get();
         if ($paste !== false) {
+          if ($this->lines[0] === '') {
+            $this->elementBefore->removeClass('placeholder', true);
+          }
           $lines = explode("\n", $paste, 2);
           $paste = $lines[0];
           $len = mb_strlen($paste);
