@@ -17,7 +17,7 @@ trait ElementStatic {
     $t = microtime(true);
     static::$root->recalculateGeometry();
     static::$root->render();
-    // DEBUG:5 echo "Refreshed:", microtime(true) - $t, "\n";
+    // DEBUG:refresh echo "Refreshed:", microtime(true) - $t, "\n";
   }
 
   public static function immediateRender(Element $element, bool $layout = true): void {
@@ -43,7 +43,7 @@ trait ElementStatic {
     $tmpTexture->copyTo($window->tmpTexture, $x, $y);
     $window->tmpTexture->copyTo(null, 0, 0);
     $window->sdl->SDL_RenderPresent($window->renderer);
-    // DEBUG:5  echo "Immediate refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
+    // DEBUG:refresh  echo "Immediate refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
   }
 
   public static function byName(string $name, ?Element $element = null): Element|false {

@@ -79,13 +79,13 @@ class StyleSheet {
         self::$styles[$selector] = $style;
       }
     }
-    //  DEBUG:5 foreach (self::$styles as $selector => $style) {
-    //  DEBUG:5   echo "----------------\n";
-    //  DEBUG:5   echo $selector, "\n";
-    //  DEBUG:5   echo "----------------\n";
-    //  DEBUG:5   $style->debug();
-    //  DEBUG:5   echo "\n";
-    //  DEBUG:5 }
+    //  DEBUG:style foreach (self::$styles as $selector => $style) {
+    //  DEBUG:style   echo "----------------\n";
+    //  DEBUG:style   echo $selector, "\n";
+    //  DEBUG:style   echo "----------------\n";
+    //  DEBUG:style   $style->debug();
+    //  DEBUG:style   echo "\n";
+    //  DEBUG:style }
   }
 
   public static function get(Style|array|null $defaultStyle, Style|array|null $ancestorStyle, string $type, string|array|int $class = self::ANY, string|int $name = self::ANY): Style {

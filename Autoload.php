@@ -23,7 +23,9 @@ class Autoload {
   public static function load(string $class): void {
     $path = self::getPath($class);
     if (DEBUG !== false) {
-      echo "AUTOLOAD: $path\n";
+      if (DEBUG === true || in_array(DEBUG, 'autoload')) {
+        echo "AUTOLOAD: $path\n";
+      }
       require_once "debug://{$path}";
     } else {
       require_once $path;
