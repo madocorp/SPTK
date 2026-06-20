@@ -69,19 +69,19 @@ class TextBox extends Element {
     $this->update();
   }
 
-  public function addClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
+  public function addClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
       $this->active = true;
     }
-    parent::addClass($class, $dynamic);
+    parent::addClass($class, $variant);
     $this->update();
   }
 
-  public function removeClass($class, $dynamic = false): void {
-    if ($dynamic && $class == 'active') {
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class == 'active') {
       $this->active = false;
     }
-    parent::removeClass($class, $dynamic);
+    parent::removeClass($class, $variant);
     $this->update();
   }
 

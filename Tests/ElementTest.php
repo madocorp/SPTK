@@ -77,10 +77,10 @@ return [
     assertFalse($checkBox->getValue(), 'string zero clears checkbox value');
     assertSame('', $checkBox->nthChild(0)->getText(), 'unchecked state clears the value marker');
 
-    $checkBox->addClass('active', true);
-    assertTrue($checkBox->nthChild(0)->hasClass('CheckBoxValue:active'), 'dynamic active class propagates to the value box');
-    $checkBox->removeClass('active', true);
-    assertFalse($checkBox->nthChild(0)->hasClass('CheckBoxValue:active'), 'dynamic active class is removed from the value box');
+    $checkBox->addVariant('active');
+    assertTrue($checkBox->nthChild(0)->hasClass('CheckBoxValue:active'), 'variant active class propagates to the value box');
+    $checkBox->removeVariant('active');
+    assertFalse($checkBox->nthChild(0)->hasClass('CheckBoxValue:active'), 'variant active class is removed from the value box');
   },
 
   'list items and list boxes expose usable values' => function (): void {

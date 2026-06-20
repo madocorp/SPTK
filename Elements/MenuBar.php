@@ -23,7 +23,7 @@ class MenuBar extends Element {
     $i = 0;
     foreach ($this->descendants as $element) {
       if ($i == $menuIndex) {
-        $element->addClass('active', true);
+        $element->addVariant('active');
         $element->raise();
         $barItem = $element;
         break;
@@ -35,7 +35,7 @@ class MenuBar extends Element {
 
   public function inactivateMenuBarItems() {
     foreach ($this->descendants as $element) {
-      $element->removeClass('active', true);
+      $element->removeVariant('active');
     }
   }
 

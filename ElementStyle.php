@@ -21,20 +21,20 @@ trait ElementStyle {
     }
   }
 
-  public function addClass(string $class, bool $dynamic = false): void {
-    if ($dynamic) {
-      $class = $this->type . ':' . $class;
-    }
+  public function addClass(string $class, bool $variant = false): void {
+    $class = $this->className($class, $variant);
     if (!in_array($class, $this->sclass)) {
       $this->sclass[] = $class;
       $this->recalculateStyle();
     }
   }
 
-  public function removeClass(string $class, bool $dynamic = false): void {
-    if ($dynamic) {
-      $class = $this->type . ':' . $class;
-    }
+  public function addVariant(string $variant): void {
+    $this->addClass($variant, variant: true);
+  }
+
+  public function removeClass(string $class, bool $variant = false): void {
+    $class = $this->className($class, $variant);
     $key = array_search($class, $this->sclass);
     if ($key !== false) {
       unset($this->sclass[$key]);
@@ -42,11 +42,25 @@ trait ElementStyle {
     }
   }
 
-  public function hasClass(string $class, bool $dynamic = false): bool {
-    if ($dynamic) {
-      $class = $this->type . ':' . $class;
-    }
+  public function removeVariant(string $variant): void {
+    $this->removeClass($variant, variant: true);
+  }
+
+  public function hasClass(string $class, bool $variant = false): bool {
+    $class = $this->className($class, $variant);
     return in_array($class, $this->sclass);
+  }
+
+  public function hasVariant(string $variant): bool {
+    return $this->hasClass($variant, variant: true);
+  }
+
+  private function className(string $class, bool $variant): string {
+    return $variant ? $this->variantName($class) : $class;
+  }
+
+  private function variantName(string $variant): string {
+    return $this->type . ':' . $variant;
   }
 
   public function addChildClass(string $class): void {

@@ -24,7 +24,7 @@ XSS, 'xss');
     assertSame(20, $style->get('height'), 'name selector applies when no class overrides it');
 
     $active = StyleSheet::get(null, null, 'Button', ['Button:active']);
-    assertSame([0, 255, 0, 255], $active->get('backgroundColor'), 'dynamic type classes are loaded as class selectors');
+    assertSame([0, 255, 0, 255], $active->get('backgroundColor'), 'variant type classes are loaded as class selectors');
   },
 
   'xss shorthands expand like css around rules' => function (): void {
