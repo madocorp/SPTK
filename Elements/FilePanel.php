@@ -14,6 +14,7 @@ class FilePanel extends Panel {
   private $theList;
   private $title;
   private $createDirBtn;
+  private $createSpace;
   private $okBtn;
   private $fileNameLabel;
   private $fileNameInput;
@@ -45,7 +46,7 @@ class FilePanel extends Panel {
     $this->createDirBtn->setHotKey('F7');
     $this->createDirBtn->addText('Create dir');
     $this->createDirBtn->setOnPress([$this, 'createDir']);
-    new Space($buttons);
+    $this->createSpace = new Space($buttons);
     $this->okBtn = new Button($buttons, 'okBtn');
     $this->okBtn->setHotKey('SPACE');
     $this->okBtn->addText('OK');
@@ -71,6 +72,7 @@ class FilePanel extends Panel {
       $this->fileNameInput->hide();
       $this->fileNameLabel->hide();
       $this->createDirBtn->hide();
+      $this->createSpace->hide();
     }
   }
 
