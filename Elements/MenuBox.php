@@ -71,7 +71,7 @@ class MenuBox extends ListBox {
         $width = $dwidth;
       }
     }
-    $this->geometry->width = $width + 30; // ...
+    $this->geometry->width = max($this->geometry->minWidth, $width);
   }
 
   public function keyPressHandler($element, $event) {

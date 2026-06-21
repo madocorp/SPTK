@@ -6,6 +6,8 @@ use \SPTK\Element;
 
 class ListItem extends Element {
 
+  private const EXTRA_WIDTH = 30;
+
   protected $selected = false;
   protected $selectable = false;
   protected $filterable = false;
@@ -115,11 +117,31 @@ class ListItem extends Element {
     return $this->value;
   }
 
+  protected function getElementWidth(Element $element) {
+    if (method_exists($element, 'getWidth')) {
+      return $element->getWidth();
+    }
+    if (is_int($element->geometry->width) && $element->geometry->width > 0) {
+      return $element->geometry->width;
+    }
+    $styleWidth = $element->style->get('width', $this->geometry);
+    if (is_int($styleWidth) && $styleWidth > 0) {
+      return $styleWidth;
+    }
+    $width = 0;
+    foreach ($element->descendants as $descendant) {
+      $width += $this->getElementWidth($descendant);
+    }
+    return $width;
+  }
+
   public function getWidth() {
-    $width = $this->valueField->getWidth();
-    $width += $this->matchField->getWidth();
-    $width += $this->afterMatchField->getWidth();
-    return $width + 30;
+    $width = $this->getElementWidth($this->itemLeft);
+    $width += $this->getElementWidth($this->valueField);
+    $width += $this->getElementWidth($this->matchField);
+    $width += $this->getElementWidth($this->afterMatchField);
+    $width += $this->getElementWidth($this->itemRight);
+    return $width + self::EXTRA_WIDTH;
   }
 
   public function deselect() {
