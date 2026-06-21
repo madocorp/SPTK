@@ -255,7 +255,7 @@ class ListBox extends Element {
         $width = $dwidth;
       }
     }
-    $this->geometry->width = $width + 30; // ...
+    $this->geometry->width = max($this->geometry->minWidth, $width);
     $this->geometry->limitateWidth();
     $this->geometry->setDerivedWidths();
   }
