@@ -3,7 +3,8 @@
     <Panel name="panel">
       <PanelTitle>CheckBox</PanelTitle>
       <PanelContent>
-        <CheckBox value="true">CheckBox</CheckBox>
+        <CheckBox value="true">CheckBox1</CheckBox>
+        <CheckBox value="false">CheckBox2</CheckBox>
       </PanelContent>
     </Panel>
   </Window>
