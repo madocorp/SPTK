@@ -98,13 +98,10 @@ class TextBox extends Element {
     if ($this->display === false) {
       return;
     }
-if ($this->height === 'content') {
-  $this->height = '100';
-}
     foreach ($this->descendants as $descendant) {
       $descendant->calculateHeights();
     }
-    $maxY = count($this->lines) * $this->lineHeight;
+    $maxY = count($this->lines) * $this->lineHeight + $this->geometry->borderTop + $this->geometry->paddingTop;
     $ascent = $this->style->get('ascent', $this->geometry);
     $this->geometry->setContentHeight($ascent, $maxY);
   }

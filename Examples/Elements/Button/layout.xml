@@ -3,7 +3,9 @@
     <Panel name="panel">
       <PanelTitle>Button</PanelTitle>
       <PanelContent>
-        <Button>Button</Button>
+        <Button>Button1</Button>
+        <Button>Button2</Button>
+        <Button>Button3</Button>
       </PanelContent>
     </Panel>
   </Window>
