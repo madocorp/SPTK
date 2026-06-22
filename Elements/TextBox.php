@@ -65,6 +65,10 @@ class TextBox extends Element {
 
   public function setValue($value): void {
     $this->lines = explode("\n", $value);
+    $this->cursor->modify(0, 0, 0, 0);
+    $this->cursor->save();
+    $this->scrollX = 0;
+    $this->scrollY = 0;
     $this->measure();
     $this->update();
   }
