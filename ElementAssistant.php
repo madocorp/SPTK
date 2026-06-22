@@ -64,6 +64,10 @@ trait ElementAssistant {
     $this->display = false;
   }
 
+  public function isDisplayed(): bool {
+    return $this->display;
+  }
+
   public function scrollToLeft(): void {
     $this->scrollX = 0;
   }
