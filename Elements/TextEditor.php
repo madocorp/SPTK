@@ -22,6 +22,20 @@ class TextEditor extends TextBox {
     return $this->lines;
   }
 
+  public function insertText(string $text): void {
+    $lines = explode("\n", $text);
+    $n = count($lines);
+    $len = mb_strlen(end($lines));
+    $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
+    if ($n === 1) {
+      $this->cursor->modify($row1, $col1 + $len, $row1, $col1 + $len);
+    } else {
+      $this->cursor->modify($row1 + $n - 1, $len, $row1 + $n - 1, $len);
+    }
+    $this->replaceSelection($lines);
+    $this->update();
+  }
+
   protected function lineSplice($offset, $length, $replacement) {
     $this->history->store($offset, $length, $replacement);
     array_splice($this->lines, $offset, $length, $replacement);

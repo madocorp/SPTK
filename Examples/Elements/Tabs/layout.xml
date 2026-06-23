@@ -6,9 +6,9 @@
         <Tabs>
           <Tab contentName="first">First</Tab>
           <Tab contentName="second">Second</Tab>
-          <TabContent name="first">First tab</TabContent>
-          <TabContent name="second">Second tab</TabContent>
         </Tabs>
+        <TabBox name="first">First tab</TabBox>
+        <TabBox name="second">Second tab</TabBox>
       </PanelContent>
     </Panel>
   </Window>

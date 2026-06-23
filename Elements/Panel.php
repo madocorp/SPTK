@@ -12,6 +12,7 @@ class Panel extends Element {
   private $inputList;
   private $focusIndex;
   private $hotKeys = [];
+  protected $arrowTabs = false;
   protected $destroyAtClose = false;
   protected $pin = false;
 
@@ -21,16 +22,53 @@ class Panel extends Element {
     $this->focusIndex = -1;
   }
 
+  public function getAttributeList(): array {
+    return ['arrowTabs'];
+  }
+
+  public function setArrowTabs($value): void {
+    $this->arrowTabs = ($value === true || $value === 'true');
+  }
+
   public function show(): void {
     $this->display = true;
+    $this->refreshInputList();
+  }
+
+  public function refreshInputList($focus = false): void {
+    if (isset($this->inputList[$this->focusIndex])) {
+      $this->inputList[$this->focusIndex]['element']->removeVariant('active');
+    }
+    $focusId = false;
+    $focusName = false;
+    if ($focus instanceof Element) {
+      $focusId = $focus->getId();
+    } else if (is_string($focus)) {
+      $focusName = $focus;
+    } else if (isset($this->inputList[$this->focusIndex])) {
+      $focusId = $this->inputList[$this->focusIndex]['element']->getId();
+    }
     $this->inputList = [];
     $this->recalculateGeometry();
+    $this->syncTabs($this);
     $this->setInputList($this);
     if (empty($this->inputList)) {
       $this->focusIndex = -1;
       $this->raise();
     } else {
-      if ($this->focusIndex < 0 || $this->focusIndex >= count($this->inputList)) {
+      $selectedIndex = false;
+      foreach ($this->inputList as $idx => $input) {
+        if (
+          ($focusId !== false && $input['element']->getId() === $focusId) ||
+          ($focusName !== false && $input['element']->getName() === $focusName)
+        ) {
+          $selectedIndex = $idx;
+          break;
+        }
+      }
+      if ($selectedIndex !== false) {
+        $this->focusIndex = $selectedIndex;
+      } else if ($this->focusIndex < 0 || $this->focusIndex >= count($this->inputList)) {
         $this->focusIndex = 0;
       }
       $focusedElement = $this->inputList[$this->focusIndex]['element'];
@@ -75,12 +113,29 @@ class Panel extends Element {
   }
 
   private function setInputList($element) {
+    if (!$element->display) {
+      return;
+    }
     if ($element->acceptInput && $element->display) {
       $this->inputList[] = $this->getInputElementDetails($element);
-      return;
+      if ($element->getType() !== 'Tabs') {
+        return;
+      }
     }
     foreach ($element->descendants as $descendant) {
       $this->setInputList($descendant);
+    }
+  }
+
+  private function syncTabs($element) {
+    if (!$element->display) {
+      return;
+    }
+    if ($element->getType() === 'Tabs' && method_exists($element, 'syncContentDisplay')) {
+      $element->syncContentDisplay();
+    }
+    foreach ($element->getDescendants() as $descendant) {
+      $this->syncTabs($descendant);
     }
   }
 
@@ -104,6 +159,9 @@ class Panel extends Element {
   }
 
   public function activateInput($name = false) {
+    if (isset($this->inputList[$this->focusIndex])) {
+      $this->inputList[$this->focusIndex]['element']->removeVariant('active');
+    }
     if ($name !== false) {
       foreach ($this->inputList as $idx => $input) {
         if ($input['element']->name === $name) {
@@ -335,6 +393,48 @@ class Panel extends Element {
     Element::refresh();
   }
 
+  private function isInside(Element $element, Element $container) {
+    $current = $element;
+    while ($current !== false && $current !== null) {
+      if ($current->getId() === $container->getId()) {
+        return true;
+      }
+      $current = $current->getAncestor();
+    }
+    return false;
+  }
+
+  private function activateFirstInputIn($container) {
+    if ($container === false) {
+      return;
+    }
+    $this->refreshInputList(false);
+    foreach ($this->inputList as $idx => $input) {
+      if ($this->isInside($input['element'], $container)) {
+        $this->inactivateInput();
+        $this->focusIndex = $idx;
+        $this->activateInput();
+        return;
+      }
+    }
+  }
+
+  private function activateAdjacentTab($offset) {
+    if (!$this->arrowTabs) {
+      return false;
+    }
+    $tabs = Element::firstByType('Tabs', $this);
+    if ($tabs === false || !method_exists($tabs, 'selectRelative')) {
+      return false;
+    }
+    if (!$tabs->selectRelative($offset, false)) {
+      return false;
+    }
+    $this->activateFirstInputIn($tabs->getTabContent());
+    Element::refresh();
+    return true;
+  }
+
   public function keyPressHandler($element, $event) {
     if (!$this->display) {
       return false;
@@ -373,10 +473,20 @@ class Panel extends Element {
         Element::refresh();
         return true;
       case Action::MOVE_LEFT:
+        if ($this->activateAdjacentTab(-1)) {
+          return true;
+        }
+        $this->activateClosestInput('left');
+        return true;
       case Action::SWITCH_LEFT:
         $this->activateClosestInput('left');
         return true;
       case Action::MOVE_RIGHT:
+        if ($this->activateAdjacentTab(1)) {
+          return true;
+        }
+        $this->activateClosestInput('right');
+        return true;
       case Action::SWITCH_RIGHT:
         $this->activateClosestInput('right');
         return true;

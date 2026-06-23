@@ -17,76 +17,158 @@ class Tabs extends Element {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
   }
 
-  public function getTabContent() {
-    $ci = -1;
+  private function tabElements() {
+    $tabs = [];
     foreach ($this->descendants as $element) {
-      if ($element->type !== 'Tab') {
-        $ci++;
-        if ($ci === $this->currentTab) {
-          return $element;
+      if ($element->type === 'Tab') {
+        $tabs[] = $element;
+      }
+    }
+    return $tabs;
+  }
+
+  private function tabContentName() {
+    $tabs = $this->tabElements();
+    $tab = $tabs[$this->currentTab] ?? false;
+    if ($tab !== false && method_exists($tab, 'getContentName')) {
+      return $tab->getContentName();
+    }
+    return false;
+  }
+
+  private function siblingTabContents() {
+    $contents = [];
+    if ($this->ancestor === null) {
+      return $contents;
+    }
+    foreach ($this->ancestor->getDescendants() as $element) {
+      if ($element->getId() === $this->id) {
+        continue;
+      }
+      if ($element->getType() === 'TabBox') {
+        $contents[] = $element;
+      }
+    }
+    return $contents;
+  }
+
+  private function tabContents() {
+    return $this->siblingTabContents();
+  }
+
+  public function getTabContent() {
+    $contents = $this->tabContents();
+    $contentName = $this->tabContentName();
+    if ($contentName !== false) {
+      foreach ($contents as $content) {
+        if ($content->getName() === $contentName) {
+          return $content;
         }
       }
+    }
+    if (isset($contents[$this->currentTab])) {
+      return $contents[$this->currentTab];
     }
     return false;
   }
 
   public function addDescendant($element): void {
-    parent::addDescendant($element);
-    if ($element->type === 'Tab') {
-      $this->tabs++;
+    if ($element->type !== 'Tab') {
+      throw new \Exception('Tabs can only contain Tab elements. Place tab content in sibling TabBox elements and reference them with Tab contentName.');
     }
+    parent::addDescendant($element);
+    $this->tabs++;
     $this->selectTab();
   }
 
-  public function selectTab($selected = null) {
+  public function selectTab($selected = null, $focusTabs = true) {
     if ($selected === null) {
       $selected = $this->currentTab;
     } else {
       $this->currentTab = $selected;
     }
-    $ti = -1;
-    foreach ($this->descendants as $element) {
-      if ($element->type === 'Tab') {
-        $ti++;
-        if ($ti === $selected) {
-          $element->addVariant('active');
-        } else {
-          $element->removeVariant('active');
+    foreach ($this->tabElements() as $ti => $element) {
+      if ($ti === $selected) {
+        $element->addVariant('active');
+        if ($this->hasVariant('active')) {
+          $element->addVariant('focused');
         }
+      } else {
+        $element->removeVariant('active');
+        $element->removeVariant('focused');
       }
     }
-    $ci = -1;
-    foreach ($this->descendants as $element) {
-      if ($element->type !== 'Tab') {
-        $ci++;
-        if ($ci === $selected) {
-          $element->show();
-          $element->recalculateGeometry();
-          $element->raise();
-        } else {
-          $element->hide();
-        }
+    $this->syncContentDisplay();
+    $panel = $this->findAncestorByType('Panel');
+    if ($panel !== false && $panel->isDisplayed()) {
+      $panel->refreshInputList($focusTabs ? $this : false);
+    }
+  }
+
+  public function selectRelative($offset, $focusTabs = true): bool {
+    if ($this->tabs <= 0) {
+      return false;
+    }
+    $this->currentTab += $offset;
+    while ($this->currentTab < 0) {
+      $this->currentTab += $this->tabs;
+    }
+    while ($this->currentTab >= $this->tabs) {
+      $this->currentTab -= $this->tabs;
+    }
+    $this->selectTab($this->currentTab, $focusTabs);
+    return true;
+  }
+
+  public function syncContentDisplay(): void {
+    $selectedContent = $this->getTabContent();
+    foreach ($this->tabContents() as $element) {
+      if ($selectedContent !== false && $element->getId() === $selectedContent->getId()) {
+        $element->show();
+        $element->recalculateGeometry();
+        $element->raise();
+      } else {
+        $element->hide();
       }
     }
+  }
+
+  private function currentTabElement() {
+    $tabs = $this->tabElements();
+    return $tabs[$this->currentTab] ?? false;
+  }
+
+  public function addClass($class, $variant = false): void {
+    parent::addClass($class, $variant);
+    if ($variant && $class === 'active') {
+      $tab = $this->currentTabElement();
+      if ($tab !== false) {
+        $tab->addVariant('focused');
+      }
+    }
+  }
+
+  public function removeClass($class, $variant = false): void {
+    if ($variant && $class === 'active') {
+      $tab = $this->currentTabElement();
+      if ($tab !== false) {
+        $tab->removeVariant('focused');
+      }
+    }
+    parent::removeClass($class, $variant);
   }
 
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     switch ($keycombo) {
       case Action::MOVE_LEFT:
-        $this->currentTab--;
-        if ($this->currentTab < 0) {
-          $this->currentTab = $this->tabs - 1;
-        }
-        $this->selectTab();
+      case Action::SWITCH_LEFT:
+        $this->selectRelative(-1);
         \SPTK\Element::refresh();
         return true;
       case Action::MOVE_RIGHT:
-        $this->currentTab++;
-        if ($this->currentTab >= $this->tabs) {
-          $this->currentTab = 0;
-        }
-        $this->selectTab();
+      case Action::SWITCH_RIGHT:
+        $this->selectRelative(1);
         \SPTK\Element::refresh();
         return true;
     }

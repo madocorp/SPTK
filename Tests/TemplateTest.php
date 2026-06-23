@@ -5,6 +5,7 @@ namespace Examples\Tests;
 use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
+use SPTK\Elements\Tab;
 use SPTK\LayoutXmlReader;
 
 return [
@@ -15,6 +16,7 @@ return [
   <Unknown name="generic" class="red big">Alpha beta</Unknown>
   <Button name="submit" onPress="Controller::noop">OK</Button>
   <CheckBox name="accepted" value="true" />
+  <Tab contentName="tab-content">Tab</Tab>
 </Root>
 XML, 'xml');
 
@@ -34,6 +36,10 @@ XML, 'xml');
     $checkBox = Element::byName('accepted', $root);
     assertInstanceOf(CheckBox::class, $checkBox, 'known self-closing elements resolve to classes');
     assertTrue($checkBox->getValue(), 'known element attributes are applied to self-closing tags');
+
+    $tab = Element::firstByType('Tab', $root);
+    assertInstanceOf(Tab::class, $tab, 'tab elements resolve to the Tab class');
+    assertSame('tab-content', $tab->getContentName(), 'tab contentName attributes are applied');
   },
 
   'template parser handles events child classes includes and cdata' => function (): void {
@@ -71,4 +77,3 @@ XML, 'xml');
     assertSame('From include', $included->getText(), 'included XML content is parsed');
   },
 ];
-
