@@ -458,6 +458,18 @@ Tab:active {
   color: #ffffff;
 }
 
+Tab:focused {
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
+TabBox {
+  width: 100%;
+  padding: 10px;
+  borderTop: 1px;
+  borderColor: #000000;
+}
+
 CheckBox {
   height: 30px;
   padding: 5px, 0px, 10px, 0px;
@@ -478,7 +490,6 @@ CheckBoxValue:active {
   backgroundColor: #000000;
   color: #ffffff;
 }
-
 
 .w10 { width: 10%; }
 .w20 { width: 20%; }
@@ -531,4 +542,3 @@ CheckBoxValue:active {
 .ww80 { width: 80%w; }
 .ww90 { width: 90%w; }
 .ww100 { width: 100%w; }
-

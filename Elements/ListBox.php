@@ -212,10 +212,12 @@ class ListBox extends Element {
         $this->activeItem = $idx;
         $descendant->addVariant('selected');
         $descendant->addVariant('active');
-        if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
-          $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
-        } else if ($descendant->geometry->y < $this->scrollY) {
-          $this->scrollY = $descendant->geometry->y - $this->geometry->borderTop;
+        if (is_int($descendant->geometry->y) && is_int($descendant->geometry->height) && is_int($this->geometry->height)) {
+          if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
+            $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
+          } else if ($descendant->geometry->y < $this->scrollY) {
+            $this->scrollY = $descendant->geometry->y - $this->geometry->borderTop;
+          }
         }
         break;
       }
@@ -233,6 +235,9 @@ class ListBox extends Element {
   }
 
   public function getActive() {
+    if (!isset($this->descendants[$this->activeItem])) {
+      return false;
+    }
     return $this->descendants[$this->activeItem];
   }
 
@@ -364,6 +369,9 @@ class ListBox extends Element {
             array_splice($this->descendants, $this->activeItem, 1);
             $this->activeItem--;
             array_splice($this->descendants, $this->activeItem, 0, [$item]);
+            if ($this->onChange !== false) {
+              call_user_func($this->onChange, $this);
+            }
           }
           Element::immediateRender($this);
           return true;
@@ -380,6 +388,9 @@ class ListBox extends Element {
             array_splice($this->descendants, $this->activeItem, 1);
             $this->activeItem++;
             array_splice($this->descendants, $this->activeItem, 0, [$item]);
+            if ($this->onChange !== false) {
+              call_user_func($this->onChange, $this);
+            }
           }
           Element::immediateRender($this);
           return true;

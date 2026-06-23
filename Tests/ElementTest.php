@@ -7,11 +7,25 @@ use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListItem;
+use SPTK\Elements\Panel;
+use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
 
 class HeadlessElement extends Element {
 
   public function recalculateGeometry(): void {
+    ;
+  }
+
+}
+
+class HeadlessPanel extends Panel {
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  public function raise(): void {
     ;
   }
 
@@ -108,10 +122,12 @@ return [
   'tabs select one content section at a time' => function (): void {
     $root = root();
     $tabs = new Tabs($root, 'tabs');
-    $tabA = new Element($tabs, null, null, 'Tab');
-    $contentA = new HeadlessElement($tabs, 'content-a', null, 'Box');
-    $tabB = new Element($tabs, null, null, 'Tab');
-    $contentB = new HeadlessElement($tabs, 'content-b', null, 'Box');
+    $tabA = new Tab($tabs);
+    $tabA->setContentName('content-a');
+    $tabB = new Tab($tabs);
+    $tabB->setContentName('content-b');
+    $contentA = new HeadlessElement($root, 'content-a', null, 'TabBox');
+    $contentB = new HeadlessElement($root, 'content-b', null, 'TabBox');
 
     $tabs->selectTab(1);
 
@@ -120,6 +136,49 @@ return [
     assertFalse(propertyValue($contentA, 'display'), 'unselected tab content is hidden');
     assertTrue(propertyValue($contentB, 'display'), 'selected tab content is shown');
     assertSame($contentB, $tabs->getTabContent(), 'getTabContent returns the current tab content');
+  },
+
+  'tabs reject nested content elements' => function (): void {
+    $root = root();
+    $tabs = new Tabs($root, 'tabs');
+
+    assertThrows(
+      fn() => new HeadlessElement($tabs, 'bad-content', null, 'TabBox'),
+      'tabs only accept Tab children'
+    );
+  },
+
+  'panels focus inputs inside the active tab content' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $content = new HeadlessElement($panel, 'content', null, 'PanelContent');
+    $tabs = new Tabs($content, 'tabs');
+    $tabA = new Tab($tabs);
+    $tabA->setContentName('content-a');
+    $tabB = new Tab($tabs);
+    $tabB->setContentName('content-b');
+    $contentA = new HeadlessElement($content, 'content-a', null, 'TabBox');
+    new CheckBox($contentA, 'field-a');
+    $contentB = new HeadlessElement($content, 'content-b', null, 'TabBox');
+    new CheckBox($contentB, 'field-b');
+
+    $panel->show();
+
+    $inputNames = array_map(fn($input) => $input['element']->getName(), propertyValue($panel, 'inputList'));
+    assertSame(['tabs', 'field-a'], $inputNames, 'panel includes tabs and controls from the active tab');
+    assertTrue($tabs->hasClass('Tabs:active'), 'tab strip starts focused when the panel opens');
+    assertTrue($tabs->nthChild(0)->hasClass('Tab:focused'), 'focused tab strip marks the selected tab');
+
+    $tabs->selectTab(1);
+
+    $inputNames = array_map(fn($input) => $input['element']->getName(), propertyValue($panel, 'inputList'));
+    assertSame(['tabs', 'field-b'], $inputNames, 'panel input list refreshes when the active tab changes');
+    assertTrue($tabs->hasClass('Tabs:active'), 'tab strip stays focused after changing tabs');
+    assertTrue($tabs->nthChild(1)->hasClass('Tab:focused'), 'focus marker follows the selected tab');
+
+    $tabs->selectTab(0);
+    assertSame($contentA, $tabs->getTabContent(), 'focused tab strip can select another tab');
+    assertTrue($tabs->nthChild(0)->hasClass('Tab:focused'), 'focus marker follows the reselected tab');
   },
 
   'buttons parse callbacks and expose hotkey labels' => function (): void {

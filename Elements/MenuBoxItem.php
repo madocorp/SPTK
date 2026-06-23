@@ -31,7 +31,7 @@ class MenuBoxItem extends ListItem {
 
   public function open() {
     if ($this->onOpen !== false) {
-      call_user_func($this->onOpen);
+      call_user_func($this->onOpen, $this);
     }
   }
 
