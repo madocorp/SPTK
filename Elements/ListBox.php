@@ -470,20 +470,20 @@ class ListBox extends Element {
             call_user_func($this->onSelect, $item);
           }
           return true;
-        } else if ($selectable !== false) {
-          foreach ($this->descendants as $descendant) {
-            if ($descendant->id === $item->id) {
-              $item->select();
-              if ($this->onSelect !== false) {
-               call_user_func($this->onSelect, $item);
-              }
-            } else if ($selectable === $descendant->isSelectable()) {
-              $descendant->deselect();
-            }
+      } else if ($selectable !== false) {
+        foreach ($this->descendants as $descendant) {
+          if ($descendant->id === $item->id) {
+            $item->select();
+          } else if ($selectable === $descendant->isSelectable()) {
+            $descendant->deselect();
           }
-          Element::immediateRender($this);
-          return true;
         }
+        Element::immediateRender($this);
+        if ($this->onSelect !== false) {
+          call_user_func($this->onSelect, $item);
+        }
+        return true;
+      }
         return false;
     }
     return false;
