@@ -89,13 +89,14 @@ class Tabs extends Element {
     }
     foreach ($this->tabElements() as $ti => $element) {
       if ($ti === $selected) {
-        $element->addVariant('active');
         if ($this->hasVariant('active')) {
-          $element->addVariant('focused');
+          $element->addVariant('active');
+        } else {
+          $element->addVariant('cursor');
         }
       } else {
         $element->removeVariant('active');
-        $element->removeVariant('focused');
+        $element->removeVariant('cursor');
       }
     }
     $this->syncContentDisplay();
@@ -138,24 +139,26 @@ class Tabs extends Element {
     return $tabs[$this->currentTab] ?? false;
   }
 
-  public function addClass($class, $variant = false): void {
-    parent::addClass($class, $variant);
-    if ($variant && $class === 'active') {
+  public function addVariant(string $class): void {
+    parent::addVariant($class);
+    if ($class === 'active') {
       $tab = $this->currentTabElement();
       if ($tab !== false) {
-        $tab->addVariant('focused');
+        $tab->removeVariant('cursor');
+        $tab->addVariant('active');
       }
     }
   }
 
-  public function removeClass($class, $variant = false): void {
-    if ($variant && $class === 'active') {
+  public function removeVariant(string $class): void {
+    if ($class === 'active') {
       $tab = $this->currentTabElement();
       if ($tab !== false) {
-        $tab->removeVariant('focused');
+        $tab->removeVariant('active');
+        $tab->addVariant('cursor');
       }
     }
-    parent::removeClass($class, $variant);
+    parent::removeVariant($class);
   }
 
   public function keyPressHandler($element, $event) {

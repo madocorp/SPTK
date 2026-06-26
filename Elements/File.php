@@ -69,26 +69,26 @@ class File extends Element {
     $this->create = ($value === 'true');
   }
 
-  public function addClass($class, $variant = false): void {
-    if ($variant && $class == 'active') {
+  public function addVariant(string $class): void {
+    if ($class == 'active') {
       $this->elementBrowse->addVariant('active');
       if ($this->value === '') {
         $this->elementFile->setValue($this->placeholder);
         $this->elementFile->addVariant('placeholder');
       }
     }
-    parent::addClass($class, $variant);
+    parent::addVariant($class);
   }
 
-  public function removeClass($class, $variant = false): void {
-    if ($variant && $class == 'active') {
+  public function removeVariant(string $class): void {
+    if ($class == 'active') {
       $this->elementBrowse->removeVariant('active');
       if ($this->value === '') {
         $this->elementFile->setValue($this->value);
         $this->elementFile->removeVariant('placeholder');
       }
     }
-    parent::removeClass($class, $variant);
+    parent::removeVariant($class);
   }
 
   public function selected($path) {

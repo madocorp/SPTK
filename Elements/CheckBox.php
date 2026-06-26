@@ -10,6 +10,7 @@ use \SPTK\SDLWrapper\Action;
 class CheckBox extends Element {
 
   protected $valueBox;
+  protected $onChange = false;
 
   protected function init(): void {
     $this->acceptInput = true;
@@ -19,7 +20,7 @@ class CheckBox extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['value'];
+    return ['value', 'onChange'];
   }
 
   public function setValue($value): void {
@@ -32,18 +33,29 @@ class CheckBox extends Element {
     }
   }
 
-  public function addClass($class, $variant = false): void {
-    if ($variant && $class == 'active') {
-      $this->valueBox->addClass($class, $variant);
+  public function setOnChange($value) {
+    if ($value === false) {
+      return;
     }
-    parent::addClass($class, $variant);
+    if (is_array($value)) {
+      $this->onChange = $value;
+    } else {
+      $this->onChange = self::parseCallback($value);
+    }
   }
 
-  public function removeClass($class, $variant = false): void {
-    if ($variant && $class == 'active') {
-      $this->valueBox->removeClass($class, $variant);
+  public function addVariant(string $class): void {
+    if ($class == 'active') {
+      $this->valueBox->addVariant($class);
     }
-    parent::removeClass($class, $variant);
+    parent::addVariant($class);
+  }
+
+  public function removeVariant($class): void {
+    if ($class == 'active') {
+      $this->valueBox->removeVariant($class);
+    }
+    parent::removeVariant($class);
   }
 
   public function keyPressHandler($element, $event) {
@@ -54,6 +66,9 @@ class CheckBox extends Element {
           $this->setValue(false);
         } else {
           $this->setValue(true);
+        }
+        if ($this->onChange !== false) {
+          call_user_func($this->onChange, $this);
         }
         \SPTK\Element::refresh();
         return true;
