@@ -11,6 +11,9 @@ use SPTK\Elements\Panel;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
+use SPTK\SDLWrapper\KeyCode;
+use SPTK\SDLWrapper\KeyModifier;
+use SPTK\SDLWrapper\ScanCode;
 
 class HeadlessElement extends Element {
 
@@ -28,6 +31,29 @@ class HeadlessPanel extends Panel {
 
   public function raise(): void {
     ;
+  }
+
+}
+
+class GreedyInput extends HeadlessElement {
+
+  protected function init(): void {
+    $this->acceptInput = true;
+    $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+  }
+
+  public function keyPressHandler($element, $event): bool {
+    return true;
+  }
+
+}
+
+class ButtonTestAction {
+
+  public static int $pressed = 0;
+
+  public static function press($panel): void {
+    self::$pressed++;
   }
 
 }
@@ -213,5 +239,99 @@ return [
     $button->setHotKey('SPACE');
     assertSame('ButtonHotKey', $button->nthChild(0)->getType(), 'button hotkeys create a hotkey label element');
     assertSame('SPACE', $button->nthChild(0)->getText(), 'button hotkey labels show the key name');
+  },
+
+  'panels call default button on ctrl return' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setDefault('true');
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $panel->show();
+    $panel->keyPressHandler($panel, [
+      'mod' => KeyModifier::CTRL,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(1, ButtonTestAction::$pressed, 'ctrl return invokes the default button callback');
+  },
+
+  'return hotkey makes buttons default automatically' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setHotKey('RETURN');
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $panel->show();
+    $panel->keyPressHandler($panel, [
+      'mod' => KeyModifier::CTRL,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(1, ButtonTestAction::$pressed, 'RETURN hotkey registers the button as the default action');
+  },
+
+  'explicit default false overrides return hotkey default' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setHotKey('RETURN');
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $button->setDefault('false');
+    $panel->show();
+    $panel->keyPressHandler($panel, [
+      'mod' => KeyModifier::CTRL,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(0, ButtonTestAction::$pressed, 'explicit default false disables the automatic RETURN default');
+  },
+
+  'missing default attribute does not override return hotkey default' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setHotKey('RETURN');
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $button->setDefault(false);
+    $panel->show();
+    $panel->keyPressHandler($panel, [
+      'mod' => KeyModifier::CTRL,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(1, ButtonTestAction::$pressed, 'missing XML default attribute keeps the automatic RETURN default');
+  },
+
+  'panel default button handles ctrl return before focused children' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    new GreedyInput($panel, 'editor');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setHotKey('RETURN');
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $panel->show();
+    $panel->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::CTRL,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(1, ButtonTestAction::$pressed, 'ctrl return default action runs before a focused child can consume the key');
   },
 ];

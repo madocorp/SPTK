@@ -5,6 +5,8 @@ namespace SPTK\Elements;
 use \SPTK\Element;
 use \SPTK\SDLWrapper\KeyCode;
 use \SPTK\SDLWrapper\KeyCombo;
+use \SPTK\SDLWrapper\KeyModifier;
+use \SPTK\SDLWrapper\ScanCode;
 use \SPTK\SDLWrapper\Action;
 
 class Panel extends Element {
@@ -12,6 +14,7 @@ class Panel extends Element {
   private $inputList;
   private $focusIndex;
   private $hotKeys = [];
+  private $defaultButtonAction = false;
   protected $arrowTabs = false;
   protected $destroyAtClose = false;
   protected $pin = false;
@@ -33,6 +36,38 @@ class Panel extends Element {
   public function show(): void {
     $this->display = true;
     $this->refreshInputList();
+  }
+
+  public function eventHandler(array $event): bool {
+    if (!$this->display) {
+      return false;
+    }
+    if (
+      isset($event['name']) &&
+      $event['name'] === 'KeyPress' &&
+      ($event['mod'] & KeyModifier::CTRL) &&
+      ($event['scancode'] === ScanCode::RETURN || $event['key'] === KeyCode::RETURN) &&
+      $this->defaultButtonAction !== false
+    ) {
+      $this->callDefaultButtonAction();
+      return true;
+    }
+    $n = count($this->stack);
+    if ($n > 0) {
+      for ($i = 0; $i < $n; $i++) {
+        $descendant = $this->stack[($n + $i - 1) % $n];
+        if ($descendant->display) {
+          if ($descendant->eventHandler($event)) {
+            return true;
+          }
+          break;
+        }
+      }
+    }
+    if (isset($event['name']) && isset($this->events[$event['name']])) {
+      return call_user_func($this->events[$event['name']], $this, $event);
+    }
+    return false;
   }
 
   public function refreshInputList($focus = false): void {
@@ -185,6 +220,24 @@ class Panel extends Element {
 
   public function removeHotKey($key) {
     unset($this->hotKeys[$key]);
+  }
+
+  public function setDefaultButtonAction($callback): void {
+    $this->defaultButtonAction = $callback;
+  }
+
+  public function clearDefaultButtonAction($callback = false): void {
+    if ($callback === false || $this->defaultButtonAction == $callback) {
+      $this->defaultButtonAction = false;
+    }
+  }
+
+  public function callDefaultButtonAction(): bool {
+    if ($this->defaultButtonAction === false) {
+      return false;
+    }
+    call_user_func($this->defaultButtonAction, $this);
+    return true;
   }
 
   private function findClosestInput($direction) {
@@ -438,6 +491,13 @@ class Panel extends Element {
   public function keyPressHandler($element, $event) {
     if (!$this->display) {
       return false;
+    }
+    if (
+      ($event['mod'] & KeyModifier::CTRL) &&
+      ($event['scancode'] === ScanCode::RETURN || $event['key'] === KeyCode::RETURN)
+    ) {
+      $this->callDefaultButtonAction();
+      return true;
     }
     if (isset($this->hotKeys[$event['key']])) {
       call_user_func($this->hotKeys[$event['key']], $this);

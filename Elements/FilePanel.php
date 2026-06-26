@@ -48,7 +48,8 @@ class FilePanel extends Panel {
     $this->createDirBtn->setOnPress([$this, 'createDir']);
     $this->createSpace = new Space($buttons);
     $this->okBtn = new Button($buttons, 'okBtn');
-    $this->okBtn->setHotKey('SPACE');
+    $this->okBtn->setDefault(true);
+    $this->okBtn->setHotKey('RETURN');
     $this->okBtn->addText('OK');
     $this->okBtn->setOnPress([$this, 'choose']);
   }
