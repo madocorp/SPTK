@@ -21,6 +21,16 @@ class SelectPanel extends Panel {
     $this->theList = new ListBox($label, null, 'wh50');
     $this->theList->setTyping('search');
     $this->theList->setOnSelect([$this, 'choose']);
+    $buttons = new Element($content, null, null, 'ButtonBox');
+    $cancel = new Button($buttons);
+    $cancel->setHotKey('ESCAPE');
+    $cancel->addText('Cancel');
+    $cancel->setOnPress([$this, 'cancel']);
+    new Space($buttons);
+    $ok = new Button($buttons);
+    $ok->setHotKey('RETURN');
+    $ok->addText('OK');
+    $ok->setOnPress([$this, 'choose']);
   }
 
   public function setTitle($title): void {
@@ -63,16 +73,20 @@ class SelectPanel extends Panel {
     return true;
   }
 
+  public function cancel(): bool {
+    $this->hide();
+    $this->remove();
+    Element::refresh();
+    return true;
+  }
+
   public function keyPressHandler($element, $event): bool {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::DO_IT:
       case Action::SELECT_ITEM:
         return $this->choose();
       case Action::CLOSE:
-        $this->hide();
-        $this->remove();
-        Element::refresh();
-        return true;
+        return $this->cancel();
     }
     return parent::keyPressHandler($element, $event);
   }

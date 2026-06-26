@@ -12,6 +12,8 @@ class Button extends Element {
   protected $onPress = false;
   protected $hotKeyStr = false;
   protected $panel = false;
+  protected $default = false;
+  protected $defaultExplicit = false;
 
   protected function init(): void {
     $this->acceptInput = true;
@@ -19,7 +21,7 @@ class Button extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['hotKey', 'onPress'];
+    return ['hotKey', 'onPress', 'default'];
   }
 
   public function setHotKey($hotKeyStr) {
@@ -34,6 +36,10 @@ class Button extends Element {
     $text = new Word($hotKey);
     $text->setValue($hotKeyStr);
     $this->hotKeyStr = $hotKeyStr;
+    if ($hotKeyStr === 'RETURN' && !$this->defaultExplicit) {
+      $this->default = true;
+    }
+    $this->registerPanelActions();
   }
 
   public function setOnPress($value) {
@@ -45,14 +51,45 @@ class Button extends Element {
     } else {
       $this->onPress = self::parseCallback($value);
     }
+    $this->registerPanelActions();
+  }
+
+  public function setDefault($value): void {
+    if ($value === false) {
+      return;
+    }
+    $this->default = ($value === true || $value === 'true');
+    $this->defaultExplicit = true;
+    $this->registerPanelActions();
+  }
+
+  private function registerPanelActions(): void {
+    if ($this->onPress === false) {
+      return;
+    }
+    $this->findPanel();
+    if ($this->panel === false) {
+      return;
+    }
     if ($this->hotKeyStr !== false) {
-      foreach (['Panel', 'WarningPanel', 'ErrorPanel', 'FilePanel', 'Window'] as $type) {
-        $this->panel = $this->findAncestorByType($type);
-        if ($this->panel !== false) {
-          break;
-        }
-      }
       $this->panel->addHotKey(constant("\SPTK\SDLWrapper\KeyCode::{$this->hotKeyStr}"), $this->onPress);
+    }
+    if ($this->default) {
+      $this->panel->setDefaultButtonAction($this->onPress);
+    } else {
+      $this->panel->clearDefaultButtonAction($this->onPress);
+    }
+  }
+
+  private function findPanel(): void {
+    if ($this->panel !== false) {
+      return;
+    }
+    foreach (['Panel', 'WarningPanel', 'ErrorPanel', 'FilePanel', 'SelectPanel', 'Window'] as $type) {
+      $this->panel = $this->findAncestorByType($type);
+      if ($this->panel !== false) {
+        return;
+      }
     }
   }
 
