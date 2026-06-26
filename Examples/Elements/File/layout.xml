@@ -3,7 +3,8 @@
     <Panel name="panel">
       <PanelTitle>File</PanelTitle>
       <PanelContent>
-        <Label>File: <File value="example.txt" /></Label>
+        <Label>File1: <File value="example.txt" /></Label>
+        <Label>File2: <File value="example.txt" /></Label>
       </PanelContent>
     </Panel>
   </Window>

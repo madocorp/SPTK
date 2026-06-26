@@ -8,6 +8,7 @@ use SPTK\Elements\CheckBox;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListItem;
 use SPTK\Elements\Panel;
+use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
 
@@ -117,6 +118,27 @@ return [
 
     $list->setValueType('select');
     assertSame(['banana'], $list->getValue(), 'select value returns selected selectable item values');
+  },
+
+  'select accepts option sources and shows hint as placeholder' => function (): void {
+    $root = root();
+    $select = new Select($root, 'size');
+    $select->setHint('Size');
+    $select->setOptions('Small, Medium, Large');
+
+    assertSame(['Small', 'Medium', 'Large'], $select->getOptions(), 'comma separated options are parsed and trimmed');
+    assertSame('Size', $select->nthChild(0)->getValue(), 'empty select displays its hint');
+    assertTrue($select->nthChild(0)->hasClass('InputValue:placeholder'), 'hint uses placeholder styling');
+
+    $select->setValue('Medium');
+
+    assertSame('Medium', $select->getValue(), 'select stores the selected value');
+    assertSame('Medium', $select->nthChild(0)->getValue(), 'selected value replaces the hint');
+    assertFalse($select->nthChild(0)->hasClass('InputValue:placeholder'), 'selected value removes placeholder styling');
+
+    $select->setOptions(['One', 'Two']);
+
+    assertSame(['One', 'Two'], $select->getOptions(), 'array options can be set from code');
   },
 
   'tabs select one content section at a time' => function (): void {
