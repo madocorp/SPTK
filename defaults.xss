@@ -287,9 +287,36 @@ File:active {
   backgroundColor: #00cccc;
 }
 
+Select {
+  width: 100%;
+  backgroundColor: #00aaaa;
+  color: #444444;
+  height: 30px;
+  textWrap: manual;
+  padding: 5px, 0px;
+  scrollable: true;
+}
+
+Select:active {
+  color: #000000;
+  backgroundColor: #00cccc;
+}
+
 FilePanel {
   width: 70%w;
   minWidth: 600px;
+}
+
+SelectPanel {
+  position: absolute;
+  x: middle;
+  y: middle;
+  width: 70%w;
+  minWidth: 600px;
+  backgroundColor: #cccccc;
+  color: #000000;
+  border: 3px;
+  borderColor: #555555;
 }
 
 Browse {

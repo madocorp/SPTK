@@ -5,6 +5,7 @@ namespace Examples\Tests;
 use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
+use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\LayoutXmlReader;
 
@@ -40,6 +41,26 @@ XML, 'xml');
     $tab = Element::firstByType('Tab', $root);
     assertInstanceOf(Tab::class, $tab, 'tab elements resolve to the Tab class');
     assertSame('tab-content', $tab->getContentName(), 'tab contentName attributes are applied');
+  },
+
+  'template parser builds select options from descendants' => function (): void {
+    $root = root();
+    $xml = tempFile(<<<'XML'
+<Root>
+  <Select name="color" hint="Color">
+    <Option>Red</Option>
+    <Option value="green">Green label</Option>
+    <Option>Blue</Option>
+  </Select>
+</Root>
+XML, 'xml');
+
+    new LayoutXmlReader($xml, $root);
+
+    $select = Element::byName('color', $root);
+    assertInstanceOf(Select::class, $select, 'select elements resolve to the Select class');
+    assertSame(['Red', 'green', 'Blue'], $select->getOptions(), 'Option descendants are collected as select options');
+    assertSame('Color', $select->nthChild(0)->getValue(), 'select hint is shown in the input field');
   },
 
   'template parser handles events child classes includes and cdata' => function (): void {

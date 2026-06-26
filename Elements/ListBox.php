@@ -60,7 +60,14 @@ class ListBox extends Element {
   }
 
   public function setOnSelect($value) {
-    $this->onSelect = self::parseCallback($value);
+    if ($value === false) {
+      return;
+    }
+    if (is_array($value)) {
+      $this->onSelect = $value;
+    } else {
+      $this->onSelect = self::parseCallback($value);
+    }
   }
 
   public function setValueType($value) {
