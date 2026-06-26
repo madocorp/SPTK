@@ -128,6 +128,9 @@ class ListBox extends Element {
 
   public function addDescendant($element): void {
     parent::addDescendant($element);
+    if ($this->num === 0) {
+      $element->addVariant('cursor');
+    }
     $this->num++;
   }
 
@@ -147,26 +150,27 @@ class ListBox extends Element {
     $this->scrollY = 0;
   }
 
-  public function addClass($class, $variant = false): void {
-    if ($variant && $class == 'active') {
+  public function addVariant(string $class): void {
+    if ($class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
           $descendant->addVariant('active');
         }
       }
     }
-    parent::addClass($class, $variant);
+    parent::addVariant($class);
   }
 
-  public function removeClass($class, $variant = false): void {
-    if ($variant && $class == 'active') {
+  public function removeVariant(string $class): void {
+    if ($class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
           $descendant->removeVariant('active');
+          $descendant->addVariant('cursor');
         }
       }
     }
-    parent::removeClass($class, $variant);
+    parent::removeVariant($class);
   }
 
   public function raise(): void {
@@ -204,14 +208,21 @@ class ListBox extends Element {
     foreach ($this->descendants as $descendant) {
       $descendant->removeVariant('selected');
       $descendant->removeVariant('active');
+      $descendant->removeVariant('cursor');
     }
     for ($i = 0; $i < $this->num; $i++) {
       $idx = ($this->num + $this->activeItem + $i * $direction) % $this->num;
-      $descendant = $this->descendants[$idx];
-      if ($descendant->display) {
-        $this->activeItem = $idx;
-        $descendant->addVariant('selected');
-        $descendant->addVariant('active');
+        $descendant = $this->descendants[$idx];
+        if ($descendant->display) {
+          $this->activeItem = $idx;
+          if ($descendant->isSelectable() !== false) {
+            $descendant->addVariant('selected');
+          }
+          if ($this->hasVariant('active')) {
+            $descendant->addVariant('active');
+          } else {
+            $descendant->addVariant('cursor');
+          }
         if (is_int($descendant->geometry->y) && is_int($descendant->geometry->height) && is_int($this->geometry->height)) {
           if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
             $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
@@ -484,6 +495,11 @@ class ListBox extends Element {
         }
         return true;
       }
+        if ($this->onSelect !== false) {
+          Element::immediateRender($this);
+          call_user_func($this->onSelect, $item);
+          return true;
+        }
         return false;
     }
     return false;

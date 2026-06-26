@@ -17,6 +17,7 @@ class MenuBox extends ListBox {
   protected function init(): void {
     $this->display = false;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+    $this->addVariant('active');
   }
 
   public function getAttributeList(): array {

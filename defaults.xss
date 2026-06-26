@@ -403,6 +403,11 @@ ListItem:selected {
   color: #aaaaaa;
 }
 
+ListItem:cursor {
+  backgroundColor: #555555;
+  color: #aaaaaa;
+}
+
 ListItem:active {
   backgroundColor: #000000;
   color: #ffffff;
@@ -453,12 +458,12 @@ Tab {
   padding: 5px, 20px;
 }
 
-Tab:active {
+Tab:cursor {
   backgroundColor: #555555;
   color: #ffffff;
 }
 
-Tab:focused {
+Tab:active {
   backgroundColor: #000000;
   color: #ffffff;
 }

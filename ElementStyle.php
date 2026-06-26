@@ -21,20 +21,24 @@ trait ElementStyle {
     }
   }
 
-  public function addClass(string $class, bool $variant = false): void {
-    $class = $this->className($class, $variant);
+  public function addClass(string $class): void {
+    $class = $this->className($class, false);
     if (!in_array($class, $this->sclass)) {
       $this->sclass[] = $class;
       $this->recalculateStyle();
     }
   }
 
-  public function addVariant(string $variant): void {
-    $this->addClass($variant, variant: true);
+  public function addVariant(string $class): void {
+    $class = $this->className($class, true);
+    if (!in_array($class, $this->sclass)) {
+      $this->sclass[] = $class;
+      $this->recalculateStyle();
+    }
   }
 
-  public function removeClass(string $class, bool $variant = false): void {
-    $class = $this->className($class, $variant);
+  public function removeClass(string $class): void {
+    $class = $this->className($class, false);
     $key = array_search($class, $this->sclass);
     if ($key !== false) {
       unset($this->sclass[$key]);
@@ -42,17 +46,23 @@ trait ElementStyle {
     }
   }
 
-  public function removeVariant(string $variant): void {
-    $this->removeClass($variant, variant: true);
+  public function removeVariant(string $class): void {
+    $class = $this->className($class, true);
+    $key = array_search($class, $this->sclass);
+    if ($key !== false) {
+      unset($this->sclass[$key]);
+      $this->recalculateStyle();
+    }
   }
 
-  public function hasClass(string $class, bool $variant = false): bool {
-    $class = $this->className($class, $variant);
+  public function hasClass(string $class): bool {
+    $class = $this->className($class, false);
     return in_array($class, $this->sclass);
   }
 
-  public function hasVariant(string $variant): bool {
-    return $this->hasClass($variant, variant: true);
+  public function hasVariant(string $class): bool {
+    $class = $this->className($class, true);
+    return in_array($class, $this->sclass);
   }
 
   private function className(string $class, bool $variant): string {
