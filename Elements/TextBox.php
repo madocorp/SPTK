@@ -84,7 +84,7 @@ class TextBox extends Element {
     $this->update();
   }
 
-  public function removeClass(string $class): void {
+  public function removeVariant(string $class): void {
     if ($class == 'active') {
       $this->active = false;
     }
