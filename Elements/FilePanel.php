@@ -26,6 +26,7 @@ class FilePanel extends Panel {
   protected function init(): void {
     parent::init();
     $this->title = new Element($this, null, null, 'PanelTitle');
+    $this->title->addVariant('active');
     $content = new Element($this, null, null, 'PanelContent');
     $this->path = new Element($content, null, 'w100', 'Path');
     $label = new Element($content, null, null, 'Label');

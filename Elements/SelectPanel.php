@@ -16,6 +16,7 @@ class SelectPanel extends Panel {
   protected function init(): void {
     parent::init();
     $this->title = new Element($this, null, null, 'PanelTitle');
+    $this->title->addVariant('active');
     $content = new Element($this, null, null, 'PanelContent');
     $label = new Element($content, null, null, 'Label');
     $this->theList = new ListBox($label, null, 'wh50');
