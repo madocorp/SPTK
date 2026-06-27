@@ -82,7 +82,11 @@ class LayoutXmlReader {
           break;
         case XMLReader::CDATA:
           $value = $xml->value;
-          if ($value[0] === "\n") {
+          if ($this->usesValueText($this->current)) {
+            $this->current->setValue($this->normalizeValueText($value));
+            break;
+          }
+          if ($value !== '' && $value[0] === "\n") {
             $value = mb_substr($value, 1);
           }
           $value = preg_replace("/\n( |\t)+$/", "", $value);
@@ -91,6 +95,10 @@ class LayoutXmlReader {
         case XMLReader::TEXT:
           if ($this->event !== false) {
             $this->current->addEvent($this->event, trim($xml->value));
+            break;
+          }
+          if ($this->usesValueText($this->current)) {
+            $this->current->setValue($this->normalizeValueText($xml->value));
             break;
           }
           $txt = trim($xml->value);
@@ -108,6 +116,37 @@ class LayoutXmlReader {
           break;
       }
     }
+  }
+
+  private function usesValueText(Element $element): bool {
+    return in_array($element->getType(), ['TextBox', 'TextEditor'], true);
+  }
+
+  private function normalizeValueText(string $value): string {
+    $value = str_replace("\r\n", "\n", $value);
+    $value = str_replace("\r", "\n", $value);
+    $lines = explode("\n", $value);
+    if (!empty($lines) && trim($lines[0]) === '') {
+      array_shift($lines);
+    }
+    if (!empty($lines) && trim($lines[count($lines) - 1]) === '') {
+      array_pop($lines);
+    }
+    $indent = null;
+    foreach ($lines as $line) {
+      if (trim($line) === '') {
+        continue;
+      }
+      preg_match('/^[ \t]*/', $line, $matches);
+      $length = strlen($matches[0]);
+      $indent = $indent === null ? $length : min($indent, $length);
+    }
+    if ($indent > 0) {
+      foreach ($lines as $i => $line) {
+        $lines[$i] = preg_replace('/^[ \t]{0,' . $indent . '}/', '', $line);
+      }
+    }
+    return implode("\n", $lines);
   }
 
 }

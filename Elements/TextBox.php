@@ -69,6 +69,9 @@ class TextBox extends Element {
     $this->cursor->save();
     $this->scrollX = 0;
     $this->scrollY = 0;
+    if ($this->renderer === false) {
+      return;
+    }
     $this->measure();
     $this->update();
   }

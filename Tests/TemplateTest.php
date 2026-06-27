@@ -7,6 +7,9 @@ use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
+use SPTK\Elements\TextBox;
+use SPTK\Elements\TextEditor;
+use SPTK\Font;
 use SPTK\LayoutXmlReader;
 
 return [
@@ -41,6 +44,46 @@ XML, 'xml');
     $tab = Element::firstByType('Tab', $root);
     assertInstanceOf(Tab::class, $tab, 'tab elements resolve to the Tab class');
     assertSame('tab-content', $tab->getContentName(), 'tab contentName attributes are applied');
+  },
+
+  'template parser assigns body text to text box values' => function (): void {
+    $root = root();
+    $fonts = new \ReflectionProperty(Font::class, 'fonts');
+    $fonts->setAccessible(true);
+    $fonts->setValue([
+      'inherit' => [
+        0 => [
+          'handle' => null,
+          'ascent' => 0,
+          'descent' => 0,
+          'height' => 1,
+          'letterWidth' => 1,
+          'letterHeight' => 1
+        ]
+      ]
+    ]);
+    $xml = tempFile(<<<'XML'
+<Root>
+  <TextBox name="notice">
+    First line
+    Second line
+  </TextBox>
+  <TextEditor name="editor">
+    Editable line
+    Next line
+  </TextEditor>
+</Root>
+XML, 'xml');
+
+    new LayoutXmlReader($xml, $root);
+
+    $notice = Element::byName('notice', $root);
+    assertInstanceOf(TextBox::class, $notice, 'TextBox elements resolve to the TextBox class');
+    assertSame(['First line', 'Second line'], propertyValue($notice, 'lines'), 'TextBox body text is stored as editor lines');
+
+    $editor = Element::byName('editor', $root);
+    assertInstanceOf(TextEditor::class, $editor, 'TextEditor elements resolve to the TextEditor class');
+    assertSame(['Editable line', 'Next line'], $editor->getValue(), 'TextEditor body text is stored as editable lines');
   },
 
   'template parser builds select options from descendants' => function (): void {
