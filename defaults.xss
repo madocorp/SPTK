@@ -320,8 +320,8 @@ SelectPanel {
   position: absolute;
   x: middle;
   y: middle;
-  width: 70%w;
-  minWidth: 600px;
+  width: 50%w;
+  minWidth: 500px;
   backgroundColor: #cccccc;
   color: #000000;
   border: 3px;
