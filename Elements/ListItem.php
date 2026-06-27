@@ -68,12 +68,7 @@ class ListItem extends Element {
 
   public function setSelected($value) {
     if ($value === true || $value === 'true') {
-      $this->selected = true;
-      if ($this->selectable === true) {
-        $this->itemLeft->setText('X');
-      } else {
-        $this->itemLeft->setText('*');
-      }
+      $this->select();
     }
   }
 
@@ -149,17 +144,25 @@ class ListItem extends Element {
     $this->itemLeft->clear();
   }
 
-  public function select() {
+  public function select($marker = false) {
     if ($this->selected && $this->selectable === true) {
       $this->selected = false;
       $this->itemLeft->clear();
     } else {
       $this->selected = true;
-      if ($this->selectable === true) {
+      if ($marker !== false) {
+        $this->itemLeft->setText((string) $marker);
+      } else if ($this->selectable === true) {
         $this->itemLeft->setText('X');
       } else {
         $this->itemLeft->setText('*');
       }
+    }
+  }
+
+  public function markSelected($marker = false) {
+    if ($this->selected) {
+      $this->itemLeft->setText((string) $marker);
     }
   }
 

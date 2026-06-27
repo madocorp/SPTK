@@ -152,6 +152,25 @@ return [
 
     $list->setValueType('select');
     assertSame(['banana'], $list->getValue(), 'select value returns selected selectable item values');
+
+    $columns = new ListBox($root, 'columns');
+    $columns->setValueType('select');
+    $columns->setSelectionOrder('true');
+    $id = new ListItem($columns);
+    $id->setValue('id');
+    $id->setSelectable('true');
+    $name = new ListItem($columns);
+    $name->setValue('name');
+    $name->setSelectable('true');
+    $email = new ListItem($columns);
+    $email->setValue('email');
+    $email->setSelectable('true');
+
+    $columns->setSelectedValues(['email', 'id']);
+
+    assertSame(['email', 'id'], $columns->getValue(), 'ordered select value returns values in selection order');
+    assertSame('1', $email->nthChild(0)->getText(), 'first ordered selection shows marker 1');
+    assertSame('2', $id->nthChild(0)->getText(), 'second ordered selection shows marker 2');
   },
 
   'select accepts option sources and shows hint as placeholder' => function (): void {

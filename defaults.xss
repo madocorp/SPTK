@@ -46,6 +46,10 @@ Box {
   position: absolute;
 }
 
+Block {
+  width: 100%;
+}
+
 Menu {
   position: absolute;
   width: 100%;

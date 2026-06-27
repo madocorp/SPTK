@@ -13,6 +13,8 @@ class ListBox extends Element {
   protected $num = 0;
   protected $movable = false;
   protected $selectable = false;
+  protected $selectionOrder = false;
+  protected $selectedOrder = [];
   protected $onChange = false;
   protected $onSelect = false;
   protected $valueType = false;
@@ -28,11 +30,15 @@ class ListBox extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['movable', 'onChange', 'typing', 'onSelect', 'valueType'];
+    return ['movable', 'selectionOrder', 'onChange', 'typing', 'onSelect', 'valueType'];
   }
 
   public function setMovable($value) {
     $this->movable = ($value === 'true');
+  }
+
+  public function setSelectionOrder($value) {
+    $this->selectionOrder = ($value === true || $value === 'true');
   }
 
   public function setOnChange($value) {
@@ -105,6 +111,17 @@ class ListBox extends Element {
 
   public function getSelectedValue() {
     $selected = [];
+    if ($this->selectionOrder) {
+      foreach ($this->selectedOrder as $id) {
+        foreach ($this->descendants as $item) {
+          if ($item->getId() === $id && $item->isSelectable() === true && $item->isSelected()) {
+            $selected[] = $item->getValue();
+            break;
+          }
+        }
+      }
+      return $selected;
+    }
     foreach ($this->descendants as $item) {
       if ($item->isSelectable() === true && $item->isSelected()) {
         $selected[] = $item->getValue();
@@ -155,6 +172,7 @@ class ListBox extends Element {
     $this->activeItem = 0;
     $this->num = 0;
     $this->scrollY = 0;
+    $this->selectedOrder = [];
   }
 
   public function addVariant(string $class): void {
@@ -249,6 +267,54 @@ class ListBox extends Element {
     foreach ($this->descendants as $descendant) {
       $descendant->removeVariant('selected');
       $descendant->removeVariant('active');
+    }
+  }
+
+  public function setSelectedValues(array $values): void {
+    $this->selectedOrder = [];
+    foreach ($this->descendants as $item) {
+      $item->deselect();
+    }
+    foreach ($values as $value) {
+      foreach ($this->descendants as $item) {
+        if ($item->isSelectable() === true && $item->getValue() === $value && !$item->isSelected()) {
+          $this->selectItem($item);
+          break;
+        }
+      }
+    }
+  }
+
+  private function selectItem($item): void {
+    if (!$this->selectionOrder) {
+      $item->select();
+      return;
+    }
+    $id = $item->getId();
+    if ($item->isSelected()) {
+      $this->selectedOrder = array_values(array_filter(
+        $this->selectedOrder,
+        fn($selectedId) => $selectedId !== $id
+      ));
+      $item->deselect();
+    } else {
+      $this->selectedOrder[] = $id;
+      $item->select(count($this->selectedOrder));
+    }
+    $this->refreshSelectionOrder();
+  }
+
+  private function refreshSelectionOrder(): void {
+    if (!$this->selectionOrder) {
+      return;
+    }
+    foreach ($this->descendants as $item) {
+      if ($item->isSelectable() === true && $item->isSelected()) {
+        $order = array_search($item->getId(), $this->selectedOrder, true);
+        if ($order !== false) {
+          $item->markSelected($order + 1);
+        }
+      }
     }
   }
 
@@ -482,7 +548,7 @@ class ListBox extends Element {
         $item = $this->descendants[$this->activeItem];
         $selectable = $item->isSelectable();
         if ($selectable === true) {
-          $item->select();
+          $this->selectItem($item);
           Element::immediateRender($this);
           if ($this->onSelect !== false) {
             call_user_func($this->onSelect, $item);
