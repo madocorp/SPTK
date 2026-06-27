@@ -35,6 +35,14 @@ class HeadlessPanel extends Panel {
 
 }
 
+class StackPanel extends Panel {
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+}
+
 class GreedyInput extends HeadlessElement {
 
   protected function init(): void {
@@ -227,6 +235,29 @@ return [
     $tabs->selectTab(0);
     assertSame($contentA, $tabs->getTabContent(), 'focused tab strip can select another tab');
     assertTrue($tabs->nthChild(0)->hasClass('Tab:focused'), 'focus marker follows the reselected tab');
+  },
+
+  'panels mark the raised visible sibling active' => function (): void {
+    $root = root();
+    $panelA = new StackPanel($root, 'panel-a', null, 'Panel');
+    $titleA = new HeadlessElement($panelA, 'title-a', null, 'PanelTitle');
+    $panelB = new StackPanel($root, 'panel-b', null, 'Panel');
+    $titleB = new HeadlessElement($panelB, 'title-b', null, 'PanelTitle');
+
+    $panelA->show();
+    $panelB->show();
+
+    assertFalse($panelA->hasClass('Panel:active'), 'older visible panel is not active');
+    assertFalse($titleA->hasClass('PanelTitle:active'), 'older visible panel title is not active');
+    assertTrue($panelB->hasClass('Panel:active'), 'raised panel is active');
+    assertTrue($titleB->hasClass('PanelTitle:active'), 'raised panel title is active');
+
+    $panelA->raise();
+
+    assertTrue($panelA->hasClass('Panel:active'), 'raised panel becomes active');
+    assertTrue($titleA->hasClass('PanelTitle:active'), 'raised panel title becomes active');
+    assertFalse($panelB->hasClass('Panel:active'), 'previous active panel is no longer active');
+    assertFalse($titleB->hasClass('PanelTitle:active'), 'previous active panel title is no longer active');
   },
 
   'buttons parse callbacks and expose hotkey labels' => function (): void {

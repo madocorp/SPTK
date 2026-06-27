@@ -36,6 +36,7 @@ class Panel extends Element {
   public function show(): void {
     $this->display = true;
     $this->refreshInputList();
+    $this->syncActive();
   }
 
   public function eventHandler(array $event): bool {
@@ -191,6 +192,55 @@ class Panel extends Element {
   public function hide(): void {
     $this->display = false;
     $this->lower();
+  }
+
+  public function raise(): void {
+    parent::raise();
+    $this->syncActive();
+  }
+
+  public function lower(): void {
+    parent::lower();
+    $this->syncActive();
+  }
+
+  public function addVariant(string $class): void {
+    if ($class === 'active') {
+      $title = Element::firstByType('PanelTitle', $this);
+      if ($title !== false) {
+        $title->addVariant('active');
+      }
+    }
+    parent::addVariant($class);
+  }
+
+  public function removeVariant(string $class): void {
+    if ($class === 'active') {
+      $title = Element::firstByType('PanelTitle', $this);
+      if ($title !== false) {
+        $title->removeVariant('active');
+      }
+    }
+    parent::removeVariant($class);
+  }
+
+  private function syncActive(): void {
+    if ($this->ancestor === null) {
+      return;
+    }
+    $activePanel = false;
+    foreach ($this->ancestor->stack as $element) {
+      if ($element->type === 'Panel' && $element->display) {
+        $activePanel = $element;
+      }
+    }
+    $panels = Element::allByType('Panel', $this->ancestor);
+    foreach ($panels as $panel) {
+      $panel->removeVariant('active');
+    }
+    if ($activePanel) {
+      $activePanel->addVariant('active');
+    }
   }
 
   public function activateInput($name = false) {

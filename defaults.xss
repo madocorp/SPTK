@@ -137,13 +137,22 @@ Panel {
   borderColor: #555555;
 }
 
+Panel:active {
+  borderColor: #888888;
+}
+
 PanelTitle {
   width: 100%;
   height: 25px;
   backgroundColor: #555555;
-  color: #ffffff;
+  color: #aaaaaa;
   textAlign: center;
   paddingTop: 2px;
+}
+
+PanelTitle:active {
+  color: #ffffff;
+  backgroundColor: #888888;
 }
 
 PanelContent {
@@ -218,7 +227,7 @@ FilePanel {
   backgroundColor: #cccccc;
   color: #000000;
   border: 3px;
-  borderColor: #555555;
+  borderColor: #888888;
 }
 
 Path {
@@ -316,7 +325,7 @@ SelectPanel {
   backgroundColor: #cccccc;
   color: #000000;
   border: 3px;
-  borderColor: #555555;
+  borderColor: #888888;
 }
 
 Browse {
