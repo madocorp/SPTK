@@ -3,6 +3,7 @@
 namespace SPTK\Elements;
 
 use \SPTK\Element;
+use \SPTK\Scrollbar;
 
 class TableContent extends Element {
 
@@ -46,6 +47,17 @@ class TableContent extends Element {
     $maxX = max(0, $this->tableContentWidth - $this->geometry->innerWidth);
     $this->scrollY = max(0, min($this->scrollY, $maxY));
     $this->scrollX = max(0, min($this->scrollX, $maxX));
+  }
+
+  public function hasScrollbarOverlap(): bool {
+    return $this->geometry->contentHeight > $this->geometry->height ||
+      $this->geometry->contentWidth > $this->geometry->width;
+  }
+
+  public function redrawScrollbar(): void {
+    if ($this->texture !== false && $this->style->get('scrollable')) {
+      new Scrollbar($this->texture, $this->scrollX, $this->scrollY, $this->geometry->contentWidth, $this->geometry->contentHeight, $this->geometry, $this->style);
+    }
   }
 
   protected function measure(): void {

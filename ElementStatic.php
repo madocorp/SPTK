@@ -72,6 +72,26 @@ trait ElementStatic {
     // DEBUG:refresh  echo "Immediate small refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
   }
 
+  public static function immediateCopy(Element $element): void {
+    $tmpTexture = $element->render();
+    if ($tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
+    $window = $element->findAncestorByType('Window');
+    if ($window->tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
+    $x = 0;
+    $y = 0;
+    static::getRenderedRelativePos($window->id, $element, $x, $y);
+    $tmpTexture->copyTo($window->tmpTexture, $x, $y);
+    $window->tmpTexture->copyTo(null, 0, 0);
+    $window->sdl->SDL_RenderPresent($window->renderer);
+  }
+
+
   public static function byName(string $name, ?Element $element = null): Element|false {
     if ($element === null) {
       $element = static::$root;

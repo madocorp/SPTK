@@ -542,15 +542,17 @@ class Table extends Element {
     if ($oldCell === false || $newCell === false) {
       return false;
     }
-    if (!$this->cellCanBeRefreshedDirectly($oldCell) || !$this->cellCanBeRefreshedDirectly($newCell)) {
-      return false;
-    }
+    $redrawScrollbar = !$this->cellCanBeRefreshedDirectly($oldCell) || !$this->cellCanBeRefreshedDirectly($newCell);
     if ($oldCell->getId() !== $newCell->getId()) {
       $oldCell->removeVariant('cursor');
       $newCell->addVariant('cursor');
       if ($render && $this->renderer !== false) {
         Element::immediateRefresh($oldCell);
         Element::immediateRefresh($newCell);
+        if ($redrawScrollbar && $this->contentElement()->hasScrollbarOverlap()) {
+          $this->contentElement()->redrawScrollbar();
+          Element::immediateCopy($this->contentElement());
+        }
       }
     }
     return true;
