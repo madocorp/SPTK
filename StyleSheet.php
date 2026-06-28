@@ -29,7 +29,7 @@ class StyleSheet {
     $styles = explode("}", $file);
     foreach ($styles as $style) {
       list($selector, $rules) = explode("{", $style, 2);
-      if (strpos($selector, ':') !== false) {
+      if (strpos($selector, ':') !== false && !preg_match('/^[^#.:]+#[^#.:]+:[^#.:]+$/', $selector)) {
         $selector = '.' . $selector;
       }
       $rules = trim($rules, ";");
@@ -109,6 +109,12 @@ class StyleSheet {
         foreach ($class as $classi) {
           if (isset(self::$styles[".{$classi}"])) {
             $style->merge(self::$styles[".{$classi}"]);
+          }
+          if ($name !== self::ANY && str_starts_with($classi, "{$type}:")) {
+            $variant = substr($classi, strlen($type) + 1);
+            if (isset(self::$styles["{$type}#{$name}:{$variant}"])) {
+              $style->merge(self::$styles["{$type}#{$name}:{$variant}"]);
+            }
           }
         }
       }
