@@ -56,6 +56,31 @@ XSS, 'xss');
     assertSame(9, $style->get('paddingLeft'), 'two-value padding left expands');
   },
 
+  'xss type name variant selectors override matching variant styles' => function (): void {
+    resetToolkit();
+    $path = tempFile(<<<'XSS'
+TextEditor { color: #111111; }
+#xyt { width: 10px; }
+TextEditor:active { color: #222222; width: 20px; }
+TextEditor#xyt:active { color: #333333; height: 30px; }
+XSS, 'xss');
+    StyleSheet::load($path);
+
+    $activeNamed = StyleSheet::get(null, null, 'TextEditor', ['TextEditor:active'], 'xyt');
+    assertSame([51, 51, 51, 255], $activeNamed->get('color'), 'type name variant selector overrides type variant color');
+    assertSame(20, $activeNamed->get('width'), 'type variant still overrides plain name style');
+    assertSame(30, $activeNamed->get('height'), 'type name variant selector applies to matching active named element');
+
+    $inactiveNamed = StyleSheet::get(null, null, 'TextEditor', StyleSheet::ANY, 'xyt');
+    assertSame([17, 17, 17, 255], $inactiveNamed->get('color'), 'inactive named element keeps base type style');
+    assertSame(10, $inactiveNamed->get('width'), 'inactive named element keeps plain name style');
+    assertSame(0, $inactiveNamed->get('height'), 'inactive named element does not receive type name variant style');
+
+    $activeOther = StyleSheet::get(null, null, 'TextEditor', ['TextEditor:active'], 'other');
+    assertSame([34, 34, 34, 255], $activeOther->get('color'), 'other active named elements keep type variant style');
+    assertSame(0, $activeOther->get('height'), 'other active named elements do not receive type name variant style');
+  },
+
   'xss values parse colors units booleans and inheritance' => function (): void {
     resetToolkit();
     $path = tempFile(<<<'XSS'
