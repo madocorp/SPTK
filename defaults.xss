@@ -490,6 +490,58 @@ TextBox:active {
   color: #000000;
 }
 
+Table {
+  borderColor: #000000;
+  color: #000000;
+  border: 1px;
+  width: 100%;
+  height: 40%h;
+  lineHeight: 100%;
+  scrollable: false;
+  textWrap: manual;
+}
+
+TableHeaderRow {
+  position: absolute;
+  x: calculated;
+  y: calculated;
+  backgroundColor: #555555;
+  color: #ffffff;
+}
+
+TableHeader {
+  position: absolute;
+  x: calculated;
+  y: calculated;
+  scrollable: false;
+}
+
+TableContent {
+  position: absolute;
+  x: calculated;
+  y: calculated;
+  scrollable: true;
+}
+
+TableRow {
+  position: absolute;
+  x: calculated;
+  y: calculated;
+}
+
+TableCell {
+  position: absolute;
+  x: calculated;
+  y: calculated;
+  padding: 1px, 5px;
+  borderRight: 1px;
+}
+
+TableCell:cursor {
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
 Tabs {
   width: 100%;
 }

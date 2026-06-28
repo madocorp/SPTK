@@ -1,0 +1,10 @@
+<Root>
+  <Window title="Table">
+    <Panel name="panel">
+      <PanelTitle>Table</PanelTitle>
+      <PanelContent>
+        <Table name="table" file="sample.tsv" chunkSize="10000" />
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>

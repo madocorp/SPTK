@@ -46,6 +46,32 @@ trait ElementStatic {
     // DEBUG:refresh  echo "Immediate refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
   }
 
+  public static function immediateRefresh(Element $element, bool $layout = true): void {
+    $t = microtime(true);
+    if ($layout) {
+      $element->recalculateGeometry();
+    } else {
+      $element->redraw();
+    }
+    $tmpTexture = $element->render();
+    if ($tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
+    $window = $element->findAncestorByType('Window');
+    if ($window->tmpTexture === false) {
+      Element::refresh();
+      return;
+    }
+    $x = 0;
+    $y = 0;
+    static::getRenderedRelativePos($window->id, $element, $x, $y);
+    $tmpTexture->copyTo($window->tmpTexture, $x, $y);
+    $window->tmpTexture->copyTo(null, 0, 0);
+    $window->sdl->SDL_RenderPresent($window->renderer);
+    // DEBUG:refresh  echo "Immediate small refresh:", microtime(true) - $t, ($layout ? ' with recalculate' : ''), "\n";
+  }
+
   public static function byName(string $name, ?Element $element = null): Element|false {
     if ($element === null) {
       $element = static::$root;
@@ -107,6 +133,21 @@ trait ElementStatic {
     $x += $element->geometry->x;
     $y += $element->geometry->y;
     static::getRelativePos($referenceId, $element->ancestor, $x, $y);
+  }
+
+  public static function getRenderedRelativePos(int $referenceId, Element $element, ?int &$x, ?int &$y): void {
+    $x ??= 0;
+    $y ??= 0;
+    if ($element->id == $referenceId) {
+      return;
+    }
+    $x += $element->geometry->x;
+    $y += $element->geometry->y;
+    if ($element->ancestor !== null) {
+      $x -= $element->ancestor->scrollX;
+      $y -= $element->ancestor->scrollY;
+    }
+    static::getRenderedRelativePos($referenceId, $element->ancestor, $x, $y);
   }
 
 
