@@ -95,6 +95,28 @@ return [
     );
   },
 
+  'table header background fills the table box when columns are narrow' => function (): void {
+    $root = root();
+    $file = tempFile("id\n1\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'narrow', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $headerRow = $table->getDescendants()[0]->nthChild(0);
+    $contentRow = $table->getDescendants()[1]->nthChild(0);
+
+    assertSame(
+      $table->getGeometry()->innerWidth,
+      $headerRow->getGeometry()->width,
+      'narrow table header row spans the full table box'
+    );
+    assertTrue(
+      $contentRow->getGeometry()->width < $headerRow->getGeometry()->width,
+      'body row keeps its content width when the header background is widened'
+    );
+  },
+
   'table caps wide columns to one third of the box when content overflows' => function (): void {
     $root = root();
     $long = str_repeat('x', 1000);
@@ -109,6 +131,38 @@ return [
 
     assertTrue($widths[0] <= $max, 'wide column is capped to at most 33% of table inner width');
     assertTrue(array_sum($widths) > 0, 'table keeps measured column widths');
+  },
+
+  'table formats null truncated and multiline cell values' => function (): void {
+    $root = root();
+    $long = str_repeat('x', 1000);
+    $file = tempFile("nullable\tlong\tmulti\n\\N\t{$long}\tline\\nbreak\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'formatting', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $row = $table->getDescendants()[1]->nthChild(0);
+    $nullWord = $row->nthChild(0)->nthChild(0);
+    $longCell = $row->nthChild(1);
+    $ellipsis = $longCell->nthChild($longCell->countDescendants() - 1);
+    $multiCell = $row->nthChild(2);
+    $returnMark = $multiCell->nthChild($multiCell->countDescendants() - 1);
+
+    assertSame(null, $row->nthChild(0)->getValue(), 'null cell keeps its raw null value');
+    assertSame('NULL', $nullWord->getValue(), 'null cell displays NULL text');
+    assertTrue($nullWord->hasClass('Word:tableNull'), 'null display text uses the blue null variant');
+    assertSame([0, 0, 255, 255], $nullWord->getStyle()->get('color'), 'null display text is blue');
+
+    assertSame('…', $ellipsis->getValue(), 'wide text is truncated with an ellipsis marker');
+    assertTrue($ellipsis->hasClass('Word:tableMarker'), 'ellipsis marker uses the blue marker variant');
+    assertSame([0, 0, 255, 255], $ellipsis->getStyle()->get('color'), 'ellipsis marker is blue');
+
+    assertSame("line\nbreak", $multiCell->getValue(), 'multiline cell keeps its raw multiline value');
+    assertSame('line', $multiCell->nthChild(0)->getValue(), 'multiline cell displays the first line');
+    assertSame('↵', $returnMark->getValue(), 'multiline cell ends with a return marker');
+    assertTrue($returnMark->hasClass('Word:tableMarker'), 'return marker uses the blue marker variant');
+    assertSame([0, 0, 255, 255], $returnMark->getStyle()->get('color'), 'return marker is blue');
   },
 
   'table moves a cell cursor and scrolls it into view' => function (): void {
@@ -145,5 +199,37 @@ return [
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::PAGEUP, 'key' => KeyCode::PAGEUP]);
     assertTrue($table->getCursor()[0] < 999, 'page up moves the cursor by a screen of rows');
+  },
+
+  'table supports text editor movement keys and cell range selection' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $file = tempFile("id\tname\tstatus\n1\tAlice\tactive\n2\tBob\tidle\n3\tCara\tactive\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'selection', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $table->keyPressHandler($table, ['mod' => KeyModifier::SHIFT, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
+    $table->keyPressHandler($table, ['mod' => KeyModifier::SHIFT, 'scancode' => ScanCode::DOWN, 'key' => KeyCode::DOWN]);
+
+    assertSame([1, 1], $table->getCursor(), 'shift movement moves the cursor');
+    assertSame([0, 0, 1, 1], $table->getSelection(), 'shift movement extends a rectangular cell range');
+
+    $content = $table->getDescendants()[1];
+    assertTrue($content->nthChild(0)->nthChild(0)->hasClass('TableCell:selected'), 'selection marks the first selected cell');
+    assertTrue($content->nthChild(0)->nthChild(1)->hasClass('TableCell:selected'), 'selection marks selected cells across columns');
+    assertTrue($content->nthChild(1)->nthChild(0)->hasClass('TableCell:selected'), 'selection marks selected cells across rows');
+    assertTrue($content->nthChild(1)->nthChild(1)->hasClass('TableCell:cursor'), 'cursor remains on the active selected cell');
+    assertFalse($content->nthChild(1)->nthChild(2)->hasClass('TableCell:selected'), 'selection excludes cells outside the range');
+
+    $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
+    assertSame([1, 2, 1, 2], $table->getSelection(), 'plain movement resets selection to the cursor cell');
+
+    $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::PAGEUP, 'key' => KeyCode::PAGEUP]);
+    assertSame([0, 0], $table->getCursor(), 'ctrl page up moves to the first table cell');
+
+    $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::PAGEDOWN, 'key' => KeyCode::PAGEDOWN]);
+    assertSame([2, 2], $table->getCursor(), 'ctrl page down moves to the last table cell');
   },
 ];
