@@ -21,7 +21,7 @@ Root {
   scrollable: false;
   scrollbarColor: #0000ff;
   scrollhandleColor: transparent;
-  scrollbarSize: 5px;
+  scrollbarSize: 10px;
   maxWidth: 10000px;
   maxHeight: 10000px;
   minWidth: 0;
