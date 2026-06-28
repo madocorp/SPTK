@@ -30,6 +30,8 @@ class Table extends Element {
   protected bool $widthsMeasured = false;
   protected int $cursorRow = 0;
   protected int $cursorColumn = 0;
+  protected int $anchorRow = 0;
+  protected int $anchorColumn = 0;
   protected int $poolStart = -1;
   protected int $poolSize = 0;
 
@@ -63,6 +65,8 @@ class Table extends Element {
     $this->scrollY = 0;
     $this->cursorRow = 0;
     $this->cursorColumn = 0;
+    $this->anchorRow = 0;
+    $this->anchorColumn = 0;
     $this->contentElement()->setScroll(0, 0);
     $this->chunk = [];
     $this->chunkStart = 0;
@@ -121,6 +125,15 @@ class Table extends Element {
 
   public function getCursor(): array {
     return [$this->cursorRow, $this->cursorColumn];
+  }
+
+  public function getSelection(): array {
+    return [
+      min($this->cursorRow, $this->anchorRow),
+      min($this->cursorColumn, $this->anchorColumn),
+      max($this->cursorRow, $this->anchorRow),
+      max($this->cursorColumn, $this->anchorColumn),
+    ];
   }
 
   public function scrollToRow(int $row): void {
@@ -258,7 +271,7 @@ class Table extends Element {
     if (array_sum($this->rawColumnWidths) <= $this->geometry->innerWidth) {
       return;
     }
-    $maxFieldWidth = max($this->minFieldWidth, (int)floor($this->geometry->innerWidth * 0.33));
+    $maxFieldWidth = max($this->minFieldWidth, (int)floor($this->geometry->innerWidth * 0.5));
     foreach ($this->columnWidths as $i => $width) {
       $this->columnWidths[$i] = min($width, $maxFieldWidth);
     }
@@ -393,7 +406,7 @@ class Table extends Element {
     $header = $this->headerElement();
     $content = $this->contentElement();
     $this->syncRowPool($header, 1, 'TableHeaderRow');
-    $this->updateRow($header->nthChild(0), -1, $this->header, 0);
+    $this->updateRow($header->nthChild(0), -1, $this->header, 0, $this->geometry->innerWidth);
     $this->syncContentRows();
   }
 
@@ -451,8 +464,8 @@ class Table extends Element {
     }
   }
 
-  protected function updateRow(TableRow $row, int $dataRow, array $values, int $visualRow): void {
-    $row->setTablePosition($visualRow, $this->rowHeight);
+  protected function updateRow(TableRow $row, int $dataRow, array $values, int $visualRow, int $minRowWidth = 0): void {
+    $row->setTablePosition($visualRow, $this->rowHeight, 0, $minRowWidth);
     $x = 0;
     $columns = max(count($this->columnWidths), count($this->header), count($values));
     for ($i = 0; $i < $columns; $i++) {
@@ -460,12 +473,18 @@ class Table extends Element {
       if (!$cell instanceof TableCell) {
         $cell = new TableCell($row);
       }
+      $cell->setCellTextMetrics($this->letterWidth);
       $cell->setCellGeometry($x, $this->columnWidths[$i] ?? $this->minFieldWidth, $this->rowHeight);
       $cell->setCellValue($values[$i] ?? null);
       if ($dataRow === $this->cursorRow && $i === $this->cursorColumn) {
         $cell->addVariant('cursor');
       } else {
         $cell->removeVariant('cursor');
+      }
+      if ($this->cellIsSelected($dataRow, $i)) {
+        $cell->addVariant('selected');
+      } else {
+        $cell->removeVariant('selected');
       }
       $x += $this->columnWidths[$i] ?? $this->minFieldWidth;
     }
@@ -492,6 +511,28 @@ class Table extends Element {
     $this->cursorColumn = max(0, min($this->cursorColumn, $this->columnCount() - 1));
   }
 
+  protected function clampAnchor(): void {
+    $this->anchorRow = max(0, min($this->anchorRow, max(0, $this->rowCount - 1)));
+    $this->anchorColumn = max(0, min($this->anchorColumn, $this->columnCount() - 1));
+  }
+
+  protected function resetSelection(bool $select = false): void {
+    if ($select) {
+      $this->clampAnchor();
+      return;
+    }
+    $this->anchorRow = $this->cursorRow;
+    $this->anchorColumn = $this->cursorColumn;
+  }
+
+  protected function cellIsSelected(int $row, int $column): bool {
+    if ($row < 0) {
+      return false;
+    }
+    [$row1, $col1, $row2, $col2] = $this->getSelection();
+    return $row >= $row1 && $row <= $row2 && $column >= $col1 && $column <= $col2;
+  }
+
   protected function cursorCellX(): int {
     $x = 0;
     for ($i = 0; $i < $this->cursorColumn; $i++) {
@@ -502,6 +543,7 @@ class Table extends Element {
 
   protected function keepCursorOnScreen(): void {
     $this->clampCursor();
+    $this->clampAnchor();
     $content = $this->contentElement();
     $cellTop = $this->cursorRow * $this->rowHeight;
     $cellBottom = $cellTop + $this->rowHeight;
@@ -526,60 +568,6 @@ class Table extends Element {
     $this->clampScroll();
   }
 
-  protected function cursorCellElement(int $row, int $column): TableCell|false {
-    foreach ($this->contentElement()->getDescendants() as $rowElement) {
-      if ($rowElement instanceof TableRow && $rowElement->getDataRow() === $row) {
-        $cell = $rowElement->nthChild($column);
-        return $cell instanceof TableCell ? $cell : false;
-      }
-    }
-    return false;
-  }
-
-  protected function refreshCursorCells(int $oldRow, int $oldColumn, bool $render = true): bool {
-    $oldCell = $this->cursorCellElement($oldRow, $oldColumn);
-    $newCell = $this->cursorCellElement($this->cursorRow, $this->cursorColumn);
-    if ($oldCell === false || $newCell === false) {
-      return false;
-    }
-    $redrawScrollbar = !$this->cellCanBeRefreshedDirectly($oldCell) || !$this->cellCanBeRefreshedDirectly($newCell);
-    if ($oldCell->getId() !== $newCell->getId()) {
-      $oldCell->removeVariant('cursor');
-      $newCell->addVariant('cursor');
-      if ($render && $this->renderer !== false) {
-        Element::immediateRefresh($oldCell);
-        Element::immediateRefresh($newCell);
-        if ($redrawScrollbar && $this->contentElement()->hasScrollbarOverlap()) {
-          $this->contentElement()->redrawScrollbar();
-          Element::immediateCopy($this->contentElement());
-        }
-      }
-    }
-    return true;
-  }
-
-  protected function cellCanBeRefreshedDirectly(TableCell $cell): bool {
-    $row = $cell->getAncestor();
-    if (!$row instanceof TableRow) {
-      return false;
-    }
-    $content = $this->contentElement();
-    $x1 = $row->getGeometry()->x + $cell->getGeometry()->x - $content->getScrollX();
-    $y1 = $row->getGeometry()->y + $cell->getGeometry()->y - $content->getScrollY();
-    $x2 = $x1 + $cell->getGeometry()->width;
-    $y2 = $y1 + $cell->getGeometry()->height;
-    $rightLimit = $content->getGeometry()->width;
-    $bottomLimit = $content->getGeometry()->height;
-    $scrollbarSize = $content->getStyle()->get('scrollbarSize', $content->getGeometry());
-    if ($content->getGeometry()->contentHeight > $content->getGeometry()->height) {
-      $rightLimit -= $scrollbarSize;
-    }
-    if ($content->getGeometry()->contentWidth > $content->getGeometry()->width) {
-      $bottomLimit -= $scrollbarSize;
-    }
-    return $x1 >= 0 && $y1 >= 0 && $x2 <= $rightLimit && $y2 <= $bottomLimit;
-  }
-
   protected function refreshVisiblePool(): void {
     $this->buildTree();
     foreach ($this->descendants as $descendant) {
@@ -593,53 +581,103 @@ class Table extends Element {
   public function keyPressHandler($element, $event): bool {
     $action = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     $page = max(1, (int)floor($this->contentElement()->getGeometry()->innerHeight / $this->rowHeight));
-    $oldRow = $this->cursorRow;
-    $oldColumn = $this->cursorColumn;
     $oldScrollX = $this->contentElement()->getScrollX();
     $oldScrollY = $this->contentElement()->getScrollY();
     $oldChunkStart = $this->chunkStart;
     switch ($action) {
       case Action::MOVE_UP:
+        $this->cursorRow--;
+        $this->resetSelection();
+        break;
       case Action::SELECT_UP:
         $this->cursorRow--;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_DOWN:
+        $this->cursorRow++;
+        $this->resetSelection();
+        break;
       case Action::SELECT_DOWN:
         $this->cursorRow++;
+        $this->resetSelection(true);
         break;
       case Action::PAGE_UP:
+        $this->cursorRow -= $page;
+        $this->resetSelection();
+        break;
       case Action::SELECT_PAGE_UP:
         $this->cursorRow -= $page;
+        $this->resetSelection(true);
         break;
       case Action::PAGE_DOWN:
+        $this->cursorRow += $page;
+        $this->resetSelection();
+        break;
       case Action::SELECT_PAGE_DOWN:
         $this->cursorRow += $page;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_FIRST:
+        $this->cursorColumn = 0;
+        $this->resetSelection();
+        break;
       case Action::SELECT_FIRST:
         $this->cursorColumn = 0;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_LAST:
+        $this->cursorColumn = $this->columnCount() - 1;
+        $this->resetSelection();
+        break;
       case Action::SELECT_LAST:
         $this->cursorColumn = $this->columnCount() - 1;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_LEFT:
+        $this->cursorColumn--;
+        $this->resetSelection();
+        break;
       case Action::SELECT_LEFT:
         $this->cursorColumn--;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_RIGHT:
+        $this->cursorColumn++;
+        $this->resetSelection();
+        break;
       case Action::SELECT_RIGHT:
         $this->cursorColumn++;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_START:
-      case Action::SELECT_START:
+      case Action::LEVEL_UP:
         $this->cursorRow = 0;
         $this->cursorColumn = 0;
+        $this->resetSelection();
+        break;
+      case Action::SELECT_START:
+      case Action::SELECT_LEVEL_UP:
+        $this->cursorRow = 0;
+        $this->cursorColumn = 0;
+        $this->resetSelection(true);
         break;
       case Action::MOVE_END:
-      case Action::SELECT_END:
+      case Action::LEVEL_DOWN:
         $this->cursorRow = $this->rowCount - 1;
         $this->cursorColumn = $this->columnCount() - 1;
+        $this->resetSelection();
+        break;
+      case Action::SELECT_END:
+      case Action::SELECT_LEVEL_DOWN:
+        $this->cursorRow = $this->rowCount - 1;
+        $this->cursorColumn = $this->columnCount() - 1;
+        $this->resetSelection(true);
+        break;
+      case Action::SELECT_ALL:
+        $this->cursorRow = $this->rowCount - 1;
+        $this->cursorColumn = $this->columnCount() - 1;
+        $this->anchorRow = 0;
+        $this->anchorColumn = 0;
         break;
       default:
         return false;
@@ -650,10 +688,7 @@ class Table extends Element {
       $oldScrollX !== $this->contentElement()->getScrollX() ||
       $oldScrollY !== $this->contentElement()->getScrollY();
     $chunkChanged = $oldChunkStart !== $this->chunkStart;
-    if (!$viewportChanged && $this->refreshCursorCells($oldRow, $oldColumn)) {
-      return true;
-    }
-    if ($viewportChanged && !$chunkChanged) {
+    if (!$chunkChanged) {
       $this->refreshVisiblePool();
       if ($this->renderer !== false) {
         if ($oldScrollX !== $this->contentElement()->getScrollX()) {

@@ -29,9 +29,6 @@ class StyleSheet {
     $styles = explode("}", $file);
     foreach ($styles as $style) {
       list($selector, $rules) = explode("{", $style, 2);
-      if (strpos($selector, ':') !== false && !preg_match('/^[^#.:]+#[^#.:]+:[^#.:]+$/', $selector)) {
-        $selector = '.' . $selector;
-      }
       $rules = trim($rules, ";");
       $rules = explode(";", $rules);
       $processedRules = [];
@@ -73,10 +70,12 @@ class StyleSheet {
         }
       }
       $style = new Style($processedRules);
-      if ($overwrite === false && isset(self::$styles[$selector])) {
-        self::$styles[$selector]->merge($style);
-      } else {
-        self::$styles[$selector] = $style;
+      foreach (self::expandSelectors($selector) as $selector) {
+        if ($overwrite === false && isset(self::$styles[$selector])) {
+          self::$styles[$selector]->merge($style);
+        } else {
+          self::$styles[$selector] = clone $style;
+        }
       }
     }
     //  DEBUG:style foreach (self::$styles as $selector => $style) {
@@ -86,6 +85,20 @@ class StyleSheet {
     //  DEBUG:style   $style->debug();
     //  DEBUG:style   echo "\n";
     //  DEBUG:style }
+  }
+
+  protected static function expandSelectors(string $selector): array {
+    $selectors = [];
+    foreach (explode(',', $selector) as $selector) {
+      if ($selector === '') {
+        continue;
+      }
+      if (strpos($selector, ':') !== false && !preg_match('/^[^#.:]+#[^#.:]+:[^#.:]+$/', $selector)) {
+        $selector = '.' . $selector;
+      }
+      $selectors[] = $selector;
+    }
+    return $selectors;
   }
 
   public static function get(Style|array|null $defaultStyle, Style|array|null $ancestorStyle, string $type, string|array|int $class = self::ANY, string|int $name = self::ANY): Style {

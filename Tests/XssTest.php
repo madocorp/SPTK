@@ -27,6 +27,23 @@ XSS, 'xss');
     assertSame([0, 255, 0, 255], $active->get('backgroundColor'), 'variant type classes are loaded as class selectors');
   },
 
+  'xss comma separated selectors share rules' => function (): void {
+    resetToolkit();
+    $path = tempFile(<<<'XSS'
+Box, Panel, .warning, Button:active, TextEditor#named:active {
+  color: #0000ff;
+  width: 42px;
+}
+XSS, 'xss');
+    StyleSheet::load($path);
+
+    assertSame([0, 0, 255, 255], StyleSheet::get(null, null, 'Box')->get('color'), 'first grouped type selector receives rules');
+    assertSame(42, StyleSheet::get(null, null, 'Panel')->get('width'), 'second grouped type selector receives rules');
+    assertSame([0, 0, 255, 255], StyleSheet::get(null, null, 'Label', ['warning'])->get('color'), 'grouped class selector receives rules');
+    assertSame(42, StyleSheet::get(null, null, 'Button', ['Button:active'])->get('width'), 'grouped variant selector receives rules');
+    assertSame([0, 0, 255, 255], StyleSheet::get(null, null, 'TextEditor', ['TextEditor:active'], 'named')->get('color'), 'grouped type name variant selector receives rules');
+  },
+
   'xss shorthands expand like css around rules' => function (): void {
     resetToolkit();
     $path = tempFile(<<<'XSS'

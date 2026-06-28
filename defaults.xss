@@ -542,6 +542,16 @@ TableCell:cursor {
   color: #ffffff;
 }
 
+TableCell:selected {
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
+Word:tableNull,
+Word:tableMarker {
+  color: #0000ff;
+}
+
 Tabs {
   width: 100%;
 }
