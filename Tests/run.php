@@ -15,6 +15,7 @@ $files = [
   __DIR__ . '/XssTest.php',
   __DIR__ . '/TemplateTest.php',
   __DIR__ . '/ElementTest.php',
+  __DIR__ . '/TableTest.php',
 ];
 
 $tests = [];
