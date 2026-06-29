@@ -142,14 +142,17 @@ class ListItem extends Element {
   public function deselect() {
     $this->selected = false;
     $this->itemLeft->clear();
+    $this->removeVariant('selected');
   }
 
   public function select($marker = false) {
     if ($this->selected && $this->selectable === true) {
       $this->selected = false;
       $this->itemLeft->clear();
+      $this->removeVariant('selected');
     } else {
       $this->selected = true;
+      $this->addVariant('selected');
       if ($marker !== false) {
         $this->itemLeft->setText((string) $marker);
       } else if ($this->selectable === true) {

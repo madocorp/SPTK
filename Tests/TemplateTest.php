@@ -6,12 +6,15 @@ use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
 use SPTK\Elements\Field;
+use SPTK\Elements\ListBox;
 use SPTK\Elements\Select;
+use SPTK\Elements\SelectPanel;
 use SPTK\Elements\Tab;
 use SPTK\Elements\TextBox;
 use SPTK\Elements\TextEditor;
 use SPTK\Font;
 use SPTK\LayoutXmlReader;
+use SPTK\StyleSheet;
 
 return [
   'template parser builds generic and known elements' => function (): void {
@@ -132,6 +135,28 @@ XML, 'xml');
     $changed->setAccessible(true);
     $changed->invoke($select);
     assertSame(['Blue'], $listener->values, 'select invokes onChange with the select element');
+  },
+
+  'select panels derive styleable names from source select names' => function (): void {
+    $root = root();
+    StyleSheet::load(tempFile(<<<'XSS'
+country/panel {
+  width: 70%w;
+}
+
+country/list {
+  height: 70%h;
+}
+XSS, 'xss'));
+
+    $panel = new SelectPanel($root, 'country/panel');
+    $list = Element::byName('country/list', $root);
+
+    assertInstanceOf(SelectPanel::class, $panel, 'named select panel resolves to the SelectPanel class');
+    assertInstanceOf(ListBox::class, $list, 'select panel option list gets a derived name');
+    assertSame(['select-panel-list'], $list->getClass(), 'select panel option list gets the semantic default class');
+    assertSame(560, $panel->getStyle()->get('width', $root->getGeometry()), 'derived panel name can override width through XSS');
+    assertSame(420, $list->getStyle()->get('height', $root->getGeometry()), 'derived list name can override height through XSS');
   },
 
   'template parser handles events child classes includes and cdata' => function (): void {

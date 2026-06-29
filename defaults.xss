@@ -115,8 +115,7 @@ MenuBoxItem {
 }
 
 MenuBoxItem:selected {
-  backgroundColor: #555555;
-  color: #aaaaaa;
+  color: #00ffff;
 }
 
 MenuBoxItem:active {
@@ -342,6 +341,10 @@ SelectPanel {
   borderColor: #888888;
 }
 
+.select-panel-list {
+  height: 50%h;
+}
+
 Browse {
   position: absolute;
   y: 0px;
@@ -449,8 +452,7 @@ ListItem:file {
 }
 
 ListItem:selected {
-  backgroundColor: #555555;
-  color: #aaaaaa;
+  color: #0000ff;
 }
 
 ListItem:cursor {

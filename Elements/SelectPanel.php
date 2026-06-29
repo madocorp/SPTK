@@ -15,11 +15,15 @@ class SelectPanel extends Panel {
 
   protected function init(): void {
     parent::init();
+    $listName = null;
+    if (is_string($this->name) && str_ends_with($this->name, '/panel')) {
+      $listName = substr($this->name, 0, -strlen('/panel')) . '/list';
+    }
     $this->title = new Element($this, null, null, 'PanelTitle');
     $this->title->addVariant('active');
     $content = new Element($this, null, null, 'PanelContent');
     $label = new Element($content, null, null, 'Label');
-    $this->theList = new ListBox($label, null, 'wh50');
+    $this->theList = new ListBox($label, $listName, 'select-panel-list');
     $this->theList->setTyping('search');
     $this->theList->setOnSelect([$this, 'choose']);
     $buttons = new Element($content, null, null, 'ButtonBox');

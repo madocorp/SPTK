@@ -123,7 +123,8 @@ class Select extends Element {
     if ($window === false) {
       return;
     }
-    $panel = new SelectPanel($window);
+    $panelName = is_string($this->name) ? $this->name . '/panel' : null;
+    $panel = new SelectPanel($window, $panelName);
     $panel->setTitle($this->hint);
     $panel->setOptions($this->options, $this->value);
     $panel->setOnSelect([$this, 'selected']);
