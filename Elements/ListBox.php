@@ -231,7 +231,6 @@ class ListBox extends Element {
 
   public function activateItem($direction = 1) {
     foreach ($this->descendants as $descendant) {
-      $descendant->removeVariant('selected');
       $descendant->removeVariant('active');
       $descendant->removeVariant('cursor');
     }
@@ -240,9 +239,6 @@ class ListBox extends Element {
         $descendant = $this->descendants[$idx];
         if ($descendant->display) {
           $this->activeItem = $idx;
-          if ($descendant->isSelectable() !== false) {
-            $descendant->addVariant('selected');
-          }
           if ($this->hasVariant('active')) {
             $descendant->addVariant('active');
           } else {
@@ -265,7 +261,6 @@ class ListBox extends Element {
 
   public function inactivateItem() {
     foreach ($this->descendants as $descendant) {
-      $descendant->removeVariant('selected');
       $descendant->removeVariant('active');
     }
   }

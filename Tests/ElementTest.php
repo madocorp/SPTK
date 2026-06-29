@@ -171,6 +171,12 @@ return [
     assertSame(['email', 'id'], $columns->getValue(), 'ordered select value returns values in selection order');
     assertSame('1', $email->nthChild(0)->getText(), 'first ordered selection shows marker 1');
     assertSame('2', $id->nthChild(0)->getText(), 'second ordered selection shows marker 2');
+    assertTrue($email->hasVariant('selected'), 'ordered selected items keep the selected visual variant');
+    assertTrue($id->hasVariant('selected'), 'ordered selected items apply the selected visual variant');
+    $columns->moveCursor(2);
+    assertSame([170, 170, 170, 255], $email->getStyle()->get('color'), 'cursor styling overrides selected item color');
+    $columns->moveCursor(1);
+    assertFalse($name->hasVariant('selected'), 'cursor movement does not apply the selected visual variant');
   },
 
   'select accepts option sources and shows hint as placeholder' => function (): void {

@@ -93,6 +93,9 @@ class StyleSheet {
       if ($selector === '') {
         continue;
       }
+      if (str_contains($selector, '/') && !str_starts_with($selector, '#') && !str_starts_with($selector, '.')) {
+        $selector = '#' . $selector;
+      }
       if (strpos($selector, ':') !== false && !preg_match('/^[^#.:]+#[^#.:]+:[^#.:]+$/', $selector)) {
         $selector = '.' . $selector;
       }
@@ -130,6 +133,9 @@ class StyleSheet {
             }
           }
         }
+      }
+      if (is_string($name) && str_contains($name, '/') && isset(self::$styles["#{$name}"])) {
+        $style->merge(self::$styles["#{$name}"]);
       }
       self::$cache[$type][$name][$classStr] = $style;
     } else {
