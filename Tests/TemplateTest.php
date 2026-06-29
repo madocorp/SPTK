@@ -5,6 +5,7 @@ namespace Examples\Tests;
 use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
+use SPTK\Elements\Field;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\TextBox;
@@ -20,6 +21,7 @@ return [
   <Unknown name="generic" class="red big">Alpha beta</Unknown>
   <Button name="submit" onPress="Controller::noop">OK</Button>
   <CheckBox name="accepted" value="true" />
+  <Field name="schema" value="main" />
   <Tab contentName="tab-content">Tab</Tab>
 </Root>
 XML, 'xml');
@@ -40,6 +42,10 @@ XML, 'xml');
     $checkBox = Element::byName('accepted', $root);
     assertInstanceOf(CheckBox::class, $checkBox, 'known self-closing elements resolve to classes');
     assertTrue($checkBox->getValue(), 'known element attributes are applied to self-closing tags');
+
+    $field = Element::byName('schema', $root);
+    assertInstanceOf(Field::class, $field, 'field elements resolve to the Field class');
+    assertSame('main', $field->getValue(), 'field value attributes are applied');
 
     $tab = Element::firstByType('Tab', $root);
     assertInstanceOf(Tab::class, $tab, 'tab elements resolve to the Tab class');
@@ -104,6 +110,28 @@ XML, 'xml');
     assertInstanceOf(Select::class, $select, 'select elements resolve to the Select class');
     assertSame(['Red', 'green', 'Blue'], $select->getOptions(), 'Option descendants are collected as select options');
     assertSame('Color', $select->nthChild(0)->getValue(), 'select hint is shown in the input field');
+  },
+
+  'select supports onChange callbacks' => function (): void {
+    $root = root();
+    $select = new Select($root, 'color');
+    $listener = new class {
+      public array $values = [];
+
+      public function changed($element): void {
+        $this->values[] = $element->getValue();
+      }
+    };
+    $select->setOnChange([$listener, 'changed']);
+
+    $select->setValue('green');
+    assertSame([], $listener->values, 'programmatic select value changes stay quiet');
+
+    $select->setValue('Blue');
+    $changed = new \ReflectionMethod(Select::class, 'changed');
+    $changed->setAccessible(true);
+    $changed->invoke($select);
+    assertSame(['Blue'], $listener->values, 'select invokes onChange with the select element');
   },
 
   'template parser handles events child classes includes and cdata' => function (): void {
