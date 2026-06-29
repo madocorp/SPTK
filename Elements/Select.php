@@ -12,6 +12,7 @@ class Select extends Element {
   private $elementOpen;
   private $hint = '';
   private $options = [];
+  private $onChange = false;
 
   protected function init(): void {
     $this->acceptInput = true;
@@ -24,7 +25,7 @@ class Select extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['value', 'hint', 'options'];
+    return ['value', 'hint', 'options', 'onChange'];
   }
 
   public function postInit(): void {
@@ -69,6 +70,23 @@ class Select extends Element {
     return $this->options;
   }
 
+  public function setOnChange($value) {
+    if ($value === false) {
+      return;
+    }
+    if (is_array($value)) {
+      $this->onChange = $value;
+    } else {
+      $this->onChange = self::parseCallback($value);
+    }
+  }
+
+  private function changed(): void {
+    if ($this->onChange !== false) {
+      call_user_func($this->onChange, $this);
+    }
+  }
+
   public function addVariant(string $class): void {
     if ($class == 'active') {
       $this->elementOpen->addVariant('active');
@@ -86,6 +104,7 @@ class Select extends Element {
   public function selected($value): void {
     $this->setValue($value);
     $this->addVariant('active');
+    $this->changed();
     Element::refresh();
   }
 
@@ -121,6 +140,7 @@ class Select extends Element {
       case Action::DELETE_FORWARD:
       case Action::DELETE_BACK:
         $this->setValue('');
+        $this->changed();
         Element::immediateRender($this);
         return true;
     }

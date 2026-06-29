@@ -262,6 +262,16 @@ Input:active {
   backgroundColor: #00cccc;
 }
 
+Field {
+  width: 100%;
+  backgroundColor: #aaaaaa;
+  color: #444444;
+  height: 30px;
+  textWrap: manual;
+  padding: 5px, 0px;
+  scrollable: true;
+}
+
 InputValue:selected {
   backgroundColor: #000000;
   color: #00cccc;
