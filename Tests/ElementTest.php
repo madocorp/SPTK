@@ -35,6 +35,16 @@ class HeadlessPanel extends Panel {
 
 }
 
+class TabChangeListener {
+
+  public static array $changes = [];
+
+  public static function changed($tabs): void {
+    self::$changes[] = $tabs->getCurrentTabContentName();
+  }
+
+}
+
 class StackPanel extends Panel {
 
   public function recalculateGeometry(): void {
@@ -217,6 +227,24 @@ return [
     assertFalse(propertyValue($contentA, 'display'), 'unselected tab content is hidden');
     assertTrue(propertyValue($contentB, 'display'), 'selected tab content is shown');
     assertSame($contentB, $tabs->getTabContent(), 'getTabContent returns the current tab content');
+  },
+
+  'tabs call onChange for direct and relative selection' => function (): void {
+    $root = root();
+    $tabs = new Tabs($root, 'tabs');
+    $tabs->setOnChange([TabChangeListener::class, 'changed']);
+    $tabA = new Tab($tabs);
+    $tabA->setContentName('content-a');
+    $tabB = new Tab($tabs);
+    $tabB->setContentName('content-b');
+    new HeadlessElement($root, 'content-a', null, 'TabBox');
+    new HeadlessElement($root, 'content-b', null, 'TabBox');
+    TabChangeListener::$changes = [];
+
+    $tabs->selectTab(1);
+    $tabs->selectRelative(-1);
+
+    assertSame(['content-b', 'content-a'], TabChangeListener::$changes, 'tab onChange receives direct and relative tab changes');
   },
 
   'tabs reject nested content elements' => function (): void {
