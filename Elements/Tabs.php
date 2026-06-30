@@ -11,10 +11,26 @@ class Tabs extends Element {
 
   protected $tabs = 0;
   protected $currentTab = 0;
+  protected $onChange = false;
 
   protected function init(): void {
     $this->acceptInput = true;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+  }
+
+  public function getAttributeList(): array {
+    return ['onChange'];
+  }
+
+  public function setOnChange($value) {
+    if ($value === false) {
+      return;
+    }
+    if (is_array($value)) {
+      $this->onChange = $value;
+    } else {
+      $this->onChange = self::parseCallback($value);
+    }
   }
 
   private function tabElements() {
@@ -72,6 +88,15 @@ class Tabs extends Element {
     return false;
   }
 
+  public function getCurrentTab(): int {
+    return $this->currentTab;
+  }
+
+  public function getCurrentTabContentName(): string|false {
+    $content = $this->getTabContent();
+    return $content === false ? false : $content->getName();
+  }
+
   public function addDescendant($element): void {
     if ($element->type !== 'Tab') {
       throw new \Exception('Tabs can only contain Tab elements. Place tab content in sibling TabBox elements and reference them with Tab contentName.');
@@ -82,6 +107,7 @@ class Tabs extends Element {
   }
 
   public function selectTab($selected = null, $focusTabs = true) {
+    $previousTab = $this->currentTab;
     if ($selected === null) {
       $selected = $this->currentTab;
     } else {
@@ -100,6 +126,9 @@ class Tabs extends Element {
       }
     }
     $this->syncContentDisplay();
+    if ($previousTab !== $this->currentTab && $this->onChange !== false) {
+      call_user_func($this->onChange, $this);
+    }
     $panel = $this->findAncestorByType('Panel');
     if ($panel !== false && $panel->isDisplayed()) {
       $panel->refreshInputList($focusTabs ? $this : false);
@@ -110,14 +139,14 @@ class Tabs extends Element {
     if ($this->tabs <= 0) {
       return false;
     }
-    $this->currentTab += $offset;
-    while ($this->currentTab < 0) {
-      $this->currentTab += $this->tabs;
+    $selected = $this->currentTab + $offset;
+    while ($selected < 0) {
+      $selected += $this->tabs;
     }
-    while ($this->currentTab >= $this->tabs) {
-      $this->currentTab -= $this->tabs;
+    while ($selected >= $this->tabs) {
+      $selected -= $this->tabs;
     }
-    $this->selectTab($this->currentTab, $focusTabs);
+    $this->selectTab($selected, $focusTabs);
     return true;
   }
 
