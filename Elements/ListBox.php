@@ -14,6 +14,7 @@ class ListBox extends Element {
   protected $movable = false;
   protected $selectable = false;
   protected $selectionOrder = false;
+  protected $selectOnReturn = true;
   protected $selectedOrder = [];
   protected $onChange = false;
   protected $onSelect = false;
@@ -30,7 +31,7 @@ class ListBox extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['movable', 'selectionOrder', 'onChange', 'typing', 'onSelect', 'valueType'];
+    return ['movable', 'selectionOrder', 'selectOnReturn', 'onChange', 'typing', 'onSelect', 'valueType'];
   }
 
   public function setMovable($value) {
@@ -39,6 +40,10 @@ class ListBox extends Element {
 
   public function setSelectionOrder($value) {
     $this->selectionOrder = ($value === true || $value === 'true');
+  }
+
+  public function setSelectOnReturn($value) {
+    $this->selectOnReturn = ($value === true || $value === 'true');
   }
 
   public function setOnChange($value) {
@@ -539,7 +544,6 @@ class ListBox extends Element {
         }
         return false;
       case Action::SELECT_ITEM:
-      case Action::DO_IT:
         $item = $this->descendants[$this->activeItem];
         $selectable = $item->isSelectable();
         if ($selectable === true) {
@@ -563,6 +567,39 @@ class ListBox extends Element {
         }
         return true;
       }
+        if ($this->onSelect !== false) {
+          Element::immediateRender($this);
+          call_user_func($this->onSelect, $item);
+          return true;
+        }
+        return false;
+      case Action::DO_IT:
+        $item = $this->descendants[$this->activeItem];
+        if ($item->isSelectable() !== false && !$this->selectOnReturn) {
+          return false;
+        }
+        $selectable = $item->isSelectable();
+        if ($selectable === true) {
+          $this->selectItem($item);
+          Element::immediateRender($this);
+          if ($this->onSelect !== false) {
+            call_user_func($this->onSelect, $item);
+          }
+          return true;
+        } else if ($selectable !== false) {
+          foreach ($this->descendants as $descendant) {
+            if ($descendant->id === $item->id) {
+              $item->select();
+            } else if ($selectable === $descendant->isSelectable()) {
+              $descendant->deselect();
+            }
+          }
+          Element::immediateRender($this);
+          if ($this->onSelect !== false) {
+            call_user_func($this->onSelect, $item);
+          }
+          return true;
+        }
         if ($this->onSelect !== false) {
           Element::immediateRender($this);
           call_user_func($this->onSelect, $item);

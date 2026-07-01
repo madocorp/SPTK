@@ -126,12 +126,16 @@ class Tabs extends Element {
       }
     }
     $this->syncContentDisplay();
+    $focus = $focusTabs ? $this : false;
     if ($previousTab !== $this->currentTab && $this->onChange !== false) {
-      call_user_func($this->onChange, $this);
+      $callbackFocus = call_user_func($this->onChange, $this);
+      if (is_string($callbackFocus) || $callbackFocus instanceof Element) {
+        $focus = $callbackFocus;
+      }
     }
     $panel = $this->findAncestorByType('Panel');
     if ($panel !== false && $panel->isDisplayed()) {
-      $panel->refreshInputList($focusTabs ? $this : false);
+      $panel->refreshInputList($focus);
     }
   }
 

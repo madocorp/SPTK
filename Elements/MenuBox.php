@@ -121,7 +121,10 @@ class MenuBox extends ListBox {
         }
         $menu = $this->findAncestorByType('Menu');
         $menu->closeMenu();
+        $selectOnReturn = $this->selectOnReturn;
+        $this->selectOnReturn = true;
         parent::keyPressHandler($element, $event);
+        $this->selectOnReturn = $selectOnReturn;
         $this->descendants[$this->activeItem]->open();
         return true;
     }
