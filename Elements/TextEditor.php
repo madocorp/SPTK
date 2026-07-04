@@ -3,19 +3,55 @@
 namespace SPTK\Elements;
 
 use \SPTK\Element;
-use \SPTK\SDLWrapper\KeyCode;
+use \SPTK\StyleSheet;
 use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\Action;
 use \SPTK\Clipboard;
 
-class TextEditor extends TextBox {
+class TextEditor extends TextGrid {
 
+  protected $lines = [''];
+  protected $cursor;
   protected $history;
+  protected $tokenizer;
+  protected $lineTokens = [];
+  protected $lineContexts = [];
+  protected $active = false;
+  protected $styleColorCache = [];
 
   protected function init(): void {
     parent::init();
+    $this->acceptInput = true;
+    $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
     $this->addEvent('TextInput', [$this, 'textInputHandler']);
+    $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
     $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
+  }
+
+  public function getAttributeList(): array {
+    return ['tokenizer', 'file'];
+  }
+
+  public function setTokenizer($value): void {
+    if ($value === 'false' || $value === false) {
+      $value = '\SPTK\Tokenizer';
+    }
+    $this->tokenizer = $value;
+  }
+
+  public function setFile($file): void {
+    if ($file === false) {
+      return;
+    }
+    if (strpos($file, '/') !== 0) {
+      $file = defined('APP_PATH') ? dirname(APP_PATH) . "/{$file}" : getcwd() . "/{$file}";
+    }
+    if (file_exists($file)) {
+      $content = file_get_contents($file);
+      if ($content !== false) {
+        $this->setValue($content);
+      }
+    }
   }
 
   public function getValue(): mixed {
@@ -23,8 +59,20 @@ class TextEditor extends TextBox {
   }
 
   public function setValue($value): void {
-    parent::setValue($value);
+    $this->lines = explode("\n", $value);
+    $this->lineTokens = [];
+    $this->lineContexts = [];
+    $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
     $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
+    $this->cursor->modify(0, 0, 0, 0);
+    $this->cursor->save();
+    $this->scrollX = 0;
+    $this->scrollY = 0;
+    $this->changed = true;
+    if ($this->renderer !== false) {
+      $this->measure();
+      $this->update();
+    }
   }
 
   public function saveState(): array {
@@ -48,6 +96,238 @@ class TextEditor extends TextBox {
     $this->update();
   }
 
+  public function addVariant(string $class): void {
+    if ($class == 'active') {
+      $this->active = true;
+    }
+    $this->styleColorCache = [];
+    parent::addVariant($class);
+    $this->update();
+  }
+
+  public function removeVariant(string $class): void {
+    if ($class == 'active') {
+      $this->active = false;
+    }
+    $this->styleColorCache = [];
+    parent::removeVariant($class);
+    $this->update();
+  }
+
+  protected function calculateHeights(): void {
+    parent::calculateHeights();
+    $maxY = count($this->lines) * $this->lineHeight + $this->geometry->borderTop + $this->geometry->paddingTop;
+    $ascent = $this->style->get('ascent', $this->geometry);
+    $this->geometry->setContentHeight($ascent, $maxY);
+  }
+
+  protected function layout(): void {
+    parent::layout();
+    $maxLen = 0;
+    foreach ($this->lines as $line) {
+      $maxLen = max($maxLen, mb_strlen($line));
+    }
+    $this->geometry->contentWidth = $maxLen * $this->letterWidth;
+  }
+
+  protected function invalidateTokensFrom(int $line): void {
+    foreach (array_keys($this->lineTokens) as $i) {
+      if ($i >= $line) {
+        unset($this->lineTokens[$i]);
+      }
+    }
+    foreach (array_keys($this->lineContexts) as $i) {
+      if ($i >= $line) {
+        unset($this->lineContexts[$i]);
+      }
+    }
+  }
+
+  protected function tokenize($from, $to): array {
+    $result = [];
+    $missingFrom = false;
+    for ($i = $from; $i < $to; $i++) {
+      if (isset($this->lineTokens[$i])) {
+        $result[$i] = $this->lineTokens[$i];
+        continue;
+      }
+      $missingFrom = $i;
+      break;
+    }
+    if ($missingFrom === false) {
+      return $result;
+    }
+    $context = $this->tokenizer;
+    $tokenizeFrom = $missingFrom;
+    while ($tokenizeFrom > 0 && !isset($this->lineContexts[$tokenizeFrom - 1])) {
+      $tokenizeFrom--;
+    }
+    if ($tokenizeFrom > 0) {
+      $context = $this->lineContexts[$tokenizeFrom - 1];
+    }
+    $lines = array_slice($this->lines, $tokenizeFrom, $to - $tokenizeFrom);
+    $tokens = \SPTK\Tokenizer::start($lines, $context);
+    for ($i = $tokenizeFrom; $i < $to; $i++) {
+      $lineTokens = array_shift($tokens);
+      $this->lineContexts[$i] = $lineTokens['context'];
+      $this->lineTokens[$i] = $lineTokens['tokens'];
+      if ($i >= $from) {
+        $result[$i] = $lineTokens['tokens'];
+      }
+    }
+    return $result;
+  }
+
+  protected function screenRange(): array {
+    if ($this->geometry->height == 0) {
+      return [0, min(300, count($this->lines))];
+    }
+    if ($this->geometry->height === 'content') {
+      return [0, min(300, count($this->lines))];
+    }
+    $first = max(0, (int)(($this->scrollY + $this->geometry->paddingTop) / $this->lineHeight));
+    $rows = max(1, (int)($this->geometry->innerHeight / $this->lineHeight) + 1);
+    return [$first, min($first + $rows, count($this->lines))];
+  }
+
+  protected function cursorCoordinates(array $cursor): array {
+    if ($cursor[0] < $cursor[2] || ($cursor[0] == $cursor[2] && $cursor[1] <= $cursor[3])) {
+      return [$cursor[0], $cursor[1], $cursor[2], $cursor[3] + 1];
+    }
+    return [$cursor[2], $cursor[3], $cursor[0], $cursor[1] + 1];
+  }
+
+  protected function inSelection(int $row, int $col): bool {
+    [$row1, $col1, $row2, $col2] = $this->cursorCoordinates($this->cursor->get());
+    if ($row < $row1 || $row > $row2) {
+      return false;
+    }
+    if ($row === $row1 && $col < $col1) {
+      return false;
+    }
+    if ($row === $row2 && $col >= $col2) {
+      return false;
+    }
+    return true;
+  }
+
+  protected function colorsForStyle(string $styleClass): array {
+    if (isset($this->styleColorCache[$styleClass])) {
+      return $this->styleColorCache[$styleClass];
+    }
+    $classes = $styleClass === '' ? [] : explode(' ', $styleClass);
+    $style = StyleSheet::get($this->style, $this->style, 'InputValue', $classes);
+    $this->styleColorCache[$styleClass] = [
+      'fg' => $style->get('color'),
+      'bg' => $style->get('backgroundColor')
+    ];
+    return $this->styleColorCache[$styleClass];
+  }
+
+  protected function cell(string $glyph, array $colors): array {
+    return [
+      'glyph' => $glyph,
+      'fg' => $colors['fg'],
+      'bg' => $colors['bg']
+    ];
+  }
+
+  protected function appendTokenCells(array &$rowCells, int $documentRow, int &$documentCol, string $text, string $styleClass, int $firstCol, int $cols): void {
+    $baseColors = $this->colorsForStyle($styleClass);
+    $selectedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:selected'));
+    foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) as $glyph) {
+      if ($documentCol >= $firstCol && count($rowCells) < $cols) {
+        $colors = ($this->active && $this->inSelection($documentRow, $documentCol)) ? $selectedColors : $baseColors;
+        $rowCells[] = $this->cell($glyph, $colors);
+      }
+      $documentCol++;
+      if (count($rowCells) >= $cols) {
+        return;
+      }
+    }
+  }
+
+  protected function buildCells(): array {
+    [$firstRow, $lastRow] = $this->screenRange();
+    $firstCol = max(0, (int)($this->scrollX / $this->letterWidth));
+    $cols = max(1, (int)($this->geometry->innerWidth / $this->letterWidth) + 1);
+    $tokens = $this->tokenize($firstRow, $lastRow);
+    $cells = [];
+    $plainColors = $this->colorsForStyle('');
+    $selectedColors = $this->colorsForStyle('InputValue:selected');
+    $cursorColors = $this->colorsForStyle('InputValue:cursor');
+    $cursor = $this->cursor->get();
+    for ($row = $firstRow; $row < $lastRow; $row++) {
+      $rowCells = [];
+      $documentCol = 0;
+      foreach ($tokens[$row] ?? [] as $token) {
+        $this->appendTokenCells($rowCells, $row, $documentCol, $token['value'], $token['style'], $firstCol, $cols);
+        if (count($rowCells) >= $cols) {
+          break;
+        }
+      }
+      while (count($rowCells) < $cols) {
+        $documentColForCell = $firstCol + count($rowCells);
+        $colors = ($this->active && $this->inSelection($row, $documentColForCell)) ? $selectedColors : $plainColors;
+        $rowCells[] = $this->cell(' ', $colors);
+      }
+      if ($this->active && $cursor[0] === $row) {
+        $cursorCol = $cursor[1] - $firstCol;
+        if ($cursorCol >= 0 && $cursorCol < count($rowCells)) {
+          $rowCells[$cursorCol] = [
+            'glyph' => $rowCells[$cursorCol]['glyph'],
+            'fg' => $cursorColors['fg'],
+            'bg' => $cursorColors['bg']
+          ];
+        }
+      }
+      $cells[] = $rowCells;
+    }
+    return $cells;
+  }
+
+  protected function update(): void {
+    $this->cursor->save();
+    $this->setScroll();
+    $this->setCells($this->buildCells());
+    if ($this->isVisibleInTree()) {
+      Element::immediateRender($this);
+    }
+  }
+
+  protected function isVisibleInTree(): bool {
+    $element = $this;
+    while ($element !== null) {
+      if (!$element->isDisplayed()) {
+        return false;
+      }
+      $element = $element->getAncestor();
+    }
+    return true;
+  }
+
+  protected function setScroll(): void {
+    $cursor = $this->cursor->get();
+    $row = $cursor[0];
+    $col = $cursor[1];
+    $rowTop = $row * $this->lineHeight;
+    $rowBottom = $rowTop + $this->lineHeight;
+    if ($rowTop < $this->scrollY) {
+      $this->scrollY = $rowTop;
+    } else if ($rowBottom > $this->scrollY + $this->geometry->innerHeight) {
+      $this->scrollY = $rowBottom - $this->geometry->innerHeight;
+    }
+    $colLeft = $col * $this->letterWidth;
+    $colRight = $colLeft + $this->letterWidth;
+    if ($colLeft < $this->scrollX) {
+      $this->scrollX = $colLeft;
+    } else if ($colRight > $this->scrollX + $this->geometry->innerWidth) {
+      $this->scrollX = $colRight - $this->geometry->innerWidth;
+    }
+    $this->scrollX = max(0, $this->scrollX);
+    $this->scrollY = max(0, $this->scrollY);
+  }
+
   public function insertText(string $text): void {
     $lines = explode("\n", $text);
     $n = count($lines);
@@ -62,19 +342,20 @@ class TextEditor extends TextBox {
     $this->update();
   }
 
-  protected function lineSplice($offset, $length, $replacement) {
+  protected function lineSplice($offset, $length, $replacement): void {
     $this->history->store($offset, $length, $replacement);
     array_splice($this->lines, $offset, $length, $replacement);
+    $this->invalidateTokensFrom($offset);
   }
 
-  protected function clearSelection() {
+  protected function clearSelection(): void {
     $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
     $before = mb_substr($this->lines[$row1], 0, $col1);
     $after = mb_substr($this->lines[$row2], $col2);
     $this->lineSplice($row1, $row2 - $row1 + 1, [$before . $after]);
   }
 
-  protected function replaceSelection($newLines) {
+  protected function replaceSelection($newLines): void {
     $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
     if ($row1 === $row2 && $col1 === $col2 - 1) {
       $col2 = $col1;
@@ -97,7 +378,6 @@ class TextEditor extends TextBox {
       return true;
     }
     switch ($keycombo) {
-      /* SPACE, NEW LINE */
       case Action::SELECT_ITEM:
         return true;
       case Action::DO_IT:
@@ -110,7 +390,6 @@ class TextEditor extends TextBox {
         $this->lineSplice($row1, $row2 - $row1 + 1, [$before, $after]);
         $this->cursor->modify($row1 + 1, 0, $row1 + 1, 0);
         break;
-      /* DELETE */
       case Action::DELETE_BACK:
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
         $line = $this->lines[$row1];
@@ -136,8 +415,7 @@ class TextEditor extends TextBox {
         $line = $this->lines[$row1];
         $len = mb_strlen($line);
         if ($row1 === $row2 && $col1 === $len && $col2 === $len + 1) {
-          $lcnt = count($this->lines);
-          if ($row1 < $lcnt) {
+          if ($row1 < count($this->lines) - 1) {
             $line2 = $this->lines[$row1 + 1];
             $this->cursor->resetSelection();
             $this->lineSplice($row1, 2, [$line . $line2]);
@@ -147,7 +425,6 @@ class TextEditor extends TextBox {
           $this->clearSelection();
         }
         break;
-      /* COPY-PASTE */
       case Action::CUT:
         Clipboard::set($this->cursor->getSelection());
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
@@ -161,24 +438,17 @@ class TextEditor extends TextBox {
       case Action::PASTE:
         $paste = Clipboard::get();
         if ($paste !== false) {
-          $lines = explode("\n", $paste);
-          $n = count($lines);
-          $len = mb_strlen(end($lines));
-          $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
-          if ($n === 1) {
-            $this->cursor->modify($row1, $col1 + $len , $row1, $col1 + $len);
-          } else {
-            $this->cursor->modify($row1 + $n - 1, $len , $row1 + $n - 1, $len);
-          }
-          $this->replaceSelection($lines);
+          $this->insertText($paste);
+          return true;
         }
         break;
-      /* UNDO-REDO */
       case Action::UNDO:
         $this->history->undo();
+        $this->invalidateTokensFrom(0);
         break;
       case Action::REDO:
         $this->history->redo();
+        $this->invalidateTokensFrom(0);
         break;
       default:
         return false;

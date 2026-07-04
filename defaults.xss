@@ -276,6 +276,11 @@ InputValue:selected {
   color: #00cccc;
 }
 
+InputValue:cursor {
+  backgroundColor: #000000;
+  color: #00cccc;
+}
+
 InputValue:matched {
   color: #0000ff;
 }
