@@ -211,17 +211,18 @@ class TextEditor extends TextGrid {
     return true;
   }
 
-  protected function colorsForStyle(string $styleClass): array {
-    if (isset($this->styleColorCache[$styleClass])) {
-      return $this->styleColorCache[$styleClass];
+  protected function colorsForStyle(string $styleClass, string|int $name = StyleSheet::ANY): array {
+    $cacheKey = ($name === StyleSheet::ANY ? '*' : $name) . '|' . $styleClass;
+    if (isset($this->styleColorCache[$cacheKey])) {
+      return $this->styleColorCache[$cacheKey];
     }
     $classes = $styleClass === '' ? [] : explode(' ', $styleClass);
-    $style = StyleSheet::get($this->style, $this->style, 'InputValue', $classes);
-    $this->styleColorCache[$styleClass] = [
+    $style = StyleSheet::get($this->style, $this->style, 'InputValue', $classes, $name);
+    $this->styleColorCache[$cacheKey] = [
       'fg' => $style->get('color'),
       'bg' => $style->get('backgroundColor')
     ];
-    return $this->styleColorCache[$styleClass];
+    return $this->styleColorCache[$cacheKey];
   }
 
   protected function cell(string $glyph, array $colors): array {
@@ -254,8 +255,8 @@ class TextEditor extends TextGrid {
     $cells = [];
     $plainColors = $this->colorsForStyle('');
     $selectedColors = $this->colorsForStyle('InputValue:selected');
-    $cursorClass = is_string($this->name) ? $this->name . '-cursor' : '';
-    $cursorColors = $this->colorsForStyle(trim('InputValue:cursor ' . $cursorClass));
+    $cursorName = is_string($this->name) ? $this->name . '/cursor' : StyleSheet::ANY;
+    $cursorColors = $this->colorsForStyle('InputValue:cursor', $cursorName);
     $cursor = $this->cursor->get();
     for ($row = $firstRow; $row < $lastRow; $row++) {
       $rowCells = [];
