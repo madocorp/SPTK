@@ -249,13 +249,13 @@ class TextEditor extends TextGrid {
 
   protected function buildCells(): array {
     [$firstRow, $lastRow] = $this->screenRange();
-    $firstCol = max(0, (int)($this->scrollX / $this->letterWidth));
-    $cols = max(1, (int)($this->geometry->innerWidth / $this->letterWidth) + 1);
+    [$firstCol, , $cols] = $this->screenColumns();
     $tokens = $this->tokenize($firstRow, $lastRow);
     $cells = [];
     $plainColors = $this->colorsForStyle('');
     $selectedColors = $this->colorsForStyle('InputValue:selected');
-    $cursorColors = $this->colorsForStyle('InputValue:cursor');
+    $cursorClass = is_string($this->name) ? $this->name . '-cursor' : '';
+    $cursorColors = $this->colorsForStyle(trim('InputValue:cursor ' . $cursorClass));
     $cursor = $this->cursor->get();
     for ($row = $firstRow; $row < $lastRow; $row++) {
       $rowCells = [];
@@ -289,10 +289,20 @@ class TextEditor extends TextGrid {
   protected function update(): void {
     $this->cursor->save();
     $this->setScroll();
-    $this->setCells($this->buildCells());
+    [, $offsetX, ] = $this->screenColumns();
+    $this->setCells($this->buildCells(), $offsetX);
     if ($this->isVisibleInTree()) {
       Element::immediateRender($this);
     }
+  }
+
+  protected function screenColumns(): array {
+    $firstPixel = max(0, $this->scrollX - $this->geometry->paddingLeft);
+    $firstCol = (int)($firstPixel / $this->letterWidth);
+    $offsetX = -($this->scrollX - $firstCol * $this->letterWidth);
+    $drawWidth = $this->geometry->paddingLeft + $this->geometry->innerWidth + $this->geometry->paddingRight - $offsetX;
+    $cols = max(1, (int)ceil($drawWidth / $this->letterWidth) + 1);
+    return [$firstCol, $offsetX, $cols];
   }
 
   protected function isVisibleInTree(): bool {
@@ -324,7 +334,9 @@ class TextEditor extends TextGrid {
     } else if ($colRight > $this->scrollX + $this->geometry->innerWidth) {
       $this->scrollX = $colRight - $this->geometry->innerWidth;
     }
+    $maxScrollX = max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
     $this->scrollX = max(0, $this->scrollX);
+    $this->scrollX = min($this->scrollX, $maxScrollX);
     $this->scrollY = max(0, $this->scrollY);
   }
 
