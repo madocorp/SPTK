@@ -47,18 +47,18 @@ class Scrollbar {
   }
 
   private function horizontal(Geometry $geometry, int $sx, int $mx, int $size, bool $hasVertical) {
-    $x1 = $geometry->borderLeft + $geometry->paddingLeft;
+    $x1 = $geometry->borderLeft;
     $x2 = $geometry->width - $geometry->borderRight - ($hasVertical ? $size : 0);
     $barWidth = $x2 - $x1;
     if ($mx <= 0) {
       return false;
     }
-    if ($mx - $geometry->borderLeft - ($hasVertical ? $size : 0) <= $barWidth + 1) {
+    if ($mx <= $geometry->innerWidth + 1) {
       return false;
     }
     $y1 = $geometry->height - $geometry->borderBottom - $size;
     $y2 = $geometry->height - $geometry->borderBottom;
-    $handlePos = round($barWidth * $sx / $mx) + $geometry->borderLeft + $geometry->paddingLeft;
+    $handlePos = round($barWidth * $sx / $mx) + $x1;
     $handleWidth = round($barWidth * $geometry->innerWidth / $mx);
     if ($handlePos + $handleWidth > $x2) {
       $handleWidth = $x2 - $handlePos;

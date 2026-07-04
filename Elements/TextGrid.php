@@ -34,6 +34,8 @@ class TextGrid extends Element {
   protected $textureWidth;
   protected $textureHeight;
   protected $cells = [];
+  protected $cellOffsetX = 0;
+  protected $cellOffsetY = 0;
 
   protected function init(): void {
     $fontSize = $this->style->get('fontSize');
@@ -89,8 +91,10 @@ class TextGrid extends Element {
     self::$nextGlyph[$key] = 0;
   }
 
-  public function setCells(array $cells): void {
+  public function setCells(array $cells, int $offsetX = 0, int $offsetY = 0): void {
     $this->cells = $cells;
+    $this->cellOffsetX = $offsetX;
+    $this->cellOffsetY = $offsetY;
     $this->changed = true;
   }
 
@@ -142,8 +146,8 @@ class TextGrid extends Element {
           $sdl->SDL_SetRenderDrawColor($this->renderer, $bg[0], $bg[1], $bg[2], $bg[3] ?? 0xff);
           $previousColor = $bg;
         }
-        self::$sdlFRect2->x = (float)($j * $cw + $this->geometry->paddingLeft + $this->geometry->borderLeft);
-        self::$sdlFRect2->y = (float)($i * $ch + $this->geometry->paddingTop + $this->geometry->borderTop);
+        self::$sdlFRect2->x = (float)($j * $cw + $this->geometry->paddingLeft + $this->geometry->borderLeft + $this->cellOffsetX);
+        self::$sdlFRect2->y = (float)($i * $ch + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY);
         self::$sdlFRect2->w = (float)$cw;
         self::$sdlFRect2->h = (float)$ch;
         $sdl->SDL_RenderFillRect($this->renderer, self::$sdlFRect2Addr);
@@ -171,8 +175,8 @@ class TextGrid extends Element {
         self::$sdlFRect1->y = (float)$glyphMap[1] - self::MAP_PAD + $this->lineOffset;
         self::$sdlFRect1->w = (float)$cw + self::MAP_PAD * 2;
         self::$sdlFRect1->h = (float)$ch + self::MAP_PAD * 2;
-        self::$sdlFRect2->x = (float)($j * $cw + $this->geometry->paddingLeft + $this->geometry->borderLeft) - self::MAP_PAD;
-        self::$sdlFRect2->y = (float)($i * $ch + $this->geometry->paddingTop + $this->geometry->borderTop) - self::MAP_PAD;
+        self::$sdlFRect2->x = (float)($j * $cw + $this->geometry->paddingLeft + $this->geometry->borderLeft + $this->cellOffsetX) - self::MAP_PAD;
+        self::$sdlFRect2->y = (float)($i * $ch + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY) - self::MAP_PAD;
         self::$sdlFRect2->w = (float)$cw + self::MAP_PAD * 2;
         self::$sdlFRect2->h = (float)$ch + self::MAP_PAD * 2;
         $sdl->SDL_RenderTexture($this->renderer, self::$atlas[$key], self::$sdlFRect1Addr, self::$sdlFRect2Addr);
