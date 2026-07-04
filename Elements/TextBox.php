@@ -246,6 +246,17 @@ class TextBox extends Element {
     }
   }
 
+  private function isVisibleInTree(): bool {
+    $element = $this;
+    while ($element !== null) {
+      if (!$element->isDisplayed()) {
+        return false;
+      }
+      $element = $element->getAncestor();
+    }
+    return true;
+  }
+
   protected function update() {
     $this->cursor->save();
     $this->setScroll();
@@ -262,6 +273,9 @@ class TextBox extends Element {
     }
     $tokens = $this->tokenize($firstOnScreen, $lastOnScreen);
     $this->buildTree($firstOnScreen, $tokens);
+    if (!$this->isVisibleInTree()) {
+      return;
+    }
     Element::immediateRender($this);
   }
 

@@ -134,4 +134,23 @@ class History {
     $this->cursor->set($cursor);
   }
 
+  public function saveState(): array {
+    if ($this->lineUnderConstruction !== false) {
+      $this->saveEditedLine();
+    }
+    return [
+      'undo' => $this->undo,
+      'redo' => $this->redo,
+      'lineUnderConstruction' => $this->lineUnderConstruction,
+      'lastChange' => $this->lastChange
+    ];
+  }
+
+  public function restoreState(array $state): void {
+    $this->undo = $state['undo'] ?? [];
+    $this->redo = $state['redo'] ?? [];
+    $this->lineUnderConstruction = $state['lineUnderConstruction'] ?? false;
+    $this->lastChange = $state['lastChange'] ?? 0.0;
+  }
+
 }

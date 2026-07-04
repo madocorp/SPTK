@@ -22,6 +22,32 @@ class TextEditor extends TextBox {
     return $this->lines;
   }
 
+  public function setValue($value): void {
+    parent::setValue($value);
+    $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
+  }
+
+  public function saveState(): array {
+    return [
+      'cursor' => $this->cursor->saveState(),
+      'history' => $this->history->saveState(),
+      'scrollX' => $this->scrollX,
+      'scrollY' => $this->scrollY
+    ];
+  }
+
+  public function restoreState(array $state): void {
+    if (isset($state['cursor']) && is_array($state['cursor'])) {
+      $this->cursor->restoreState($state['cursor']);
+    }
+    if (isset($state['history']) && is_array($state['history'])) {
+      $this->history->restoreState($state['history']);
+    }
+    $this->scrollX = $state['scrollX'] ?? $this->scrollX;
+    $this->scrollY = $state['scrollY'] ?? $this->scrollY;
+    $this->update();
+  }
+
   public function insertText(string $text): void {
     $lines = explode("\n", $text);
     $n = count($lines);

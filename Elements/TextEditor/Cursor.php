@@ -91,6 +91,24 @@ class Cursor {
     $this->anchor[1] = $cursor[3];
   }
 
+  public function saveState(): array {
+    return [
+      'caret' => $this->caret,
+      'anchor' => $this->anchor,
+      'caretBefore' => $this->caretBefore,
+      'anchorBefore' => $this->anchorBefore,
+      'freeSelectionMode' => $this->freeSelectionMode
+    ];
+  }
+
+  public function restoreState(array $state): void {
+    $this->caret = $state['caret'] ?? [0, 0];
+    $this->anchor = $state['anchor'] ?? $this->caret;
+    $this->caretBefore = $state['caretBefore'] ?? $this->caret;
+    $this->anchorBefore = $state['anchorBefore'] ?? $this->anchor;
+    $this->freeSelectionMode = $state['freeSelectionMode'] ?? false;
+  }
+
   public function modify(int|false $caretRow, int|false $caretCol, int|false $anchorRow, int|false $anchorCol): void {
     if ($caretRow !== false) {
       $this->caret[0] = $caretRow;
