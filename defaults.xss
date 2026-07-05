@@ -281,6 +281,16 @@ InputValue:cursor {
   color: #00cccc;
 }
 
+InputValue:inactive-selected {
+  backgroundColor: #444444;
+  color: #00aaaa;
+}
+
+InputValue:inactive-cursor {
+  backgroundColor: #00aaaa;
+  color: #000000;
+}
+
 InputValue:matched {
   backgroundColor: #ffff00;
   color: #000000;

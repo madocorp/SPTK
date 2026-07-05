@@ -96,7 +96,11 @@ class StyleSheet {
       if (str_contains($selector, '/') && !str_starts_with($selector, '#') && !str_starts_with($selector, '.')) {
         $selector = '#' . $selector;
       }
-      if (strpos($selector, ':') !== false && !preg_match('/^[^#.:]+#[^#.:]+:[^#.:]+$/', $selector)) {
+      if (
+        strpos($selector, ':') !== false &&
+        !preg_match('/^[^#.:]+#[^#.:]+:[^#.:]+$/', $selector) &&
+        !preg_match('/^#[^#.:]+:[^#.:]+$/', $selector)
+      ) {
         $selector = '.' . $selector;
       }
       $selectors[] = $selector;
@@ -128,8 +132,20 @@ class StyleSheet {
           }
           if ($name !== self::ANY && str_starts_with($classi, "{$type}:")) {
             $variant = substr($classi, strlen($type) + 1);
+            if (isset(self::$styles["#{$name}:{$variant}"])) {
+              $style->merge(self::$styles["#{$name}:{$variant}"]);
+            }
             if (isset(self::$styles["{$type}#{$name}:{$variant}"])) {
               $style->merge(self::$styles["{$type}#{$name}:{$variant}"]);
+            }
+          } else if ($name !== self::ANY && strpos($classi, ':') !== false) {
+            $variant = substr($classi, strrpos($classi, ':') + 1);
+            if (isset(self::$styles["#{$name}:{$variant}"])) {
+              $style->merge(self::$styles["#{$name}:{$variant}"]);
+            }
+            $classType = substr($classi, 0, strpos($classi, ':'));
+            if (isset(self::$styles["{$classType}#{$name}:{$variant}"])) {
+              $style->merge(self::$styles["{$classType}#{$name}:{$variant}"]);
             }
           }
         }
