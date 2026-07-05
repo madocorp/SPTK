@@ -282,7 +282,8 @@ InputValue:cursor {
 }
 
 InputValue:matched {
-  color: #0000ff;
+  backgroundColor: #ffff00;
+  color: #000000;
 }
 
 InputValue:placeholder {
@@ -611,6 +612,27 @@ CheckBoxValue {
 }
 
 CheckBoxValue:active {
+  backgroundColor: #000000;
+  color: #ffffff;
+}
+
+RadioButton {
+  height: 30px;
+  padding: 5px, 0px, 10px, 0px;
+  marginRight: 30px;
+}
+
+RadioButtonValue {
+  width: 22px;
+  height: 22px;
+  ascent: 16px;
+  border: 2px;
+  borderColor: #000000;
+  marginRight: 10px;
+  textAlign: center;
+}
+
+RadioButtonValue:active {
   backgroundColor: #000000;
   color: #ffffff;
 }
