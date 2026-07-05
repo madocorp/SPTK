@@ -19,6 +19,7 @@ class TextEditor extends TextGrid {
   protected $active = false;
   protected $styleColorCache = [];
   protected $highlightRanges = [];
+  protected $preserveScrollOnNextUpdate = false;
 
   protected function init(): void {
     parent::init();
@@ -70,6 +71,31 @@ class TextEditor extends TextGrid {
     $this->cursor->save();
     $this->scrollX = 0;
     $this->scrollY = 0;
+    $this->changed = true;
+    if ($this->renderer !== false) {
+      $this->measure();
+      $this->update();
+    }
+  }
+
+  public function setValueAndState($value, array $state): void {
+    $this->lines = explode("\n", $value);
+    $this->lineTokens = [];
+    $this->lineContexts = [];
+    $this->highlightRanges = [];
+    $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
+    $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
+    $this->cursor->modify(0, 0, 0, 0);
+    $this->cursor->save();
+    if (isset($state['cursor']) && is_array($state['cursor'])) {
+      $this->cursor->restoreState($state['cursor']);
+    }
+    if (isset($state['history']) && is_array($state['history'])) {
+      $this->history->restoreState($state['history']);
+    }
+    $this->scrollX = $state['scrollX'] ?? 0;
+    $this->scrollY = $state['scrollY'] ?? 0;
+    $this->preserveScrollOnNextUpdate = true;
     $this->changed = true;
     if ($this->renderer !== false) {
       $this->measure();
@@ -276,14 +302,15 @@ class TextEditor extends TextGrid {
   protected function appendTokenCells(array &$rowCells, int $documentRow, int &$documentCol, string $text, string $styleClass, int $firstCol, int $cols): void {
     $baseColors = $this->colorsForStyle($styleClass);
     $matchedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:matched'));
-    $selectedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:selected'));
+    $selectedClass = $this->active ? 'InputValue:selected' : 'InputValue:inactive-selected';
+    $selectedColors = $this->colorsForStyle(trim($styleClass . ' ' . $selectedClass));
     foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) as $glyph) {
       if ($documentCol >= $firstCol && count($rowCells) < $cols) {
         $colors = $baseColors;
         if ($this->inHighlight($documentRow, $documentCol)) {
           $colors = $matchedColors;
         }
-        if ($this->active && $this->inSelection($documentRow, $documentCol)) {
+        if ($this->inSelection($documentRow, $documentCol)) {
           $colors = $selectedColors;
         }
         $rowCells[] = $this->cell($glyph, $colors);
@@ -301,9 +328,11 @@ class TextEditor extends TextGrid {
     $tokens = $this->tokenize($firstRow, $lastRow);
     $cells = [];
     $plainColors = $this->colorsForStyle('');
-    $selectedColors = $this->colorsForStyle('InputValue:selected');
-    $cursorName = is_string($this->name) ? $this->name . '/cursor' : StyleSheet::ANY;
-    $cursorColors = $this->colorsForStyle('InputValue:cursor', $cursorName);
+    $selectedClass = $this->active ? 'InputValue:selected' : 'InputValue:inactive-selected';
+    $selectedColors = $this->colorsForStyle($selectedClass);
+    $cursorName = is_string($this->name) ? $this->name : StyleSheet::ANY;
+    $cursorClass = $this->active ? 'InputValue:cursor' : 'InputValue:inactive-cursor';
+    $cursorColors = $this->colorsForStyle($cursorClass, $cursorName);
     $cursor = $this->cursor->get();
     for ($row = $firstRow; $row < $lastRow; $row++) {
       $rowCells = [];
@@ -320,12 +349,12 @@ class TextEditor extends TextGrid {
         if ($this->inHighlight($row, $documentColForCell)) {
           $colors = $this->colorsForStyle('InputValue:matched');
         }
-        if ($this->active && $this->inSelection($row, $documentColForCell)) {
+        if ($this->inSelection($row, $documentColForCell)) {
           $colors = $selectedColors;
         }
         $rowCells[] = $this->cell(' ', $colors);
       }
-      if ($this->active && $cursor[0] === $row) {
+      if ($cursor[0] === $row) {
         $cursorCol = $cursor[1] - $firstCol;
         if ($cursorCol >= 0 && $cursorCol < count($rowCells)) {
           $rowCells[$cursorCol] = [
@@ -342,7 +371,12 @@ class TextEditor extends TextGrid {
 
   protected function update(): void {
     $this->cursor->save();
-    $this->setScroll();
+    if ($this->preserveScrollOnNextUpdate) {
+      $this->preserveScrollOnNextUpdate = false;
+      $this->clampScroll();
+    } else {
+      $this->setScroll();
+    }
     [, $offsetX, ] = $this->screenColumns();
     $this->setCells($this->buildCells(), $offsetX);
     if ($this->isVisibleInTree()) {
@@ -391,6 +425,12 @@ class TextEditor extends TextGrid {
     $maxScrollX = max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
     $this->scrollX = max(0, $this->scrollX);
     $this->scrollX = min($this->scrollX, $maxScrollX);
+    $this->scrollY = max(0, $this->scrollY);
+  }
+
+  protected function clampScroll(): void {
+    $maxScrollX = max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
+    $this->scrollX = max(0, min($this->scrollX, $maxScrollX));
     $this->scrollY = max(0, $this->scrollY);
   }
 
