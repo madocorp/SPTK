@@ -8,6 +8,7 @@ use SPTK\Elements\CheckBox;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListItem;
 use SPTK\Elements\Panel;
+use SPTK\Elements\RadioButton;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
@@ -140,6 +141,33 @@ return [
     assertTrue($checkBox->nthChild(0)->hasClass('CheckBoxValue:active'), 'variant active class propagates to the value box');
     $checkBox->removeVariant('active');
     assertFalse($checkBox->nthChild(0)->hasClass('CheckBoxValue:active'), 'variant active class is removed from the value box');
+  },
+
+  'radio buttons mark with O and exclude group peers' => function (): void {
+    $root = root();
+    $first = new RadioButton($root, 'first');
+    $first->setGroup('mode');
+    $second = new RadioButton($root, 'second');
+    $second->setGroup('mode');
+    $other = new RadioButton($root, 'other');
+    $other->setGroup('other');
+
+    $first->setValue(true);
+    assertTrue($first->getValue(), 'radio button accepts true values');
+    assertSame('O', $first->nthChild(0)->getText(), 'selected radio button writes the value marker');
+
+    $second->setValue(true);
+    assertFalse($first->getValue(), 'selecting a radio button clears a peer in the same group');
+    assertSame('', $first->nthChild(0)->getText(), 'cleared radio button removes the marker');
+    assertTrue($second->getValue(), 'selected peer remains active');
+
+    $other->setValue(true);
+    assertTrue($second->getValue(), 'selecting another group does not clear this group');
+
+    $second->addVariant('active');
+    assertTrue($second->nthChild(0)->hasClass('RadioButtonValue:active'), 'variant active class propagates to the radio value box');
+    $second->removeVariant('active');
+    assertFalse($second->nthChild(0)->hasClass('RadioButtonValue:active'), 'variant active class is removed from the radio value box');
   },
 
   'list items and list boxes expose usable values' => function (): void {

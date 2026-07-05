@@ -18,6 +18,7 @@ class TextEditor extends TextGrid {
   protected $lineContexts = [];
   protected $active = false;
   protected $styleColorCache = [];
+  protected $highlightRanges = [];
 
   protected function init(): void {
     parent::init();
@@ -62,6 +63,7 @@ class TextEditor extends TextGrid {
     $this->lines = explode("\n", $value);
     $this->lineTokens = [];
     $this->lineContexts = [];
+    $this->highlightRanges = [];
     $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
     $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
     $this->cursor->modify(0, 0, 0, 0);
@@ -93,6 +95,27 @@ class TextEditor extends TextGrid {
     }
     $this->scrollX = $state['scrollX'] ?? $this->scrollX;
     $this->scrollY = $state['scrollY'] ?? $this->scrollY;
+    $this->update();
+  }
+
+  public function setHighlightRanges(array $ranges): void {
+    $this->highlightRanges = [];
+    foreach ($ranges as $range) {
+      if (!is_array($range) || count($range) < 4) {
+        continue;
+      }
+      $this->highlightRanges[] = [
+        (int) $range[0],
+        (int) $range[1],
+        (int) $range[2],
+        (int) $range[3]
+      ];
+    }
+    $this->update();
+  }
+
+  public function clearHighlightRanges(): void {
+    $this->highlightRanges = [];
     $this->update();
   }
 
@@ -211,6 +234,23 @@ class TextEditor extends TextGrid {
     return true;
   }
 
+  protected function inHighlight(int $row, int $col): bool {
+    foreach ($this->highlightRanges as $range) {
+      [$row1, $col1, $row2, $col2] = $range;
+      if ($row < $row1 || $row > $row2) {
+        continue;
+      }
+      if ($row === $row1 && $col < $col1) {
+        continue;
+      }
+      if ($row === $row2 && $col >= $col2) {
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
   protected function colorsForStyle(string $styleClass, string|int $name = StyleSheet::ANY): array {
     $cacheKey = ($name === StyleSheet::ANY ? '*' : $name) . '|' . $styleClass;
     if (isset($this->styleColorCache[$cacheKey])) {
@@ -235,10 +275,17 @@ class TextEditor extends TextGrid {
 
   protected function appendTokenCells(array &$rowCells, int $documentRow, int &$documentCol, string $text, string $styleClass, int $firstCol, int $cols): void {
     $baseColors = $this->colorsForStyle($styleClass);
+    $matchedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:matched'));
     $selectedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:selected'));
     foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) as $glyph) {
       if ($documentCol >= $firstCol && count($rowCells) < $cols) {
-        $colors = ($this->active && $this->inSelection($documentRow, $documentCol)) ? $selectedColors : $baseColors;
+        $colors = $baseColors;
+        if ($this->inHighlight($documentRow, $documentCol)) {
+          $colors = $matchedColors;
+        }
+        if ($this->active && $this->inSelection($documentRow, $documentCol)) {
+          $colors = $selectedColors;
+        }
         $rowCells[] = $this->cell($glyph, $colors);
       }
       $documentCol++;
@@ -269,7 +316,13 @@ class TextEditor extends TextGrid {
       }
       while (count($rowCells) < $cols) {
         $documentColForCell = $firstCol + count($rowCells);
-        $colors = ($this->active && $this->inSelection($row, $documentColForCell)) ? $selectedColors : $plainColors;
+        $colors = $plainColors;
+        if ($this->inHighlight($row, $documentColForCell)) {
+          $colors = $this->colorsForStyle('InputValue:matched');
+        }
+        if ($this->active && $this->inSelection($row, $documentColForCell)) {
+          $colors = $selectedColors;
+        }
         $rowCells[] = $this->cell(' ', $colors);
       }
       if ($this->active && $cursor[0] === $row) {
@@ -342,6 +395,7 @@ class TextEditor extends TextGrid {
   }
 
   public function insertText(string $text): void {
+    $this->highlightRanges = [];
     $lines = explode("\n", $text);
     $n = count($lines);
     $len = mb_strlen(end($lines));
@@ -352,6 +406,16 @@ class TextEditor extends TextGrid {
       $this->cursor->modify($row1 + $n - 1, $len, $row1 + $n - 1, $len);
     }
     $this->replaceSelection($lines);
+    $this->update();
+  }
+
+  public function replaceText(string $text): void {
+    $this->highlightRanges = [];
+    $replacement = explode("\n", $text);
+    $last = count($replacement) - 1;
+    $lastLen = mb_strlen($replacement[$last]);
+    $this->cursor->modify($last, $lastLen, $last, $lastLen);
+    $this->lineSplice(0, count($this->lines), $replacement);
     $this->update();
   }
 
@@ -394,6 +458,7 @@ class TextEditor extends TextGrid {
       case Action::SELECT_ITEM:
         return true;
       case Action::DO_IT:
+        $this->highlightRanges = [];
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
         if ($row1 === $row2 && $col1 === $col2 - 1) {
           $col2 = $col1;
@@ -404,6 +469,7 @@ class TextEditor extends TextGrid {
         $this->cursor->modify($row1 + 1, 0, $row1 + 1, 0);
         break;
       case Action::DELETE_BACK:
+        $this->highlightRanges = [];
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
         $line = $this->lines[$row1];
         if ($row1 === $row2 && $col1 === 0 && $col2 === 1) {
@@ -424,6 +490,7 @@ class TextEditor extends TextGrid {
         }
         break;
       case Action::DELETE_FORWARD:
+        $this->highlightRanges = [];
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
         $line = $this->lines[$row1];
         $len = mb_strlen($line);
@@ -439,6 +506,7 @@ class TextEditor extends TextGrid {
         }
         break;
       case Action::CUT:
+        $this->highlightRanges = [];
         Clipboard::set($this->cursor->getSelection());
         $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
         $this->cursor->modify($row1, $col1, $row1, $col1);
@@ -456,10 +524,12 @@ class TextEditor extends TextGrid {
         }
         break;
       case Action::UNDO:
+        $this->highlightRanges = [];
         $this->history->undo();
         $this->invalidateTokensFrom(0);
         break;
       case Action::REDO:
+        $this->highlightRanges = [];
         $this->history->redo();
         $this->invalidateTokensFrom(0);
         break;
@@ -471,6 +541,7 @@ class TextEditor extends TextGrid {
   }
 
   public function textInputHandler($element, $event) {
+    $this->highlightRanges = [];
     $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
     $this->cursor->modify($row1, $col1 + 1, $row1, $col1 + 1);
     $this->replaceSelection([$event['text']]);
