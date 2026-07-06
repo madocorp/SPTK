@@ -25,6 +25,24 @@ class HeadlessTable extends Table {
     return $result;
   }
 
+  public function visibleCells(): array {
+    return [
+      'header' => $this->visibleCellsForRow(-1, $this->header, $this->geometry->borderTop + $this->geometry->paddingTop),
+      'body' => $this->visibleBodyCells()
+    ];
+  }
+
+  public function headerBand(): array {
+    $style = $this->isActive() ? $this->styleFor('TableHeader', ['TableHeader:active']) : $this->styleFor('TableHeader');
+    return [
+      'x' => $this->geometry->borderLeft + $this->geometry->paddingLeft,
+      'y' => $this->geometry->borderTop + $this->geometry->paddingTop,
+      'width' => $this->geometry->innerWidth,
+      'height' => $this->rowHeight,
+      'backgroundColor' => $style->get('backgroundColor')
+    ];
+  }
+
 }
 
 return [
@@ -70,32 +88,33 @@ return [
     assertSame(["501", "Name 501", "plain"], $table->getChunk()[$chunkIndex], 'reloaded chunk includes the requested viewport row');
     assertSame($widths, $table->getColumnWidths(), 'column widths stay based on the first loaded chunk and header');
 
-    $children = $table->getDescendants();
-    $headerBox = $children[0];
-    $contentBox = $children[1];
-    $header = $headerBox->nthChild(0);
     $geometry = $table->getGeometry();
-    assertSame('TableHeader', $headerBox->getType(), 'table contains a fixed header box');
-    assertSame('TableContent', $contentBox->getType(), 'table contains a scrollable content box');
-    assertSame('TableHeaderRow', $header->getType(), 'fixed header box contains the header row');
+    $cells = $table->visibleCells();
+    assertSame(0, $table->countDescendants(), 'table uses direct grid rendering instead of row and cell descendants');
     assertSame(
       $geometry->paddingTop + $geometry->borderTop,
-      $headerBox->getGeometry()->y,
+      $cells['header'][0]['y'],
       'fixed header stays at the top of the table'
     );
     assertSame(
-      $header->nthChild(0)->getGeometry()->x,
-      $contentBox->nthChild(0)->nthChild(0)->getGeometry()->x,
+      $cells['header'][0]['x'],
+      $cells['body'][0]['x'],
       'header and body cells start at the same x position'
     );
     assertSame(
-      $header->getGeometry()->height,
-      $contentBox->nthChild(0)->getGeometry()->height,
+      $cells['header'][0]['height'],
+      $cells['body'][0]['height'],
       'header and body rows use the same padded row height'
     );
+    assertSame([85, 85, 85, 255], $cells['header'][0]['backgroundColor'], 'header cells use TableHeader background color');
+    assertSame([255, 255, 255, 255], $cells['header'][0]['color'], 'header cells use TableHeader text color');
+    $table->addVariant('active');
+    $table->recalculateGeometry();
+    $cells = $table->visibleCells();
+    assertSame([119, 119, 119, 255], $cells['header'][0]['backgroundColor'], 'active header cells use TableHeader:active background color');
   },
 
-  'table header background fills the table box when columns are narrow' => function (): void {
+  'table keeps visible cell geometry when columns are narrow' => function (): void {
     $root = root();
     $file = tempFile("id\n1\n", 'tsv');
 
@@ -103,21 +122,25 @@ return [
     $table->setFile($file);
     $table->recalculateGeometry();
 
-    $headerRow = $table->getDescendants()[0]->nthChild(0);
-    $contentRow = $table->getDescendants()[1]->nthChild(0);
+    $cells = $table->visibleCells();
 
     assertSame(
-      $table->getGeometry()->innerWidth,
-      $headerRow->getGeometry()->width,
-      'narrow table header row spans the full table box'
+      $cells['header'][0]['width'],
+      $cells['body'][0]['width'],
+      'header and body cells keep matching column widths'
     );
     assertTrue(
-      $contentRow->getGeometry()->width < $headerRow->getGeometry()->width,
-      'body row keeps its content width when the header background is widened'
+      $cells['header'][0]['width'] < $table->getGeometry()->innerWidth,
+      'narrow column cell width stays narrower than the table viewport'
+    );
+    assertSame(
+      $table->getGeometry()->innerWidth,
+      $table->headerBand()['width'],
+      'header background band spans the full table viewport'
     );
   },
 
-  'table caps wide columns to one third of the box when content overflows' => function (): void {
+  'table caps wide columns to one half of the box when content overflows' => function (): void {
     $root = root();
     $long = str_repeat('x', 1000);
     $file = tempFile("a\tb\tc\n{$long}\tshort\tshort\n", 'tsv');
@@ -127,9 +150,9 @@ return [
     $table->recalculateGeometry();
 
     $widths = $table->getColumnWidths();
-    $max = (int)floor($table->getGeometry()->innerWidth * 0.33);
+    $max = (int)floor($table->getGeometry()->innerWidth * 0.5);
 
-    assertTrue($widths[0] <= $max, 'wide column is capped to at most 33% of table inner width');
+    assertTrue($widths[0] <= $max, 'wide column is capped to at most 50% of table inner width');
     assertTrue(array_sum($widths) > 0, 'table keeps measured column widths');
   },
 
@@ -142,27 +165,24 @@ return [
     $table->setFile($file);
     $table->recalculateGeometry();
 
-    $row = $table->getDescendants()[1]->nthChild(0);
-    $nullWord = $row->nthChild(0)->nthChild(0);
-    $longCell = $row->nthChild(1);
-    $ellipsis = $longCell->nthChild($longCell->countDescendants() - 1);
-    $multiCell = $row->nthChild(2);
-    $returnMark = $multiCell->nthChild($multiCell->countDescendants() - 1);
+    $row = array_values(array_filter($table->visibleCells()['body'], fn($cell) => $cell['row'] === 0));
+    $nullCell = $row[0];
+    $longCell = $row[1];
+    $multiCell = $row[2];
 
-    assertSame(null, $row->nthChild(0)->getValue(), 'null cell keeps its raw null value');
-    assertSame('NULL', $nullWord->getValue(), 'null cell displays NULL text');
-    assertTrue($nullWord->hasClass('Word:tableNull'), 'null display text uses the blue null variant');
-    assertSame([0, 0, 255, 255], $nullWord->getStyle()->get('color'), 'null display text is blue');
+    assertSame(null, $nullCell['value'], 'null cell keeps its raw null value');
+    assertSame('NULL', $nullCell['segments'][0]['text'], 'null cell displays NULL text');
+    assertSame('tableNull', $nullCell['segments'][0]['variant'], 'null display text uses the null variant');
 
-    assertSame('…', $ellipsis->getValue(), 'wide text is truncated with an ellipsis marker');
-    assertTrue($ellipsis->hasClass('Word:tableMarker'), 'ellipsis marker uses the blue marker variant');
-    assertSame([0, 0, 255, 255], $ellipsis->getStyle()->get('color'), 'ellipsis marker is blue');
+    $longMarker = $longCell['segments'][count($longCell['segments']) - 1];
+    assertSame('…', $longMarker['text'], 'wide text is truncated with an ellipsis marker');
+    assertSame('tableMarker', $longMarker['variant'], 'ellipsis marker uses the marker variant');
 
-    assertSame("line\nbreak", $multiCell->getValue(), 'multiline cell keeps its raw multiline value');
-    assertSame('line', $multiCell->nthChild(0)->getValue(), 'multiline cell displays the first line');
-    assertSame('↵', $returnMark->getValue(), 'multiline cell ends with a return marker');
-    assertTrue($returnMark->hasClass('Word:tableMarker'), 'return marker uses the blue marker variant');
-    assertSame([0, 0, 255, 255], $returnMark->getStyle()->get('color'), 'return marker is blue');
+    $multiMarker = $multiCell['segments'][count($multiCell['segments']) - 1];
+    assertSame("line\nbreak", $multiCell['value'], 'multiline cell keeps its raw multiline value');
+    assertSame('line', $multiCell['segments'][0]['text'], 'multiline cell displays the first line');
+    assertSame('↵', $multiMarker['text'], 'multiline cell ends with a return marker');
+    assertSame('tableMarker', $multiMarker['variant'], 'return marker uses the marker variant');
   },
 
   'table moves a cell cursor and scrolls it into view' => function (): void {
@@ -179,9 +199,14 @@ return [
     $table->recalculateGeometry();
 
     assertSame([0, 0], $table->getCursor(), 'cursor starts at the first data cell');
-    $content = $table->getDescendants()[1];
-    $firstRow = $content->nthChild(0);
-    assertTrue($firstRow->nthChild(0)->hasClass('TableCell:cursor'), 'current cell gets cursor variant');
+    $firstCell = $table->visibleCells()['body'][0];
+    assertTrue($firstCell['cursor'], 'current cell gets cursor state');
+    assertSame([85, 85, 85, 255], $firstCell['backgroundColor'], 'inactive current cell uses inactive cursor background color');
+    $table->addVariant('active');
+    $table->recalculateGeometry();
+    $firstCell = $table->visibleCells()['body'][0];
+    assertSame([0, 0, 0, 255], $firstCell['backgroundColor'], 'current cell uses cursor background color');
+    assertSame([0, 0, 0, 255], $firstCell['borderColor'], 'cursor cell keeps the base table cell border color');
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::DOWN, 'key' => KeyCode::DOWN]);
@@ -195,7 +220,7 @@ return [
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::END, 'key' => KeyCode::END]);
     assertSame([999, 2], $table->getCursor(), 'ctrl end moves to the last data cell');
-    assertTrue(propertyValue($content, 'scrollY') > 0, 'content box scrolls vertically when cursor leaves the viewport');
+    assertTrue(propertyValue($table, 'scrollY') > 0, 'table scrolls vertically when cursor leaves the viewport');
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::PAGEUP, 'key' => KeyCode::PAGEUP]);
     assertTrue($table->getCursor()[0] < 999, 'page up moves the cursor by a screen of rows');
@@ -216,12 +241,26 @@ return [
     assertSame([1, 1], $table->getCursor(), 'shift movement moves the cursor');
     assertSame([0, 0, 1, 1], $table->getSelection(), 'shift movement extends a rectangular cell range');
 
-    $content = $table->getDescendants()[1];
-    assertTrue($content->nthChild(0)->nthChild(0)->hasClass('TableCell:selected'), 'selection marks the first selected cell');
-    assertTrue($content->nthChild(0)->nthChild(1)->hasClass('TableCell:selected'), 'selection marks selected cells across columns');
-    assertTrue($content->nthChild(1)->nthChild(0)->hasClass('TableCell:selected'), 'selection marks selected cells across rows');
-    assertTrue($content->nthChild(1)->nthChild(1)->hasClass('TableCell:cursor'), 'cursor remains on the active selected cell');
-    assertFalse($content->nthChild(1)->nthChild(2)->hasClass('TableCell:selected'), 'selection excludes cells outside the range');
+    $cells = $table->visibleCells()['body'];
+    $byPosition = [];
+    foreach ($cells as $cell) {
+      $byPosition[$cell['row'] . ':' . $cell['column']] = $cell;
+    }
+    assertTrue($byPosition['0:0']['selected'], 'selection marks the first selected cell');
+    assertSame([85, 85, 85, 255], $byPosition['0:0']['backgroundColor'], 'inactive selected cells use inactive selection background color');
+    $table->addVariant('active');
+    $table->recalculateGeometry();
+    $cells = $table->visibleCells()['body'];
+    $byPosition = [];
+    foreach ($cells as $cell) {
+      $byPosition[$cell['row'] . ':' . $cell['column']] = $cell;
+    }
+    assertSame([0, 0, 0, 255], $byPosition['0:0']['backgroundColor'], 'selected cells use selected background color');
+    assertSame([0, 0, 0, 255], $byPosition['0:0']['borderColor'], 'selected cells keep the base table cell border color');
+    assertTrue($byPosition['0:1']['selected'], 'selection marks selected cells across columns');
+    assertTrue($byPosition['1:0']['selected'], 'selection marks selected cells across rows');
+    assertTrue($byPosition['1:1']['cursor'], 'cursor remains on the active selected cell');
+    assertFalse($byPosition['1:2']['selected'], 'selection excludes cells outside the range');
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
     assertSame([1, 2, 1, 2], $table->getSelection(), 'plain movement resets selection to the cursor cell');

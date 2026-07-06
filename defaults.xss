@@ -534,19 +534,20 @@ Table {
   textWrap: manual;
 }
 
-TableHeaderRow {
+TableHeader {
   position: absolute;
   x: calculated;
   y: calculated;
   backgroundColor: #555555;
   color: #ffffff;
+  scrollable: false;
+  padding: 1px, 5px;
+  borderRight: 1px;
 }
 
-TableHeader {
-  position: absolute;
-  x: calculated;
-  y: calculated;
-  scrollable: false;
+TableHeader:active {
+  backgroundColor: #777777;
+  color: #ffffff;
 }
 
 TableContent {
@@ -575,8 +576,14 @@ TableCell:cursor {
   color: #ffffff;
 }
 
-TableCell:selected {
+TableCell:selection {
   backgroundColor: #000000;
+  color: #ffffff;
+}
+
+TableCell:inactive-cursor,
+TableCell:inactive-selection {
+  backgroundColor: #555555;
   color: #ffffff;
 }
 
