@@ -14,6 +14,7 @@ class ListItem extends Element {
   protected $pre = '';
   protected $after;
   protected $itemLeft;
+  protected $itemPrefix;
   protected $itemRight;
   protected $valueField;
   protected $matchField;
@@ -24,6 +25,7 @@ class ListItem extends Element {
 
   protected function init(): void {
     $this->itemLeft = new Element($this, null, null, 'ItemLeft');
+    $this->itemPrefix = new Element($this, null, null, 'ItemPrefix');
     $this->itemRight = new Element($this, null, null, 'ItemRight');
     $this->valueField = new InputValue($this);
     $this->matchField = new InputValue($this);
@@ -47,7 +49,7 @@ class ListItem extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['value', 'selectable', 'selected', 'filterable', 'left', 'right'];
+    return ['value', 'selectable', 'selected', 'filterable', 'left', 'prefix', 'right'];
   }
 
   public function setValue($value): void {
@@ -79,6 +81,12 @@ class ListItem extends Element {
   public function setLeft($value) {
     if ($value !== false) {
       $this->itemLeft->setText($value);
+    }
+  }
+
+  public function setPrefix($value) {
+    if ($value !== false) {
+      $this->itemPrefix->setText($value);
     }
   }
 
@@ -132,6 +140,7 @@ class ListItem extends Element {
 
   public function getWidth() {
     $width = $this->getElementWidth($this->itemLeft);
+    $width += $this->getElementWidth($this->itemPrefix);
     $width += $this->getElementWidth($this->valueField);
     $width += $this->getElementWidth($this->matchField);
     $width += $this->getElementWidth($this->afterMatchField);
