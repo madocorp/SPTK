@@ -18,6 +18,9 @@ class MenuBoxItem extends ListItem {
     if ($value === true || $value === 'true') {
       $this->setRight('>');
       $this->submenu = true;
+    } else if ($value !== false && $value !== 'false' && $value !== '') {
+      $this->setRight('>');
+      $this->submenu = $value;
     }
   }
 
@@ -37,12 +40,14 @@ class MenuBoxItem extends ListItem {
 
   public function openSubmenu() {
     $submenu = $this->findAncestorByType('SubMenu');
+    $target = $this->submenu === true ? $this->name : $this->submenu;
     foreach ($submenu->descendants as $menuBox) {
-      if ($menuBox->belongsTo == $this->name) {
-        self::getRelativePos($submenu->id, $this, $x, $y);
+      if ($menuBox->belongsTo == $target) {
+        $this->open();
+        self::getRenderedRelativePos($submenu->id, $this, $x, $y);
         $x += $this->geometry->width;
         $y += floor($this->geometry->height / 2) - $menuBox->geometry->marginTop - $menuBox->geometry->borderTop;
-        $submenu->showMenuBox($this->name, $x, $y, false);
+        $submenu->showMenuBox($target, $x, $y, false);
         return true;
       }
     }

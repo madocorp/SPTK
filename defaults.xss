@@ -463,6 +463,11 @@ ItemLeft {
   textWrap: manual;
 }
 
+ItemPrefix {
+  color: #0000ff;
+  textWrap: manual;
+}
+
 ListItem:file {
   color: #555500;
 }
