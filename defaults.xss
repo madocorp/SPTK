@@ -550,19 +550,6 @@ TableHeader:active {
   color: #ffffff;
 }
 
-TableContent {
-  position: absolute;
-  x: calculated;
-  y: calculated;
-  scrollable: true;
-}
-
-TableRow {
-  position: absolute;
-  x: calculated;
-  y: calculated;
-}
-
 TableCell {
   position: absolute;
   x: calculated;

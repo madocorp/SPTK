@@ -181,7 +181,7 @@ return [
     $multiMarker = $multiCell['segments'][count($multiCell['segments']) - 1];
     assertSame("line\nbreak", $multiCell['value'], 'multiline cell keeps its raw multiline value');
     assertSame('line', $multiCell['segments'][0]['text'], 'multiline cell displays the first line');
-    assertSame('↵', $multiMarker['text'], 'multiline cell ends with a return marker');
+    assertSame('>', $multiMarker['text'], 'multiline cell ends with a continuation marker');
     assertSame('tableMarker', $multiMarker['variant'], 'return marker uses the marker variant');
   },
 

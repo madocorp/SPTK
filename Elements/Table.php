@@ -541,7 +541,7 @@ class Table extends TextGrid {
       $segments[] = ['text' => '…', 'variant' => 'tableMarker'];
     }
     if ($multiline) {
-      $segments[] = ['text' => '↵', 'variant' => 'tableMarker'];
+      $segments[] = ['text' => '>', 'variant' => 'tableMarker'];
     }
     if (empty($segments)) {
       $segments[] = ['text' => '', 'variant' => null];
@@ -716,17 +716,15 @@ class Table extends TextGrid {
       return false;
     }
     new Border($this->texture, $this->geometry, $this->ancestor->geometry, $this->style);
-    if ($this->style->get('scrollable')) {
-      new Scrollbar(
-        $this->texture,
-        $this->scrollX,
-        $this->scrollY,
-        array_sum($this->columnWidths),
-        $this->rowHeight + $this->rowCount * $this->rowHeight,
-        $this->geometry,
-        $this->style
-      );
-    }
+    new Scrollbar(
+      $this->texture,
+      $this->scrollX,
+      $this->scrollY,
+      array_sum($this->columnWidths),
+      $this->rowHeight + $this->rowCount * $this->rowHeight,
+      $this->geometry,
+      $this->style
+    );
     return $this->texture;
   }
 
