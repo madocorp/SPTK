@@ -15,16 +15,16 @@ class TextGrid extends Element {
   const GLYPH_MAP_SIZE = 64;
   const MAP_PAD = 1;
 
-  private static $fgColor = false;
-  private static $sdlRect = false;
-  private static $sdlRectAddr = false;
-  private static $sdlFRect1 = false;
-  private static $sdlFRect1Addr = false;
-  private static $sdlFRect2 = false;
-  private static $sdlFRect2Addr = false;
-  private static $glyphCache = [];
-  private static $nextGlyph = [];
-  private static $atlas = [];
+  protected static $fgColor = false;
+  protected static $sdlRect = false;
+  protected static $sdlRectAddr = false;
+  protected static $sdlFRect1 = false;
+  protected static $sdlFRect1Addr = false;
+  protected static $sdlFRect2 = false;
+  protected static $sdlFRect2Addr = false;
+  protected static $glyphCache = [];
+  protected static $nextGlyph = [];
+  protected static $atlas = [];
 
   protected $font;
   protected $letterWidth;
@@ -182,6 +182,29 @@ class TextGrid extends Element {
         $sdl->SDL_RenderTexture($this->renderer, self::$atlas[$key], self::$sdlFRect1Addr, self::$sdlFRect2Addr);
       }
     }
+  }
+
+  protected function drawGlyphAt(string $glyph, int $x, int $y, array $fg): void {
+    if ($glyph === ' ') {
+      return;
+    }
+    $sdl = SDL::$instance->sdl;
+    $key = $this->fontKey();
+    $sdl->SDL_SetTextureColorMod(self::$atlas[$key], $fg[0], $fg[1], $fg[2]);
+    $sdl->SDL_SetTextureAlphaMod(self::$atlas[$key], $fg[3] ?? 0xff);
+    if (!isset(self::$glyphCache[$key][$glyph])) {
+      $this->renderGlyph($glyph);
+    }
+    $glyphMap = self::$glyphCache[$key][$glyph];
+    self::$sdlFRect1->x = (float)$glyphMap[0] - self::MAP_PAD;
+    self::$sdlFRect1->y = (float)$glyphMap[1] - self::MAP_PAD + $this->lineOffset;
+    self::$sdlFRect1->w = (float)$this->letterWidth + self::MAP_PAD * 2;
+    self::$sdlFRect1->h = (float)$this->lineHeight + self::MAP_PAD * 2;
+    self::$sdlFRect2->x = (float)$x - self::MAP_PAD;
+    self::$sdlFRect2->y = (float)$y - self::MAP_PAD;
+    self::$sdlFRect2->w = (float)$this->letterWidth + self::MAP_PAD * 2;
+    self::$sdlFRect2->h = (float)$this->lineHeight + self::MAP_PAD * 2;
+    $sdl->SDL_RenderTexture($this->renderer, self::$atlas[$key], self::$sdlFRect1Addr, self::$sdlFRect2Addr);
   }
 
   protected function renderGlyph(string $glyph): void {
