@@ -323,6 +323,12 @@ class ListBox extends Element {
     }
   }
 
+  private function refreshAfterSelection(): void {
+    $this->resetSearch();
+    $this->recalculateGeometry();
+    Element::immediateRender($this);
+  }
+
   public function getActive() {
     if (!isset($this->descendants[$this->activeItem])) {
       return false;
@@ -371,6 +377,13 @@ class ListBox extends Element {
 
   public function resetSearch() {
     $this->typed = '';
+    $this->nextMatch = 0;
+    foreach ($this->descendants as $descendant) {
+      $descendant->match(false);
+      if ($this->typing === 'filter') {
+        $descendant->show();
+      }
+    }
   }
 
   protected function lookUp() {
@@ -553,7 +566,7 @@ class ListBox extends Element {
         $selectable = $item->isSelectable();
         if ($selectable === true) {
           $this->selectItem($item);
-          Element::immediateRender($this);
+          $this->refreshAfterSelection();
           if ($this->onSelect !== false) {
             call_user_func($this->onSelect, $item);
           }
@@ -566,14 +579,14 @@ class ListBox extends Element {
             $descendant->deselect();
           }
         }
-        Element::immediateRender($this);
+        $this->refreshAfterSelection();
         if ($this->onSelect !== false) {
           call_user_func($this->onSelect, $item);
         }
         return true;
       }
         if ($this->onSelect !== false) {
-          Element::immediateRender($this);
+          $this->refreshAfterSelection();
           call_user_func($this->onSelect, $item);
           return true;
         }
@@ -586,7 +599,7 @@ class ListBox extends Element {
         $selectable = $item->isSelectable();
         if ($selectable === true) {
           $this->selectItem($item);
-          Element::immediateRender($this);
+          $this->refreshAfterSelection();
           if ($this->onSelect !== false) {
             call_user_func($this->onSelect, $item);
           }
@@ -599,14 +612,14 @@ class ListBox extends Element {
               $descendant->deselect();
             }
           }
-          Element::immediateRender($this);
+          $this->refreshAfterSelection();
           if ($this->onSelect !== false) {
             call_user_func($this->onSelect, $item);
           }
           return true;
         }
         if ($this->onSelect !== false) {
-          Element::immediateRender($this);
+          $this->refreshAfterSelection();
           call_user_func($this->onSelect, $item);
           return true;
         }
