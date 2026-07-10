@@ -497,8 +497,12 @@ class Table extends TextGrid {
   }
 
   protected function cursorCellX(): int {
+    return $this->columnX($this->cursorColumn);
+  }
+
+  protected function columnX(int $column): int {
     $x = 0;
-    for ($i = 0; $i < $this->cursorColumn; $i++) {
+    for ($i = 0; $i < $column; $i++) {
       $x += $this->columnWidths[$i] ?? $this->minFieldWidth;
     }
     return $x;
@@ -520,7 +524,13 @@ class Table extends TextGrid {
     $cellLeft = $this->cursorCellX();
     $cellWidth = $this->columnWidths[$this->cursorColumn] ?? $this->minFieldWidth;
     $cellRight = $cellLeft + $cellWidth;
-    if ($cellLeft < $this->scrollX) {
+    if ($cellWidth > $this->geometry->innerWidth) {
+      if ($cellLeft > $this->scrollX) {
+        $this->scrollX = $cellLeft;
+      } else if ($cellRight < $this->scrollX + $this->geometry->innerWidth) {
+        $this->scrollX = $cellRight - $this->geometry->innerWidth;
+      }
+    } else if ($cellLeft < $this->scrollX) {
       $this->scrollX = $cellLeft;
     } else if ($cellRight > $this->scrollX + $this->geometry->innerWidth) {
       $this->scrollX = $cellRight - $this->geometry->innerWidth;
@@ -578,7 +588,7 @@ class Table extends TextGrid {
     $right = $this->scrollX + $this->geometry->innerWidth;
     for ($i = 0; $i < $this->columnCount(); $i++) {
       $width = $this->columnWidths[$i] ?? $this->minFieldWidth;
-      if ($x + $width >= $left && $x <= $right) {
+      if ($x + $width > $left && $x < $right) {
         $columns[] = [$i, $x, $width];
       }
       if ($x > $right) {
@@ -587,6 +597,55 @@ class Table extends TextGrid {
       $x += $width;
     }
     return $columns;
+  }
+
+  protected function firstVisibleColumn(): int {
+    $range = $this->visibleColumnRange();
+    if (empty($range)) {
+      return 0;
+    }
+    return $range[0][0];
+  }
+
+  protected function moveToFirstVisibleColumn(): void {
+    $first = $this->firstVisibleColumn();
+    if ($this->cursorColumn === $first && $this->scrollX > 0) {
+      $width = $this->columnWidths[$first] ?? $this->minFieldWidth;
+      $right = $this->columnX($first) + $width;
+      if ($right < $this->scrollX + $this->geometry->innerWidth) {
+        $this->scrollX = $right - $this->geometry->innerWidth;
+      } else {
+        $this->scrollX = max($this->scrollX - $this->geometry->innerWidth, min($this->scrollX - 1, $right - $this->geometry->innerWidth + 1));
+      }
+      $this->clampScroll();
+      $first = $this->firstVisibleColumn();
+    }
+    $this->cursorColumn = $first;
+  }
+
+  protected function lastVisibleColumn(): int {
+    $range = $this->visibleColumnRange();
+    if (empty($range)) {
+      return $this->columnCount() - 1;
+    }
+    return $range[count($range) - 1][0];
+  }
+
+  protected function moveToLastVisibleColumn(): void {
+    $last = $this->lastVisibleColumn();
+    if ($this->cursorColumn === $last && $this->scrollX < $this->maxScrollX()) {
+      $left = $this->columnX($last);
+      $width = $this->columnWidths[$last] ?? $this->minFieldWidth;
+      $right = $left + $width;
+      if ($left > $this->scrollX) {
+        $this->scrollX = $left;
+      } else {
+        $this->scrollX = min($this->scrollX + $this->geometry->innerWidth, max($this->scrollX + 1, $right - 1));
+      }
+      $this->clampScroll();
+      $last = $this->lastVisibleColumn();
+    }
+    $this->cursorColumn = $last;
   }
 
   protected function visibleCellsForRow(int $dataRow, array $values, int $y): array {
@@ -781,19 +840,19 @@ class Table extends TextGrid {
         $this->resetSelection(true);
         break;
       case Action::MOVE_FIRST:
-        $this->cursorColumn = 0;
+        $this->moveToFirstVisibleColumn();
         $this->resetSelection();
         break;
       case Action::SELECT_FIRST:
-        $this->cursorColumn = 0;
+        $this->moveToFirstVisibleColumn();
         $this->resetSelection(true);
         break;
       case Action::MOVE_LAST:
-        $this->cursorColumn = $this->columnCount() - 1;
+        $this->moveToLastVisibleColumn();
         $this->resetSelection();
         break;
       case Action::SELECT_LAST:
-        $this->cursorColumn = $this->columnCount() - 1;
+        $this->moveToLastVisibleColumn();
         $this->resetSelection(true);
         break;
       case Action::MOVE_LEFT:
@@ -813,24 +872,36 @@ class Table extends TextGrid {
         $this->resetSelection(true);
         break;
       case Action::MOVE_START:
+        $this->cursorColumn = 0;
+        $this->resetSelection();
+        break;
+      case Action::SELECT_START:
+        $this->cursorColumn = 0;
+        $this->resetSelection(true);
+        break;
+      case Action::MOVE_END:
+        $this->cursorColumn = $this->columnCount() - 1;
+        $this->resetSelection();
+        break;
+      case Action::SELECT_END:
+        $this->cursorColumn = $this->columnCount() - 1;
+        $this->resetSelection(true);
+        break;
       case Action::LEVEL_UP:
         $this->cursorRow = 0;
         $this->cursorColumn = 0;
         $this->resetSelection();
         break;
-      case Action::SELECT_START:
       case Action::SELECT_LEVEL_UP:
         $this->cursorRow = 0;
         $this->cursorColumn = 0;
         $this->resetSelection(true);
         break;
-      case Action::MOVE_END:
       case Action::LEVEL_DOWN:
         $this->cursorRow = $this->rowCount - 1;
         $this->cursorColumn = $this->columnCount() - 1;
         $this->resetSelection();
         break;
-      case Action::SELECT_END:
       case Action::SELECT_LEVEL_DOWN:
         $this->cursorRow = $this->rowCount - 1;
         $this->cursorColumn = $this->columnCount() - 1;
