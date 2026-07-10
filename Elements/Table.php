@@ -159,6 +159,21 @@ class Table extends TextGrid {
     return [$this->cursorRow, $this->cursorColumn];
   }
 
+  public function getActiveCellValue(): mixed {
+    if ($this->rowCount === 0) {
+      return false;
+    }
+    $this->clampCursor();
+    if ($this->cursorRow < $this->chunkStart || $this->cursorRow >= $this->chunkStart + count($this->chunk)) {
+      $this->loadChunk($this->cursorRow);
+    }
+    $row = $this->chunk[$this->cursorRow - $this->chunkStart] ?? false;
+    if ($row === false) {
+      return false;
+    }
+    return $row[$this->cursorColumn] ?? null;
+  }
+
   public function getSelection(): array {
     return [
       min($this->cursorRow, $this->anchorRow),

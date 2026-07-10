@@ -53,6 +53,11 @@ class MenuBox extends ListBox {
     }
   }
 
+  public function hide(): void {
+    $this->resetSearch();
+    parent::hide();
+  }
+
   protected function measure(): void {
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     if ($this->geometry->width === 'calculated') {

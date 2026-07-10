@@ -183,7 +183,17 @@ return [
 
     assertSame('apple', $list->getValue(), 'simple list value is the active item value');
     assertTrue($apple->match('app'), 'filterable list items match from the start of their text');
+    assertSame('', $apple->nthChild(3)->getValue(), 'matched list items move text before the match into the value field');
+    assertSame('app', $apple->nthChild(4)->getValue(), 'matched list items render the matching text separately');
+    assertSame('le', $apple->nthChild(5)->getValue(), 'matched list items render the text after the match separately');
+    $list->resetSearch();
+    assertSame('apple', $apple->nthChild(3)->getValue(), 'resetting list search restores the value field text');
+    assertSame('', $apple->nthChild(4)->getValue(), 'resetting list search clears the matching text field');
+    assertSame('', $apple->nthChild(5)->getValue(), 'resetting list search clears the after-match text field');
+    assertTrue($apple->match('app'), 'filterable list items can match again after reset');
     assertFalse($apple->match('pp'), 'filterable list items do not match non-prefix text');
+    assertSame('apple', $apple->nthChild(3)->getValue(), 'failed matching restores the value field text');
+    assertSame('', $apple->nthChild(4)->getValue(), 'failed matching clears stale matching text');
 
     $list->setValueType('order');
     assertSame(['apple', 'banana'], $list->getValue(), 'order value returns item values in descendant order');

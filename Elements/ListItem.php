@@ -209,6 +209,7 @@ class ListItem extends Element {
       $this->valueField->setValue($this->text);
       $this->matchField->setValue('');
       $this->afterMatchField->setValue('');
+      $this->matched = false;
     }
     return false;
   }
