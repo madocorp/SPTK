@@ -110,6 +110,7 @@ void SDL_GetWindowSize(SDL_Window *window, int *w, int *h);
 bool SDL_SetWindowFullscreen(SDL_Window *window, bool fullscreen);
 bool SDL_SyncWindow(SDL_Window *window);
 bool SDL_SetRenderViewport(SDL_Renderer *renderer, const SDL_Rect *rect);
+bool SDL_SetRenderClipRect(SDL_Renderer *renderer, const SDL_Rect *rect);
 bool SDL_SetWindowPosition(SDL_Window *window, int x, int y);
 SDL_Window *SDL_CreateWindow(const char *title, int w, int h, SDL_WindowFlags flags);
 SDL_WindowID SDL_GetWindowID(SDL_Window *window);
