@@ -140,6 +140,42 @@ return [
     );
   },
 
+  'table can render virtual row numbers without changing data columns' => function (): void {
+    $root = root();
+    $file = tempFile("id\tname\n1\tAlice\n2\tBob\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'row-numbers', null, 'Table');
+    $table->setRowNumbers(true);
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    assertTrue($table->getRowNumbers(), 'row numbers can be enabled');
+    assertSame([0, 0], $table->getCursor(), 'cursor still starts at the first data cell');
+
+    $cells = $table->visibleCells();
+    assertSame(-1, $cells['header'][0]['column'], 'row number header is exposed as a virtual column');
+    assertSame(0, $cells['header'][0]['displayColumn'], 'row number header is the first display column');
+    assertTrue($cells['header'][0]['rowNumber'], 'row number header is marked as rowNumber');
+    assertSame('#', $cells['header'][0]['value'], 'row number header uses # text');
+    assertSame(0, $cells['header'][1]['column'], 'first data header keeps data column index 0');
+
+    $firstBody = array_values(array_filter($cells['body'], fn($cell) => $cell['row'] === 0));
+    assertSame(-1, $firstBody[0]['column'], 'row number body cell is virtual');
+    assertSame('1', $firstBody[0]['value'], 'first row number is one-based');
+    assertFalse($firstBody[0]['cursor'], 'row number cell is not cursor-selectable');
+    assertSame(0, $firstBody[1]['column'], 'first data body cell keeps data column index 0');
+    assertTrue($firstBody[1]['cursor'], 'cursor remains on the first data cell');
+
+    $match = $table->search('Bob');
+    assertSame(['row' => 1, 'column' => 1, 'value' => 'Bob', 'header' => 'name'], $match, 'search indexes ignore the virtual row number column');
+    assertSame([1, 1], $table->getCursor(), 'search cursor uses data column indexes');
+
+    $table->setRowNumbers(false);
+    $table->recalculateGeometry();
+    assertFalse($table->getRowNumbers(), 'row numbers can be disabled');
+    assertSame(0, $table->visibleCells()['header'][0]['column'], 'disabling row numbers restores first visible column to data column 0');
+  },
+
   'table caps wide columns to one half of the box when content overflows' => function (): void {
     $root = root();
     $long = str_repeat('x', 1000);
@@ -219,7 +255,10 @@ return [
     assertSame([1, 0], $table->getCursor(), 'home moves to the first cell in the current row');
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::END, 'key' => KeyCode::END]);
-    assertSame([999, 2], $table->getCursor(), 'ctrl end moves to the last data cell');
+    assertSame([1, 2], $table->getCursor(), 'ctrl end moves to the last cell in the current row');
+
+    $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::PAGEDOWN, 'key' => KeyCode::PAGEDOWN]);
+    assertSame([999, 2], $table->getCursor(), 'ctrl page down moves to the last data cell');
     assertTrue(propertyValue($table, 'scrollY') > 0, 'table scrolls vertically when cursor leaves the viewport');
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::PAGEUP, 'key' => KeyCode::PAGEUP]);
@@ -270,5 +309,68 @@ return [
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::PAGEDOWN, 'key' => KeyCode::PAGEDOWN]);
     assertSame([2, 2], $table->getCursor(), 'ctrl page down moves to the last table cell');
+  },
+
+  'table searches cells and navigates matches' => function (): void {
+    $root = root();
+    $file = tempFile("id\tname\tstatus\n1\tAlice\tactive\n2\tBob\tidle\n3\tCara\tactive\n4\tAlfred\tidle\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'search', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $match = $table->search('active');
+    assertSame(['row' => 0, 'column' => 2, 'value' => 'active', 'header' => 'status'], $match, 'search finds the first row-major matching cell');
+    assertSame([0, 2], $table->getCursor(), 'search moves the cursor to the match');
+
+    $match = $table->nextMatch();
+    assertSame(2, $match['row'], 'next match advances to the next matching row');
+    assertSame([2, 2], $table->getCursor(), 'next match moves cursor to the active match');
+
+    $match = $table->nextMatch();
+    assertSame(0, $match['row'], 'next match wraps to the first match');
+
+    $match = $table->previousMatch();
+    assertSame(2, $match['row'], 'previous match wraps backwards');
+
+    $cells = $table->visibleCells()['body'];
+    $byPosition = [];
+    foreach ($cells as $cell) {
+      $byPosition[$cell['row'] . ':' . $cell['column']] = $cell;
+    }
+    assertTrue($byPosition['0:2']['search'], 'visible matching cells are marked as search matches');
+    assertTrue($byPosition['2:2']['activeSearch'], 'active match is marked distinctly');
+    assertSame([255, 255, 0, 255], $byPosition['2:2']['backgroundColor'], 'active match uses search-active styling');
+
+    $table->clearSearch();
+    assertSame([], $table->getSearchState(), 'clearSearch resets search state');
+    $table->recalculateGeometry();
+    $cells = $table->visibleCells()['body'];
+    assertFalse($cells[2]['search'], 'clearing search removes match state from visible cells');
+  },
+
+  'table search supports regex columns and invalid pattern failures' => function (): void {
+    $root = root();
+    $file = tempFile("id\tname\tstatus\n1\tAlice\tactive\n2\tBob\tidle\n3\tALAN\tactive\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'search-options', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $match = $table->search('al', ['columns' => ['name']]);
+    assertSame([0, 1], $table->getCursor(), 'case-insensitive search matches named columns');
+    assertSame('Alice', $match['value'], 'named column search returns the first matching value');
+
+    $match = $table->search('^AL', ['regexp' => true, 'caseSensitive' => true, 'columns' => [1]]);
+    assertSame([2, 1], $table->getCursor(), 'regex case-sensitive search respects column indexes');
+    assertSame('ALAN', $match['value'], 'regex search returns matching value');
+
+    $state = $table->getSearchState();
+    $failed = $table->search('[', ['regexp' => true]);
+    assertSame(false, $failed, 'invalid regex returns false');
+    assertSame($state, $table->getSearchState(), 'invalid regex does not replace existing search state');
+
+    $failed = $table->search('active', ['columns' => ['missing']]);
+    assertSame(false, $failed, 'searching only missing columns returns false');
   },
 ];

@@ -26,6 +26,8 @@ class Table extends TextGrid {
   protected array $lineOffsets = [];
   protected array $rawColumnWidths = [];
   protected array $columnWidths = [];
+  protected bool $rowNumbers = false;
+  protected int $rowNumberColumnWidth = 0;
   protected int $rowHeight = 18;
   protected int $cellHorizontalChrome = 0;
   protected int $cellVerticalChrome = 0;
@@ -37,6 +39,7 @@ class Table extends TextGrid {
   protected int $anchorColumn = 0;
   protected bool $active = false;
   protected array $tableStyleCache = [];
+  protected array|false $searchState = false;
 
   protected function init(): void {
     if ($this->renderer !== false && TTF::$instance !== null && SDL::$instance !== null) {
@@ -77,7 +80,7 @@ class Table extends TextGrid {
   }
 
   public function getAttributeList(): array {
-    return ['file', 'chunkSize', 'minFieldWidth'];
+    return ['file', 'chunkSize', 'minFieldWidth', 'rowNumbers'];
   }
 
   public function setFile($file): void {
@@ -101,6 +104,7 @@ class Table extends TextGrid {
     $this->cursorColumn = 0;
     $this->anchorRow = 0;
     $this->anchorColumn = 0;
+    $this->searchState = false;
     $this->chunk = [];
     $this->chunkStart = 0;
     $this->rawColumnWidths = [];
@@ -130,6 +134,20 @@ class Table extends TextGrid {
       $this->measureColumnWidths();
       $this->changed = true;
     }
+  }
+
+  public function setRowNumbers($value): void {
+    $this->rowNumbers = $value === true || $value === 'true' || $value === 1 || $value === '1';
+    $this->widthsMeasured = false;
+    $this->measureColumnWidths();
+    $this->changed = true;
+    if ($this->renderer !== false) {
+      $this->recalculateGeometry();
+    }
+  }
+
+  public function getRowNumbers(): bool {
+    return $this->rowNumbers;
   }
 
   public function getHeader(): array {
@@ -182,6 +200,205 @@ class Table extends TextGrid {
       max($this->cursorRow, $this->anchorRow),
       max($this->cursorColumn, $this->anchorColumn),
     ];
+  }
+
+  public function search(string $text, array $options = []): array|false {
+    $state = $this->buildSearchState($text, $options);
+    if ($state === false) {
+      return false;
+    }
+    $start = $options['start'] ?? [$this->cursorRow, $this->cursorColumn];
+    $match = $this->findMatch($state, (int)($start[0] ?? 0), (int)($start[1] ?? 0), 1, true);
+    if ($match === false) {
+      $this->searchState = false;
+      $this->changed = true;
+      return false;
+    }
+    $state['active'] = $match;
+    $this->searchState = $state;
+    $this->moveToSearchMatch($match);
+    return $match;
+  }
+
+  public function nextMatch(): array|false {
+    if ($this->searchState === false) {
+      return false;
+    }
+    $active = $this->searchState['active'] ?? ['row' => $this->cursorRow, 'column' => $this->cursorColumn];
+    $match = $this->findMatch($this->searchState, (int)$active['row'], (int)$active['column'], 1, false);
+    if ($match === false) {
+      return false;
+    }
+    $this->searchState['active'] = $match;
+    $this->moveToSearchMatch($match);
+    return $match;
+  }
+
+  public function previousMatch(): array|false {
+    if ($this->searchState === false) {
+      return false;
+    }
+    $active = $this->searchState['active'] ?? ['row' => $this->cursorRow, 'column' => $this->cursorColumn];
+    $match = $this->findMatch($this->searchState, (int)$active['row'], (int)$active['column'], -1, false);
+    if ($match === false) {
+      return false;
+    }
+    $this->searchState['active'] = $match;
+    $this->moveToSearchMatch($match);
+    return $match;
+  }
+
+  public function clearSearch(): void {
+    $this->searchState = false;
+    $this->changed = true;
+  }
+
+  public function getSearchState(): array {
+    return $this->searchState === false ? [] : $this->searchState;
+  }
+
+  protected function buildSearchState(string $text, array $options): array|false {
+    if ($text === '' || $this->rowCount === 0) {
+      return false;
+    }
+    $regexp = $this->boolOption($options['regexp'] ?? false);
+    $caseSensitive = $this->boolOption($options['caseSensitive'] ?? false);
+    $pattern = false;
+    if ($regexp) {
+      $pattern = $this->searchPattern($text, $caseSensitive);
+      if (!$this->validSearchPattern($pattern)) {
+        return false;
+      }
+    }
+    $columns = $this->normalizeSearchColumns($options['columns'] ?? null);
+    if (empty($columns)) {
+      return false;
+    }
+    return [
+      'text' => $text,
+      'regexp' => $regexp,
+      'caseSensitive' => $caseSensitive,
+      'pattern' => $pattern,
+      'columns' => $columns,
+      'active' => false
+    ];
+  }
+
+  protected function boolOption(mixed $value): bool {
+    return $value === true || $value === 'true' || $value === 1 || $value === '1';
+  }
+
+  protected function searchPattern(string $text, bool $caseSensitive): string {
+    return '~' . str_replace('~', '\~', $text) . '~u' . ($caseSensitive ? '' : 'i');
+  }
+
+  protected function validSearchPattern(string $pattern): bool {
+    set_error_handler(function() {
+    });
+    $valid = preg_match($pattern, '') !== false;
+    restore_error_handler();
+    return $valid;
+  }
+
+  protected function normalizeSearchColumns(mixed $columns): array {
+    if ($columns === null || $columns === false || $columns === []) {
+      return range(0, $this->columnCount() - 1);
+    }
+    if (!is_array($columns)) {
+      $columns = [$columns];
+    }
+    $normalized = [];
+    foreach ($columns as $column) {
+      if (is_int($column) || ctype_digit((string)$column)) {
+        $idx = (int)$column;
+      } else {
+        $idx = array_search((string)$column, $this->header, true);
+        if ($idx === false) {
+          continue;
+        }
+      }
+      if ($idx >= 0 && $idx < $this->columnCount()) {
+        $normalized[] = $idx;
+      }
+    }
+    $normalized = array_values(array_unique($normalized));
+    sort($normalized);
+    return $normalized;
+  }
+
+  protected function searchableCellValue(mixed $value): string {
+    return $value === null ? 'NULL' : (string)$value;
+  }
+
+  protected function searchMatchesValue(array $state, mixed $value): bool {
+    $text = $this->searchableCellValue($value);
+    if ($state['regexp']) {
+      return preg_match($state['pattern'], $text) === 1;
+    }
+    return $state['caseSensitive'] ? str_contains($text, $state['text']) : stripos($text, $state['text']) !== false;
+  }
+
+  protected function searchMatchAt(array $state, int $rowIndex, int $column): array|false {
+    if (!in_array($column, $state['columns'], true)) {
+      return false;
+    }
+    $row = $this->rowValues($rowIndex);
+    if ($row === false) {
+      return false;
+    }
+    if (!$this->searchMatchesValue($state, $row[$column] ?? null)) {
+      return false;
+    }
+    return [
+      'row' => $rowIndex,
+      'column' => $column,
+      'value' => $row[$column] ?? null,
+      'header' => $this->header[$column] ?? ''
+    ];
+  }
+
+  protected function findMatch(array $state, int $row, int $column, int $direction, bool $includeStart): array|false {
+    $total = $this->rowCount * $this->columnCount();
+    if ($total <= 0) {
+      return false;
+    }
+    $row = max(0, min($row, $this->rowCount - 1));
+    $column = max(0, min($column, $this->columnCount() - 1));
+    $start = $row * $this->columnCount() + $column;
+    for ($step = $includeStart ? 0 : 1; $step < $total + ($includeStart ? 0 : 1); $step++) {
+      $index = ($start + $direction * $step) % $total;
+      if ($index < 0) {
+        $index += $total;
+      }
+      $match = $this->searchMatchAt($state, (int)floor($index / $this->columnCount()), $index % $this->columnCount());
+      if ($match !== false) {
+        return $match;
+      }
+    }
+    return false;
+  }
+
+  protected function moveToSearchMatch(array $match): void {
+    $this->cursorRow = (int)$match['row'];
+    $this->cursorColumn = (int)$match['column'];
+    $this->resetSelection();
+    $this->keepCursorOnScreen();
+    $this->reloadVisibleChunk();
+    $this->changed = true;
+  }
+
+  protected function cellMatchesSearch(int $row, int $column, mixed $value): bool {
+    return $this->searchState !== false &&
+      $row >= 0 &&
+      in_array($column, $this->searchState['columns'], true) &&
+      $this->searchMatchesValue($this->searchState, $value);
+  }
+
+  protected function cellIsActiveSearchMatch(int $row, int $column): bool {
+    return $this->searchState !== false &&
+      is_array($this->searchState['active']) &&
+      (int)$this->searchState['active']['row'] === $row &&
+      (int)$this->searchState['active']['column'] === $column;
   }
 
   protected function rowValues(int $row): array|false {
@@ -377,6 +594,8 @@ class Table extends TextGrid {
       $this->widthsMeasured = true;
     }
     $this->columnWidths = $this->rawColumnWidths;
+    $digits = max(mb_strlen((string)max(1, $this->rowCount)), 1);
+    $this->rowNumberColumnWidth = $digits * $this->letterWidth + $this->cellHorizontalChrome;
     $this->limitColumnWidthsToBox();
   }
 
@@ -384,7 +603,8 @@ class Table extends TextGrid {
     if ($this->geometry->innerWidth <= 0) {
       return;
     }
-    if (array_sum($this->rawColumnWidths) <= $this->geometry->innerWidth) {
+    $rowNumberWidth = $this->rowNumbers ? $this->rowNumberColumnWidth : 0;
+    if (array_sum($this->rawColumnWidths) + $rowNumberWidth <= $this->geometry->innerWidth) {
       return;
     }
     $maxFieldWidth = max($this->minFieldWidth, (int)floor($this->geometry->innerWidth * 0.5));
@@ -488,7 +708,7 @@ class Table extends TextGrid {
     $this->reloadVisibleChunk();
     $this->geometry->contentWidth =
       $this->geometry->paddingLeft +
-      array_sum($this->columnWidths) +
+      $this->tableContentWidth() +
       $this->geometry->paddingRight;
     $this->clampScroll();
     $this->changed = true;
@@ -503,7 +723,7 @@ class Table extends TextGrid {
   }
 
   protected function maxScrollX(): int {
-    return max(0, array_sum($this->columnWidths) - $this->geometry->innerWidth);
+    return max(0, $this->tableContentWidth() - $this->geometry->innerWidth);
   }
 
   protected function clampScroll(): void {
@@ -535,6 +755,36 @@ class Table extends TextGrid {
 
   protected function columnCount(): int {
     return max(1, count($this->columnWidths), count($this->header));
+  }
+
+  protected function displayColumnCount(): int {
+    return $this->columnCount() + ($this->rowNumbers ? 1 : 0);
+  }
+
+  protected function dataColumnForDisplay(int $displayColumn): int|false {
+    if ($this->rowNumbers) {
+      if ($displayColumn === 0) {
+        return false;
+      }
+      return $displayColumn - 1;
+    }
+    return $displayColumn;
+  }
+
+  protected function displayColumnForData(int $column): int {
+    return $column + ($this->rowNumbers ? 1 : 0);
+  }
+
+  protected function displayColumnWidth(int $displayColumn): int {
+    $column = $this->dataColumnForDisplay($displayColumn);
+    if ($column === false) {
+      return $this->rowNumberColumnWidth;
+    }
+    return $this->columnWidths[$column] ?? $this->minFieldWidth;
+  }
+
+  protected function tableContentWidth(): int {
+    return array_sum($this->columnWidths) + ($this->rowNumbers ? $this->rowNumberColumnWidth : 0);
   }
 
   protected function clampCursor(): void {
@@ -570,8 +820,8 @@ class Table extends TextGrid {
 
   protected function columnX(int $column): int {
     $x = 0;
-    for ($i = 0; $i < $column; $i++) {
-      $x += $this->columnWidths[$i] ?? $this->minFieldWidth;
+    for ($i = 0; $i < $this->displayColumnForData($column); $i++) {
+      $x += $this->displayColumnWidth($i);
     }
     return $x;
   }
@@ -654,8 +904,8 @@ class Table extends TextGrid {
     $x = 0;
     $left = $this->scrollX;
     $right = $this->scrollX + $this->geometry->innerWidth;
-    for ($i = 0; $i < $this->columnCount(); $i++) {
-      $width = $this->columnWidths[$i] ?? $this->minFieldWidth;
+    for ($i = 0; $i < $this->displayColumnCount(); $i++) {
+      $width = $this->displayColumnWidth($i);
       if ($x + $width > $left && $x < $right) {
         $columns[] = [$i, $x, $width];
       }
@@ -669,10 +919,13 @@ class Table extends TextGrid {
 
   protected function firstVisibleColumn(): int {
     $range = $this->visibleColumnRange();
-    if (empty($range)) {
-      return 0;
+    foreach ($range as [$displayColumn]) {
+      $column = $this->dataColumnForDisplay($displayColumn);
+      if ($column !== false) {
+        return $column;
+      }
     }
-    return $range[0][0];
+    return 0;
   }
 
   protected function moveToFirstVisibleColumn(): void {
@@ -693,10 +946,13 @@ class Table extends TextGrid {
 
   protected function lastVisibleColumn(): int {
     $range = $this->visibleColumnRange();
-    if (empty($range)) {
-      return $this->columnCount() - 1;
+    for ($i = count($range) - 1; $i >= 0; $i--) {
+      $column = $this->dataColumnForDisplay($range[$i][0]);
+      if ($column !== false) {
+        return $column;
+      }
     }
-    return $range[count($range) - 1][0];
+    return $this->columnCount() - 1;
   }
 
   protected function moveToLastVisibleColumn(): void {
@@ -720,17 +976,31 @@ class Table extends TextGrid {
     $isHeader = $dataRow < 0;
     $isActive = $this->isActive();
     $baseStyle = $isHeader ? $this->styleFor('TableHeader') : $this->styleFor('TableCell');
+    $headerStyle = $this->styleFor('TableHeader');
     $cursorStyle = $this->styleFor('TableCell', [$isActive ? 'TableCell:cursor' : 'TableCell:inactive-cursor']);
     $selectionStyle = $this->styleFor('TableCell', [$isActive ? 'TableCell:selection' : 'TableCell:inactive-selection']);
+    $searchStyle = $this->styleFor('TableCell', ['TableCell:search']);
+    $activeSearchStyle = $this->styleFor('TableCell', ['TableCell:search-active']);
     $activeHeaderStyle = $this->styleFor('TableHeader', ['TableHeader:active']);
     $cells = [];
-    foreach ($this->visibleColumnRange() as [$column, $columnX, $width]) {
-      $style = $isHeader && $isActive ? $activeHeaderStyle : $baseStyle;
-      if (!$isHeader && $this->cellIsSelected($dataRow, $column)) {
+    foreach ($this->visibleColumnRange() as [$displayColumn, $columnX, $width]) {
+      $column = $this->dataColumnForDisplay($displayColumn);
+      $rowNumber = $column === false;
+      $value = $rowNumber ? ($isHeader ? '#' : (string)($dataRow + 1)) : ($values[$column] ?? null);
+      $style = ($isHeader || $rowNumber) && $isActive ? $activeHeaderStyle : (($isHeader || $rowNumber) ? $headerStyle : $baseStyle);
+      $search = !$isHeader && !$rowNumber && $this->cellMatchesSearch($dataRow, $column, $value);
+      $activeSearch = !$isHeader && !$rowNumber && $this->cellIsActiveSearchMatch($dataRow, $column);
+      if ($search) {
+        $style = $searchStyle;
+      }
+      if (!$isHeader && !$rowNumber && $this->cellIsSelected($dataRow, $column)) {
         $style = $selectionStyle;
       }
-      if (!$isHeader && $dataRow === $this->cursorRow && $column === $this->cursorColumn) {
-        $style = $cursorStyle;
+      if ($activeSearch) {
+        $style = $activeSearchStyle;
+      }
+      if (!$isHeader && !$rowNumber && $dataRow === $this->cursorRow && $column === $this->cursorColumn) {
+        $style = $activeSearch ? $activeSearchStyle : $cursorStyle;
       }
       $paddingLeft = $style->get('paddingLeft', $this->geometry);
       $paddingRight = $style->get('paddingRight', $this->geometry);
@@ -740,8 +1010,10 @@ class Table extends TextGrid {
       $innerWidth = max(0, $width - $paddingLeft - $paddingRight - $borderRight);
       $cells[] = [
         'row' => $dataRow,
-        'column' => $column,
-        'value' => $values[$column] ?? null,
+        'column' => $rowNumber ? -1 : $column,
+        'displayColumn' => $displayColumn,
+        'rowNumber' => $rowNumber,
+        'value' => $value,
         'x' => $this->geometry->borderLeft + $this->geometry->paddingLeft + $columnX - $this->scrollX,
         'y' => $y,
         'width' => $width,
@@ -757,9 +1029,11 @@ class Table extends TextGrid {
           'borderColorRight',
           $this->styleValue($this->style, 'borderColorRight', $color)
         ),
-        'selected' => !$isHeader && $this->cellIsSelected($dataRow, $column),
-        'cursor' => !$isHeader && $dataRow === $this->cursorRow && $column === $this->cursorColumn,
-        'segments' => $this->displaySegments($values[$column] ?? null, $innerWidth)
+        'search' => $search,
+        'activeSearch' => $activeSearch,
+        'selected' => !$isHeader && !$rowNumber && $this->cellIsSelected($dataRow, $column),
+        'cursor' => !$isHeader && !$rowNumber && $dataRow === $this->cursorRow && $column === $this->cursorColumn,
+        'segments' => $this->displaySegments($value, $innerWidth)
       ];
     }
     return $cells;
@@ -873,7 +1147,7 @@ class Table extends TextGrid {
       $this->texture,
       $this->scrollX,
       $this->scrollY,
-      array_sum($this->columnWidths),
+      $this->tableContentWidth(),
       $this->rowHeight + $this->rowCount * $this->rowHeight,
       $this->geometry,
       $this->style
