@@ -8,6 +8,7 @@ use \SPTK\StyleSheet;
 use \SPTK\Texture;
 use \SPTK\Border;
 use \SPTK\Scrollbar;
+use \SPTK\Clipboard;
 use \SPTK\SDLWrapper\Action;
 use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\TTF;
@@ -181,6 +182,73 @@ class Table extends TextGrid {
       max($this->cursorRow, $this->anchorRow),
       max($this->cursorColumn, $this->anchorColumn),
     ];
+  }
+
+  protected function rowValues(int $row): array|false {
+    if ($this->rowCount === 0 || $row < 0 || $row >= $this->rowCount) {
+      return false;
+    }
+    if ($row < $this->chunkStart || $row >= $this->chunkStart + count($this->chunk)) {
+      $this->loadChunk($row);
+    }
+    return $this->chunk[$row - $this->chunkStart] ?? false;
+  }
+
+  protected function copyCellValue(mixed $value): string {
+    if ($value === null) {
+      return 'NULL';
+    }
+    return str_replace(["\\", "\r", "\n", "\t"], ["\\\\", "\\r", "\\n", "\\t"], (string)$value);
+  }
+
+  protected function copyCurrentCell(): bool {
+    $value = $this->getActiveCellValue();
+    if ($value === false) {
+      return false;
+    }
+    Clipboard::set($this->copyCellValue($value));
+    return true;
+  }
+
+  protected function copySelectedRange(): bool {
+    [$row1, $col1, $row2, $col2] = $this->getSelection();
+    $lines = [];
+    $headers = [];
+    for ($column = $col1; $column <= $col2; $column++) {
+      $headers[] = $this->copyCellValue($this->header[$column] ?? '');
+    }
+    $lines[] = implode("\t", $headers);
+    for ($rowIndex = $row1; $rowIndex <= $row2; $rowIndex++) {
+      $row = $this->rowValues($rowIndex);
+      if ($row === false) {
+        continue;
+      }
+      $fields = [];
+      for ($column = $col1; $column <= $col2; $column++) {
+        $fields[] = $this->copyCellValue($row[$column] ?? null);
+      }
+      $lines[] = implode("\t", $fields);
+    }
+    Clipboard::set(implode("\n", $lines));
+    return true;
+  }
+
+  protected function copySelection(): bool {
+    if ($this->rowCount === 0) {
+      return false;
+    }
+    $chunkStart = $this->chunkStart;
+    $chunk = $this->chunk;
+    try {
+      [$row1, $col1, $row2, $col2] = $this->getSelection();
+      if ($row1 === $row2 && $col1 === $col2) {
+        return $this->copyCurrentCell();
+      }
+      return $this->copySelectedRange();
+    } finally {
+      $this->chunkStart = $chunkStart;
+      $this->chunk = $chunk;
+    }
   }
 
   public function scrollToRow(int $row): void {
@@ -733,11 +801,19 @@ class Table extends TextGrid {
         );
       }
     }
+    $sdl = SDL::$instance->sdl;
+    if ($clipTop !== null || $clipBottom !== null) {
+      self::$sdlRect->x = 0;
+      self::$sdlRect->y = $clipTop ?? 0;
+      self::$sdlRect->w = $this->geometry->width;
+      self::$sdlRect->h = ($clipBottom ?? $this->geometry->height) - self::$sdlRect->y;
+      $sdl->SDL_SetRenderClipRect($this->renderer, self::$sdlRectAddr);
+    }
     foreach ($cells as $cell) {
-      if ($clipTop !== null && $cell['textY'] < $clipTop) {
+      if ($clipTop !== null && $cell['textY'] + $this->lineHeight <= $clipTop) {
         continue;
       }
-      if ($clipBottom !== null && $cell['textY'] + $this->lineHeight > $clipBottom) {
+      if ($clipBottom !== null && $cell['textY'] >= $clipBottom) {
         continue;
       }
       $x = $cell['textX'];
@@ -752,6 +828,9 @@ class Table extends TextGrid {
           $x += $this->letterWidth;
         }
       }
+    }
+    if ($clipTop !== null || $clipBottom !== null) {
+      $sdl->SDL_SetRenderClipRect($this->renderer, null);
     }
   }
 
@@ -807,6 +886,8 @@ class Table extends TextGrid {
     $page = max(1, (int)floor($this->bodyHeight() / $this->rowHeight));
     $oldChunkStart = $this->chunkStart;
     switch ($action) {
+      case Action::COPY:
+        return $this->copySelection();
       case Action::MOVE_UP:
         $this->cursorRow--;
         $this->resetSelection();
