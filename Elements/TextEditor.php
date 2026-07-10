@@ -79,10 +79,14 @@ class TextEditor extends TextGrid {
   }
 
   public function setValueAndState($value, array $state): void {
-    $this->lines = explode("\n", $value);
+    $lines = explode("\n", $value);
+    $sameValue = $lines === $this->lines;
+    $this->lines = $lines;
     $this->lineTokens = [];
     $this->lineContexts = [];
-    $this->highlightRanges = [];
+    if (!$sameValue) {
+      $this->highlightRanges = [];
+    }
     $this->cursor = new \SPTK\Elements\TextEditor\Cursor($this->lines);
     $this->history = new \SPTK\Elements\TextEditor\History($this->lines, $this->cursor);
     $this->cursor->modify(0, 0, 0, 0);
