@@ -140,6 +140,12 @@ class TextEditor extends TextGrid {
     $this->update();
   }
 
+  public function setCursorPosition(int $row, int $col): void {
+    $this->cursor->set([$row, $col, $row, $col]);
+    $this->cursor->save();
+    $this->update();
+  }
+
   public function clearHighlightRanges(): void {
     $this->highlightRanges = [];
     $this->update();
