@@ -101,6 +101,15 @@ class ListItem extends Element {
     $this->valueField->setValue($this->text);
   }
 
+  public function addVariant(string $class): void {
+    if ($class === 'active') {
+      $this->removeVariant('cursor');
+    } else if ($class === 'cursor') {
+      $this->removeVariant('active');
+    }
+    parent::addVariant($class);
+  }
+
   public function isSelectable() {
     return $this->selectable;
   }

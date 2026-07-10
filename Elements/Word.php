@@ -59,6 +59,7 @@ class Word extends Element {
     $fontName = $this->style->get('font');
     $fontSize = $this->style->get('fontSize', $this->ancestor->geometry);
     if ($fontSize === 0) {
+      $this->changed = false;
       return;
     }
     $font = new Font($fontName, $fontSize);
@@ -68,6 +69,7 @@ class Word extends Element {
       $this->height = 0;
       $this->ascent = $font->ascent;
       $this->descent = $font->height - $font->ascent;
+      $this->changed = false;
       return;
     }
     $ttf = TTF::$instance->ttf;
@@ -96,6 +98,7 @@ class Word extends Element {
     $sdl = SDL::$instance->sdl;
     $surface = $sdl->cast("SDL_Surface *", $this->surface);
     $this->texture = new Texture($this->renderer, $this->width, $this->height, $bgcolor, $surface);
+    $this->changed = false;
   }
 
   public function __destruct() {
@@ -107,6 +110,9 @@ class Word extends Element {
   }
 
   protected function render(): Texture|false {
+    if ($this->changed) {
+      $this->draw();
+    }
     return $this->texture;
   }
 

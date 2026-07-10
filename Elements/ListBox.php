@@ -158,7 +158,11 @@ class ListBox extends Element {
   public function addDescendant($element): void {
     parent::addDescendant($element);
     if ($this->num === 0) {
-      $element->addVariant('cursor');
+      if ($this->hasVariant('active')) {
+        $element->addVariant('active');
+      } else {
+        $element->addVariant('cursor');
+      }
     }
     $this->num++;
   }
@@ -184,6 +188,7 @@ class ListBox extends Element {
     if ($class == 'active') {
       foreach ($this->descendants as $i => $descendant) {
         if ($i === $this->activeItem) {
+          $descendant->removeVariant('cursor');
           $descendant->addVariant('active');
         }
       }
