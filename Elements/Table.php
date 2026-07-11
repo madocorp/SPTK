@@ -818,6 +818,16 @@ class Table extends TextGrid {
     return $this->columnX($this->cursorColumn);
   }
 
+  protected function cursorScrollBounds(): array {
+    $left = $this->cursorCellX();
+    $width = $this->columnWidths[$this->cursorColumn] ?? $this->minFieldWidth;
+    if ($this->rowNumbers && $this->cursorColumn === 0) {
+      $left = 0;
+      $width += $this->rowNumberColumnWidth;
+    }
+    return [$left, $left + $width, $width];
+  }
+
   protected function columnX(int $column): int {
     $x = 0;
     for ($i = 0; $i < $this->displayColumnForData($column); $i++) {
@@ -839,9 +849,7 @@ class Table extends TextGrid {
       $this->scrollY = $cellBottom - $this->bodyHeight();
     }
 
-    $cellLeft = $this->cursorCellX();
-    $cellWidth = $this->columnWidths[$this->cursorColumn] ?? $this->minFieldWidth;
-    $cellRight = $cellLeft + $cellWidth;
+    [$cellLeft, $cellRight, $cellWidth] = $this->cursorScrollBounds();
     if ($cellWidth > $this->geometry->innerWidth) {
       if ($cellLeft > $this->scrollX) {
         $this->scrollX = $cellLeft;
