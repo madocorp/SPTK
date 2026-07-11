@@ -229,14 +229,62 @@ class ListBox extends Element {
 
   public function bringToMiddle() {
     $active = $this->descendants[$this->activeItem];
-    $this->scrollY = $active->geometry->y + (int)($active->geometry->height / 2 - $this->geometry->height / 2) + $this->geometry->borderTop;
+    if (!is_int($active->geometry->y) || !is_int($active->geometry->height)) {
+      return;
+    }
+    $visibleTop = $this->visibleTop();
+    $visibleHeight = max(1, $this->visibleBottom() - $visibleTop);
+    $this->scrollY = $active->geometry->y + (int)($active->geometry->height / 2 - $visibleHeight / 2) - $visibleTop;
     if ($this->scrollY < 0) {
       $this->scrollY = 0;
     }
-    $maxSY = $this->geometry->contentHeight - $this->geometry->height + $this->geometry->borderTop + $this->geometry->borderBottom;
+    $maxSY = $this->maxScrollY();
     if ($this->scrollY > $maxSY) {
       $this->scrollY = $maxSY;
     }
+  }
+
+  private function visibleTop(): int {
+    return (is_int($this->geometry->borderTop) ? $this->geometry->borderTop : 0) +
+      (is_int($this->geometry->paddingTop) ? $this->geometry->paddingTop : 0);
+  }
+
+  private function visibleBottom(): int {
+    if (!is_int($this->geometry->height)) {
+      return $this->visibleTop();
+    }
+    $borderBottom = is_int($this->geometry->borderBottom) ? $this->geometry->borderBottom : 0;
+    $paddingBottom = is_int($this->geometry->paddingBottom) ? $this->geometry->paddingBottom : 0;
+    return $this->geometry->height - $borderBottom - $paddingBottom;
+  }
+
+  private function maxScrollY(): int {
+    if (!is_int($this->geometry->contentHeight)) {
+      return 0;
+    }
+    return max(0, $this->geometry->contentHeight - $this->visibleBottom());
+  }
+
+  private function clampScrollY(): void {
+    $this->scrollY = max(0, min($this->scrollY, $this->maxScrollY()));
+  }
+
+  private function scrollActiveIntoView(): void {
+    if (!isset($this->descendants[$this->activeItem])) {
+      return;
+    }
+    $descendant = $this->descendants[$this->activeItem];
+    if (!is_int($descendant->geometry->y) || !is_int($descendant->geometry->height) || !is_int($this->geometry->height)) {
+      return;
+    }
+    $visibleTop = $this->visibleTop();
+    $visibleBottom = $this->visibleBottom();
+    if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $visibleBottom) {
+      $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $visibleBottom;
+    } else if ($descendant->geometry->y < $this->scrollY + $visibleTop) {
+      $this->scrollY = $descendant->geometry->y - $visibleTop;
+    }
+    $this->clampScrollY();
   }
 
   public function activateItem($direction = 1) {
@@ -254,13 +302,7 @@ class ListBox extends Element {
           } else {
             $descendant->addVariant('cursor');
           }
-        if (is_int($descendant->geometry->y) && is_int($descendant->geometry->height) && is_int($this->geometry->height)) {
-          if ($descendant->geometry->y + $descendant->geometry->height > $this->scrollY + $this->geometry->height - $this->geometry->borderTop) {
-            $this->scrollY = $descendant->geometry->y + $descendant->geometry->height - $this->geometry->height + $this->geometry->borderTop;
-          } else if ($descendant->geometry->y < $this->scrollY) {
-            $this->scrollY = $descendant->geometry->y - $this->geometry->borderTop;
-          }
-        }
+        $this->scrollActiveIntoView();
         break;
       }
     }
@@ -338,9 +380,13 @@ class ListBox extends Element {
   }
 
   private function refreshAfterSelection(): void {
+    $scrollY = $this->scrollY;
     $this->resetSearch();
     $this->recalculateGeometry();
-    Element::immediateRender($this);
+    $this->scrollY = $scrollY;
+    $this->clampScrollY();
+    $this->scrollActiveIntoView();
+    Element::immediateRender($this, false);
   }
 
   public function getActive() {
