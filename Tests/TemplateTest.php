@@ -159,6 +159,24 @@ XSS, 'xss'));
     assertSame(420, $list->getStyle()->get('height', $root->getGeometry()), 'derived list name can override height through XSS');
   },
 
+  'select panels support multiple selection actions' => function (): void {
+    $root = root();
+    $panel = new SelectPanel($root, 'columns/panel');
+    $panel->setMultiple(true);
+    $panel->setOptions(['id', 'name', 'email'], 'id, email');
+    $list = Element::byName('columns/list', $root);
+
+    assertSame(['id', 'email'], $list->getValue(), 'multiple select panel initializes selected values from comma list');
+
+    $panel->selectAll();
+
+    assertSame(['id', 'name', 'email'], $list->getValue(), 'multiple select panel All selects every option');
+
+    $panel->clearSelection();
+
+    assertSame([], $list->getValue(), 'multiple select panel Clear removes every selection');
+  },
+
   'template parser handles events child classes includes and cdata' => function (): void {
     $root = root();
     $include = tempFile('<Included name="included">From include</Included>', 'xml');

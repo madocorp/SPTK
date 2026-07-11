@@ -13,6 +13,7 @@ class Select extends Element {
   private $hint = '';
   private $options = [];
   private $onChange = false;
+  private $multiple = false;
 
   protected function init(): void {
     $this->acceptInput = true;
@@ -25,7 +26,7 @@ class Select extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['value', 'hint', 'options', 'onChange'];
+    return ['value', 'hint', 'options', 'multiple', 'onChange'];
   }
 
   public function postInit(): void {
@@ -70,6 +71,14 @@ class Select extends Element {
     return $this->options;
   }
 
+  public function setMultiple($value): void {
+    if ($value === false) {
+      return;
+    }
+    $this->multiple = ($value === true || $value === 'true');
+    $this->refreshValue();
+  }
+
   public function setOnChange($value) {
     if ($value === false) {
       return;
@@ -102,13 +111,41 @@ class Select extends Element {
   }
 
   public function selected($value): void {
-    $this->setValue($value);
+    if ($this->multiple && is_array($value)) {
+      $this->setValue(implode(', ', $value));
+    } else {
+      $this->setValue($value);
+    }
     $this->addVariant('active');
     $this->changed();
-    Element::refresh();
+    if ($this->findAncestorByType('Window') !== false) {
+      Element::refresh();
+    }
+  }
+
+  private function selectedValues(): array {
+    return array_values(array_filter(
+      array_map('trim', explode(',', $this->value)),
+      fn($value) => $value !== ''
+    ));
   }
 
   private function refreshValue(): void {
+    if ($this->multiple) {
+      $selected = $this->selectedValues();
+      $selectedOptions = array_values(array_intersect($this->options, $selected));
+      if (empty($selected)) {
+        $this->elementValue->setValue('none');
+        $this->elementValue->addVariant('placeholder');
+      } else if (!empty($this->options) && count($selectedOptions) === count($this->options)) {
+        $this->elementValue->setValue('all');
+        $this->elementValue->addVariant('placeholder');
+      } else {
+        $this->elementValue->setValue($this->value);
+        $this->elementValue->removeVariant('placeholder');
+      }
+      return;
+    }
     if ($this->value === '' && $this->hint !== '') {
       $this->elementValue->setValue($this->hint);
       $this->elementValue->addVariant('placeholder');
@@ -125,6 +162,7 @@ class Select extends Element {
     }
     $panelName = is_string($this->name) ? $this->name . '/panel' : null;
     $panel = new SelectPanel($window, $panelName);
+    $panel->setMultiple($this->multiple);
     $panel->setTitle($this->hint);
     $panel->setOptions($this->options, $this->value);
     $panel->setOnSelect([$this, 'selected']);

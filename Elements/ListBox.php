@@ -290,6 +290,20 @@ class ListBox extends Element {
     }
   }
 
+  public function selectAll(): void {
+    $values = [];
+    foreach ($this->descendants as $item) {
+      if ($item->isSelectable() === true) {
+        $values[] = $item->getValue();
+      }
+    }
+    $this->setSelectedValues($values);
+  }
+
+  public function clearSelection(): void {
+    $this->setSelectedValues([]);
+  }
+
   private function selectItem($item): void {
     if (!$this->selectionOrder) {
       $item->select();
@@ -370,6 +384,9 @@ class ListBox extends Element {
       return;
     }
     if ($this->geometry->innerHeight === 'calculated' || $item->geometry->fullHeight == 'calculated') {
+      return;
+    }
+    if ($item->geometry->fullHeight === 0) {
       return;
     }
     $this->pageSize = (int)($this->geometry->innerHeight / $item->geometry->fullHeight);

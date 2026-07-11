@@ -225,6 +225,14 @@ return [
     assertSame([170, 170, 170, 255], $email->getStyle()->get('color'), 'cursor styling overrides selected item color');
     $columns->moveCursor(1);
     assertFalse($name->hasVariant('selected'), 'cursor movement does not apply the selected visual variant');
+
+    $columns->selectAll();
+
+    assertSame(['id', 'name', 'email'], $columns->getValue(), 'selectAll selects every selectable item');
+
+    $columns->clearSelection();
+
+    assertSame([], $columns->getValue(), 'clearSelection deselects every selectable item');
   },
 
   'select accepts option sources and shows hint as placeholder' => function (): void {
@@ -246,6 +254,29 @@ return [
     $select->setOptions(['One', 'Two']);
 
     assertSame(['One', 'Two'], $select->getOptions(), 'array options can be set from code');
+  },
+
+  'select supports comma separated multiple values' => function (): void {
+    $root = root();
+    $select = new Select($root, 'columns');
+    $select->setOptions(['id', 'name', 'email']);
+    $select->setMultiple('true');
+
+    assertSame('', $select->getValue(), 'multiple select starts with an empty value');
+    assertSame('none', $select->nthChild(0)->getValue(), 'empty multiple select shows none placeholder');
+    assertTrue($select->nthChild(0)->hasClass('InputValue:placeholder'), 'none uses placeholder styling');
+
+    $select->selected(['id', 'email']);
+
+    assertSame('id, email', $select->getValue(), 'multiple select stores comma separated values');
+    assertSame('id, email', $select->nthChild(0)->getValue(), 'partial multiple selection shows selected values');
+    assertFalse($select->nthChild(0)->hasClass('InputValue:placeholder'), 'partial multiple selection is not placeholder text');
+
+    $select->selected(['id', 'name', 'email']);
+
+    assertSame('id, name, email', $select->getValue(), 'all selected values remain stored');
+    assertSame('all', $select->nthChild(0)->getValue(), 'complete multiple selection shows all placeholder');
+    assertTrue($select->nthChild(0)->hasClass('InputValue:placeholder'), 'all uses placeholder styling');
   },
 
   'tabs select one content section at a time' => function (): void {
