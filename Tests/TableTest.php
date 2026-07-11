@@ -265,6 +265,42 @@ return [
     assertTrue($table->getCursor()[0] < 999, 'page up moves the cursor by a screen of rows');
   },
 
+  'table shows row numbers when cursor returns to the first data column' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $wide = str_repeat('x', 200);
+    $file = tempFile(
+      "id\tc1\tc2\tc3\tc4\tc5\tc6\n1\t{$wide}\t{$wide}\t{$wide}\t{$wide}\t{$wide}\t{$wide}\n",
+      'tsv'
+    );
+
+    $table = new HeadlessTable($root, 'row-number-scroll', null, 'Table');
+    $table->setRowNumbers(true);
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    for ($i = 0; $i < 6; $i++) {
+      $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
+    }
+    assertSame([0, 6], $table->getCursor(), 'right movement reaches the last data column');
+    assertTrue(propertyValue($table, 'scrollX') > 0, 'moving to a later column scrolls row numbers off screen');
+
+    $table->keyPressHandler($table, ['mod' => KeyModifier::CTRL, 'scancode' => ScanCode::HOME, 'key' => KeyCode::HOME]);
+    assertSame([0, 0], $table->getCursor(), 'ctrl home returns to the first data column');
+    assertSame(0, propertyValue($table, 'scrollX'), 'ctrl home exposes the virtual row number column');
+    assertSame(-1, $table->visibleCells()['body'][0]['column'], 'row number cell is visible before the first data cell');
+
+    for ($i = 0; $i < 6; $i++) {
+      $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
+    }
+    for ($i = 0; $i < 6; $i++) {
+      $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::LEFT, 'key' => KeyCode::LEFT]);
+    }
+
+    assertSame([0, 0], $table->getCursor(), 'left movement returns to the first data column');
+    assertSame(0, propertyValue($table, 'scrollX'), 'left movement exposes the virtual row number column');
+  },
+
   'table supports text editor movement keys and cell range selection' => function (): void {
     KeyCombo::init();
     $root = root();

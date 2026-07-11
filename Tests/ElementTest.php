@@ -261,7 +261,7 @@ return [
     $tabs->selectTab(1);
 
     assertFalse($tabA->hasClass('Tab:active'), 'unselected tab loses active class');
-    assertTrue($tabB->hasClass('Tab:active'), 'selected tab gains active class');
+    assertTrue($tabB->hasClass('Tab:cursor'), 'selected tab gains cursor class when the tab strip is inactive');
     assertFalse(propertyValue($contentA, 'display'), 'unselected tab content is hidden');
     assertTrue(propertyValue($contentB, 'display'), 'selected tab content is shown');
     assertSame($contentB, $tabs->getTabContent(), 'getTabContent returns the current tab content');
@@ -314,18 +314,18 @@ return [
     $inputNames = array_map(fn($input) => $input['element']->getName(), propertyValue($panel, 'inputList'));
     assertSame(['tabs', 'field-a'], $inputNames, 'panel includes tabs and controls from the active tab');
     assertTrue($tabs->hasClass('Tabs:active'), 'tab strip starts focused when the panel opens');
-    assertTrue($tabs->nthChild(0)->hasClass('Tab:focused'), 'focused tab strip marks the selected tab');
+    assertTrue($tabs->nthChild(0)->hasClass('Tab:active'), 'focused tab strip marks the selected tab');
 
     $tabs->selectTab(1);
 
     $inputNames = array_map(fn($input) => $input['element']->getName(), propertyValue($panel, 'inputList'));
     assertSame(['tabs', 'field-b'], $inputNames, 'panel input list refreshes when the active tab changes');
     assertTrue($tabs->hasClass('Tabs:active'), 'tab strip stays focused after changing tabs');
-    assertTrue($tabs->nthChild(1)->hasClass('Tab:focused'), 'focus marker follows the selected tab');
+    assertTrue($tabs->nthChild(1)->hasClass('Tab:active'), 'focus marker follows the selected tab');
 
     $tabs->selectTab(0);
     assertSame($contentA, $tabs->getTabContent(), 'focused tab strip can select another tab');
-    assertTrue($tabs->nthChild(0)->hasClass('Tab:focused'), 'focus marker follows the reselected tab');
+    assertTrue($tabs->nthChild(0)->hasClass('Tab:active'), 'focus marker follows the reselected tab');
   },
 
   'panels mark the raised visible sibling active' => function (): void {
