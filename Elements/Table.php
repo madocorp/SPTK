@@ -257,6 +257,10 @@ class Table extends TextGrid {
     return $this->searchState === false ? [] : $this->searchState;
   }
 
+  public function searchColumns(mixed $columns): array {
+    return $this->normalizeSearchColumns($columns);
+  }
+
   protected function buildSearchState(string $text, array $options): array|false {
     if ($text === '' || $this->rowCount === 0) {
       return false;
