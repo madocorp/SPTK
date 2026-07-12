@@ -119,7 +119,7 @@ class LayoutXmlReader {
   }
 
   private function usesValueText(Element $element): bool {
-    return in_array($element->getType(), ['TextBox', 'TextEditor'], true);
+    return in_array($element->getType(), ['TextBox', 'TextEditor', 'TextPreview'], true);
   }
 
   private function normalizeValueText(string $value): string {
