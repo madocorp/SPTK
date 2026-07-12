@@ -5,6 +5,7 @@ namespace Examples\Tests;
 use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
+use SPTK\Elements\File;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListItem;
 use SPTK\Elements\Panel;
@@ -13,6 +14,7 @@ use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
 use SPTK\SDLWrapper\KeyCode;
+use SPTK\SDLWrapper\KeyCombo;
 use SPTK\SDLWrapper\KeyModifier;
 use SPTK\SDLWrapper\ScanCode;
 
@@ -63,6 +65,19 @@ class GreedyInput extends HeadlessElement {
 
   public function keyPressHandler($element, $event): bool {
     return true;
+  }
+
+}
+
+class PassiveInput extends HeadlessElement {
+
+  protected function init(): void {
+    $this->acceptInput = true;
+    $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+  }
+
+  public function keyPressHandler($element, $event): bool {
+    return false;
   }
 
 }
@@ -410,6 +425,122 @@ return [
     ]);
 
     assertSame(1, ButtonTestAction::$pressed, 'ctrl return invokes the default button callback');
+  },
+
+  'plain return advances focus when focused input does not handle it' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $first = new PassiveInput($panel, 'first');
+    $second = new PassiveInput($panel, 'second');
+
+    $panel->show();
+    $panel->keyPressHandler($panel, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertFalse($first->hasVariant('active'), 'plain return leaves the current input');
+    assertTrue($second->hasVariant('active'), 'plain return activates the next input');
+  },
+
+  'plain return does not submit panel when focused input does not handle it' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    new PassiveInput($panel, 'input');
+    new PassiveInput($panel, 'next');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setHotKey('RETURN');
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $panel->show();
+    $panel->keyPressHandler($panel, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(0, ButtonTestAction::$pressed, 'plain return fallback does not invoke the panel default button');
+  },
+
+  'focused button still handles plain return' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $button = new Button($panel, 'save');
+    ButtonTestAction::$pressed = 0;
+
+    $button->setOnPress([ButtonTestAction::class, 'press']);
+    $panel->show();
+    $button->keyPressHandler($button, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertSame(1, ButtonTestAction::$pressed, 'focused button handles plain return locally');
+  },
+
+  'select and file controls leave plain return for panel focus movement' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $select = new Select($panel, 'select');
+    $file = new File($panel, 'file');
+    $after = new PassiveInput($panel, 'after');
+
+    $panel->show();
+    $handled = $select->keyPressHandler($select, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+    assertFalse($handled, 'select does not handle plain return locally');
+    $panel->keyPressHandler($panel, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+    assertFalse($select->hasVariant('active'), 'plain return leaves a select control');
+    assertTrue($file->hasVariant('active'), 'plain return moves from select to file');
+
+    $handled = $file->keyPressHandler($file, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+    assertFalse($handled, 'file does not handle plain return locally');
+    $panel->keyPressHandler($panel, [
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+    assertFalse($file->hasVariant('active'), 'plain return leaves a file control');
+    assertTrue($after->hasVariant('active'), 'plain return moves from file to the next input');
+  },
+
+  'space remains the select operation key' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $select = new Select($root, 'select');
+
+    $handled = $select->keyPressHandler($select, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::SPACE,
+      'key' => KeyCode::SPACE,
+    ]);
+
+    assertTrue($handled, 'space is handled by select controls');
   },
 
   'return hotkey makes buttons default automatically' => function (): void {

@@ -16,6 +16,9 @@ use \SPTK\SDLWrapper\SDL;
 
 class Table extends TextGrid {
 
+  protected const CELL_TRUNCATION_MARKER = '~';
+  protected const CELL_MULTILINE_MARKER = 'v';
+
   protected string|false $file = false;
   protected int $chunkSize = 10000;
   protected int $chunkStart = 0;
@@ -873,35 +876,45 @@ class Table extends TextGrid {
       return [['text' => 'NULL', 'variant' => 'tableNull']];
     }
 
-    $text = (string)$value;
-    $multiline = str_contains($text, "\n") || str_contains($text, "\r");
-    if ($multiline) {
-      $parts = preg_split("/\r\n|\r|\n/", $text, 2);
-      $text = $parts[0] ?? '';
-    }
-
-    $markerLength = $multiline ? 1 : 0;
     $maxChars = max(0, (int)floor($innerWidth / $this->letterWidth));
-    $truncated = mb_strlen($text) + $markerLength > $maxChars;
-    if ($truncated) {
-      $markerLength += 1;
-      $text = mb_substr($text, 0, max(0, $maxChars - $markerLength));
-    }
+    $display = $this->clipCellText((string)$value, $maxChars);
 
     $segments = [];
-    if ($text !== '') {
-      $segments[] = ['text' => $text, 'variant' => null];
+    if ($display['text'] !== '') {
+      $segments[] = ['text' => $display['text'], 'variant' => null];
     }
-    if ($truncated) {
-      $segments[] = ['text' => '…', 'variant' => 'tableMarker'];
+    if ($display['truncated']) {
+      $segments[] = ['text' => self::CELL_TRUNCATION_MARKER, 'variant' => 'tableMarker'];
     }
-    if ($multiline) {
-      $segments[] = ['text' => '>', 'variant' => 'tableMarker'];
+    if ($display['multiline']) {
+      $segments[] = ['text' => self::CELL_MULTILINE_MARKER, 'variant' => 'tableMarker'];
     }
     if (empty($segments)) {
       $segments[] = ['text' => '', 'variant' => null];
     }
     return $segments;
+  }
+
+  protected function clipCellText(string $value, int $maxChars): array {
+    $multiline = str_contains($value, "\n") || str_contains($value, "\r");
+    $text = $value;
+    if ($multiline) {
+      $parts = preg_split("/\r\n|\r|\n/", $text, 2);
+      $text = $parts[0] ?? '';
+    }
+
+    $markerLength = $multiline ? mb_strlen(self::CELL_MULTILINE_MARKER) : 0;
+    $truncated = mb_strlen($text) + $markerLength > $maxChars;
+    if ($truncated) {
+      $markerLength += mb_strlen(self::CELL_TRUNCATION_MARKER);
+      $text = mb_substr($text, 0, max(0, $maxChars - $markerLength));
+    }
+
+    return [
+      'text' => $text,
+      'truncated' => $truncated,
+      'multiline' => $multiline
+    ];
   }
 
   protected function colorForVariant(?string $variant, array $fallback): array {

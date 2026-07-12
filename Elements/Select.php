@@ -173,7 +173,6 @@ class Select extends Element {
   public function keyPressHandler($element, $event): bool {
     switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
       case Action::SELECT_ITEM:
-      case Action::DO_IT:
         $this->openSelectPanel();
         return true;
       case Action::DELETE_FORWARD:

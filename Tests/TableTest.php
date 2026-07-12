@@ -211,13 +211,13 @@ return [
     assertSame('tableNull', $nullCell['segments'][0]['variant'], 'null display text uses the null variant');
 
     $longMarker = $longCell['segments'][count($longCell['segments']) - 1];
-    assertSame('…', $longMarker['text'], 'wide text is truncated with an ellipsis marker');
-    assertSame('tableMarker', $longMarker['variant'], 'ellipsis marker uses the marker variant');
+    assertSame('~', $longMarker['text'], 'wide text is truncated with a clipping marker');
+    assertSame('tableMarker', $longMarker['variant'], 'clipping marker uses the marker variant');
 
     $multiMarker = $multiCell['segments'][count($multiCell['segments']) - 1];
     assertSame("line\nbreak", $multiCell['value'], 'multiline cell keeps its raw multiline value');
     assertSame('line', $multiCell['segments'][0]['text'], 'multiline cell displays the first line');
-    assertSame('>', $multiMarker['text'], 'multiline cell ends with a continuation marker');
+    assertSame('v', $multiMarker['text'], 'multiline cell ends with a downward continuation marker');
     assertSame('tableMarker', $multiMarker['variant'], 'return marker uses the marker variant');
   },
 
