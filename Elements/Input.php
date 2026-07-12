@@ -46,6 +46,7 @@ class Input extends Element {
     }
     $this->lines = [$value];
     $this->elementBefore->setValue($value);
+    $this->elementBefore->removeVariant('placeholder');
     $this->elementSelected->setValue(' ');
     $this->elementAfter->setValue('');
     if ($this->cursor !== false) {
@@ -54,6 +55,7 @@ class Input extends Element {
     }
     $this->scrollX = 0;
     $this->scrollY = 0;
+    $this->updatePlaceholderDisplay();
   }
 
   public function getValue(): mixed {
@@ -62,6 +64,7 @@ class Input extends Element {
 
   public function setPlaceholder($value) {
     $this->placeholder = $value;
+    $this->updatePlaceholderDisplay();
   }
 
   public function setOnChange($value) {
@@ -78,10 +81,6 @@ class Input extends Element {
   public function addVariant(string $class): void {
     if ($class == 'active') {
       $this->elementSelected->addVariant('selected');
-      if ($this->getValue() === '') {
-        $this->elementBefore->setValue($this->placeholder);
-        $this->elementBefore->addVariant('placeholder');
-      }
     }
     parent::addVariant($class);
     $this->update();
@@ -91,11 +90,18 @@ class Input extends Element {
     if ($class == 'active') {
       $this->elementSelected->removeVariant('selected');
     }
-    if ($this->getValue() === '') {
-      $this->elementBefore->setValue('');
+    parent::removeVariant($class);
+    $this->updatePlaceholderDisplay();
+  }
+
+  private function updatePlaceholderDisplay(): void {
+    if ($this->lines[0] === '' && $this->placeholder !== '') {
+      $this->elementBefore->setValue($this->placeholder);
+      $this->elementBefore->addVariant('placeholder');
+    } else {
+      $this->elementBefore->setValue($this->lines[0]);
       $this->elementBefore->removeVariant('placeholder');
     }
-    parent::removeVariant($class);
   }
 
   protected function setScroll() {
@@ -113,7 +119,13 @@ class Input extends Element {
     $before = mb_substr($this->lines[0], 0, $col1);
     $selected = mb_substr($this->lines[0], $col1, $col2 - $col1);
     $after = mb_substr($this->lines[0], $col2);
-    $this->elementBefore->setValue($before);
+    if ($this->lines[0] === '' && $this->placeholder !== '') {
+      $this->elementBefore->setValue($this->placeholder);
+      $this->elementBefore->addVariant('placeholder');
+    } else {
+      $this->elementBefore->setValue($before);
+      $this->elementBefore->removeVariant('placeholder');
+    }
     $this->elementSelected->setValue($selected === '' ? ' ' : $selected);
     $this->elementAfter->setValue($after);
     $this->recalculateGeometry();

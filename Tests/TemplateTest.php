@@ -12,6 +12,7 @@ use SPTK\Elements\SelectPanel;
 use SPTK\Elements\Tab;
 use SPTK\Elements\TextBox;
 use SPTK\Elements\TextEditor;
+use SPTK\Elements\TextPreview;
 use SPTK\Font;
 use SPTK\LayoutXmlReader;
 use SPTK\StyleSheet;
@@ -81,6 +82,10 @@ XML, 'xml');
     Editable line
     Next line
   </TextEditor>
+  <TextPreview name="preview">
+    Preview line
+    Wrapped value
+  </TextPreview>
 </Root>
 XML, 'xml');
 
@@ -93,6 +98,10 @@ XML, 'xml');
     $editor = Element::byName('editor', $root);
     assertInstanceOf(TextEditor::class, $editor, 'TextEditor elements resolve to the TextEditor class');
     assertSame(['Editable line', 'Next line'], $editor->getValue(), 'TextEditor body text is stored as editable lines');
+
+    $preview = Element::byName('preview', $root);
+    assertInstanceOf(TextPreview::class, $preview, 'TextPreview elements resolve to the TextPreview class');
+    assertSame("Preview line\nWrapped value", $preview->getValue(), 'TextPreview body text is stored as preview text');
   },
 
   'template parser builds select options from descendants' => function (): void {

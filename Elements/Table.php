@@ -43,6 +43,7 @@ class Table extends TextGrid {
   protected bool $active = false;
   protected array $tableStyleCache = [];
   protected array|false $searchState = false;
+  protected $onChange = false;
 
   protected function init(): void {
     if ($this->renderer !== false && TTF::$instance !== null && SDL::$instance !== null) {
@@ -83,7 +84,15 @@ class Table extends TextGrid {
   }
 
   public function getAttributeList(): array {
-    return ['file', 'chunkSize', 'minFieldWidth', 'rowNumbers'];
+    return ['file', 'chunkSize', 'minFieldWidth', 'rowNumbers', 'onChange'];
+  }
+
+  public function setOnChange($value): void {
+    if ($value === false || $value === '') {
+      $this->onChange = false;
+      return;
+    }
+    $this->onChange = is_callable($value) ? $value : self::parseCallback($value);
   }
 
   public function setFile($file): void {
@@ -392,6 +401,13 @@ class Table extends TextGrid {
     $this->keepCursorOnScreen();
     $this->reloadVisibleChunk();
     $this->changed = true;
+    $this->triggerOnChange();
+  }
+
+  protected function triggerOnChange(): void {
+    if ($this->onChange !== false) {
+      call_user_func($this->onChange, $this);
+    }
   }
 
   protected function cellMatchesSearch(int $row, int $column, mixed $value): bool {
@@ -1307,6 +1323,7 @@ class Table extends TextGrid {
         Element::immediateRender($this, false);
       }
     }
+    $this->triggerOnChange();
     return true;
   }
 

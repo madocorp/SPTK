@@ -6,6 +6,7 @@ use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
 use SPTK\Elements\File;
+use SPTK\Elements\Input;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListItem;
 use SPTK\Elements\Panel;
@@ -78,6 +79,36 @@ class PassiveInput extends HeadlessElement {
 
   public function keyPressHandler($element, $event): bool {
     return false;
+  }
+
+}
+
+class HeadlessInput extends Input {
+
+  protected function init(): void {
+    parent::init();
+    $this->letterWidth = 1;
+  }
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  protected function update() {
+    $this->nthChild(0)->setValue($this->getValue() === '' ? $this->placeholder : $this->getValue());
+    if ($this->getValue() === '' && $this->placeholder !== '') {
+      $this->nthChild(0)->addVariant('placeholder');
+    } else {
+      $this->nthChild(0)->removeVariant('placeholder');
+    }
+  }
+
+  public function placeholderText(): string {
+    return $this->nthChild(0)->getValue();
+  }
+
+  public function placeholderActive(): bool {
+    return $this->nthChild(0)->hasClass('InputValue:placeholder');
   }
 
 }
@@ -292,6 +323,26 @@ return [
     assertSame('id, name, email', $select->getValue(), 'all selected values remain stored');
     assertSame('all', $select->nthChild(0)->getValue(), 'complete multiple selection shows all placeholder');
     assertTrue($select->nthChild(0)->hasClass('InputValue:placeholder'), 'all uses placeholder styling');
+  },
+
+  'input shows placeholder while empty' => function (): void {
+    $root = root();
+    $input = new HeadlessInput($root, 'input');
+
+    $input->setPlaceholder('empty means default');
+
+    assertSame('empty means default', $input->placeholderText(), 'inactive empty input shows placeholder text');
+    assertTrue($input->placeholderActive(), 'inactive empty input uses placeholder styling');
+
+    $input->addVariant('active');
+
+    assertSame('empty means default', $input->placeholderText(), 'active empty input shows placeholder text');
+    assertTrue($input->placeholderActive(), 'active empty input uses placeholder styling');
+
+    $input->setValue('named');
+
+    assertSame('named', $input->placeholderText(), 'input value replaces placeholder text');
+    assertFalse($input->placeholderActive(), 'non-empty input removes placeholder styling');
   },
 
   'tabs select one content section at a time' => function (): void {
