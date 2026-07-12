@@ -493,7 +493,7 @@ class Panel extends Element {
       $this->focusIndex = $idx;
     }
     $this->activateInput();
-    Element::refresh();
+    $this->refreshIfRendered();
   }
 
   private function isInside(Element $element, Element $container) {
@@ -534,8 +534,40 @@ class Panel extends Element {
       return false;
     }
     $this->activateFirstInputIn($tabs->getTabContent());
-    Element::refresh();
+    $this->refreshIfRendered();
     return true;
+  }
+
+  private function activateNextInput(): void {
+    if ($this->focusIndex < 0) {
+      return;
+    }
+    $this->inactivateInput();
+    $this->focusIndex++;
+    if ($this->focusIndex >= count($this->inputList)) {
+      $this->focusIndex = 0;
+    }
+    $this->activateInput();
+    $this->refreshIfRendered();
+  }
+
+  private function activatePreviousInput(): void {
+    if ($this->focusIndex < 0) {
+      return;
+    }
+    $this->inactivateInput();
+    $this->focusIndex--;
+    if ($this->focusIndex < 0) {
+      $this->focusIndex = count($this->inputList) - 1;
+    }
+    $this->activateInput();
+    $this->refreshIfRendered();
+  }
+
+  private function refreshIfRendered(): void {
+    if ($this->renderer instanceof \FFI\CData) {
+      Element::refresh();
+    }
   }
 
   public function keyPressHandler($element, $event) {
@@ -549,38 +581,23 @@ class Panel extends Element {
       $this->callDefaultButtonAction();
       return true;
     }
-    if (isset($this->hotKeys[$event['key']])) {
+    $action = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
+    if ($action !== Action::DO_IT && isset($this->hotKeys[$event['key']])) {
       call_user_func($this->hotKeys[$event['key']], $this);
       return true;
     }
-    switch (KeyCombo::resolve($event['mod'], $event['scancode'], $event['key'])) {
+    switch ($action) {
       case Action::DO_IT:
+        $this->activateNextInput();
+        return true;
       case Action::CLOSE:
         $this->close();
         return true;
       case Action::SWITCH_NEXT:
-        if ($this->focusIndex < 0) {
-          return true;
-        }
-        $this->inactivateInput();
-        $this->focusIndex++;
-        if ($this->focusIndex >= count($this->inputList)) {
-          $this->focusIndex = 0;
-        }
-        $this->activateInput();
-        Element::refresh();
+        $this->activateNextInput();
         return true;
       case Action::SWITCH_PREVIOUS:
-        if ($this->focusIndex < 0) {
-          return true;
-        }
-        $this->inactivateInput();
-        $this->focusIndex--;
-        if ($this->focusIndex < 0) {
-          $this->focusIndex = count($this->inputList) - 1;
-        }
-        $this->activateInput();
-        Element::refresh();
+        $this->activatePreviousInput();
         return true;
       case Action::MOVE_LEFT:
         if ($this->activateAdjacentTab(-1)) {
