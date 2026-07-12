@@ -13,7 +13,7 @@ class TextEditor extends TextGrid {
   protected $lines = [''];
   protected $cursor;
   protected $history;
-  protected $tokenizer;
+  protected $tokenizer = [];
   protected $lineTokens = [];
   protected $lineContexts = [];
   protected $active = false;

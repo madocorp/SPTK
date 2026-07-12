@@ -15,6 +15,7 @@ class Panel extends Element {
   private $focusIndex;
   private $hotKeys = [];
   private $defaultButtonAction = false;
+  private $returnAction = false;
   protected $arrowTabs = false;
   protected $destroyAtClose = false;
   protected $pin = false;
@@ -51,6 +52,16 @@ class Panel extends Element {
       $this->defaultButtonAction !== false
     ) {
       $this->callDefaultButtonAction();
+      return true;
+    }
+    if (
+      isset($event['name']) &&
+      $event['name'] === 'KeyPress' &&
+      ($event['mod'] & (KeyModifier::CTRL | KeyModifier::SHIFT | KeyModifier::ALT | KeyModifier::GUI)) === 0 &&
+      ($event['scancode'] === ScanCode::RETURN || $event['key'] === KeyCode::RETURN) &&
+      $this->returnAction !== false
+    ) {
+      call_user_func($this->returnAction, $this);
       return true;
     }
     $n = count($this->stack);
@@ -280,6 +291,10 @@ class Panel extends Element {
     if ($callback === false || $this->defaultButtonAction == $callback) {
       $this->defaultButtonAction = false;
     }
+  }
+
+  public function setReturnAction($callback): void {
+    $this->returnAction = $callback;
   }
 
   public function callDefaultButtonAction(): bool {
