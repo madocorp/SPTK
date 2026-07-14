@@ -78,6 +78,7 @@ class StyleSheet {
         }
       }
     }
+    self::clearCache();
     //  DEBUG:style foreach (self::$styles as $selector => $style) {
     //  DEBUG:style   echo "----------------\n";
     //  DEBUG:style   echo $selector, "\n";
@@ -117,7 +118,8 @@ class StyleSheet {
     } else {
       $classStr = self::ANY;
     }
-    if (!isset(self::$cache[$type][$name][$classStr])) {
+    $defaultKey = self::styleCacheKey($defaultStyle);
+    if (!isset(self::$cache[$type][$name][$classStr][$defaultKey])) {
       $style = new Style($defaultStyle);
       if (isset(self::$styles[$type])) {
         $style->merge(self::$styles[$type]);
@@ -153,9 +155,9 @@ class StyleSheet {
       if (is_string($name) && str_contains($name, '/') && isset(self::$styles["#{$name}"])) {
         $style->merge(self::$styles["#{$name}"]);
       }
-      self::$cache[$type][$name][$classStr] = $style;
+      self::$cache[$type][$name][$classStr][$defaultKey] = $style;
     } else {
-      $style = self::$cache[$type][$name][$classStr];
+      $style = self::$cache[$type][$name][$classStr][$defaultKey];
     }
     $inheritedStyle = clone $style;
     if ($ancestorStyle !== null) {
@@ -166,6 +168,16 @@ class StyleSheet {
 
   public static function clearCache(): void {
     self::$cache = [];
+  }
+
+  private static function styleCacheKey(Style|array|null $style): string {
+    if ($style instanceof Style) {
+      return sha1(serialize($style->rules));
+    }
+    if (is_array($style)) {
+      return sha1(serialize($style));
+    }
+    return 'null';
   }
 
 }
