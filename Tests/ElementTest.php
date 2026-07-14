@@ -249,9 +249,11 @@ return [
     assertSame('fresh', $apple->nthChild(2)->getText(), 'list item right text can be set');
     assertTrue($apple->nthChild(2)->hasClass('preview'), 'list item right text accepts local style classes');
     assertTrue($apple->nthChild(2)->hasClass('ItemRight:cursor'), 'list item right text follows cursor state');
+    assertSame([85, 85, 85, 255], $apple->nthChild(3)->getStyle()->get('backgroundColor'), 'list item text inherits cursor background');
     $list->addVariant('active');
     assertTrue($apple->nthChild(2)->hasClass('ItemRight:active'), 'list item right text follows active state');
     assertFalse($apple->nthChild(2)->hasClass('ItemRight:cursor'), 'active right text clears cursor state');
+    assertSame([0, 0, 0, 255], $apple->nthChild(3)->getStyle()->get('backgroundColor'), 'list item text inherits active background');
     assertTrue($apple->match('app'), 'filterable list items match from the start of their text');
     assertSame('', $apple->nthChild(3)->getValue(), 'matched list items move text before the match into the value field');
     assertSame('app', $apple->nthChild(4)->getValue(), 'matched list items render the matching text separately');

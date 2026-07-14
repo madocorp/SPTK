@@ -147,4 +147,27 @@ XSS, 'xss');
     assertThrows(fn() => $overwritten->get('width'), 'overwrite replaces the previous selector entirely');
     assertThrows(fn() => new Style(['color' => '#12345']), 'invalid color strings throw');
   },
+
+  'xss cache separates different default styles' => function (): void {
+    resetToolkit();
+    $path = tempFile('Child { width: 10px; }', 'xss');
+    StyleSheet::load($path);
+
+    $defaultA = new Style([
+      'backgroundColor' => '#111111',
+      'color' => '#222222'
+    ]);
+    $defaultB = new Style([
+      'backgroundColor' => '#333333',
+      'color' => '#444444'
+    ]);
+
+    $styleA = StyleSheet::get($defaultA, null, 'Child');
+    $styleB = StyleSheet::get($defaultB, null, 'Child');
+
+    assertSame([17, 17, 17, 255], $styleA->get('backgroundColor'), 'first default background is preserved in cached style');
+    assertSame([34, 34, 34, 255], $styleA->get('color'), 'first default color is preserved in cached style');
+    assertSame([51, 51, 51, 255], $styleB->get('backgroundColor'), 'second default background is not polluted by first cache entry');
+    assertSame([68, 68, 68, 255], $styleB->get('color'), 'second default color is not polluted by first cache entry');
+  },
 ];
