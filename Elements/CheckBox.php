@@ -6,6 +6,7 @@ use \SPTK\Element;
 use \SPTK\SDLWrapper\KeyCode;
 use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\Action;
+use \SPTK\SDLWrapper\SDL;
 
 class CheckBox extends Element {
 
@@ -62,6 +63,9 @@ class CheckBox extends Element {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     switch ($keycombo) {
       case Action::SELECT_ITEM:
+        if (SDL::$instance !== null) {
+          SDL::$instance->supressTextInput();
+        }
         if ($this->value === true) {
           $this->setValue(false);
         } else {

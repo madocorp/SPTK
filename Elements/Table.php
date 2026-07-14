@@ -205,6 +205,37 @@ class Table extends TextGrid {
     return $row[$this->cursorColumn] ?? null;
   }
 
+  public function getActiveRowValues(): array|false {
+    if ($this->rowCount === 0) {
+      return false;
+    }
+    $this->clampCursor();
+    return $this->rowValues($this->cursorRow);
+  }
+
+  public function getRowValues(int $row): array|false {
+    return $this->rowValues($row);
+  }
+
+  public function getRowRangeValues(int $first, int $last): array {
+    if ($this->rowCount === 0) {
+      return [];
+    }
+    $first = max(0, min($first, $this->rowCount - 1));
+    $last = max(0, min($last, $this->rowCount - 1));
+    if ($first > $last) {
+      [$first, $last] = [$last, $first];
+    }
+    $rows = [];
+    for ($row = $first; $row <= $last; $row++) {
+      $values = $this->rowValues($row);
+      if ($values !== false) {
+        $rows[] = $values;
+      }
+    }
+    return $rows;
+  }
+
   public function getSelection(): array {
     return [
       min($this->cursorRow, $this->anchorRow),

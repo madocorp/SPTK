@@ -187,6 +187,7 @@ class TextEditor extends TextGrid {
       $maxLen = max($maxLen, mb_strlen($line));
     }
     $this->geometry->contentWidth = $maxLen * $this->letterWidth;
+    $this->refreshCells(false);
   }
 
   protected function invalidateTokensFrom(int $line): void {
@@ -380,6 +381,10 @@ class TextEditor extends TextGrid {
   }
 
   protected function update(): void {
+    $this->refreshCells(true);
+  }
+
+  protected function refreshCells(bool $render): void {
     $this->cursor->save();
     if ($this->preserveScrollOnNextUpdate) {
       $this->preserveScrollOnNextUpdate = false;
@@ -389,7 +394,7 @@ class TextEditor extends TextGrid {
     }
     [, $offsetX, ] = $this->screenColumns();
     $this->setCells($this->buildCells(), $offsetX);
-    if ($this->isVisibleInTree()) {
+    if ($render && $this->isVisibleInTree()) {
       Element::immediateRender($this);
     }
   }

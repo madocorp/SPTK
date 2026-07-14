@@ -15,7 +15,7 @@ class TextBox extends Element {
   protected $cursor;
   protected $lineHeight;
   protected $letterWidth;
-  protected $tokenizer;
+  protected $tokenizer = [];
   protected $lineTokens = [];
   protected $lineContexts = [];
   protected $active = false;
