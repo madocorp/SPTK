@@ -456,6 +456,11 @@ ItemRight {
   textWrap: manual;
 }
 
+ItemRight:cursor,
+ItemRight:active {
+  color: inherit;
+}
+
 ItemLeft {
   width: 20px;
   color: #0000ff;

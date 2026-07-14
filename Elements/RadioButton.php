@@ -5,6 +5,7 @@ namespace SPTK\Elements;
 use \SPTK\Element;
 use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\Action;
+use \SPTK\SDLWrapper\SDL;
 
 class RadioButton extends Element {
 
@@ -87,6 +88,9 @@ class RadioButton extends Element {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     switch ($keycombo) {
       case Action::SELECT_ITEM:
+        if (SDL::$instance !== null) {
+          SDL::$instance->supressTextInput();
+        }
         if ($this->value !== true) {
           $this->setValue(true);
           if ($this->onChange !== false) {

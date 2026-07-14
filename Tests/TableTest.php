@@ -247,6 +247,7 @@ return [
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::DOWN, 'key' => KeyCode::DOWN]);
     assertSame([1, 1], $table->getCursor(), 'arrow keys move by one cell');
+    assertSame(['2', 'Name 2', 'active'], $table->getActiveRowValues(), 'active row values follow the cursor row');
 
     $table->keyPressHandler($table, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::END, 'key' => KeyCode::END]);
     assertSame([1, 2], $table->getCursor(), 'end moves to the last cell in the current row');

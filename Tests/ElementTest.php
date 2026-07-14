@@ -39,6 +39,22 @@ class HeadlessPanel extends Panel {
 
 }
 
+class ForgeHeadlessPanel extends Panel {
+
+  public function __construct(?Element $ancestor = null, ?string $name = null, ?string $class = null, ?string $type = null) {
+    parent::__construct($ancestor, $name, $class, 'Panel');
+  }
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  public function raise(): void {
+    ;
+  }
+
+}
+
 class TabChangeListener {
 
   public static array $changes = [];
@@ -222,12 +238,20 @@ return [
     $apple = new ListItem($list);
     $apple->setValue('apple');
     $apple->setFilterable('true');
+    $apple->setRight('fresh');
+    $apple->addRightClass('preview');
     $banana = new ListItem($list);
     $banana->setValue('banana');
     $banana->setSelectable('true');
     $banana->select();
 
     assertSame('apple', $list->getValue(), 'simple list value is the active item value');
+    assertSame('fresh', $apple->nthChild(2)->getText(), 'list item right text can be set');
+    assertTrue($apple->nthChild(2)->hasClass('preview'), 'list item right text accepts local style classes');
+    assertTrue($apple->nthChild(2)->hasClass('ItemRight:cursor'), 'list item right text follows cursor state');
+    $list->addVariant('active');
+    assertTrue($apple->nthChild(2)->hasClass('ItemRight:active'), 'list item right text follows active state');
+    assertFalse($apple->nthChild(2)->hasClass('ItemRight:cursor'), 'active right text clears cursor state');
     assertTrue($apple->match('app'), 'filterable list items match from the start of their text');
     assertSame('', $apple->nthChild(3)->getValue(), 'matched list items move text before the match into the value field');
     assertSame('app', $apple->nthChild(4)->getValue(), 'matched list items render the matching text separately');
@@ -460,6 +484,38 @@ return [
     assertSame('SPACE', $button->nthChild(0)->getText(), 'button hotkey labels show the key name');
   },
 
+  'forged panels get a default ok button when no buttons are specified' => function (): void {
+    $root = root();
+    new HeadlessElement($root, 'window', null, 'Window');
+
+    ForgeHeadlessPanel::forge('Notice', 'Read this.');
+    $panel = Element::firstByType('Panel');
+    $buttons = Element::allByType('Button', $panel);
+
+    assertSame(1, count($buttons), 'default forge creates one button');
+    assertSame('RETURN OK', $buttons[0]->getText(), 'default forge button is return ok');
+  },
+
+  'forged panels preserve explicit button lists' => function (): void {
+    $root = root();
+    new HeadlessElement($root, 'window', null, 'Window');
+
+    ForgeHeadlessPanel::forge('Notice', 'Read this.', []);
+    $panel = Element::firstByType('Panel');
+    assertSame(0, count(Element::allByType('Button', $panel)), 'explicit empty button list stays empty');
+
+    $root = root();
+    new HeadlessElement($root, 'window', null, 'Window');
+    ForgeHeadlessPanel::forge('Notice', 'Read this.', [
+      ['text' => 'Close', 'hotKey' => 'ESCAPE', 'onPress' => 'close']
+    ]);
+    $panel = Element::firstByType('Panel');
+    $buttons = Element::allByType('Button', $panel);
+
+    assertSame(1, count($buttons), 'custom forge button list is preserved');
+    assertSame('ESCAPE Close', $buttons[0]->getText(), 'custom forge button is not replaced');
+  },
+
   'panels call default button on ctrl return' => function (): void {
     $root = root();
     $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
@@ -517,6 +573,25 @@ return [
     ]);
 
     assertSame(0, ButtonTestAction::$pressed, 'plain return fallback does not invoke the panel default button');
+  },
+
+  'plain return event advances focus through panel dispatch' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $first = new PassiveInput($panel, 'first');
+    $second = new PassiveInput($panel, 'second');
+
+    $panel->show();
+    $panel->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN,
+    ]);
+
+    assertFalse($first->hasVariant('active'), 'plain return event leaves the current input');
+    assertTrue($second->hasVariant('active'), 'plain return event activates the next input');
   },
 
   'focused button still handles plain return' => function (): void {

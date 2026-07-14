@@ -32,6 +32,11 @@ class ListItem extends Element {
     $this->matchField->addVariant('matched');
     $this->afterMatchField = new InputValue($this);
     $this->initialized = true;
+    if ($this->hasVariant('active')) {
+      $this->itemRight->addVariant('active');
+    } else if ($this->hasVariant('cursor')) {
+      $this->itemRight->addVariant('cursor');
+    }
   }
 
   public function postInit(): void {
@@ -96,6 +101,10 @@ class ListItem extends Element {
     }
   }
 
+  public function addRightClass(string $class): void {
+    $this->itemRight->addClass($class);
+  }
+
   public function setText($text): void {
     $this->text = $text;
     $this->valueField->setValue($this->text);
@@ -108,6 +117,16 @@ class ListItem extends Element {
       $this->removeVariant('active');
     }
     parent::addVariant($class);
+    if (($class === 'active' || $class === 'cursor') && $this->initialized) {
+      $this->itemRight->addVariant($class);
+    }
+  }
+
+  public function removeVariant(string $class): void {
+    if (($class === 'active' || $class === 'cursor') && $this->initialized) {
+      $this->itemRight->removeVariant($class);
+    }
+    parent::removeVariant($class);
   }
 
   public function isSelectable() {
