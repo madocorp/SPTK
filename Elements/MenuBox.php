@@ -124,6 +124,9 @@ class MenuBox extends ListBox {
         if ($this->descendants[$this->activeItem]->isSubmenu()) {
           return $this->descendants[$this->activeItem]->openSubmenu();
         }
+        if (!$this->isActiveItemSelectable()) {
+          return true;
+        }
         parent::keyPressHandler($element, $event);
         $this->descendants[$this->activeItem]->open();
         $this->raise();
@@ -154,6 +157,11 @@ class MenuBox extends ListBox {
       }
     }
     return true;
+  }
+
+  private function isActiveItemSelectable(): bool {
+    return isset($this->descendants[$this->activeItem]) &&
+      $this->descendants[$this->activeItem]->isSelectable() !== false;
   }
 
 }

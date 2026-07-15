@@ -35,14 +35,14 @@ class ConfirmationCode extends Element {
     if ($class == 'active') {
       $this->elementSelected->addVariant('selected');
     }
-    parent::addVariant($class, $variant);
+    parent::addVariant($class);
   }
 
   public function removeVariant(string $class): void {
     if ($class == 'active') {
       $this->elementSelected->removeVariant('selected');
     }
-    parent::removeVariant($class, $variant);
+    parent::removeVariant($class);
   }
 
   public function keyPressHandler($element, $event) {
