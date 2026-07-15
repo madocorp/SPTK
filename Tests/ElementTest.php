@@ -9,6 +9,8 @@ use SPTK\Elements\File;
 use SPTK\Elements\Input;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListItem;
+use SPTK\Elements\MenuBox;
+use SPTK\Elements\MenuBoxItem;
 use SPTK\Elements\Panel;
 use SPTK\Elements\RadioButton;
 use SPTK\Elements\Select;
@@ -305,6 +307,28 @@ return [
     $columns->clearSelection();
 
     assertSame([], $columns->getValue(), 'clearSelection deselects every selectable item');
+  },
+
+  'menu space acts only on submenu and selectable items' => function (): void {
+    $root = root();
+    $menu = new MenuBox($root, 'menu');
+    $action = new MenuBoxItem($menu);
+    $action->setValue('Action');
+    $multi = new MenuBoxItem($menu);
+    $multi->setValue('Multi');
+    $multi->setSelectable('true');
+    $group = new MenuBoxItem($menu);
+    $group->setValue('Group');
+    $group->setSelectable('group');
+    $selectable = new \ReflectionMethod(MenuBox::class, 'isActiveItemSelectable');
+    $selectable->setAccessible(true);
+
+    assertFalse($selectable->invoke($menu), 'action-only menu items are not selectable for space');
+    $menu->moveCursor(1);
+    assertTrue($selectable->invoke($menu), 'true-selectable menu items are selectable for space');
+
+    $menu->moveCursor(2);
+    assertTrue($selectable->invoke($menu), 'grouped selectable menu items are selectable for space');
   },
 
   'select accepts option sources and shows hint as placeholder' => function (): void {

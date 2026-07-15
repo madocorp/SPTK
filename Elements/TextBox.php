@@ -79,6 +79,10 @@ class TextBox extends Element {
     $this->update();
   }
 
+  public function getValue(): mixed {
+    return $this->lines;
+  }
+
   public function addVariant(string $class): void {
     if ($class == 'active') {
       $this->active = true;
