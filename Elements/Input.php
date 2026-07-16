@@ -15,6 +15,7 @@ class Input extends Element {
   protected $elementSelected;
   protected $elementAfter;
   protected $placeholder = '';
+  protected bool $activePlaceholderVisible = false;
   protected $onChange = false;
   protected $lines = [''];
   protected $cursor = false;
@@ -53,9 +54,14 @@ class Input extends Element {
       $this->cursor->moveLineEnd();
       $this->cursor->save();
     }
+    $this->activePlaceholderVisible = true;
     $this->scrollX = 0;
     $this->scrollY = 0;
-    $this->updatePlaceholderDisplay();
+    if ($this->hasVariant('active')) {
+      $this->update();
+    } else {
+      $this->updateInactiveDisplay();
+    }
   }
 
   public function getValue(): mixed {
@@ -64,7 +70,11 @@ class Input extends Element {
 
   public function setPlaceholder($value) {
     $this->placeholder = $value;
-    $this->updatePlaceholderDisplay();
+    if ($this->hasVariant('active')) {
+      $this->update();
+    } else {
+      $this->updateInactiveDisplay();
+    }
   }
 
   public function setOnChange($value) {
@@ -80,6 +90,7 @@ class Input extends Element {
 
   public function addVariant(string $class): void {
     if ($class == 'active') {
+      $this->activePlaceholderVisible = true;
       $this->elementSelected->addVariant('selected');
     }
     parent::addVariant($class);
@@ -91,16 +102,26 @@ class Input extends Element {
       $this->elementSelected->removeVariant('selected');
     }
     parent::removeVariant($class);
-    $this->updatePlaceholderDisplay();
+    $this->updateInactiveDisplay();
   }
 
-  private function updatePlaceholderDisplay(): void {
-    if ($this->lines[0] === '' && $this->placeholder !== '') {
-      $this->elementBefore->setValue($this->placeholder);
-      $this->elementBefore->addVariant('placeholder');
-    } else {
-      $this->elementBefore->setValue($this->lines[0]);
-      $this->elementBefore->removeVariant('placeholder');
+  private function updateInactiveDisplay(): void {
+    $this->elementBefore->setValue($this->lines[0]);
+    $this->elementBefore->removeVariant('placeholder');
+    $this->elementSelected->setValue('');
+    $this->elementAfter->setValue('');
+  }
+
+  protected function placeholderVisible(): bool {
+    if ($this->lines[0] !== '' || $this->placeholder === '') {
+      return false;
+    }
+    return $this->hasVariant('active') && $this->activePlaceholderVisible;
+  }
+
+  private function hideActivePlaceholder(): void {
+    if ($this->hasVariant('active')) {
+      $this->activePlaceholderVisible = false;
     }
   }
 
@@ -119,7 +140,7 @@ class Input extends Element {
     $before = mb_substr($this->lines[0], 0, $col1);
     $selected = mb_substr($this->lines[0], $col1, $col2 - $col1);
     $after = mb_substr($this->lines[0], $col2);
-    if ($this->lines[0] === '' && $this->placeholder !== '') {
+    if ($this->placeholderVisible()) {
       $this->elementBefore->setValue($this->placeholder);
       $this->elementBefore->addVariant('placeholder');
     } else {
@@ -156,10 +177,17 @@ class Input extends Element {
   }
 
   public function keyPressHandler($element, $event) {
+    $placeholderWasVisible = $this->placeholderVisible();
+    if ($placeholderWasVisible) {
+      $this->hideActivePlaceholder();
+    }
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
     switch ($keycombo) {
       /* SPACE */
       case Action::SELECT_ITEM:
+        if ($placeholderWasVisible) {
+          $this->update();
+        }
         return true;
       /* LEFT */
       case Action::MOVE_LEFT:
@@ -259,6 +287,9 @@ class Input extends Element {
         $this->history->redo();
         break;
       default:
+        if ($placeholderWasVisible) {
+          $this->update();
+        }
         return false;
     }
     $this->update();
@@ -266,9 +297,7 @@ class Input extends Element {
   }
 
   public function textInputHandler($element, $event) {
-    if ($this->lines[0] === '') {
-      $this->elementBefore->removeVariant('placeholder');
-    }
+    $this->hideActivePlaceholder();
     $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
     if ($col1 === $col2 - 1) {
       $this->cursor->modify($row1, $col1 + 1, $row1, $col1 + 1);
