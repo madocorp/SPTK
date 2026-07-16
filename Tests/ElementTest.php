@@ -113,8 +113,8 @@ class HeadlessInput extends Input {
   }
 
   protected function update() {
-    $this->nthChild(0)->setValue($this->getValue() === '' ? $this->placeholder : $this->getValue());
-    if ($this->getValue() === '' && $this->placeholder !== '') {
+    $this->nthChild(0)->setValue($this->placeholderVisible() ? $this->placeholder : $this->getValue());
+    if ($this->placeholderVisible()) {
       $this->nthChild(0)->addVariant('placeholder');
     } else {
       $this->nthChild(0)->removeVariant('placeholder');
@@ -127,6 +127,49 @@ class HeadlessInput extends Input {
 
   public function placeholderActive(): bool {
     return $this->nthChild(0)->hasClass('InputValue:placeholder');
+  }
+
+}
+
+class SegmentedHeadlessInput extends Input {
+
+  protected function init(): void {
+    parent::init();
+    $this->letterWidth = 1;
+  }
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  protected function update() {
+    $this->cursor->save();
+    $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
+    $before = mb_substr($this->lines[0], 0, $col1);
+    $selected = mb_substr($this->lines[0], $col1, $col2 - $col1);
+    $after = mb_substr($this->lines[0], $col2);
+    if ($this->placeholderVisible()) {
+      $this->elementBefore->setValue($this->placeholder);
+      $this->elementBefore->addVariant('placeholder');
+    } else {
+      $this->elementBefore->setValue($before);
+      $this->elementBefore->removeVariant('placeholder');
+    }
+    $this->elementSelected->setValue($selected === '' ? ' ' : $selected);
+    $this->elementAfter->setValue($after);
+  }
+
+  public function moveCursorTo(int $col): void {
+    $this->cursor->modify(0, $col, 0, $col);
+    $this->update();
+  }
+
+  public function segments(): array {
+    return [
+      $this->nthChild(0)->getValue(),
+      $this->nthChild(1)->getValue(),
+      $this->nthChild(2)->getValue()
+    ];
   }
 
 }
@@ -381,18 +424,63 @@ return [
 
     $input->setPlaceholder('empty means default');
 
-    assertSame('empty means default', $input->placeholderText(), 'inactive empty input shows placeholder text');
-    assertTrue($input->placeholderActive(), 'inactive empty input uses placeholder styling');
+    assertSame('', $input->placeholderText(), 'inactive empty input hides placeholder text');
+    assertFalse($input->placeholderActive(), 'inactive empty input does not use placeholder styling');
 
     $input->addVariant('active');
 
-    assertSame('empty means default', $input->placeholderText(), 'active empty input shows placeholder text');
-    assertTrue($input->placeholderActive(), 'active empty input uses placeholder styling');
+    assertSame('empty means default', $input->placeholderText(), 'just activated empty input shows placeholder text');
+    assertTrue($input->placeholderActive(), 'just activated empty input uses placeholder styling');
 
     $input->setValue('named');
 
     assertSame('named', $input->placeholderText(), 'input value replaces placeholder text');
     assertFalse($input->placeholderActive(), 'non-empty input removes placeholder styling');
+  },
+
+  'input hides placeholder after any active keypress' => function (): void {
+    $root = root();
+    $input = new HeadlessInput($root, 'input');
+    $input->setPlaceholder('empty means default');
+    $input->addVariant('active');
+
+    $input->keyPressHandler($input, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::BACKSPACE,
+      'key' => KeyCode::BACKSPACE
+    ]);
+
+    assertSame('', $input->placeholderText(), 'backspace clears the active empty placeholder');
+    assertFalse($input->placeholderActive(), 'backspace removes placeholder styling');
+
+    $input->removeVariant('active');
+    assertSame('', $input->placeholderText(), 'inactive empty input keeps placeholder hidden');
+    assertFalse($input->placeholderActive(), 'inactive empty input keeps placeholder styling disabled');
+
+    $input->addVariant('active');
+    $input->keyPressHandler($input, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::LEFT,
+      'key' => KeyCode::LEFT
+    ]);
+
+    assertSame('', $input->placeholderText(), 'cursor movement clears the active empty placeholder');
+    assertFalse($input->placeholderActive(), 'cursor movement removes placeholder styling');
+  },
+
+  'input clears cursor segments when inactive' => function (): void {
+    $root = root();
+    $input = new SegmentedHeadlessInput($root, 'input');
+
+    $input->setValue('test');
+    $input->addVariant('active');
+    $input->moveCursorTo(2);
+
+    assertSame(['te', 's', 't'], $input->segments(), 'active input splits text around the cursor');
+
+    $input->removeVariant('active');
+
+    assertSame(['test', '', ''], $input->segments(), 'inactive input clears stale cursor and after-cursor text');
   },
 
   'tabs select one content section at a time' => function (): void {
