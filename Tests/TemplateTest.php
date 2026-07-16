@@ -15,6 +15,9 @@ use SPTK\Elements\TextEditor;
 use SPTK\Elements\TextPreview;
 use SPTK\Font;
 use SPTK\LayoutXmlReader;
+use SPTK\SDLWrapper\KeyCode;
+use SPTK\SDLWrapper\KeyModifier;
+use SPTK\SDLWrapper\ScanCode;
 use SPTK\StyleSheet;
 
 return [
@@ -93,7 +96,13 @@ XML, 'xml');
 
     $notice = Element::byName('notice', $root);
     assertInstanceOf(TextBox::class, $notice, 'TextBox elements resolve to the TextBox class');
+    assertInstanceOf(TextEditor::class, $notice, 'TextBox reuses the TextEditor implementation');
     assertSame(['First line', 'Second line'], propertyValue($notice, 'lines'), 'TextBox body text is stored as editor lines');
+    assertFalse(isset(propertyValue($notice, 'events')['TextInput']), 'TextBox does not subscribe to text input events');
+    assertFalse($notice->textInputHandler($notice, ['text' => 'x']), 'TextBox ignores direct text input calls');
+    assertSame(['First line', 'Second line'], propertyValue($notice, 'lines'), 'TextBox text input does not mutate content');
+    $notice->keyPressHandler($notice, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::BACKSPACE, 'key' => KeyCode::BACKSPACE]);
+    assertSame(['First line', 'Second line'], propertyValue($notice, 'lines'), 'TextBox delete keys do not mutate content');
 
     $editor = Element::byName('editor', $root);
     assertInstanceOf(TextEditor::class, $editor, 'TextEditor elements resolve to the TextEditor class');
