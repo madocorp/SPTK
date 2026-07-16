@@ -8,6 +8,7 @@ use SPTK\Elements\CheckBox;
 use SPTK\Elements\File;
 use SPTK\Elements\Input;
 use SPTK\Elements\ListBox;
+use SPTK\Elements\ListHeaderRow;
 use SPTK\Elements\ListItem;
 use SPTK\Elements\MenuBox;
 use SPTK\Elements\MenuBoxItem;
@@ -16,6 +17,7 @@ use SPTK\Elements\RadioButton;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
+use SPTK\Geometry;
 use SPTK\SDLWrapper\KeyCode;
 use SPTK\SDLWrapper\KeyCombo;
 use SPTK\SDLWrapper\KeyModifier;
@@ -220,6 +222,22 @@ return [
     assertSame(['c', 'a'], array_map(fn($e) => $e->getName(), $root->getDescendants()), 'remove detaches descendants');
   },
 
+  'geometry preserves unresolved content dimensions while deriving sizes' => function (): void {
+    $geometry = new Geometry(null);
+    $geometry->width = 'calculated';
+    $geometry->height = 'content';
+
+    $geometry->setDerivedWidths();
+    $geometry->setDerivedHeights();
+    $geometry->limitateWidth();
+    $geometry->limitateHeight();
+
+    assertSame('calculated', $geometry->innerWidth, 'unresolved calculated width remains available');
+    assertSame('calculated', $geometry->fullWidth, 'unresolved calculated full width remains available');
+    assertSame('content', $geometry->innerHeight, 'unresolved content height remains available');
+    assertSame('content', $geometry->fullHeight, 'unresolved content full height remains available');
+  },
+
   'child classes are inherited only while active' => function (): void {
     $root = root();
     $parent = new Element($root, 'parent', null, 'Box');
@@ -291,26 +309,17 @@ return [
     $banana->select();
 
     assertSame('apple', $list->getValue(), 'simple list value is the active item value');
-    assertSame('fresh', $apple->nthChild(2)->getText(), 'list item right text can be set');
-    assertTrue($apple->nthChild(2)->hasClass('preview'), 'list item right text accepts local style classes');
-    assertTrue($apple->nthChild(2)->hasClass('ItemRight:cursor'), 'list item right text follows cursor state');
-    assertSame([85, 85, 85, 255], $apple->nthChild(3)->getStyle()->get('backgroundColor'), 'list item text inherits cursor background');
+    assertSame('fresh', $list->getItems()[0]->getRight(), 'list item right text can be set');
+    assertSame(['preview'], $list->getItems()[0]->getClass(), 'list item right classes are stored on the row model');
     $list->addVariant('active');
-    assertTrue($apple->nthChild(2)->hasClass('ItemRight:active'), 'list item right text follows active state');
-    assertFalse($apple->nthChild(2)->hasClass('ItemRight:cursor'), 'active right text clears cursor state');
-    assertSame([0, 0, 0, 255], $apple->nthChild(3)->getStyle()->get('backgroundColor'), 'list item text inherits active background');
     assertTrue($apple->match('app'), 'filterable list items match from the start of their text');
-    assertSame('', $apple->nthChild(3)->getValue(), 'matched list items move text before the match into the value field');
-    assertSame('app', $apple->nthChild(4)->getValue(), 'matched list items render the matching text separately');
-    assertSame('le', $apple->nthChild(5)->getValue(), 'matched list items render the text after the match separately');
+    assertTrue($list->getItems()[0]->isMatched(), 'matched list items mark the backing row');
+    assertSame(3, $list->getItems()[0]->getMatchLength(), 'matched list items store the match length for grid rendering');
     $list->resetSearch();
-    assertSame('apple', $apple->nthChild(3)->getValue(), 'resetting list search restores the value field text');
-    assertSame('', $apple->nthChild(4)->getValue(), 'resetting list search clears the matching text field');
-    assertSame('', $apple->nthChild(5)->getValue(), 'resetting list search clears the after-match text field');
+    assertFalse($list->getItems()[0]->isMatched(), 'resetting list search clears the row match state');
     assertTrue($apple->match('app'), 'filterable list items can match again after reset');
     assertFalse($apple->match('pp'), 'filterable list items do not match non-prefix text');
-    assertSame('apple', $apple->nthChild(3)->getValue(), 'failed matching restores the value field text');
-    assertSame('', $apple->nthChild(4)->getValue(), 'failed matching clears stale matching text');
+    assertFalse($list->getItems()[0]->isMatched(), 'failed matching clears stale row match state');
 
     $list->setValueType('order');
     assertSame(['apple', 'banana'], $list->getValue(), 'order value returns item values in descendant order');
@@ -334,12 +343,12 @@ return [
     $columns->setSelectedValues(['email', 'id']);
 
     assertSame(['email', 'id'], $columns->getValue(), 'ordered select value returns values in selection order');
-    assertSame('1', $email->nthChild(0)->getText(), 'first ordered selection shows marker 1');
-    assertSame('2', $id->nthChild(0)->getText(), 'second ordered selection shows marker 2');
+    assertSame('1', $columns->getItems()[2]->getLeft(), 'first ordered selection shows marker 1');
+    assertSame('2', $columns->getItems()[0]->getLeft(), 'second ordered selection shows marker 2');
     assertTrue($email->hasVariant('selected'), 'ordered selected items keep the selected visual variant');
     assertTrue($id->hasVariant('selected'), 'ordered selected items apply the selected visual variant');
     $columns->moveCursor(2);
-    assertSame([170, 170, 170, 255], $email->getStyle()->get('color'), 'cursor styling overrides selected item color');
+    assertSame('email', $columns->getValue()[0], 'cursor movement preserves ordered selection value');
     $columns->moveCursor(1);
     assertFalse($name->hasVariant('selected'), 'cursor movement does not apply the selected visual variant');
 
@@ -350,6 +359,55 @@ return [
     $columns->clearSelection();
 
     assertSame([], $columns->getValue(), 'clearSelection deselects every selectable item');
+
+    $bulk = new ListBox($root, 'bulk');
+    $bulk->setItems([
+      ['value' => 'one', 'filterable' => true],
+      ['value' => 'two', 'right' => '2']
+    ]);
+    assertSame(0, $bulk->countDescendants(), 'bulk list rows do not create per-row elements');
+    assertSame('one', $bulk->getValue(), 'bulk list rows expose simple values');
+    assertSame('2', $bulk->getItems()[1]->getRight(), 'bulk list rows keep right text');
+
+    $wide = new ListBox($root, 'wide');
+    $wide->addItem(['text' => 'this is wider than the visible list area']);
+    $measure = new \ReflectionMethod($wide, 'measure');
+    $measure->setAccessible(true);
+    $measure->invoke($wide);
+    $wide->getGeometry()->contentWidth = 999;
+    $layout = new \ReflectionMethod($wide, 'layout');
+    $layout->setAccessible(true);
+    $layout->invoke($wide);
+
+    assertSame($wide->getGeometry()->innerWidth, $wide->getGeometry()->contentWidth, 'list boxes never preserve horizontal overflow width');
+
+    $header = new ListHeaderRow($root);
+    new Element($header, null, 'w50', 'Header');
+    new Element($header, null, 'w50', 'Header');
+    $grid = new ListBox($root, 'grid-list');
+    $grid->getStyle()->set('width', '200px');
+    $grid->getStyle()->set('height', '100px');
+    $letterWidth = new \ReflectionProperty(ListBox::class, 'letterWidth');
+    $letterWidth->setAccessible(true);
+    $letterWidth->setValue($grid, 10);
+    $grid->addItem(['columns' => ['abcdefghi', 'xy']]);
+    $measureHeader = new \ReflectionMethod($header, 'measure');
+    $measureHeader->setAccessible(true);
+    $measureHeader->invoke($header);
+    $measureGrid = new \ReflectionMethod($grid, 'measure');
+    $measureGrid->setAccessible(true);
+    $measureGrid->invoke($grid);
+    $calculateWidths = new \ReflectionMethod($header, 'calculateWidths');
+    $calculateWidths->setAccessible(true);
+    $calculateWidths->invoke($header);
+    $buildCells = new \ReflectionMethod($grid, 'buildCells');
+    $buildCells->setAccessible(true);
+    $cells = $buildCells->invoke($grid);
+
+    assertSame('  abcdefghxy     ', implode('', array_column($cells[0], 'glyph')), 'column list rows align values to text-grid columns');
+    assertSame(31, $header->nthChild(0)->getGeometry()->width, 'list headers reserve the list grid text offset');
+    assertSame(80, $header->nthChild(1)->getGeometry()->width, 'first header uses the first grid column width');
+    assertSame(70, $header->nthChild(2)->getGeometry()->width, 'second header uses the second grid column width');
   },
 
   'menu space acts only on submenu and selectable items' => function (): void {
@@ -357,6 +415,9 @@ return [
     $menu = new MenuBox($root, 'menu');
     $action = new MenuBoxItem($menu);
     $action->setValue('Action');
+    $separator = new MenuBoxItem($menu);
+    $separator->setValue('separator text should not matter');
+    $separator->addClass('MenuSeparator');
     $multi = new MenuBoxItem($menu);
     $multi->setValue('Multi');
     $multi->setSelectable('true');
@@ -368,10 +429,85 @@ return [
 
     assertFalse($selectable->invoke($menu), 'action-only menu items are not selectable for space');
     $menu->moveCursor(1);
-    assertTrue($selectable->invoke($menu), 'true-selectable menu items are selectable for space');
+    assertSame('separator text should not matter', $menu->getActive()->getText(), 'menu separator rows keep their content and cursor position');
+    assertFalse($selectable->invoke($menu), 'separator rows remain action-only rows unless selectable');
 
     $menu->moveCursor(2);
+    assertTrue($selectable->invoke($menu), 'true-selectable menu items are selectable for space');
+
+    $menu->moveCursor(3);
     assertTrue($selectable->invoke($menu), 'grouped selectable menu items are selectable for space');
+  },
+
+  'menu box width follows marker item and submenu column formula' => function (): void {
+    $root = root();
+    $menu = new MenuBox($root, 'menu');
+    $menu->show();
+    $menu->getStyle()->set('minWidth', '150px');
+    $menu->getStyle()->set('height', '100px');
+    $letterWidth = new \ReflectionProperty(MenuBox::class, 'letterWidth');
+    $letterWidth->setAccessible(true);
+    $letterWidth->setValue($menu, 7);
+    $menu->addItem(['text' => 'A']);
+    $menu->addItem(['text' => 'Sep', 'classes' => ['MenuSeparator']]);
+
+    $measure = new \ReflectionMethod($menu, 'measure');
+    $measure->setAccessible(true);
+    $measure->invoke($menu);
+
+    assertSame(61, $menu->getGeometry()->width, 'separator rows keep their text in menu width calculation');
+    $buildCells = new \ReflectionMethod($menu, 'buildCells');
+    $buildCells->setAccessible(true);
+    $cells = $buildCells->invoke($menu);
+    assertSame(' Sep ', implode('', array_column($cells[1], 'glyph')), 'menu separators keep the normal text grid row content');
+    $rowHeight = new \ReflectionMethod($menu, 'rowHeight');
+    $rowHeight->setAccessible(true);
+    $normalRowHeight = new \ReflectionMethod($menu, 'normalRowHeight');
+    $normalRowHeight->setAccessible(true);
+    $plainMenu = new MenuBox($root, 'plain-menu');
+    assertSame($normalRowHeight->invoke($plainMenu) + 3, $rowHeight->invoke($plainMenu), 'plain menus reserve separator space in every row');
+    assertSame($normalRowHeight->invoke($menu) + 3, $rowHeight->invoke($menu), 'menu separators use the same reserved row space');
+
+    $scrolling = new MenuBox($root, 'scrolling-menu');
+    $scrolling->show();
+    $scrolling->getStyle()->set('minWidth', '0px');
+    $scrolling->getStyle()->set('maxHeight', '30px');
+    $letterWidth->setValue($scrolling, 7);
+    $scrolling->addItem(['text' => 'Long', 'submenu' => true]);
+    $scrolling->addItem(['text' => 'Two']);
+    $scrolling->addItem(['text' => 'Three']);
+
+    $measure->invoke($scrolling);
+
+    assertSame(82, $scrolling->getGeometry()->width, 'submenu menus reserve a two-column right side');
+
+    $withRight = new MenuBox($root, 'right-menu');
+    $withRight->show();
+    $withRight->getStyle()->set('minWidth', '0px');
+    $letterWidth->setValue($withRight, 7);
+    $withRight->addItem(['text' => 'Open', 'right' => 'Ctrl+O']);
+    $withRight->addItem(['text' => 'Pinned', 'selectable' => true]);
+
+    $measure->invoke($withRight);
+
+    assertSame(131, $withRight->getGeometry()->width, 'selectable and right-text menus reserve their dynamic columns');
+
+    $withRight->getGeometry()->contentWidth = 999;
+    $layout = new \ReflectionMethod($withRight, 'layout');
+    $layout->setAccessible(true);
+    $layout->invoke($withRight);
+
+    assertSame($withRight->getGeometry()->innerWidth, $withRight->getGeometry()->contentWidth, 'menus never preserve horizontal overflow width');
+
+    $x = 0;
+    $y = 0;
+    $withRight->getGeometry()->x = 20;
+    assertTrue($withRight->activeRowPosition($x, $y), 'menu can report active row submenu position');
+    assertSame(
+      $withRight->getGeometry()->x + $withRight->getGeometry()->width - $withRight->getGeometry()->borderRight,
+      $x,
+      'submenu x position overlaps the parent menu right border'
+    );
   },
 
   'select accepts option sources and shows hint as placeholder' => function (): void {

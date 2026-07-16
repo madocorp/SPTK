@@ -245,8 +245,9 @@ class TextEditor extends TextGrid {
     if ($this->geometry->height === 'content') {
       return [0, min(300, count($this->lines))];
     }
-    $first = max(0, (int)(($this->scrollY + $this->geometry->paddingTop) / $this->lineHeight));
-    $rows = max(1, (int)($this->geometry->innerHeight / $this->lineHeight) + 1);
+    $lineHeight = $this->rowHeight();
+    $first = max(0, (int)(($this->scrollY + $this->geometry->paddingTop) / $lineHeight));
+    $rows = max(1, (int)($this->viewportHeight() / $lineHeight) + 1);
     return [$first, min($first + $rows, count($this->lines))];
   }
 
@@ -257,7 +258,19 @@ class TextEditor extends TextGrid {
     return [$cursor[2], $cursor[3], $cursor[0], $cursor[1] + 1];
   }
 
+  protected function collapsedSelectionVisible(): bool {
+    return true;
+  }
+
   protected function inSelection(int $row, int $col): bool {
+    $cursor = $this->cursor->get();
+    if (
+      !$this->collapsedSelectionVisible() &&
+      $cursor[0] === $cursor[2] &&
+      $cursor[1] === $cursor[3]
+    ) {
+      return false;
+    }
     [$row1, $col1, $row2, $col2] = $this->cursorCoordinates($this->cursor->get());
     if ($row < $row1 || $row > $row2) {
       return false;
@@ -302,6 +315,21 @@ class TextEditor extends TextGrid {
     return $this->styleColorCache[$cacheKey];
   }
 
+  protected function drawCursor(): bool {
+    return true;
+  }
+
+  protected function cursorColors(): array {
+    $cursorName = is_string($this->name) ? $this->name : StyleSheet::ANY;
+    $cursorClass = $this->active ? 'InputValue:cursor' : 'InputValue:inactive-cursor';
+    return $this->colorsForStyle($cursorClass, $cursorName);
+  }
+
+  protected function selectionColors(string $styleClass): array {
+    $selectedClass = $this->active ? 'InputValue:selected' : 'InputValue:inactive-selected';
+    return $this->colorsForStyle(trim($styleClass . ' ' . $selectedClass));
+  }
+
   protected function cell(string $glyph, array $colors): array {
     return [
       'glyph' => $glyph,
@@ -313,8 +341,7 @@ class TextEditor extends TextGrid {
   protected function appendTokenCells(array &$rowCells, int $documentRow, int &$documentCol, string $text, string $styleClass, int $firstCol, int $cols): void {
     $baseColors = $this->colorsForStyle($styleClass);
     $matchedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:matched'));
-    $selectedClass = $this->active ? 'InputValue:selected' : 'InputValue:inactive-selected';
-    $selectedColors = $this->colorsForStyle(trim($styleClass . ' ' . $selectedClass));
+    $selectedColors = $this->selectionColors($styleClass);
     foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) as $glyph) {
       if ($documentCol >= $firstCol && count($rowCells) < $cols) {
         $colors = $baseColors;
@@ -339,11 +366,9 @@ class TextEditor extends TextGrid {
     $tokens = $this->tokenize($firstRow, $lastRow);
     $cells = [];
     $plainColors = $this->colorsForStyle('');
-    $selectedClass = $this->active ? 'InputValue:selected' : 'InputValue:inactive-selected';
-    $selectedColors = $this->colorsForStyle($selectedClass);
-    $cursorName = is_string($this->name) ? $this->name : StyleSheet::ANY;
-    $cursorClass = $this->active ? 'InputValue:cursor' : 'InputValue:inactive-cursor';
-    $cursorColors = $this->colorsForStyle($cursorClass, $cursorName);
+    $selectedColors = $this->selectionColors('');
+    $drawCursor = $this->drawCursor();
+    $cursorColors = $drawCursor ? $this->cursorColors() : false;
     $cursor = $this->cursor->get();
     for ($row = $firstRow; $row < $lastRow; $row++) {
       $rowCells = [];
@@ -365,7 +390,7 @@ class TextEditor extends TextGrid {
         }
         $rowCells[] = $this->cell(' ', $colors);
       }
-      if ($cursor[0] === $row) {
+      if ($drawCursor && $cursor[0] === $row) {
         $cursorCol = $cursor[1] - $firstCol;
         if ($cursorCol >= 0 && $cursorCol < count($rowCells)) {
           $rowCells[$cursorCol] = [
@@ -401,10 +426,11 @@ class TextEditor extends TextGrid {
 
   protected function screenColumns(): array {
     $firstPixel = max(0, $this->scrollX - $this->geometry->paddingLeft);
-    $firstCol = (int)($firstPixel / $this->letterWidth);
-    $offsetX = -($this->scrollX - $firstCol * $this->letterWidth);
-    $drawWidth = $this->geometry->paddingLeft + $this->geometry->innerWidth + $this->geometry->paddingRight - $offsetX;
-    $cols = max(1, (int)ceil($drawWidth / $this->letterWidth) + 1);
+    $letterWidth = $this->columnWidth();
+    $firstCol = (int)($firstPixel / $letterWidth);
+    $offsetX = -($this->scrollX - $firstCol * $letterWidth);
+    $drawWidth = $this->geometry->paddingLeft + $this->viewportWidth() + $this->geometry->paddingRight - $offsetX;
+    $cols = max(1, (int)ceil($drawWidth / $letterWidth) + 1);
     return [$firstCol, $offsetX, $cols];
   }
 
@@ -423,30 +449,53 @@ class TextEditor extends TextGrid {
     $cursor = $this->cursor->get();
     $row = $cursor[0];
     $col = $cursor[1];
-    $rowTop = $row * $this->lineHeight;
-    $rowBottom = $rowTop + $this->lineHeight;
+    $lineHeight = $this->rowHeight();
+    $viewportHeight = $this->viewportHeight();
+    $viewportWidth = $this->viewportWidth();
+    $rowTop = $row * $lineHeight;
+    $rowBottom = $rowTop + $lineHeight;
     if ($rowTop < $this->scrollY) {
       $this->scrollY = $rowTop;
-    } else if ($rowBottom > $this->scrollY + $this->geometry->innerHeight) {
-      $this->scrollY = $rowBottom - $this->geometry->innerHeight;
+    } else if ($rowBottom > $this->scrollY + $viewportHeight) {
+      $this->scrollY = $rowBottom - $viewportHeight;
     }
-    $colLeft = $col * $this->letterWidth;
-    $colRight = $colLeft + $this->letterWidth;
+    $letterWidth = $this->columnWidth();
+    $colLeft = $col * $letterWidth;
+    $colRight = $colLeft + $letterWidth;
     if ($colLeft < $this->scrollX) {
       $this->scrollX = $colLeft;
-    } else if ($colRight > $this->scrollX + $this->geometry->innerWidth) {
-      $this->scrollX = $colRight - $this->geometry->innerWidth;
+    } else if ($colRight > $this->scrollX + $viewportWidth) {
+      $this->scrollX = $colRight - $viewportWidth;
     }
-    $maxScrollX = max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
+    $maxScrollX = max(0, $this->geometry->contentWidth - $viewportWidth);
     $this->scrollX = max(0, $this->scrollX);
     $this->scrollX = min($this->scrollX, $maxScrollX);
     $this->scrollY = max(0, $this->scrollY);
   }
 
   protected function clampScroll(): void {
-    $maxScrollX = max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
+    $maxScrollX = max(0, $this->geometry->contentWidth - $this->viewportWidth());
     $this->scrollX = max(0, min($this->scrollX, $maxScrollX));
     $this->scrollY = max(0, $this->scrollY);
+  }
+
+  protected function rowHeight(): int {
+    return max(1, (int)$this->lineHeight);
+  }
+
+  protected function columnWidth(): int {
+    return max(1, (int)$this->letterWidth);
+  }
+
+  protected function viewportHeight(): int {
+    return is_int($this->geometry->innerHeight) ? max(1, $this->geometry->innerHeight) : $this->rowHeight();
+  }
+
+  protected function viewportWidth(): int {
+    if (is_int($this->geometry->innerWidth)) {
+      return max(1, $this->geometry->innerWidth);
+    }
+    return is_int($this->geometry->width) ? max(1, $this->geometry->width) : $this->columnWidth();
   }
 
   public function insertText(string $text): void {
@@ -502,8 +551,8 @@ class TextEditor extends TextGrid {
 
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
-    $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-    $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+    $linesOnScreen = (int)($this->viewportHeight() / $this->rowHeight()) - 1;
+    $lettersOnScreen = (int)($this->viewportWidth() / $this->columnWidth());
     $handled = $this->cursor->handleKeys($keycombo, $linesOnScreen, $lettersOnScreen);
     if ($handled) {
       $this->update();

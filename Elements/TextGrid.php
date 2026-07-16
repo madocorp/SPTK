@@ -68,6 +68,18 @@ class TextGrid extends Element {
     return $this->style->get('font') . ':' . $this->style->get('fontSize');
   }
 
+  protected function gridRowHeight(): int {
+    return max(1, (int)$this->lineHeight);
+  }
+
+  protected function glyphOffsetY(): int {
+    return 0;
+  }
+
+  protected function rowBackground(array $row): array|false {
+    return false;
+  }
+
   protected function ensureAtlas(): void {
     $key = $this->fontKey();
     if (isset(self::$atlas[$key])) {
@@ -103,7 +115,7 @@ class TextGrid extends Element {
       return;
     }
     $this->geometry->setDerivedHeights();
-    $this->geometry->setContentHeight($this->lineHeight, $this->geometry->contentHeight);
+    $this->geometry->setContentHeight($this->gridRowHeight(), $this->geometry->contentHeight);
   }
 
   protected function layout(): void {
@@ -138,6 +150,24 @@ class TextGrid extends Element {
     $sdl = SDL::$instance->sdl;
     $cw = $this->letterWidth;
     $ch = $this->lineHeight;
+    $rh = $this->gridRowHeight();
+    $glyphOffsetY = $this->glyphOffsetY();
+    $previousColor = false;
+    foreach ($this->cells as $i => $row) {
+      $bg = $this->rowBackground($row);
+      if ($bg === false) {
+        continue;
+      }
+      if ($bg !== $previousColor) {
+        $sdl->SDL_SetRenderDrawColor($this->renderer, $bg[0], $bg[1], $bg[2], $bg[3] ?? 0xff);
+        $previousColor = $bg;
+      }
+      self::$sdlFRect2->x = (float)($this->geometry->paddingLeft + $this->geometry->borderLeft);
+      self::$sdlFRect2->y = (float)($i * $rh + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY);
+      self::$sdlFRect2->w = (float)$this->geometry->innerWidth;
+      self::$sdlFRect2->h = (float)$rh;
+      $sdl->SDL_RenderFillRect($this->renderer, self::$sdlFRect2Addr);
+    }
     $previousColor = false;
     foreach ($this->cells as $i => $row) {
       foreach ($row as $j => $cell) {
@@ -147,9 +177,9 @@ class TextGrid extends Element {
           $previousColor = $bg;
         }
         self::$sdlFRect2->x = (float)($j * $cw + $this->geometry->paddingLeft + $this->geometry->borderLeft + $this->cellOffsetX);
-        self::$sdlFRect2->y = (float)($i * $ch + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY);
+        self::$sdlFRect2->y = (float)($i * $rh + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY);
         self::$sdlFRect2->w = (float)$cw;
-        self::$sdlFRect2->h = (float)$ch;
+        self::$sdlFRect2->h = (float)$rh;
         $sdl->SDL_RenderFillRect($this->renderer, self::$sdlFRect2Addr);
       }
     }
@@ -176,7 +206,7 @@ class TextGrid extends Element {
         self::$sdlFRect1->w = (float)$cw + self::MAP_PAD * 2;
         self::$sdlFRect1->h = (float)$ch + self::MAP_PAD * 2;
         self::$sdlFRect2->x = (float)($j * $cw + $this->geometry->paddingLeft + $this->geometry->borderLeft + $this->cellOffsetX) - self::MAP_PAD;
-        self::$sdlFRect2->y = (float)($i * $ch + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY) - self::MAP_PAD;
+        self::$sdlFRect2->y = (float)($i * $rh + $this->geometry->paddingTop + $this->geometry->borderTop + $this->cellOffsetY + $glyphOffsetY) - self::MAP_PAD;
         self::$sdlFRect2->w = (float)$cw + self::MAP_PAD * 2;
         self::$sdlFRect2->h = (float)$ch + self::MAP_PAD * 2;
         $sdl->SDL_RenderTexture($this->renderer, self::$atlas[$key], self::$sdlFRect1Addr, self::$sdlFRect2Addr);

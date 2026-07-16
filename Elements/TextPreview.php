@@ -24,8 +24,8 @@ class TextPreview extends TextGrid {
   }
 
   protected function previewCells(): array {
-    $columns = max(1, (int)floor($this->geometry->innerWidth / max(1, $this->letterWidth)));
-    $rows = max(1, (int)floor($this->geometry->innerHeight / max(1, $this->lineHeight)));
+    $columns = max(1, (int)floor($this->viewportWidth() / max(1, (int)$this->letterWidth)));
+    $rows = max(1, (int)floor($this->viewportHeight() / max(1, (int)$this->lineHeight)));
     $lines = $this->wrappedLines($columns);
     $overflow = count($lines) > $rows;
     if ($overflow) {
@@ -56,6 +56,20 @@ class TextPreview extends TextGrid {
       $cells[] = $row;
     }
     return $cells;
+  }
+
+  protected function viewportWidth(): int {
+    if (is_int($this->geometry->innerWidth)) {
+      return max(1, $this->geometry->innerWidth);
+    }
+    return is_int($this->geometry->width) ? max(1, $this->geometry->width) : max(1, (int)$this->letterWidth);
+  }
+
+  protected function viewportHeight(): int {
+    if (is_int($this->geometry->innerHeight)) {
+      return max(1, $this->geometry->innerHeight);
+    }
+    return is_int($this->geometry->height) ? max(1, $this->geometry->height) : max(1, (int)$this->lineHeight);
   }
 
   protected function wrappedLines(int $columns): array {
