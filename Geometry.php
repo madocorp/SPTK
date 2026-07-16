@@ -95,8 +95,8 @@ class Geometry {
     }
     $this->height = $style->get('height', $ancestorGeometry);
     if ($this->height === 'content' || $this->height === 'calculated') {
-      $this->innerHeight = $this->width;
-      $this->fullHeight = $this->width;
+      $this->innerHeight = $this->height;
+      $this->fullHeight = $this->height;
     } else {
       if ($this->height < 0) {
         $this->height = $ancestorGeometry->innerHeight + $this->height;
@@ -108,6 +108,11 @@ class Geometry {
   }
 
   public function setDerivedWidths(): void {
+    if (!is_int($this->width)) {
+      $this->innerWidth = $this->width;
+      $this->fullWidth = $this->width;
+      return;
+    }
     $this->innerWidth =
       $this->width -
       $this->borderLeft -
@@ -121,6 +126,11 @@ class Geometry {
   }
 
   public function setDerivedHeights(): void {
+    if (!is_int($this->height)) {
+      $this->innerHeight = $this->height;
+      $this->fullHeight = $this->height;
+      return;
+    }
     $this->innerHeight =
       $this->height -
       $this->borderTop -
@@ -167,6 +177,9 @@ class Geometry {
   }
 
   public function limitateWidth(): void {
+    if (!is_int($this->width)) {
+      return;
+    }
     if ($this->width < $this->minWidth) {
       $this->width = $this->minWidth;
     }
@@ -176,6 +189,9 @@ class Geometry {
   }
 
   public function limitateHeight(): void {
+    if (!is_int($this->height)) {
+      return;
+    }
     if ($this->height < $this->minHeight) {
       $this->height = $this->minHeight;
     }

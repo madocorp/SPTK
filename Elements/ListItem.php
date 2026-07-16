@@ -6,238 +6,153 @@ use \SPTK\Element;
 
 class ListItem extends Element {
 
-  private const EXTRA_WIDTH = 30;
-
-  protected $selected = false;
-  protected $selectable = false;
-  protected $filterable = false;
-  protected $pre = '';
-  protected $after;
-  protected $itemLeft;
-  protected $itemPrefix;
-  protected $itemRight;
-  protected $valueField;
-  protected $matchField;
-  protected $afterMatchField = '';
-  protected $matched = false;
-  protected $text = '';
-  protected $initialized = false;
+  protected ?ListBoxRow $row = null;
+  protected string $pendingText = '';
 
   protected function init(): void {
-    $this->itemLeft = new Element($this, null, null, 'ItemLeft');
-    $this->itemPrefix = new Element($this, null, null, 'ItemPrefix');
-    $this->itemRight = new Element($this, null, null, 'ItemRight');
-    $this->valueField = new InputValue($this);
-    $this->matchField = new InputValue($this);
-    $this->matchField->addVariant('matched');
-    $this->afterMatchField = new InputValue($this);
-    $this->initialized = true;
-    if ($this->hasVariant('active')) {
-      $this->itemRight->addVariant('active');
-    } else if ($this->hasVariant('cursor')) {
-      $this->itemRight->addVariant('cursor');
+    $this->display = false;
+    if ($this->ancestor instanceof ListBox) {
+      $this->ancestor->registerItemElement($this);
     }
+  }
+
+  public function getBackingRow(): ?ListBoxRow {
+    return $this->row;
+  }
+
+  public function setBackingRow(ListBoxRow $row): void {
+    $this->row = $row;
   }
 
   public function postInit(): void {
     $text = [];
     foreach ($this->descendants as $descendant) {
-      if ($descendant->type === 'Word') {
-        $this->removeDescendant($descendant);
+      if ($descendant->getType() === 'Word') {
         $text[] = $descendant->getValue();
       }
     }
-    $this->text = implode(' ', $text);
-    if ($this->text !== '') {
-      $this->valueField->setValue($this->text);
+    if (!empty($text)) {
+      $this->setText(implode(' ', $text));
+    } else if ($this->pendingText !== '') {
+      $this->setText($this->pendingText);
     }
   }
 
   public function getAttributeList(): array {
-    return ['value', 'selectable', 'selected', 'filterable', 'left', 'prefix', 'right'];
+    return ['value', 'selectable', 'selected', 'filterable', 'left', 'prefix', 'right', 'columns'];
   }
 
   public function setValue($value): void {
     $this->value = $value;
-    $this->text = $value;
-    $this->valueField->setValue($this->text);
-  }
-
-  public function setSelectable($value) {
-    if ($value === true || $value === 'true') {
-      $this->selectable = true;
-    } else if ($value === 'false') {
-      $this->selectable = false;
-    } else {
-      $this->selectable = $value;
-    }
-  }
-
-  public function setSelected($value) {
-    if ($value === true || $value === 'true') {
-      $this->select();
-    }
-  }
-
-  public function setFilterable($value) {
-    $this->filterable = ($value === true || $value === 'true');
-  }
-
-  public function setLeft($value) {
-    if ($value !== false) {
-      $this->itemLeft->setText($value);
-    }
-  }
-
-  public function setPrefix($value) {
-    if ($value !== false) {
-      $this->itemPrefix->setText($value);
-    }
-  }
-
-  public function setRight($value) {
-    if ($value !== false) {
-      $this->itemRight->setText($value);
-    }
-  }
-
-  public function addRightClass(string $class): void {
-    $this->itemRight->addClass($class);
-  }
-
-  public function setText($text): void {
-    $this->text = $text;
-    $this->valueField->setValue($this->text);
-  }
-
-  public function addVariant(string $class): void {
-    if ($class === 'active') {
-      $this->removeVariant('cursor');
-    } else if ($class === 'cursor') {
-      $this->removeVariant('active');
-    }
-    parent::addVariant($class);
-    if (($class === 'active' || $class === 'cursor') && $this->initialized) {
-      $this->itemRight->addVariant($class);
-    }
-  }
-
-  public function removeVariant(string $class): void {
-    if (($class === 'active' || $class === 'cursor') && $this->initialized) {
-      $this->itemRight->removeVariant($class);
-    }
-    parent::removeVariant($class);
-  }
-
-  public function isSelectable() {
-    return $this->selectable;
-  }
-
-  public function isFilterable() {
-    return $this->filterable;
-  }
-
-  public function isSelected() {
-    return $this->selected;
+    $this->row?->setValue($value);
   }
 
   public function getValue(): mixed {
-    if ($this->value === false || $this->value === '') {
-      return $this->text;
-    }
-    return $this->value;
+    return $this->row === null ? parent::getValue() : $this->row->getValue();
   }
 
-  protected function getElementWidth(Element $element) {
-    if (method_exists($element, 'getWidth')) {
-      return $element->getWidth();
-    }
-    if (is_int($element->geometry->width) && $element->geometry->width > 0) {
-      return $element->geometry->width;
-    }
-    $styleWidth = $element->style->get('width', $this->geometry);
-    if (is_int($styleWidth) && $styleWidth > 0) {
-      return $styleWidth;
-    }
-    $width = 0;
-    foreach ($element->descendants as $descendant) {
-      $width += $this->getElementWidth($descendant);
-    }
-    return $width;
+  public function setText($text): void {
+    $this->pendingText = (string)$text;
+    $this->row?->setText($text);
   }
 
-  public function getWidth() {
-    $width = $this->getElementWidth($this->itemLeft);
-    $width += $this->getElementWidth($this->itemPrefix);
-    $width += $this->getElementWidth($this->valueField);
-    $width += $this->getElementWidth($this->matchField);
-    $width += $this->getElementWidth($this->afterMatchField);
-    $width += $this->getElementWidth($this->itemRight);
-    return $width + self::EXTRA_WIDTH;
+  public function addText(string $text): void {
+    $this->setText(trim($this->pendingText . ' ' . $text));
   }
 
-  public function deselect() {
-    $this->selected = false;
-    $this->itemLeft->clear();
-    $this->removeVariant('selected');
+  public function getText(?array &$text = null): string {
+    return $this->row === null ? $this->pendingText : $this->row->getText();
   }
 
-  public function select($marker = false) {
-    if ($this->selected && $this->selectable === true) {
-      $this->selected = false;
-      $this->itemLeft->clear();
-      $this->removeVariant('selected');
-    } else {
-      $this->selected = true;
-      $this->addVariant('selected');
-      if ($marker !== false) {
-        $this->itemLeft->setText((string) $marker);
-      } else if ($this->selectable === true) {
-        $this->itemLeft->setText('X');
-      } else {
-        $this->itemLeft->setText('*');
-      }
-    }
+  public function setSelectable($value): void {
+    $this->row?->setSelectable($value);
   }
 
-  public function markSelected($marker = false) {
-    if ($this->selected) {
-      $this->itemLeft->setText((string) $marker);
-    }
+  public function isSelectable(): bool|string {
+    return $this->row === null ? false : $this->row->isSelectable();
   }
 
-  public function match($search) {
-    if ($this->filterable === false) {
-      return false;
-    }
-    if ($this->text !== '' && $search !== false) {
-      $pos = strpos($this->text, $search);
-      if ($pos === 0) {
-        $slen = mb_strlen($search);
-        $this->matched = true;
-        $before = '';
-        $match = mb_substr($this->text, $pos, $slen);
-        $after = mb_substr($this->text, $pos + $slen);
-        $this->valueField->setValue($before);
-        $this->matchField->setValue($match);
-        $this->afterMatchField->setValue($after);
-        return true;
-      }
-    }
-    if ($this->matched) {
-      $this->valueField->setValue($this->text);
-      $this->matchField->setValue('');
-      $this->afterMatchField->setValue('');
-      $this->matched = false;
-    }
-    return false;
+  public function setSelected($value): void {
+    $this->row?->setSelected($value);
   }
 
-  public function addDescendant($element): void {
-    parent::addDescendant($element);
-    if ($this->initialized) {
-      $this->valueField->setValue('');
+  public function isSelected(): bool {
+    return $this->row !== null && $this->row->isSelected();
+  }
+
+  public function select($marker = false): void {
+    $this->row?->select($marker);
+  }
+
+  public function deselect(): void {
+    $this->row?->deselect();
+  }
+
+  public function markSelected($marker = false): void {
+    $this->row?->markSelected($marker);
+  }
+
+  public function setFilterable($value): void {
+    $this->row?->setFilterable($value);
+  }
+
+  public function isFilterable(): bool {
+    return $this->row !== null && $this->row->isFilterable();
+  }
+
+  public function setLeft($value): void {
+    $this->row?->setLeft($value);
+  }
+
+  public function setPrefix($value): void {
+    $this->row?->setPrefix($value);
+  }
+
+  public function setRight($value): void {
+    $this->row?->setRight($value);
+  }
+
+  public function setColumns($value): void {
+    $this->row?->setColumns($value);
+  }
+
+  public function addRightClass(string $class): void {
+    $this->row?->addClass($class);
+  }
+
+  public function addClass(string $class): void {
+    parent::addClass($class);
+    $this->row?->addClass($class);
+  }
+
+  public function removeClass(string $class): void {
+    parent::removeClass($class);
+    $this->row?->removeClass($class);
+  }
+
+  public function addVariant(string $class): void {
+    parent::addVariant($class);
+    $this->row?->addVariant($class);
+  }
+
+  public function removeVariant(string $class): void {
+    parent::removeVariant($class);
+    $this->row?->removeVariant($class);
+  }
+
+  public function hasVariant(string $class): bool {
+    return $this->row === null ? parent::hasVariant($class) : $this->row->hasVariant($class);
+  }
+
+  public function match($search): bool {
+    return $this->row !== null && $this->row->match($search);
+  }
+
+  public function getWidth(): int {
+    if ($this->row === null) {
+      return 0;
     }
+    return mb_strlen($this->row->getLeft() . $this->row->getPrefix() . $this->row->getText() . $this->row->getRight()) * 10;
   }
 
 }

@@ -70,18 +70,19 @@ class SelectPanel extends Panel {
 
   public function setOptions(array $options, mixed $selected = false): void {
     $this->options = $options;
-    $this->theList->clear();
+    $items = [];
     $cursor = 0;
     foreach ($this->options as $i => $option) {
-      $item = new ListItem($this->theList);
-      $item->setValue((string)$option);
-      $item->setFilterable(true);
-      if ($this->multiple) {
-        $item->setSelectable(true);
-      } else if ($option === $selected) {
+      $items[] = [
+        'value' => (string)$option,
+        'filterable' => true,
+        'selectable' => $this->multiple
+      ];
+      if (!$this->multiple && $option === $selected) {
         $cursor = $i;
       }
     }
+    $this->theList->setItems($items);
     if ($this->multiple) {
       $selectedValues = array_values(array_filter(
         array_map('trim', explode(',', (string)$selected)),

@@ -147,16 +147,15 @@ class FilePanel extends Panel {
   }
 
   private function fillUpTheList($dirs, $files, $selected) {
-    $this->theList->clear();
+    $items = [];
     $i = 0;
     $cursor = 0;
     foreach ($dirs as $dir) {
-      $li = new ListItem($this->theList);
-      if ($i > 0) {
-        $li->setLeft('/');
-      }
-      $li->setValue($dir);
-      $li->setFilterable(true);
+      $items[] = [
+        'left' => $i > 0 ? '/' : '',
+        'value' => $dir,
+        'filterable' => true
+      ];
       if ($dir === $selected) {
         $cursor = $i;
       }
@@ -176,16 +175,18 @@ class FilePanel extends Panel {
             continue;
           }
         }
-        $li = new ListItem($this->theList);
-        $li->addVariant('file');
-        $li->setFilterable(true);
-        $li->setValue($file);
+        $items[] = [
+          'value' => $file,
+          'filterable' => true,
+          'classes' => ['ListItem:file']
+        ];
         if ($file === $selected) {
           $cursor = $i;
         }
         $i++;
       }
     }
+    $this->theList->setItems($items);
     $this->theList->moveCursor($cursor);
     $this->theList->recalculateGeometry();
   }

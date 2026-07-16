@@ -19,14 +19,33 @@ class TextBox extends TextEditor {
   public function replaceText(string $text): void {
   }
 
+  protected function drawCursor(): bool {
+    return $this->active;
+  }
+
+  protected function collapsedSelectionVisible(): bool {
+    return $this->active;
+  }
+
+  protected function cursorColors(): array {
+    return [
+      'fg' => $this->style->get('backgroundColor'),
+      'bg' => $this->style->get('color')
+    ];
+  }
+
+  protected function selectionColors(string $styleClass): array {
+    return $this->cursorColors();
+  }
+
   public function textInputHandler($element, $event) {
     return false;
   }
 
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
-    $linesOnScreen = (int)($this->geometry->height / $this->lineHeight) - 1;
-    $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth);
+    $linesOnScreen = (int)($this->viewportHeight() / $this->rowHeight()) - 1;
+    $lettersOnScreen = (int)($this->viewportWidth() / $this->columnWidth());
     $handled = $this->cursor->handleKeys($keycombo, $linesOnScreen, $lettersOnScreen);
     if ($handled) {
       $this->update();

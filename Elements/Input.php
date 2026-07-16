@@ -194,7 +194,7 @@ class Input extends Element {
         $this->cursor->moveBackward();
         break;
       case Action::MOVE_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
+        $lettersOnScreen = $this->lettersOnScreen();
         $this->cursor->moveScreenStart($lettersOnScreen);
         break;
       case Action::MOVE_START:
@@ -204,7 +204,7 @@ class Input extends Element {
         $this->cursor->moveBackward(true);
         break;
       case Action::SELECT_FIRST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
+        $lettersOnScreen = $this->lettersOnScreen();
         $this->cursor->moveScreenStart($lettersOnScreen, true);
         break;
       case Action::SELECT_START:
@@ -215,7 +215,7 @@ class Input extends Element {
         $this->cursor->moveForward();
         break;
       case Action::MOVE_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
+        $lettersOnScreen = $this->lettersOnScreen();
         $this->cursor->moveScreenEnd($lettersOnScreen);
         break;
       case Action::MOVE_END:
@@ -225,7 +225,7 @@ class Input extends Element {
         $this->cursor->moveForward(true);
         break;;
       case Action::SELECT_LAST:
-        $lettersOnScreen = (int)($this->geometry->innerWidth / $this->letterWidth) - 1;
+        $lettersOnScreen = $this->lettersOnScreen();
         $this->cursor->moveScreenEnd($lettersOnScreen, true);
         break;
       case Action::SELECT_END:
@@ -294,6 +294,11 @@ class Input extends Element {
     }
     $this->update();
     return true;
+  }
+
+  protected function lettersOnScreen(): int {
+    $innerWidth = is_int($this->geometry->innerWidth) ? $this->geometry->innerWidth : (is_int($this->geometry->width) ? $this->geometry->width : max(1, (int)$this->letterWidth));
+    return max(1, (int)($innerWidth / max(1, (int)$this->letterWidth)) - 1);
   }
 
   public function textInputHandler($element, $event) {

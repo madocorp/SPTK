@@ -2,56 +2,41 @@
 
 namespace SPTK\Elements;
 
-use \SPTK\Element;
-
 class MenuBoxItem extends ListItem {
 
-  protected $submenu = false;
-  protected $onOpen = false;
-
   public function getAttributeList(): array {
-    $attributeList = parent::getAttributeList();
-    return array_merge($attributeList, ['submenu', 'onOpen']);
+    return array_merge(parent::getAttributeList(), ['submenu', 'onOpen']);
   }
 
-  public function setSubmenu($value) {
-    if ($value === true || $value === 'true') {
-      $this->setRight('>');
-      $this->submenu = true;
-    } else if ($value !== false && $value !== 'false' && $value !== '') {
-      $this->setRight('>');
-      $this->submenu = $value;
+  public function setSubmenu($value): void {
+    $row = $this->getBackingRow();
+    if ($row instanceof MenuBoxRow) {
+      $row->setSubmenu($value);
     }
   }
 
-  public function setOnOpen($value) {
-    $this->onOpen = self::parseCallback($value);
-  }
-
-  public function isSubmenu() {
-    return $this->submenu;
-  }
-
-  public function open() {
-    if ($this->onOpen !== false) {
-      call_user_func($this->onOpen, $this);
+  public function setOnOpen($value): void {
+    $row = $this->getBackingRow();
+    if ($row instanceof MenuBoxRow) {
+      $row->setOnOpen($value);
     }
   }
 
-  public function openSubmenu() {
-    $submenu = $this->findAncestorByType('SubMenu');
-    $target = $this->submenu === true ? $this->name : $this->submenu;
-    foreach ($submenu->descendants as $menuBox) {
-      if ($menuBox->belongsTo == $target) {
-        $this->open();
-        self::getRenderedRelativePos($submenu->id, $this, $x, $y);
-        $x += $this->geometry->width;
-        $y += floor($this->geometry->height / 2) - $menuBox->geometry->marginTop - $menuBox->geometry->borderTop;
-        $submenu->showMenuBox($target, $x, $y, false);
-        return true;
-      }
+  public function isSubmenu(): bool|string {
+    $row = $this->getBackingRow();
+    return $row instanceof MenuBoxRow ? $row->isSubmenu() : false;
+  }
+
+  public function open(): void {
+    $row = $this->getBackingRow();
+    if ($row instanceof MenuBoxRow) {
+      $row->open();
     }
-    return false;
+  }
+
+  public function openSubmenu(): bool {
+    $row = $this->getBackingRow();
+    return $row instanceof MenuBoxRow && $row->openSubmenu();
   }
 
 }
