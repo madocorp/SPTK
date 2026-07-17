@@ -8,6 +8,7 @@ use \SPTK\SDLWrapper\KeyCombo;
 use \SPTK\SDLWrapper\KeyModifier;
 use \SPTK\SDLWrapper\ScanCode;
 use \SPTK\SDLWrapper\Action;
+use \SPTK\Clipboard;
 
 class Panel extends Element {
 
@@ -18,6 +19,7 @@ class Panel extends Element {
   protected $arrowTabs = false;
   protected $destroyAtClose = false;
   protected $pin = false;
+  protected string $bodyText = '';
 
   protected function init(): void {
     $this->display = false;
@@ -36,6 +38,7 @@ class Panel extends Element {
   public function show(): void {
     $this->display = true;
     $this->refreshInputList();
+    $this->activateInput();
     $this->syncActive();
   }
 
@@ -71,7 +74,7 @@ class Panel extends Element {
     return false;
   }
 
-  public function refreshInputList($focus = false): void {
+  public function refreshInputList($focus = false, bool $recalculate = true): void {
     if (isset($this->inputList[$this->focusIndex])) {
       $this->inputList[$this->focusIndex]['element']->removeVariant('active');
     }
@@ -85,8 +88,10 @@ class Panel extends Element {
       $focusId = $this->inputList[$this->focusIndex]['element']->getId();
     }
     $this->inputList = [];
-    $this->recalculateGeometry();
-    $this->syncTabs($this);
+    if ($recalculate) {
+      $this->recalculateGeometry();
+      $this->syncTabs($this);
+    }
     $this->setInputList($this);
     if (empty($this->inputList)) {
       $this->focusIndex = -1;
@@ -108,7 +113,6 @@ class Panel extends Element {
         $this->focusIndex = 0;
       }
       $focusedElement = $this->inputList[$this->focusIndex]['element'];
-      $focusedElement->raise();
       $focusedElement->addVariant('active');
     }
   }
@@ -134,6 +138,7 @@ class Panel extends Element {
   }
 
   public function setText($text): void {
+    $this->bodyText = (string)$text;
     $content = Element::firstByType('PanelContent', $this);
     if ($content === false) {
       $content = Element::firstByType('WarningPanelContent', $this);
@@ -244,6 +249,9 @@ class Panel extends Element {
   }
 
   public function activateInput($name = false) {
+    if (!isset($this->inputList[$this->focusIndex])) {
+      return;
+    }
     if (isset($this->inputList[$this->focusIndex])) {
       $this->inputList[$this->focusIndex]['element']->removeVariant('active');
     }
@@ -287,6 +295,22 @@ class Panel extends Element {
       return false;
     }
     call_user_func($this->defaultButtonAction, $this);
+    return true;
+  }
+
+  protected function copyableBodyText(): string|false {
+    if (!in_array($this->getType(), ['WarningPanel', 'ErrorPanel'], true)) {
+      return false;
+    }
+    return $this->bodyText;
+  }
+
+  protected function copyBodyText(): bool {
+    $text = $this->copyableBodyText();
+    if ($text === false) {
+      return false;
+    }
+    Clipboard::set($text);
     return true;
   }
 
@@ -511,7 +535,7 @@ class Panel extends Element {
     if ($container === false) {
       return;
     }
-    $this->refreshInputList(false);
+    $this->refreshInputList(false, false);
     foreach ($this->inputList as $idx => $input) {
       if ($this->isInside($input['element'], $container)) {
         $this->inactivateInput();
@@ -587,6 +611,11 @@ class Panel extends Element {
       return true;
     }
     switch ($action) {
+      case Action::COPY:
+        if ($this->copyBodyText()) {
+          return true;
+        }
+        break;
       case Action::DO_IT:
         $this->activateNextInput();
         return true;
@@ -672,6 +701,7 @@ class Panel extends Element {
     } else {
       $conetentElement->addText($text);
     }
+    $panel->bodyText = (string)$text;
     if ($buttons === false) {
       $buttons = [
         ['text' => 'OK', 'hotKey' => 'RETURN', 'onPress' => 'close']

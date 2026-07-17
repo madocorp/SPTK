@@ -16,6 +16,7 @@ use SPTK\Elements\TextPreview;
 use SPTK\Font;
 use SPTK\LayoutXmlReader;
 use SPTK\SDLWrapper\KeyCode;
+use SPTK\SDLWrapper\KeyCombo;
 use SPTK\SDLWrapper\KeyModifier;
 use SPTK\SDLWrapper\ScanCode;
 use SPTK\StyleSheet;
@@ -57,6 +58,20 @@ XML, 'xml');
     $tab = Element::firstByType('Tab', $root);
     assertInstanceOf(Tab::class, $tab, 'tab elements resolve to the Tab class');
     assertSame('tab-content', $tab->getContentName(), 'tab contentName attributes are applied');
+  },
+
+  'template parser preserves known element key handlers without optional attributes' => function (): void {
+    $root = root();
+    $xml = tempFile(<<<'XML'
+<Root>
+  <Menu name="main-menu"></Menu>
+</Root>
+XML, 'xml');
+
+    new LayoutXmlReader($xml, $root);
+
+    $menu = Element::byName('main-menu', $root);
+    assertTrue(isset(propertyValue($menu, 'events')['KeyPress']), 'missing optional attributes do not remove menu key handling');
   },
 
   'template parser assigns body text to text box values' => function (): void {
@@ -135,6 +150,70 @@ XML, 'xml');
     $preview = Element::byName('preview', $root);
     assertInstanceOf(TextPreview::class, $preview, 'TextPreview elements resolve to the TextPreview class');
     assertSame("Preview line\nWrapped value", $preview->getValue(), 'TextPreview body text is stored as preview text');
+  },
+
+  'text editor read only mode blocks edits but keeps navigation' => function (): void {
+    $root = root();
+    KeyCombo::init();
+    $fonts = new \ReflectionProperty(Font::class, 'fonts');
+    $fonts->setAccessible(true);
+    $fonts->setValue([
+      'inherit' => [
+        0 => [
+          'handle' => null,
+          'ascent' => 0,
+          'descent' => 0,
+          'height' => 1,
+          'letterWidth' => 1,
+          'letterHeight' => 1
+        ]
+      ]
+    ]);
+    $xml = tempFile(<<<'XML'
+<Root>
+  <TextEditor name="readonly" readOnly="true">abc</TextEditor>
+</Root>
+XML, 'xml');
+
+    new LayoutXmlReader($xml, $root);
+
+    $editor = Element::byName('readonly', $root);
+    assertInstanceOf(TextEditor::class, $editor, 'read-only TextEditor resolves to the editor class');
+    $editor->getGeometry()->width = 100;
+    $editor->getGeometry()->height = 20;
+    $editor->getGeometry()->innerWidth = 100;
+    $editor->getGeometry()->innerHeight = 20;
+    $editor->hide();
+    assertTrue($editor->getReadOnly(), 'readOnly XML attribute enables read-only mode');
+    assertSame(['abc'], $editor->getValue(), 'read-only editor keeps initial content');
+
+    $editor->textInputHandler($editor, ['text' => 'x']);
+    assertSame(['abc'], $editor->getValue(), 'read-only editor ignores text input');
+    $editor->insertText('x');
+    assertSame(['abc'], $editor->getValue(), 'read-only editor ignores insertText');
+    $editor->replaceText('changed');
+    assertSame(['abc'], $editor->getValue(), 'read-only editor ignores replaceText');
+
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RETURN, 'key' => KeyCode::RETURN]);
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::BACKSPACE, 'key' => KeyCode::BACKSPACE]);
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::DELETE, 'key' => KeyCode::DELETE]);
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::PRIMARY, 'scancode' => ScanCode::X, 'key' => KeyCode::X]);
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::PRIMARY, 'scancode' => ScanCode::V, 'key' => KeyCode::V]);
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::PRIMARY, 'scancode' => ScanCode::Z, 'key' => KeyCode::Z]);
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::PRIMARY, 'scancode' => ScanCode::Y, 'key' => KeyCode::Y]);
+    assertSame(['abc'], $editor->getValue(), 'read-only editor ignores editing key actions');
+
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
+    $cursor = propertyValue($editor, 'cursor');
+    assertSame([0, 1, 0, 1], $cursor->get(), 'read-only editor still allows cursor movement');
+    $editor->keyPressHandler($editor, ['mod' => KeyModifier::SHIFT, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT]);
+    assertSame([0, 2, 0, 1], $cursor->get(), 'read-only editor still allows selection movement');
+
+    $editor->setValue('loaded');
+    assertSame(['loaded'], $editor->getValue(), 'setValue can still load read-only editor content');
+    $editor->setReadOnly(false);
+    $editor->insertText('!');
+    assertSame(['!loaded'], $editor->getValue(), 'editable editor accepts insertText after read-only mode is disabled');
   },
 
   'template parser builds select options from descendants' => function (): void {

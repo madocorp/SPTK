@@ -6,12 +6,12 @@ class Scrollbar {
 
   protected $texture;
 
-  public function __construct(Texture $texture, int $sx, int $sy, int $mx, int $my, Geometry $geometry, Style $style) {
+  public function __construct(Texture $texture, int $sx, int $sy, int $mx, int $my, Geometry $geometry, Style $style, array $options = []) {
     $this->texture = $texture;
     $barColor = $style->get('scrollbarColor');
     $handleColor = $style->get('scrollhandleColor');
     $size = $style->get('scrollbarSize');
-    $vb = $this->vertical($geometry, $sy, $my, $size);
+    $vb = $this->vertical($geometry, $sy, $my, $size, $options);
     $hb = $this->horizontal($geometry, $sx, $mx, $size, $vb !== false);
     if ($vb !== false && $barColor !== 'transparent') {
       $this->drawFillTriangle($vb[0], $vb[2], $vb[1], $vb[2], $vb[1], $vb[4], $barColor);
@@ -29,17 +29,19 @@ class Scrollbar {
     }
   }
 
-  private function vertical(Geometry $geometry, int $sy, int $my, int $size) {
-    $y1 = $geometry->borderTop;
-    $y2 = $geometry->height - $geometry->borderBottom;
+  private function vertical(Geometry $geometry, int $sy, int $my, int $size, array $options) {
+    $y1 = $options['verticalTop'] ?? $geometry->borderTop;
+    $y2 = $options['verticalBottom'] ?? ($geometry->height - $geometry->borderBottom);
     $barHeight = $y2 - $y1;
-    if ($my - $geometry->borderTop <= $barHeight + 1) {
+    $hasViewportHeight = array_key_exists('verticalViewportHeight', $options);
+    $viewportHeight = $hasViewportHeight ? $options['verticalViewportHeight'] : $geometry->innerHeight;
+    if (($hasViewportHeight ? $my <= $viewportHeight + 1 : $my - $geometry->borderTop <= $barHeight + 1) || $barHeight <= 0) {
       return false;
     }
     $x1 = $geometry->width - $geometry->borderRight - $size;
     $x2 = $geometry->width - $geometry->borderRight;
-    $handlePos = round($barHeight * $sy / $my) + $geometry->borderTop;
-    $handleHeight = round($barHeight * $geometry->innerHeight / $my);
+    $handlePos = round($barHeight * $sy / $my) + $y1;
+    $handleHeight = round($barHeight * $viewportHeight / $my);
     if ($handlePos + $handleHeight > $y2) {
       $handleHeight = $y2 - $handlePos;
     }

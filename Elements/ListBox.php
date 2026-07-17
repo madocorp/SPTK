@@ -586,9 +586,10 @@ class ListBox extends TextGrid {
   protected function rightSlotColumns(?array $items = null): int {
     $max = 0;
     foreach ($items ?? $this->items as $item) {
-      $max = max($max, mb_strlen($item->getRight()));
+      $right = mb_strlen($item->getRight());
+      $max = max($max, $right === 0 ? 0 : $right + 1, $item->getRightReserve());
     }
-    return $max > 0 ? $max + 1 : 0;
+    return $max;
   }
 
   protected function preferredColumns(?array $items = null): int {
@@ -710,6 +711,20 @@ class ListBox extends TextGrid {
     }
   }
 
+  protected function appendTruncatedTextCells(array &$cells, string $text, array $colors, int $limit, string $marker): void {
+    if ($marker === '' || mb_strlen($text) <= max(0, $limit - count($cells))) {
+      $this->appendTextCells($cells, $text, $colors, $limit);
+      return;
+    }
+    $available = max(0, $limit - count($cells));
+    $markerLength = mb_strlen($marker);
+    if ($available <= $markerLength) {
+      $this->appendTextCells($cells, mb_substr($marker, 0, $available), $colors, $limit);
+      return;
+    }
+    $this->appendTextCells($cells, mb_substr($text, 0, $available - $markerLength) . $marker, $colors, $limit);
+  }
+
   protected function rowClasses(ListBoxRow $row, int $index): array {
     $classes = $row->getClass();
     if ($index === $this->activeItem) {
@@ -730,7 +745,8 @@ class ListBox extends TextGrid {
     $leftColors = $this->colorsForStyle('ItemLeft');
     $leftColors['bg'] = $baseColors['bg'];
     $prefixColors = $this->colorsForStyle('ItemPrefix', $classes);
-    $rightColors = $this->colorsForStyle('ItemRight', $classes);
+    $rightColors = $this->colorsForStyle('ItemRight');
+    $rightColors['bg'] = $baseColors['bg'];
     $matchColors = $this->colorsForStyle('InputValue', ['InputValue:matched']);
     $cells = [];
     $this->appendLeftCells($cells, $row->getLeft(), $leftColors, $cols);
@@ -745,7 +761,7 @@ class ListBox extends TextGrid {
       $this->appendTextCells($cells, mb_substr($text, 0, $matchLength), $matchColors, $textLimit);
       $this->appendTextCells($cells, mb_substr($text, $matchLength), $baseColors, $textLimit);
     } else {
-      $this->appendTextCells($cells, $text, $baseColors, $textLimit);
+      $this->appendTruncatedTextCells($cells, $text, $baseColors, $textLimit, $row->getTruncateMarker());
     }
     while (count($cells) < $cols) {
       $cells[] = $this->cell(' ', $baseColors);
@@ -797,7 +813,14 @@ class ListBox extends TextGrid {
   }
 
   protected function leftSlotColumns(): int {
-    return 2;
+    $columns = 0;
+    foreach ($this->visibleItems() as $item) {
+      $columns = max($columns, $item->getLeftReserve());
+      if ($item->isSelectable() !== false) {
+        $columns = max($columns, 2);
+      }
+    }
+    return $columns;
   }
 
   protected function parseColumnWidths(array|string $columns): array|false {
@@ -890,6 +913,9 @@ class ListBox extends TextGrid {
     $visible = $this->visibleItems();
     $bodyColumns = $this->maxBodyColumns($visible);
     $rightColumns = $this->rightSlotColumns($visible);
+    if ($rightColumns > 0) {
+      $bodyColumns = min($bodyColumns, max(0, $cols - $rightColumns));
+    }
     $plainColors = $this->colorsForStyle('ListItem');
     $i = 0;
     foreach ($visible as $index => $row) {

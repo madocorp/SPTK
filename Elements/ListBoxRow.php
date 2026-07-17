@@ -14,8 +14,12 @@ class ListBoxRow {
   protected mixed $value = false;
   protected string $text = '';
   protected string $left = '';
+  protected int $leftReserve = 0;
   protected string $prefix = '';
+  protected string $prefixSeparator = ' ';
   protected string $right = '';
+  protected int $rightReserve = 0;
+  protected string $truncateMarker = '';
   protected array|false $columns = false;
   protected array $classes = [];
   protected bool|string $selectable = false;
@@ -44,8 +48,12 @@ class ListBoxRow {
         case 'value': $this->setValue($value); break;
         case 'text': $this->setText($value); break;
         case 'left': $this->setLeft($value); break;
+        case 'leftReserve': $this->setLeftReserve($value); break;
         case 'prefix': $this->setPrefix($value); break;
+        case 'prefixSeparator': $this->setPrefixSeparator($value); break;
         case 'right': $this->setRight($value); break;
+        case 'rightReserve': $this->setRightReserve($value); break;
+        case 'truncateMarker': $this->setTruncateMarker($value); break;
         case 'columns': $this->setColumns($value); break;
         case 'class':
         case 'classes':
@@ -108,6 +116,15 @@ class ListBoxRow {
     return $this->left;
   }
 
+  public function setLeftReserve($value): void {
+    $this->leftReserve = max(0, (int)$value);
+    $this->list->rowChanged();
+  }
+
+  public function getLeftReserve(): int {
+    return $this->leftReserve;
+  }
+
   public function setPrefix($value): void {
     $this->prefix = $value === false ? '' : (string)$value;
     $this->list->rowChanged();
@@ -117,6 +134,15 @@ class ListBoxRow {
     return $this->prefix;
   }
 
+  public function setPrefixSeparator($value): void {
+    $this->prefixSeparator = $value === false ? '' : (string)$value;
+    $this->list->rowChanged();
+  }
+
+  public function getPrefixSeparator(): string {
+    return $this->prefixSeparator;
+  }
+
   public function setRight($value): void {
     $this->right = $value === false ? '' : (string)$value;
     $this->list->rowChanged();
@@ -124,6 +150,24 @@ class ListBoxRow {
 
   public function getRight(): string {
     return $this->right;
+  }
+
+  public function setRightReserve($value): void {
+    $this->rightReserve = max(0, (int)$value);
+    $this->list->rowChanged();
+  }
+
+  public function getRightReserve(): int {
+    return $this->rightReserve;
+  }
+
+  public function setTruncateMarker($value): void {
+    $this->truncateMarker = $value === false ? '' : (string)$value;
+    $this->list->rowChanged();
+  }
+
+  public function getTruncateMarker(): string {
+    return $this->truncateMarker;
   }
 
   public function setColumns($value): void {

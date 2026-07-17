@@ -5,6 +5,7 @@ namespace Examples\Tests;
 use SPTK\Element;
 use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
+use SPTK\Elements\ErrorPanel;
 use SPTK\Elements\File;
 use SPTK\Elements\Input;
 use SPTK\Elements\ListBox;
@@ -17,6 +18,8 @@ use SPTK\Elements\RadioButton;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
+use SPTK\Elements\TextReader;
+use SPTK\Elements\WarningPanel;
 use SPTK\Geometry;
 use SPTK\SDLWrapper\KeyCode;
 use SPTK\SDLWrapper\KeyCombo;
@@ -43,6 +46,33 @@ class HeadlessPanel extends Panel {
 
 }
 
+class CountingTabBox extends Element {
+
+  public int $recalculateCount = 0;
+
+  public function __construct(?Element $ancestor = null, ?string $name = null, ?string $class = null, ?string $type = null) {
+    parent::__construct($ancestor, $name, $class, 'TabBox');
+  }
+
+  public function recalculateGeometry(): void {
+    $this->recalculateCount++;
+    $this->changed = false;
+    $this->texture = true;
+  }
+
+}
+
+class StyleCountingElement extends Element {
+
+  public int $recalculateStyleCount = 0;
+
+  public function recalculateStyle(): void {
+    $this->recalculateStyleCount++;
+    parent::recalculateStyle();
+  }
+
+}
+
 class ForgeHeadlessPanel extends Panel {
 
   public function __construct(?Element $ancestor = null, ?string $name = null, ?string $class = null, ?string $type = null) {
@@ -55,6 +85,46 @@ class ForgeHeadlessPanel extends Panel {
 
   public function raise(): void {
     ;
+  }
+
+}
+
+class ForgeHeadlessWarningPanel extends WarningPanel {
+
+  public function __construct(?Element $ancestor = null, ?string $name = null, ?string $class = null, ?string $type = null) {
+    parent::__construct($ancestor, $name, $class, 'WarningPanel');
+  }
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  public function raise(): void {
+    ;
+  }
+
+  public function exposedCopyableBodyText(): string|false {
+    return $this->copyableBodyText();
+  }
+
+}
+
+class ForgeHeadlessErrorPanel extends ErrorPanel {
+
+  public function __construct(?Element $ancestor = null, ?string $name = null, ?string $class = null, ?string $type = null) {
+    parent::__construct($ancestor, $name, $class, 'ErrorPanel');
+  }
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  public function raise(): void {
+    ;
+  }
+
+  public function exposedCopyableBodyText(): string|false {
+    return $this->copyableBodyText();
   }
 
 }
@@ -73,6 +143,29 @@ class StackPanel extends Panel {
 
   public function recalculateGeometry(): void {
     ;
+  }
+
+}
+
+class InspectableListBox extends ListBox {
+
+  public function setGridSize(int $columns, int $rows = 1): void {
+    $this->letterWidth = 1;
+    $this->lineHeight = 1;
+    $this->geometry->innerWidth = $columns;
+    $this->geometry->innerHeight = $rows;
+    $this->rowPaddingLeft = 0;
+    $this->rowPaddingRight = 0;
+    $this->listRowHeight = 1;
+  }
+
+  public function renderedText(): string {
+    $rows = $this->buildCells();
+    return implode('', array_map(fn($cell) => $cell['glyph'], $rows[0] ?? []));
+  }
+
+  public function renderedCells(): array {
+    return $this->buildCells();
   }
 
 }
@@ -222,6 +315,71 @@ return [
     assertSame(['c', 'a'], array_map(fn($e) => $e->getName(), $root->getDescendants()), 'remove detaches descendants');
   },
 
+  'text reader handles vertical navigation keys' => function (): void {
+    KeyCombo::init();
+    $root = root();
+    $box = new TextReader($root, 'scroll-box');
+    $box->getGeometry()->lineHeight = 10;
+    $box->getGeometry()->innerHeight = 30;
+    $box->getGeometry()->contentHeight = 100;
+
+    assertTrue($box->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::DOWN,
+      'key' => KeyCode::DOWN
+    ]), 'down scrolls a focusable box');
+    assertSame(10, propertyValue($box, 'scrollY'), 'down scrolls by one line');
+
+    $box->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::PAGEDOWN,
+      'key' => KeyCode::PAGEDOWN
+    ]);
+    assertSame(30, propertyValue($box, 'scrollY'), 'page down scrolls by one viewport minus one line');
+
+    $box->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::END,
+      'key' => KeyCode::END
+    ]);
+    assertSame(70, propertyValue($box, 'scrollY'), 'end scrolls to the bottom');
+
+    $box->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::PAGEUP,
+      'key' => KeyCode::PAGEUP
+    ]);
+    assertSame(50, propertyValue($box, 'scrollY'), 'page up scrolls by one viewport minus one line');
+
+    $box->eventHandler([
+      'name' => 'KeyPress',
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::HOME,
+      'key' => KeyCode::HOME
+    ]);
+    assertSame(0, propertyValue($box, 'scrollY'), 'home scrolls to the top');
+  },
+
+  'text reader active state does not dirty text texture' => function (): void {
+    $root = root();
+    $reader = new TextReader($root, 'reader');
+    $child = new StyleCountingElement($reader, 'child', null, 'Word');
+    $changed = new \ReflectionProperty(Element::class, 'changed');
+    $changed->setAccessible(true);
+    $changed->setValue($reader, false);
+    $before = $child->recalculateStyleCount;
+
+    $reader->addVariant('active');
+    $reader->removeVariant('active');
+
+    assertSame($before, $child->recalculateStyleCount, 'text reader focus changes do not restyle descendant words');
+    assertFalse(propertyValue($reader, 'changed'), 'text reader focus changes do not mark the reader texture dirty');
+  },
+
   'geometry preserves unresolved content dimensions while deriving sizes' => function (): void {
     $geometry = new Geometry(null);
     $geometry->width = 'calculated';
@@ -369,6 +527,36 @@ return [
     assertSame('one', $bulk->getValue(), 'bulk list rows expose simple values');
     assertSame('2', $bulk->getItems()[1]->getRight(), 'bulk list rows keep right text');
 
+    $plain = new InspectableListBox($root, 'plain');
+    $plain->setGridSize(8);
+    $plain->addItem('abc');
+    assertSame('abc     ', $plain->renderedText(), 'plain lists reserve no leading marker column');
+
+    $selectableList = new InspectableListBox($root, 'selectable-list');
+    $selectableList->setGridSize(8);
+    $selectableList->addItem(['text' => 'abc', 'selectable' => true]);
+    assertSame('  abc   ', $selectableList->renderedText(), 'selectable lists reserve two leading marker columns');
+
+    $pinList = new InspectableListBox($root, 'pin-list');
+    $pinList->setGridSize(8);
+    $pinList->addItem(['text' => 'abc', 'leftReserve' => 2]);
+    assertSame('  abc   ', $pinList->renderedText(), 'plain lists can reserve a marker column without making rows selectable');
+
+    $queries = new InspectableListBox($root, 'queries');
+    $queries->setGridSize(20);
+    $queries->addItem([
+      'text' => 'very-long-query-title',
+      'leftReserve' => 2,
+      'right' => 'done',
+      'rightReserve' => 6,
+      'truncateMarker' => '~'
+    ]);
+    assertSame('  very-long-q~  done', $queries->renderedText(), 'long text is clamped between reserved marker slots');
+    $queries->addVariant('active');
+    $cells = $queries->renderedCells();
+    assertSame([0, 0, 255, 255], $cells[0][16]['fg'], 'right markers keep the normal marker color on active rows');
+    assertSame($cells[0][0]['bg'], $cells[0][16]['bg'], 'right markers keep the active row background');
+
     $wide = new ListBox($root, 'wide');
     $wide->addItem(['text' => 'this is wider than the visible list area']);
     $measure = new \ReflectionMethod($wide, 'measure');
@@ -404,10 +592,10 @@ return [
     $buildCells->setAccessible(true);
     $cells = $buildCells->invoke($grid);
 
-    assertSame('  abcdefghxy     ', implode('', array_column($cells[0], 'glyph')), 'column list rows align values to text-grid columns');
-    assertSame(31, $header->nthChild(0)->getGeometry()->width, 'list headers reserve the list grid text offset');
-    assertSame(80, $header->nthChild(1)->getGeometry()->width, 'first header uses the first grid column width');
-    assertSame(70, $header->nthChild(2)->getGeometry()->width, 'second header uses the second grid column width');
+    assertSame('abcdefghixy      ', implode('', array_column($cells[0], 'glyph')), 'column list rows align values to text-grid columns');
+    assertSame(11, $header->nthChild(0)->getGeometry()->width, 'list headers reserve the list grid text offset');
+    assertSame(90, $header->nthChild(1)->getGeometry()->width, 'first header uses the first grid column width');
+    assertSame(80, $header->nthChild(2)->getGeometry()->width, 'second header uses the second grid column width');
   },
 
   'menu space acts only on submenu and selectable items' => function (): void {
@@ -699,6 +887,53 @@ return [
     assertTrue($tabs->nthChild(0)->hasClass('Tab:active'), 'focus marker follows the reselected tab');
   },
 
+  'focused tab strip keeps key routing after switching content' => function (): void {
+    $root = root();
+    KeyCombo::init();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $content = new HeadlessElement($panel, 'content', null, 'PanelContent');
+    $tabs = new Tabs($content, 'tabs');
+    foreach (['content-a', 'content-b', 'content-c'] as $contentName) {
+      $tab = new Tab($tabs);
+      $tab->setContentName($contentName);
+      $tab->setText($contentName);
+      new HeadlessElement($content, $contentName, null, 'TabBox');
+    }
+
+    $panel->show();
+    $event = ['name' => 'KeyPress', 'mod' => KeyModifier::NONE, 'scancode' => ScanCode::RIGHT, 'key' => KeyCode::RIGHT];
+
+    assertTrue($panel->eventHandler($event), 'panel routes first right key to focused tab strip');
+    assertSame(1, $tabs->getCurrentTab(), 'first right key switches to second tab');
+    assertTrue($tabs->hasClass('Tabs:active'), 'tab strip remains active after first switch');
+    assertTrue($panel->eventHandler($event), 'panel routes second right key to focused tab strip');
+    assertSame(2, $tabs->getCurrentTab(), 'second right key switches to third tab');
+  },
+
+  'tab switches reuse already laid out content' => function (): void {
+    $root = root();
+    $panel = new HeadlessPanel($root, 'panel', null, 'Panel');
+    $content = new HeadlessElement($panel, 'content', null, 'PanelContent');
+    $tabs = new Tabs($content, 'tabs');
+    foreach (['content-a', 'content-b'] as $contentName) {
+      $tab = new Tab($tabs);
+      $tab->setContentName($contentName);
+      $tab->setText($contentName);
+    }
+    $contentA = new CountingTabBox($content, 'content-a');
+    $contentB = new CountingTabBox($content, 'content-b');
+
+    $panel->show();
+    $tabs->selectTab(1);
+    $tabs->selectTab(0);
+    $firstCounts = [$contentA->recalculateCount, $contentB->recalculateCount];
+
+    $tabs->selectTab(1);
+    $tabs->selectTab(0);
+
+    assertSame($firstCounts, [$contentA->recalculateCount, $contentB->recalculateCount], 'tab switches show existing content without laying it out again');
+  },
+
   'panels mark the raised visible sibling active' => function (): void {
     $root = root();
     $panelA = new StackPanel($root, 'panel-a', null, 'Panel');
@@ -720,6 +955,23 @@ return [
     assertTrue($titleA->hasClass('PanelTitle:active'), 'raised panel title becomes active');
     assertFalse($panelB->hasClass('Panel:active'), 'previous active panel is no longer active');
     assertFalse($titleB->hasClass('PanelTitle:active'), 'previous active panel title is no longer active');
+  },
+
+  'panel input refresh preserves sibling stack order' => function (): void {
+    $root = root();
+    $panelA = new StackPanel($root, 'panel-a', null, 'Panel');
+    new PassiveInput($panelA, 'field-a');
+    $panelB = new StackPanel($root, 'panel-b', null, 'Panel');
+    new PassiveInput($panelB, 'field-b');
+
+    $panelA->show();
+    $panelB->show();
+    $stackBefore = array_map(fn($element) => $element->getName(), propertyValue($root, 'stack'));
+
+    $panelA->refreshInputList('field-a');
+
+    assertSame($stackBefore, array_map(fn($element) => $element->getName(), propertyValue($root, 'stack')), 'refreshing inputs does not raise an inactive sibling panel');
+    assertTrue($panelA->nthChild(0)->hasVariant('active'), 'requested input still receives active focus state');
   },
 
   'buttons parse callbacks and expose hotkey labels' => function (): void {
@@ -764,6 +1016,33 @@ return [
 
     assertSame(1, count($buttons), 'custom forge button list is preserved');
     assertSame('ESCAPE Close', $buttons[0]->getText(), 'custom forge button is not replaced');
+  },
+
+  'warning panels expose only body text for clipboard copy' => function (): void {
+    $root = root();
+    new HeadlessElement($root, 'window', null, 'Window');
+
+    ForgeHeadlessWarningPanel::forge('Warning', "First line\nSecond line", [
+      ['text' => 'OK', 'hotKey' => 'RETURN', 'onPress' => 'close']
+    ]);
+    $panel = Element::firstByType('WarningPanel');
+
+    assertInstanceOf(ForgeHeadlessWarningPanel::class, $panel, 'forged warning panel is available');
+    assertSame("First line\nSecond line", $panel->exposedCopyableBodyText(), 'warning panel clipboard text preserves the body without buttons');
+
+    $panel->setText("Changed\nbody");
+    assertSame("Changed\nbody", $panel->exposedCopyableBodyText(), 'warning panel clipboard text follows body updates');
+
+    $root = root();
+    new HeadlessElement($root, 'window', null, 'Window');
+
+    ForgeHeadlessErrorPanel::forge('Error', "SQLSTATE[HY000]\nAccess denied", [
+      ['text' => 'OK', 'hotKey' => 'RETURN', 'onPress' => 'close']
+    ]);
+    $panel = Element::firstByType('ErrorPanel');
+
+    assertInstanceOf(ForgeHeadlessErrorPanel::class, $panel, 'forged error panel is available');
+    assertSame("SQLSTATE[HY000]\nAccess denied", $panel->exposedCopyableBodyText(), 'error panel clipboard text preserves the body without buttons');
   },
 
   'panels call default button on ctrl return' => function (): void {

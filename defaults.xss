@@ -46,6 +46,12 @@ Box {
   position: absolute;
 }
 
+TextReader {
+  position: absolute;
+  scrollable: true;
+  textWrap: auto;
+}
+
 Block {
   width: 100%;
 }

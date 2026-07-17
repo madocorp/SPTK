@@ -81,11 +81,34 @@ trait ElementAssistant {
   }
 
   public function scrollToTop(): void {
-    $this->scollY = 0;
+    $this->scrollY = 0;
   }
 
   public function scrollToBottom(): void {
-    // todo
+    $this->scrollY = $this->maxScrollY();
+  }
+
+  public function scrollBy(int $x, int $y): bool {
+    return $this->scrollTo($this->scrollX + $x, $this->scrollY + $y);
+  }
+
+  public function scrollTo(int $x, int $y): bool {
+    $scrollX = max(0, min($x, $this->maxScrollX()));
+    $scrollY = max(0, min($y, $this->maxScrollY()));
+    if ($scrollX === $this->scrollX && $scrollY === $this->scrollY) {
+      return false;
+    }
+    $this->scrollX = $scrollX;
+    $this->scrollY = $scrollY;
+    return true;
+  }
+
+  protected function maxScrollX(): int {
+    return max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
+  }
+
+  protected function maxScrollY(): int {
+    return max(0, $this->geometry->contentHeight - $this->geometry->innerHeight);
   }
 
   public function debug(int $level = 0): void {
