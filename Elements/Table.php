@@ -1210,6 +1210,14 @@ class Table extends TextGrid {
     $this->changed = false;
   }
 
+  protected function scrollbarOptions(): array {
+    return [
+      'verticalTop' => $this->geometry->borderTop + $this->geometry->paddingTop + $this->rowHeight,
+      'verticalBottom' => $this->geometry->height - $this->geometry->borderBottom - $this->geometry->paddingBottom,
+      'verticalViewportHeight' => $this->bodyHeight()
+    ];
+  }
+
   protected function render(): Texture|false {
     if ($this->display === false || $this->texture === false) {
       return false;
@@ -1220,9 +1228,10 @@ class Table extends TextGrid {
       $this->scrollX,
       $this->scrollY,
       $this->tableContentWidth(),
-      $this->rowHeight + $this->rowCount * $this->rowHeight,
+      $this->rowCount * $this->rowHeight,
       $this->geometry,
-      $this->style
+      $this->style,
+      $this->scrollbarOptions()
     );
     return $this->texture;
   }

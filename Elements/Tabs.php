@@ -135,7 +135,10 @@ class Tabs extends Element {
     }
     $panel = $this->findAncestorByType('Panel');
     if ($panel !== false && $panel->isDisplayed()) {
-      $panel->refreshInputList($focus);
+      $panel->refreshInputList($focus, false);
+      if ($focus === $this) {
+        $this->raise();
+      }
     }
   }
 
@@ -159,12 +162,18 @@ class Tabs extends Element {
     foreach ($this->tabContents() as $element) {
       if ($selectedContent !== false && $element->getId() === $selectedContent->getId()) {
         $element->show();
-        $element->recalculateGeometry();
+        if ($this->contentNeedsGeometry($element)) {
+          $element->recalculateGeometry();
+        }
         $element->raise();
       } else {
         $element->hide();
       }
     }
+  }
+
+  private function contentNeedsGeometry(Element $element): bool {
+    return $element->texture === false || $element->changed;
   }
 
   private function currentTabElement() {
@@ -200,12 +209,16 @@ class Tabs extends Element {
       case Action::MOVE_LEFT:
       case Action::SWITCH_LEFT:
         $this->selectRelative(-1);
-        \SPTK\Element::refresh();
+        if ($this->renderer instanceof \FFI\CData) {
+          \SPTK\Element::refresh();
+        }
         return true;
       case Action::MOVE_RIGHT:
       case Action::SWITCH_RIGHT:
         $this->selectRelative(1);
-        \SPTK\Element::refresh();
+        if ($this->renderer instanceof \FFI\CData) {
+          \SPTK\Element::refresh();
+        }
         return true;
     }
     return false;

@@ -138,7 +138,7 @@ class MenuBox extends ListBox {
 
   protected function menuText(ListBoxRow $item): string {
     $prefix = $item->getPrefix();
-    return ($prefix === '' ? '' : $prefix . ' ') . $item->getText();
+    return ($prefix === '' ? '' : $prefix . $item->getPrefixSeparator()) . $item->getText();
   }
 
   protected function normalRowHeight(): int {
@@ -186,14 +186,16 @@ class MenuBox extends ListBox {
     $baseColors = $this->colorsForStyle($row->getType(), $classes);
     $leftColors = $this->colorsForStyle('ItemLeft');
     $leftColors['bg'] = $baseColors['bg'];
-    $prefixColors = $this->colorsForStyle('ItemPrefix', $classes);
-    $rightColors = $this->colorsForStyle('ItemRight', $classes);
+    $prefixColors = $this->colorsForStyle('ItemPrefix');
+    $prefixColors['bg'] = $baseColors['bg'];
+    $rightColors = $this->colorsForStyle('ItemRight');
+    $rightColors['bg'] = $baseColors['bg'];
     $matchColors = $this->colorsForStyle('InputValue', ['InputValue:matched']);
     $cells = [];
     $this->appendMenuLeftCells($cells, $row->getLeft(), $leftColumns, $leftColors, $cols);
     $itemStart = count($cells);
     if ($row->getPrefix() !== '') {
-      $this->appendTextCells($cells, $row->getPrefix() . ' ', $prefixColors, min($cols, $itemStart + $menuColumns));
+      $this->appendTextCells($cells, $row->getPrefix() . $row->getPrefixSeparator(), $prefixColors, min($cols, $itemStart + $menuColumns));
     }
     $textLimit = min($cols, $itemStart + $menuColumns);
     $text = $row->getText();

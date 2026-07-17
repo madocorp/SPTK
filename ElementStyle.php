@@ -5,6 +5,13 @@ namespace SPTK;
 trait ElementStyle {
 
   public function recalculateStyle(): void {
+    $this->recalculateOwnStyle();
+    foreach ($this->descendants as $descendant) {
+      $descendant->recalculateStyle();
+    }
+  }
+
+  protected function recalculateOwnStyle(): void {
     $defaultStyle = null;
     $ancestorStyle = null;
     if (isset(self::$root)) {
@@ -16,9 +23,6 @@ trait ElementStyle {
       $this->display = false;
     }
     $this->changed = true;
-    foreach ($this->descendants as $descendant) {
-      $descendant->recalculateStyle();
-    }
   }
 
   public function addClass(string $class): void {

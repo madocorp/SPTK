@@ -43,6 +43,10 @@ class HeadlessTable extends Table {
     ];
   }
 
+  public function scrollbarViewport(): array {
+    return $this->scrollbarOptions();
+  }
+
 }
 
 return [
@@ -112,6 +116,34 @@ return [
     $table->recalculateGeometry();
     $cells = $table->visibleCells();
     assertSame([119, 119, 119, 255], $cells['header'][0]['backgroundColor'], 'active header cells use TableHeader:active background color');
+  },
+
+  'table vertical scrollbar starts below the fixed header' => function (): void {
+    $root = root();
+    $rows = ["id\tname"];
+    for ($i = 1; $i <= 100; $i++) {
+      $rows[] = "{$i}\tName {$i}";
+    }
+    $file = tempFile(implode("\n", $rows) . "\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'scrollbar-header', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $geometry = $table->getGeometry();
+    $cells = $table->visibleCells();
+    $viewport = $table->scrollbarViewport();
+
+    assertSame(
+      $geometry->borderTop + $geometry->paddingTop + $cells['header'][0]['height'],
+      $viewport['verticalTop'],
+      'vertical scrollbar begins at the body top instead of covering the header'
+    );
+    assertSame(
+      $geometry->height - $geometry->borderBottom - $geometry->paddingBottom,
+      $viewport['verticalBottom'],
+      'vertical scrollbar ends at the body bottom'
+    );
   },
 
   'table keeps visible cell geometry when columns are narrow' => function (): void {

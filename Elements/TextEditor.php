@@ -17,6 +17,7 @@ class TextEditor extends TextGrid {
   protected $lineTokens = [];
   protected $lineContexts = [];
   protected $active = false;
+  protected $readOnly = false;
   protected $styleColorCache = [];
   protected $highlightRanges = [];
   protected $preserveScrollOnNextUpdate = false;
@@ -31,7 +32,15 @@ class TextEditor extends TextGrid {
   }
 
   public function getAttributeList(): array {
-    return ['tokenizer', 'file'];
+    return ['tokenizer', 'file', 'readOnly'];
+  }
+
+  public function setReadOnly($value): void {
+    $this->readOnly = $value === true || $value === 'true' || $value === 1 || $value === '1';
+  }
+
+  public function getReadOnly(): bool {
+    return $this->readOnly;
   }
 
   public function setTokenizer($value): void {
@@ -153,6 +162,24 @@ class TextEditor extends TextGrid {
   public function clearHighlightRanges(): void {
     $this->highlightRanges = [];
     $this->update();
+  }
+
+  public function addClass(string $class): void {
+    $changed = !$this->hasClass($class);
+    $this->styleColorCache = [];
+    parent::addClass($class);
+    if ($changed && $this->renderer !== false) {
+      $this->update();
+    }
+  }
+
+  public function removeClass(string $class): void {
+    $changed = $this->hasClass($class);
+    $this->styleColorCache = [];
+    parent::removeClass($class);
+    if ($changed && $this->renderer !== false) {
+      $this->update();
+    }
   }
 
   public function addVariant(string $class): void {
@@ -499,6 +526,9 @@ class TextEditor extends TextGrid {
   }
 
   public function insertText(string $text): void {
+    if ($this->readOnly) {
+      return;
+    }
     $this->highlightRanges = [];
     $lines = explode("\n", $text);
     $n = count($lines);
@@ -514,6 +544,9 @@ class TextEditor extends TextGrid {
   }
 
   public function replaceText(string $text): void {
+    if ($this->readOnly) {
+      return;
+    }
     $this->highlightRanges = [];
     $replacement = explode("\n", $text);
     $last = count($replacement) - 1;
@@ -557,6 +590,26 @@ class TextEditor extends TextGrid {
     if ($handled) {
       $this->update();
       return true;
+    }
+    if ($this->readOnly) {
+      if ($keycombo === Action::COPY) {
+        Clipboard::set($this->cursor->getSelection());
+        $this->cursor->resetSelection();
+        $this->update();
+        return true;
+      }
+      switch ($keycombo) {
+        case Action::DO_IT:
+        case Action::DELETE_BACK:
+        case Action::DELETE_FORWARD:
+        case Action::CUT:
+        case Action::PASTE:
+        case Action::UNDO:
+        case Action::REDO:
+          return true;
+        default:
+          return false;
+      }
     }
     switch ($keycombo) {
       case Action::SELECT_ITEM:
@@ -645,6 +698,9 @@ class TextEditor extends TextGrid {
   }
 
   public function textInputHandler($element, $event) {
+    if ($this->readOnly) {
+      return true;
+    }
     $this->highlightRanges = [];
     $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
     $this->cursor->modify($row1, $col1 + 1, $row1, $col1 + 1);
