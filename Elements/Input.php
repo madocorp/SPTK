@@ -46,7 +46,7 @@ class Input extends Element {
       $value = '';
     }
     $this->lines = [$value];
-    $this->elementBefore->setValue($value);
+    $this->elementBefore->setValue($this->displayValue((string)$value));
     $this->elementBefore->removeVariant('placeholder');
     $this->elementSelected->setValue(' ');
     $this->elementAfter->setValue('');
@@ -106,10 +106,14 @@ class Input extends Element {
   }
 
   private function updateInactiveDisplay(): void {
-    $this->elementBefore->setValue($this->lines[0]);
+    $this->elementBefore->setValue($this->displayValue((string)$this->lines[0]));
     $this->elementBefore->removeVariant('placeholder');
     $this->elementSelected->setValue('');
     $this->elementAfter->setValue('');
+  }
+
+  protected function displayValue(string $value): string {
+    return $value;
   }
 
   protected function placeholderVisible(): bool {
@@ -144,11 +148,11 @@ class Input extends Element {
       $this->elementBefore->setValue($this->placeholder);
       $this->elementBefore->addVariant('placeholder');
     } else {
-      $this->elementBefore->setValue($before);
+      $this->elementBefore->setValue($this->displayValue($before));
       $this->elementBefore->removeVariant('placeholder');
     }
-    $this->elementSelected->setValue($selected === '' ? ' ' : $selected);
-    $this->elementAfter->setValue($after);
+    $this->elementSelected->setValue($selected === '' ? ' ' : $this->displayValue($selected));
+    $this->elementAfter->setValue($this->displayValue($after));
     $this->recalculateGeometry();
     $this->setScroll();
     Element::immediateRender($this);

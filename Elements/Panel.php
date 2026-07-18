@@ -554,7 +554,7 @@ class Panel extends Element {
     if ($tabs === false || !method_exists($tabs, 'selectRelative')) {
       return false;
     }
-    if (!$tabs->selectRelative($offset, false)) {
+    if (!$tabs->selectRelative($offset, false, false)) {
       return false;
     }
     $this->activateFirstInputIn($tabs->getTabContent());
@@ -590,7 +590,7 @@ class Panel extends Element {
 
   private function refreshIfRendered(): void {
     if ($this->renderer instanceof \FFI\CData) {
-      Element::refresh();
+      Element::immediateRender($this);
     }
   }
 

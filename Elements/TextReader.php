@@ -77,4 +77,11 @@ class TextReader extends Element {
     return true;
   }
 
+  protected function scrollbarOptions(): array {
+    return [
+      'horizontal' => false,
+      'horizontalContentIncludesPadding' => true
+    ];
+  }
+
 }

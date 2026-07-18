@@ -189,4 +189,12 @@ class Select extends Element {
     return true;
   }
 
+  protected function scrollbarOptions(): array {
+    return [
+      'vertical' => false,
+      'horizontal' => false,
+      'horizontalContentIncludesPadding' => true
+    ];
+  }
+
 }

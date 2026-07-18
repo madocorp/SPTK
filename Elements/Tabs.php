@@ -106,7 +106,7 @@ class Tabs extends Element {
     $this->selectTab();
   }
 
-  public function selectTab($selected = null, $focusTabs = true) {
+  public function selectTab($selected = null, $focusTabs = true, bool $refreshPanel = true) {
     $previousTab = $this->currentTab;
     if ($selected === null) {
       $selected = $this->currentTab;
@@ -134,15 +134,15 @@ class Tabs extends Element {
       }
     }
     $panel = $this->findAncestorByType('Panel');
-    if ($panel !== false && $panel->isDisplayed()) {
+    if ($refreshPanel && $panel !== false && $panel->isDisplayed()) {
       $panel->refreshInputList($focus, false);
       if ($focus === $this) {
-        $this->raise();
+        $this->raiseLocal();
       }
     }
   }
 
-  public function selectRelative($offset, $focusTabs = true): bool {
+  public function selectRelative($offset, $focusTabs = true, bool $refreshPanel = true): bool {
     if ($this->tabs <= 0) {
       return false;
     }
@@ -153,7 +153,7 @@ class Tabs extends Element {
     while ($selected >= $this->tabs) {
       $selected -= $this->tabs;
     }
-    $this->selectTab($selected, $focusTabs);
+    $this->selectTab($selected, $focusTabs, $refreshPanel);
     return true;
   }
 
@@ -165,7 +165,6 @@ class Tabs extends Element {
         if ($this->contentNeedsGeometry($element)) {
           $element->recalculateGeometry();
         }
-        $element->raise();
       } else {
         $element->hide();
       }
@@ -210,18 +209,27 @@ class Tabs extends Element {
       case Action::SWITCH_LEFT:
         $this->selectRelative(-1);
         if ($this->renderer instanceof \FFI\CData) {
-          \SPTK\Element::refresh();
+          $this->refreshTabContainer();
         }
         return true;
       case Action::MOVE_RIGHT:
       case Action::SWITCH_RIGHT:
         $this->selectRelative(1);
         if ($this->renderer instanceof \FFI\CData) {
-          \SPTK\Element::refresh();
+          $this->refreshTabContainer();
         }
         return true;
     }
     return false;
+  }
+
+  private function refreshTabContainer(): void {
+    $panel = $this->findAncestorByType('Panel');
+    if ($panel !== false && $panel->isDisplayed()) {
+      \SPTK\Element::immediateRender($panel);
+      return;
+    }
+    \SPTK\Element::refresh();
   }
 
 }

@@ -13,6 +13,9 @@ trait ElementLayout {
   }
 
   protected function measure(): void {
+    if ($this->display === false) {
+      return;
+    }
     $this->geometry->setValues($this->ancestor->geometry, $this->style);
     foreach ($this->descendants as $descendant) {
       $descendant->measure();
@@ -231,9 +234,22 @@ trait ElementLayout {
     }
     new Border($tmpTexture, $this->geometry, $this->ancestor->geometry, $this->style);
     if ($this->style->get('scrollable')) {
-      new Scrollbar($tmpTexture, $this->scrollX, $this->scrollY, $this->geometry->contentWidth, $this->geometry->contentHeight, $this->geometry, $this->style);
+      new Scrollbar(
+        $tmpTexture,
+        $this->scrollX,
+        $this->scrollY,
+        $this->geometry->contentWidth,
+        $this->geometry->contentHeight,
+        $this->geometry,
+        $this->style,
+        $this->scrollbarOptions()
+      );
     }
     return $tmpTexture;
+  }
+
+  protected function scrollbarOptions(): array {
+    return ['horizontalContentIncludesPadding' => true];
   }
 
 }
