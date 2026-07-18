@@ -104,11 +104,13 @@ trait ElementAssistant {
   }
 
   protected function maxScrollX(): int {
-    return max(0, $this->geometry->contentWidth - $this->geometry->innerWidth);
+    $contentWidth = $this->geometry->contentWidth - $this->geometry->paddingLeft - $this->geometry->paddingRight;
+    return max(0, $contentWidth - $this->geometry->innerWidth);
   }
 
   protected function maxScrollY(): int {
-    return max(0, $this->geometry->contentHeight - $this->geometry->innerHeight);
+    $contentHeight = $this->geometry->contentHeight - $this->geometry->paddingBottom;
+    return max(0, $contentHeight - $this->geometry->innerHeight);
   }
 
   public function debug(int $level = 0): void {

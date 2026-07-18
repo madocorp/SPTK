@@ -14,6 +14,7 @@ use SPTK\Elements\ListItem;
 use SPTK\Elements\MenuBox;
 use SPTK\Elements\MenuBoxItem;
 use SPTK\Elements\Panel;
+use SPTK\Elements\PasswordInput;
 use SPTK\Elements\RadioButton;
 use SPTK\Elements\Select;
 use SPTK\Elements\Tab;
@@ -21,6 +22,7 @@ use SPTK\Elements\Tabs;
 use SPTK\Elements\TextReader;
 use SPTK\Elements\WarningPanel;
 use SPTK\Geometry;
+use SPTK\Scrollbar;
 use SPTK\SDLWrapper\KeyCode;
 use SPTK\SDLWrapper\KeyCombo;
 use SPTK\SDLWrapper\KeyModifier;
@@ -69,6 +71,42 @@ class StyleCountingElement extends Element {
   public function recalculateStyle(): void {
     $this->recalculateStyleCount++;
     parent::recalculateStyle();
+  }
+
+}
+
+class InspectableScrollElement extends HeadlessElement {
+
+  public function maxX(): int {
+    return $this->maxScrollX();
+  }
+
+  public function maxY(): int {
+    return $this->maxScrollY();
+  }
+
+}
+
+class InspectableTextReader extends TextReader {
+
+  public function options(): array {
+    return $this->scrollbarOptions();
+  }
+
+}
+
+class InspectableFile extends File {
+
+  public function options(): array {
+    return $this->scrollbarOptions();
+  }
+
+}
+
+class InspectableSelect extends Select {
+
+  public function options(): array {
+    return $this->scrollbarOptions();
   }
 
 }
@@ -247,11 +285,11 @@ class SegmentedHeadlessInput extends Input {
       $this->elementBefore->setValue($this->placeholder);
       $this->elementBefore->addVariant('placeholder');
     } else {
-      $this->elementBefore->setValue($before);
+      $this->elementBefore->setValue($this->displayValue($before));
       $this->elementBefore->removeVariant('placeholder');
     }
-    $this->elementSelected->setValue($selected === '' ? ' ' : $selected);
-    $this->elementAfter->setValue($after);
+    $this->elementSelected->setValue($selected === '' ? ' ' : $this->displayValue($selected));
+    $this->elementAfter->setValue($this->displayValue($after));
   }
 
   public function moveCursorTo(int $col): void {
@@ -265,6 +303,53 @@ class SegmentedHeadlessInput extends Input {
       $this->nthChild(1)->getValue(),
       $this->nthChild(2)->getValue()
     ];
+  }
+
+}
+
+class HeadlessPasswordInput extends PasswordInput {
+
+  protected function init(): void {
+    parent::init();
+    $this->letterWidth = 1;
+  }
+
+  public function recalculateGeometry(): void {
+    ;
+  }
+
+  protected function update() {
+    $this->cursor->save();
+    $this->cursor->toCoordinates($row1, $col1, $row2, $col2);
+    $before = mb_substr($this->lines[0], 0, $col1);
+    $selected = mb_substr($this->lines[0], $col1, $col2 - $col1);
+    $after = mb_substr($this->lines[0], $col2);
+    if ($this->placeholderVisible()) {
+      $this->elementBefore->setValue($this->placeholder);
+      $this->elementBefore->addVariant('placeholder');
+    } else {
+      $this->elementBefore->setValue($this->displayValue($before));
+      $this->elementBefore->removeVariant('placeholder');
+    }
+    $this->elementSelected->setValue($selected === '' ? ' ' : $this->displayValue($selected));
+    $this->elementAfter->setValue($this->displayValue($after));
+  }
+
+  public function moveCursorTo(int $col): void {
+    $this->cursor->modify(0, $col, 0, $col);
+    $this->update();
+  }
+
+  public function segments(): array {
+    return [
+      $this->nthChild(0)->getValue(),
+      $this->nthChild(1)->getValue(),
+      $this->nthChild(2)->getValue()
+    ];
+  }
+
+  public function placeholderActive(): bool {
+    return $this->nthChild(0)->hasClass('InputValue:placeholder');
   }
 
 }
@@ -394,6 +479,87 @@ return [
     assertSame('calculated', $geometry->fullWidth, 'unresolved calculated full width remains available');
     assertSame('content', $geometry->innerHeight, 'unresolved content height remains available');
     assertSame('content', $geometry->fullHeight, 'unresolved content full height remains available');
+  },
+
+  'scroll range ignores padding only overflow' => function (): void {
+    $root = root();
+    $element = new InspectableScrollElement($root, 'scrollable');
+    $geometry = $element->getGeometry();
+    $geometry->innerWidth = 100;
+    $geometry->innerHeight = 80;
+    $geometry->paddingLeft = 10;
+    $geometry->paddingRight = 10;
+    $geometry->paddingBottom = 10;
+    $geometry->contentWidth = 120;
+    $geometry->contentHeight = 90;
+
+    assertSame(0, $element->maxX(), 'horizontal padding alone does not create scroll range');
+    assertSame(0, $element->maxY(), 'bottom padding alone does not create scroll range');
+
+    $geometry->contentWidth = 121;
+    $geometry->contentHeight = 91;
+
+    assertSame(1, $element->maxX(), 'real horizontal overflow still creates scroll range');
+    assertSame(1, $element->maxY(), 'real vertical overflow still creates scroll range');
+  },
+
+  'scrollbar visibility ignores padding only overflow' => function (): void {
+    $geometry = new Geometry(null);
+    $geometry->width = 140;
+    $geometry->height = 100;
+    $geometry->innerWidth = 100;
+    $geometry->innerHeight = 80;
+    $geometry->paddingLeft = 10;
+    $geometry->paddingRight = 10;
+    $geometry->paddingBottom = 10;
+    $scrollbar = (new \ReflectionClass(Scrollbar::class))->newInstanceWithoutConstructor();
+    $vertical = new \ReflectionMethod(Scrollbar::class, 'vertical');
+    $vertical->setAccessible(true);
+    $horizontal = new \ReflectionMethod(Scrollbar::class, 'horizontal');
+    $horizontal->setAccessible(true);
+
+    assertFalse($vertical->invoke($scrollbar, $geometry, 0, 90, 10, []), 'vertical scrollbar ignores bottom padding overflow');
+    assertFalse(
+      $horizontal->invoke($scrollbar, $geometry, 0, 120, 10, false, ['horizontalContentIncludesPadding' => true]),
+      'horizontal scrollbar ignores horizontal padding overflow'
+    );
+    assertTrue(
+      is_array($vertical->invoke($scrollbar, $geometry, 0, 92, 10, [])),
+      'vertical scrollbar appears for real content overflow'
+    );
+    assertTrue(
+      is_array($horizontal->invoke($scrollbar, $geometry, 0, 122, 10, false, ['horizontalContentIncludesPadding' => true])),
+      'horizontal scrollbar appears for real content overflow'
+    );
+  },
+
+  'text reader disables horizontal scrollbar' => function (): void {
+    $root = root();
+    $reader = new InspectableTextReader($root, 'reader');
+    $options = $reader->options();
+
+    assertSame(false, $options['horizontal'] ?? null, 'text reader does not draw a horizontal scrollbar');
+    assertSame(true, $options['horizontalContentIncludesPadding'] ?? null, 'text reader keeps generic padding-aware width math');
+  },
+
+  'file selector disables horizontal scrollbar' => function (): void {
+    $root = root();
+    $file = new InspectableFile($root, 'file');
+    $options = $file->options();
+
+    assertSame(false, $options['vertical'] ?? null, 'file selector does not draw a vertical scrollbar');
+    assertSame(false, $options['horizontal'] ?? null, 'file selector does not draw a horizontal scrollbar');
+    assertSame(true, $options['horizontalContentIncludesPadding'] ?? null, 'file selector keeps generic padding-aware width math');
+  },
+
+  'select disables scrollbars' => function (): void {
+    $root = root();
+    $select = new InspectableSelect($root, 'select');
+    $options = $select->options();
+
+    assertSame(false, $options['vertical'] ?? null, 'select does not draw a vertical scrollbar');
+    assertSame(false, $options['horizontal'] ?? null, 'select does not draw a horizontal scrollbar');
+    assertSame(true, $options['horizontalContentIncludesPadding'] ?? null, 'select keeps generic padding-aware width math');
   },
 
   'child classes are inherited only while active' => function (): void {
@@ -805,6 +971,33 @@ return [
     $input->removeVariant('active');
 
     assertSame(['test', '', ''], $input->segments(), 'inactive input clears stale cursor and after-cursor text');
+  },
+
+  'password input masks visible value only' => function (): void {
+    $root = root();
+    $input = new HeadlessPasswordInput($root, 'password', null, 'PasswordInput');
+
+    $input->setValue('secret');
+
+    assertSame('Input', $input->getType(), 'password input uses the normal Input type for styling');
+    assertSame('secret', $input->getValue(), 'password input keeps the real value for application code');
+    assertSame(['******', '', ''], $input->segments(), 'inactive password input displays one mask per character');
+
+    $input->addVariant('active');
+    $input->moveCursorTo(3);
+
+    assertSame(['***', '*', '**'], $input->segments(), 'active password input masks each cursor segment');
+  },
+
+  'password input leaves active placeholder readable' => function (): void {
+    $root = root();
+    $input = new HeadlessPasswordInput($root, 'password');
+
+    $input->setPlaceholder('Password');
+    $input->addVariant('active');
+
+    assertSame(['Password', ' ', ''], $input->segments(), 'password placeholder text is not masked');
+    assertTrue($input->placeholderActive(), 'password placeholder keeps placeholder styling');
   },
 
   'tabs select one content section at a time' => function (): void {

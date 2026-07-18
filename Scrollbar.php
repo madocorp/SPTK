@@ -11,8 +11,8 @@ class Scrollbar {
     $barColor = $style->get('scrollbarColor');
     $handleColor = $style->get('scrollhandleColor');
     $size = $style->get('scrollbarSize');
-    $vb = $this->vertical($geometry, $sy, $my, $size, $options);
-    $hb = $this->horizontal($geometry, $sx, $mx, $size, $vb !== false);
+    $vb = ($options['vertical'] ?? true) ? $this->vertical($geometry, $sy, $my, $size, $options) : false;
+    $hb = ($options['horizontal'] ?? true) ? $this->horizontal($geometry, $sx, $mx, $size, $vb !== false, $options) : false;
     if ($vb !== false && $barColor !== 'transparent') {
       $this->drawFillTriangle($vb[0], $vb[2], $vb[1], $vb[2], $vb[1], $vb[4], $barColor);
       $this->drawFillTriangle($vb[0], $vb[3], $vb[1], $vb[3], $vb[1], $vb[5], $barColor);
@@ -35,33 +35,37 @@ class Scrollbar {
     $barHeight = $y2 - $y1;
     $hasViewportHeight = array_key_exists('verticalViewportHeight', $options);
     $viewportHeight = $hasViewportHeight ? $options['verticalViewportHeight'] : $geometry->innerHeight;
-    if (($hasViewportHeight ? $my <= $viewportHeight + 1 : $my - $geometry->borderTop <= $barHeight + 1) || $barHeight <= 0) {
+    $contentHeight = $hasViewportHeight ? $my : max(0, $my - $geometry->paddingBottom);
+    if ($contentHeight <= $viewportHeight + 1 || $barHeight <= 0) {
       return false;
     }
     $x1 = $geometry->width - $geometry->borderRight - $size;
     $x2 = $geometry->width - $geometry->borderRight;
-    $handlePos = round($barHeight * $sy / $my) + $y1;
-    $handleHeight = round($barHeight * $viewportHeight / $my);
+    $handlePos = round($barHeight * $sy / $contentHeight) + $y1;
+    $handleHeight = round($barHeight * $viewportHeight / $contentHeight);
     if ($handlePos + $handleHeight > $y2) {
       $handleHeight = $y2 - $handlePos;
     }
     return [$x1, $x2, $y1, $y2, $handlePos, $handlePos + $handleHeight];
   }
 
-  private function horizontal(Geometry $geometry, int $sx, int $mx, int $size, bool $hasVertical) {
+  private function horizontal(Geometry $geometry, int $sx, int $mx, int $size, bool $hasVertical, array $options) {
     $x1 = $geometry->borderLeft;
     $x2 = $geometry->width - $geometry->borderRight - ($hasVertical ? $size : 0);
     $barWidth = $x2 - $x1;
-    if ($mx <= 0) {
+    $contentWidth = !empty($options['horizontalContentIncludesPadding'])
+      ? max(0, $mx - $geometry->paddingLeft - $geometry->paddingRight)
+      : $mx;
+    if ($contentWidth <= 0) {
       return false;
     }
-    if ($mx <= $geometry->innerWidth + 1) {
+    if ($contentWidth <= $geometry->innerWidth + 1) {
       return false;
     }
     $y1 = $geometry->height - $geometry->borderBottom - $size;
     $y2 = $geometry->height - $geometry->borderBottom;
-    $handlePos = round($barWidth * $sx / $mx) + $x1;
-    $handleWidth = round($barWidth * $geometry->innerWidth / $mx);
+    $handlePos = round($barWidth * $sx / $contentWidth) + $x1;
+    $handleWidth = round($barWidth * $geometry->innerWidth / $contentWidth);
     if ($handlePos + $handleWidth > $x2) {
       $handleWidth = $x2 - $handlePos;
     }

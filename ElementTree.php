@@ -40,6 +40,11 @@ trait ElementTree {
   }
 
   public function raise(): void {
+    $this->raiseLocal();
+    $this->ancestor->raise();
+  }
+
+  protected function raiseLocal(): void {
     foreach ($this->ancestor->stack as $i => $element) {
       if ($element->id === $this->id) {
         unset($this->ancestor->stack[$i]);
@@ -48,7 +53,6 @@ trait ElementTree {
         break;
       }
     }
-    $this->ancestor->raise();
   }
 
   public function lower(): void {
