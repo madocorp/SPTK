@@ -11,6 +11,7 @@ class Menu extends Element {
 
   protected $bar;
   protected $sub;
+  protected array $subs = [];
   protected $openedIndex = false;
 
   protected function init(): void {
@@ -22,14 +23,19 @@ class Menu extends Element {
     if ($element->type == 'MenuBar') {
       $this->bar = $element;
     } else if ($element->type == 'SubMenu') {
-      $this->sub = $element;
+      if ($this->sub === null) {
+        $this->sub = $element;
+      }
+      $this->subs[] = $element;
     }
   }
 
   public function closeMenu() {
     $this->bar->inactivateMenuBarItems();
     $this->openedIndex = false;
-    $this->sub->closeMenuBoxes();
+    foreach ($this->subs as $sub) {
+      $sub->closeMenuBoxes();
+    }
   }
 
   public function openMenu($menuIndex) {
@@ -39,7 +45,9 @@ class Menu extends Element {
       return false;
     }
     $this->openedIndex = $menuIndex;
-    $this->sub->showMenuBox($barItem->getName(), $barItem->geometry->x, 0, true);
+    foreach ($this->subs as $sub) {
+      $sub->showMenuBox($barItem->getName(), $barItem->geometry->x, 0, true);
+    }
     return true;
   }
 
