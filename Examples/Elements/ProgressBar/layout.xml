@@ -1,0 +1,11 @@
+<Root>
+  <Window title="ProgressBar">
+    <Panel name="panel">
+      <PanelTitle>ProgressBar</PanelTitle>
+      <PanelContent>
+        <ProgressBar name="progress" label="Working" type="percent" />
+        <Label>Input: <Input value="Input" /></Label>
+      </PanelContent>
+    </Panel>
+  </Window>
+</Root>
