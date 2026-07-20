@@ -277,6 +277,32 @@ Field {
   scrollable: true;
 }
 
+ProgressBar {
+  width: 100%;
+  backgroundColor: inherit;
+  color: inherit;
+  height: content;
+  textWrap: auto;
+  padding: 5px, 0px;
+}
+
+ProgressBarLabel {
+  backgroundColor: inherit;
+  color: inherit;
+}
+
+ProgressBarBox {
+  width: 100%;
+  height: 30px;
+  backgroundColor: inherit;
+  border: 1px;
+  borderColor: #000000;
+}
+
+ProgressBarFill {
+  backgroundColor: #0000ff;
+}
+
 InputValue:selected {
   backgroundColor: #000000;
   color: #00cccc;

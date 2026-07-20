@@ -7,6 +7,7 @@ use SPTK\Elements\Button;
 use SPTK\Elements\CheckBox;
 use SPTK\Elements\Field;
 use SPTK\Elements\ListBox;
+use SPTK\Elements\ProgressBar;
 use SPTK\Elements\Select;
 use SPTK\Elements\SelectPanel;
 use SPTK\Elements\Tab;
@@ -58,6 +59,83 @@ XML, 'xml');
     $tab = Element::firstByType('Tab', $root);
     assertInstanceOf(Tab::class, $tab, 'tab elements resolve to the Tab class');
     assertSame('tab-content', $tab->getContentName(), 'tab contentName attributes are applied');
+  },
+
+  'template parser builds progress bars from attributes' => function (): void {
+    $root = root();
+    $xml = tempFile(<<<'XML'
+<Root>
+  <ProgressBar name="work" label="Working" type="steps" stepNumber="34" value="5" showJob="false" />
+</Root>
+XML, 'xml');
+
+    new LayoutXmlReader($xml, $root);
+
+    $progress = Element::byName('work', $root);
+    assertInstanceOf(ProgressBar::class, $progress, 'progress bar elements resolve to the ProgressBar class');
+    assertSame(5, $progress->getValue(), 'progress bar value attribute is applied');
+    assertSame(34, $progress->getStepNumber(), 'progress bar stepNumber attribute is applied');
+    assertSame('steps', $progress->getProgressType(), 'progress bar type attribute is applied');
+    assertFalse($progress->getShowJob(), 'progress bar showJob attribute is applied');
+    assertSame('Working: 5 / 34', $progress->nthChild(0)->getValue(), 'steps progress text is rendered');
+    assertFalse(propertyValue($progress, 'acceptInput'), 'progress bars are display-only controls');
+    assertSame('content', $progress->getStyle()->get('height'), 'progress bar height follows wrapped content');
+    assertSame(30, $progress->nthChild(2)->getStyle()->get('height'), 'progress bar box matches input height');
+  },
+
+  'progress bars format percent steps hidden and jobs' => function (): void {
+    $root = root();
+    $progress = new ProgressBar($root, 'work');
+    $progress->setLabel('Working');
+
+    $progress->setValue(23);
+    assertSame('Working: 23%', $progress->nthChild(0)->getValue(), 'percent progress text is rendered');
+    assertSame(0.23, $progress->getProgressRatio(), 'percent values produce a fill ratio');
+
+    $progress->setValue(120);
+    assertSame('Working: 100%', $progress->nthChild(0)->getValue(), 'percent text clamps high values');
+    assertSame(1.0, $progress->getProgressRatio(), 'percent ratio clamps high values');
+
+    $progress->setValue(-1);
+    assertSame('Working: 0%', $progress->nthChild(0)->getValue(), 'percent text clamps low values');
+    assertSame(0.0, $progress->getProgressRatio(), 'percent ratio clamps low values');
+
+    $progress->setType('steps');
+    $progress->setStepNumber(34);
+    $progress->setValue(5);
+    assertSame('Working: 5 / 34', $progress->nthChild(0)->getValue(), 'steps progress text is rendered');
+    assertSame(5 / 34, $progress->getProgressRatio(), 'steps values produce a fill ratio');
+
+    $progress->increment(2);
+    assertSame(7, $progress->getValue(), 'increment updates the stored progress value');
+    assertSame('Working: 7 / 34', $progress->nthChild(0)->getValue(), 'increment updates the rendered progress text');
+
+    $progress->setJobName('/home/mado/x.txt');
+    assertSame('Working: 7 / 34 /home/mado/x.txt', $progress->nthChild(0)->getValue(), 'jobs append to visible progress text');
+
+    $progress->setType('hidden');
+    assertSame('Working: /home/mado/x.txt', $progress->nthChild(0)->getValue(), 'hidden progress shows only label and job');
+    assertSame(0.0, $progress->getProgressRatio(), 'hidden progress has no fill ratio');
+
+    $progress->setShowJob('false');
+    assertSame('Working', $progress->nthChild(0)->getValue(), 'hidden progress can hide job text');
+  },
+
+  'progress bars detect hidden ancestors before immediate rendering' => function (): void {
+    $root = root();
+    $container = new Element($root, 'container', null, 'Box');
+    $progress = new ProgressBar($container, 'work');
+    $visible = new \ReflectionMethod(ProgressBar::class, 'isVisibleInTree');
+    $visible->setAccessible(true);
+
+    assertTrue($visible->invoke($progress), 'progress bar starts visible when ancestors are visible');
+
+    $container->hide();
+    assertFalse($visible->invoke($progress), 'progress bar is hidden when an ancestor is hidden');
+
+    $container->show();
+    $progress->hide();
+    assertFalse($visible->invoke($progress), 'progress bar is hidden when the element itself is hidden');
   },
 
   'template parser preserves known element key handlers without optional attributes' => function (): void {
