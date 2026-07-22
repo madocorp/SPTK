@@ -409,7 +409,8 @@ return [
     }
     assertTrue($byPosition['0:2']['search'], 'visible matching cells are marked as search matches');
     assertTrue($byPosition['2:2']['activeSearch'], 'active match is marked distinctly');
-    assertSame([255, 255, 0, 255], $byPosition['2:2']['backgroundColor'], 'active match uses search-active styling');
+    assertTrue($byPosition['2:2']['cursor'], 'active match keeps cursor state');
+    assertSame([85, 85, 85, 255], $byPosition['2:2']['backgroundColor'], 'cursor styling overrides active search styling');
 
     $table->clearSearch();
     assertSame([], $table->getSearchState(), 'clearSearch resets search state');
