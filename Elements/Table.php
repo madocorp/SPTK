@@ -1072,7 +1072,7 @@ class Table extends TextGrid {
         $style = $activeSearchStyle;
       }
       if (!$isHeader && !$rowNumber && $dataRow === $this->cursorRow && $column === $this->cursorColumn) {
-        $style = $activeSearch ? $activeSearchStyle : $cursorStyle;
+        $style = $cursorStyle;
       }
       $paddingLeft = $style->get('paddingLeft', $this->geometry);
       $paddingRight = $style->get('paddingRight', $this->geometry);
