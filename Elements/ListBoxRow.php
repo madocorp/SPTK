@@ -19,6 +19,7 @@ class ListBoxRow {
   protected string $prefixSeparator = ' ';
   protected string $right = '';
   protected int $rightReserve = 0;
+  protected string $rightAlign = 'right';
   protected string $truncateMarker = '';
   protected array|false $columns = false;
   protected array $classes = [];
@@ -53,6 +54,7 @@ class ListBoxRow {
         case 'prefixSeparator': $this->setPrefixSeparator($value); break;
         case 'right': $this->setRight($value); break;
         case 'rightReserve': $this->setRightReserve($value); break;
+        case 'rightAlign': $this->setRightAlign($value); break;
         case 'truncateMarker': $this->setTruncateMarker($value); break;
         case 'columns': $this->setColumns($value); break;
         case 'class':
@@ -159,6 +161,15 @@ class ListBoxRow {
 
   public function getRightReserve(): int {
     return $this->rightReserve;
+  }
+
+  public function setRightAlign($value): void {
+    $this->rightAlign = ($value === false || $value === 'false' || $value === 'left') ? 'left' : 'right';
+    $this->list->rowChanged();
+  }
+
+  public function getRightAlign(): string {
+    return $this->rightAlign;
   }
 
   public function setTruncateMarker($value): void {
