@@ -124,6 +124,7 @@ bool SDL_SetRenderDrawColor(SDL_Renderer *renderer, Uint8 r, Uint8 g, Uint8 b, U
 bool SDL_RenderClear(SDL_Renderer *renderer);
 bool SDL_RenderPresent(SDL_Renderer *renderer);
 bool SDL_SetWindowTitle(SDL_Window *window, const char *title);
+bool SDL_SetWindowIcon(SDL_Window *window, SDL_Surface *icon);
 int SDL_SetHint(const char *name, const char *value);
 bool SDL_PollEvent(SDL_Event *event);
 bool SDL_WaitEventTimeout(SDL_Event *event, Sint32 timeoutMS);
