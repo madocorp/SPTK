@@ -586,6 +586,9 @@ class ListBox extends TextGrid {
   protected function rightSlotColumns(?array $items = null): int {
     $max = 0;
     foreach ($items ?? $this->items as $item) {
+      if ($item->getRightAlign() === 'left') {
+        continue;
+      }
       $right = mb_strlen($item->getRight());
       $max = max($max, $right === 0 ? 0 : $right + 1, $item->getRightReserve());
     }
@@ -768,8 +771,10 @@ class ListBox extends TextGrid {
     }
     if ($right !== '') {
       $rightGlyphs = preg_split('//u', $right, -1, PREG_SPLIT_NO_EMPTY);
-      $start = $bodyColumns + $rightColumns - count($rightGlyphs);
-      if ($start + count($rightGlyphs) > $cols) {
+      $start = $row->getRightAlign() === 'left'
+        ? $bodyColumns
+        : $bodyColumns + $rightColumns - count($rightGlyphs);
+      if ($row->getRightAlign() !== 'left' && $start + count($rightGlyphs) > $cols) {
         $start = max(0, $cols - count($rightGlyphs));
       }
       foreach ($rightGlyphs as $i => $glyph) {
