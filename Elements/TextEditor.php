@@ -87,6 +87,10 @@ class TextEditor extends TextGrid {
     }
   }
 
+  public function setText(string $text): void {
+    $this->setValue($text);
+  }
+
   public function setValueAndState($value, array $state): void {
     $lines = explode("\n", $value);
     $sameValue = $lines === $this->lines;
@@ -156,6 +160,12 @@ class TextEditor extends TextGrid {
   public function setCursorPosition(int $row, int $col): void {
     $this->cursor->set([$row, $col, $row, $col]);
     $this->cursor->save();
+    $this->update();
+  }
+
+  public function scrollToRow(int $row): void {
+    $this->scrollY = max(0, $row) * $this->rowHeight();
+    $this->preserveScrollOnNextUpdate = true;
     $this->update();
   }
 
