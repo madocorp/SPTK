@@ -53,13 +53,67 @@ class Window extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['title', 'fullscreen'];
+    return ['title', 'fullscreen', 'icon'];
   }
 
   public function setTitle($title) {
     if ($title !== false) {
       $this->sdl->SDL_SetWindowTitle($this->window, $title);
     }
+  }
+
+  public function setIcon($icon) {
+    if ($icon === false) {
+      return;
+    }
+    $file = $this->resolveIconPath($icon);
+    if (!file_exists($file)) {
+      throw new \Exception("Window icon does not exist: {$file}");
+    }
+    $data = file_get_contents($file);
+    if ($data === false) {
+      throw new \Exception("Failed to load window icon: {$file}");
+    }
+    $img = imagecreatefromstring($data);
+    if ($img === false) {
+      throw new \Exception("Failed to decode window icon: {$file}");
+    }
+    imagepalettetotruecolor($img);
+    imagesavealpha($img, true);
+    $surface = $this->imageToSurface($img);
+    $this->sdl->SDL_SetWindowIcon($this->window, $surface);
+    $this->sdl->SDL_DestroySurface($surface);
+  }
+
+  protected function resolveIconPath(string $icon): string {
+    if (strpos($icon, '/') === 0) {
+      return $icon;
+    }
+    if (defined('APP_PATH')) {
+      return dirname(APP_PATH) . '/' . $icon;
+    }
+    return getcwd() . '/' . $icon;
+  }
+
+  protected function imageToSurface(\GdImage $img) {
+    $width = imagesx($img);
+    $height = imagesy($img);
+    $surface = $this->sdl->SDL_CreateSurface($width, $height, SDL::SDL_PIXELFORMAT_RGBA8888);
+    $this->sdl->SDL_LockSurface($surface);
+    for ($y = 0; $y < $height; $y++) {
+      $dst = \FFI::cast("uint8_t*", $surface->pixels + $y * $surface->pitch);
+      $offset = 0;
+      for ($x = 0; $x < $width; $x++) {
+        $c = imagecolorat($img, $x, $y);
+        $a = 255 - intdiv((($c >> 24) & 0x7F) * 255, 127);
+        $dst[$offset++] = $a;
+        $dst[$offset++] = $c & 0xFF;
+        $dst[$offset++] = ($c >> 8) & 0xFF;
+        $dst[$offset++] = ($c >> 16) & 0xFF;
+      }
+    }
+    $this->sdl->SDL_UnlockSurface($surface);
+    return $surface;
   }
 
   public function setFullscreen($full) {
