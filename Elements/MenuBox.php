@@ -94,12 +94,14 @@ class MenuBox extends ListBox {
   }
 
   protected function leftItemColumns(array $items): int {
+    $columns = 1;
     foreach ($items as $item) {
+      $columns = max($columns, $item->getLeftReserve());
       if ($item->isSelectable() !== false) {
-        return 2;
+        $columns = max($columns, 2);
       }
     }
-    return 1;
+    return $columns;
   }
 
   protected function menuItemColumns(array $items): int {
