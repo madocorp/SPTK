@@ -38,6 +38,16 @@ function resetToolkit(): void {
   $nextId = $element->getProperty('nextInternalId');
   $nextId->setAccessible(true);
   $nextId->setValue(0);
+  foreach ([
+    'refreshBatchDepth' => 0,
+    'refreshFullRequested' => false,
+    'refreshElements' => [],
+    'refreshFlushing' => false,
+  ] as $propertyName => $value) {
+    $property = $element->getProperty($propertyName);
+    $property->setAccessible(true);
+    $property->setValue($value);
+  }
 
   $styleSheet = new \ReflectionClass(StyleSheet::class);
   foreach (['styles', 'cache'] as $propertyName) {

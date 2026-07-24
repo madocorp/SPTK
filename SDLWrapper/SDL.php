@@ -81,12 +81,22 @@ class SDL {
             continue;
           }
           if ($this->eventCallback !== false) {
-            call_user_func($this->eventCallback, $parsedEvent);
+            \SPTK\Element::beginBatch();
+            try {
+              call_user_func($this->eventCallback, $parsedEvent);
+            } finally {
+              \SPTK\Element::endBatch();
+            }
           }
         } while (!$this->end && $this->sdl->SDL_PollEvent(\FFI::addr($event)));
       }
       if ($this->loopCallback !== null) {
-        call_user_func($this->loopCallback);
+        \SPTK\Element::beginBatch();
+        try {
+          call_user_func($this->loopCallback);
+        } finally {
+          \SPTK\Element::endBatch();
+        }
       }
       pcntl_signal_dispatch();
       if ($this->timerCallback !== null) {
@@ -98,7 +108,12 @@ class SDL {
           }
         }
         if ($now >= $timer + $this->timerPeriod) {
-          call_user_func($this->timerCallback, $now);
+          \SPTK\Element::beginBatch();
+          try {
+            call_user_func($this->timerCallback, $now);
+          } finally {
+            \SPTK\Element::endBatch();
+          }
           $timer = $now;
         }
       }

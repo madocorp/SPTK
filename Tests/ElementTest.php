@@ -36,6 +36,30 @@ class HeadlessElement extends Element {
 
 }
 
+class HiddenHeadlessElement extends HeadlessElement {
+
+  public function hideForTest(): void {
+    $this->display = false;
+  }
+
+}
+
+class RefreshCountingRoot extends HeadlessRoot {
+
+  public int $recalculateCount = 0;
+  public int $renderCount = 0;
+
+  public function recalculateGeometry(): void {
+    $this->recalculateCount++;
+  }
+
+  protected function render(): \SPTK\Texture|false {
+    $this->renderCount++;
+    return false;
+  }
+
+}
+
 class HeadlessPanel extends Panel {
 
   public function recalculateGeometry(): void {
@@ -386,6 +410,65 @@ class ButtonTestAction {
 }
 
 return [
+  'batched full refresh flushes once' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+
+    Element::beginBatch();
+    Element::refresh();
+    Element::refresh();
+
+    assertSame(0, $root->renderCount, 'batched refreshes are deferred');
+
+    Element::endBatch();
+
+    assertSame(1, $root->recalculateCount, 'batched refresh recalculates once');
+    assertSame(1, $root->renderCount, 'batched refresh renders once');
+  },
+
+  'nested refresh batches flush at outer end' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+
+    Element::beginBatch();
+    Element::refresh();
+    Element::beginBatch();
+    Element::refresh();
+    Element::endBatch();
+
+    assertSame(0, $root->renderCount, 'inner batch end does not flush');
+
+    Element::endBatch();
+
+    assertSame(1, $root->renderCount, 'outer batch end flushes once');
+  },
+
+  'full refresh overrides partial refresh request' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+    $child = new HeadlessElement($root, 'child');
+
+    Element::beginBatch();
+    Element::immediateRender($child);
+    Element::refresh();
+    Element::endBatch();
+
+    assertSame(1, $root->renderCount, 'full refresh consumes earlier partial requests');
+  },
+
+  'hidden partial refresh escalates to full refresh' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+    $child = new HiddenHeadlessElement($root, 'child');
+    $child->hideForTest();
+
+    Element::beginBatch();
+    Element::immediateRender($child);
+    Element::endBatch();
+
+    assertSame(1, $root->renderCount, 'hidden partial refresh falls back to full refresh');
+  },
+
   'base elements manage identity text classes and lookup' => function (): void {
     $root = root();
     $box = new Element($root, 'box', 'alpha beta', 'Box');
