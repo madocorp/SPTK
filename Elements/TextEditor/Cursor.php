@@ -12,6 +12,7 @@ class Cursor {
   protected array $anchor = [0, 0];
   protected array $caretBefore = [0, 0];
   protected array $anchorBefore = [0, 0];
+  protected int|false $preferredCol = false;
   protected bool $freeSelectionMode = false;
 
   public function __construct(array &$lines) {
@@ -45,6 +46,22 @@ class Cursor {
   protected function checkLineLength(): void {
     $len = $this->getLineLength($this->caret[0]);
     $this->caret[1] = min($len, $this->caret[1]);
+  }
+
+  protected function resetPreferredColumn(): void {
+    $this->preferredCol = $this->caret[1];
+  }
+
+  protected function moveVertical(int $rows, bool $select = false): void {
+    if ($this->preferredCol === false) {
+      $this->preferredCol = $this->caret[1];
+    }
+    $this->caret[0] += $rows;
+    $this->checkDocStart();
+    $this->checkDocEnd();
+    $this->caret[1] = $this->preferredCol;
+    $this->checkLineLength();
+    $this->resetSelection($select);
   }
 
   public function save(): void {
@@ -89,6 +106,7 @@ class Cursor {
     $this->caret[1] = $cursor[1];
     $this->anchor[0] = $cursor[2];
     $this->anchor[1] = $cursor[3];
+    $this->resetPreferredColumn();
   }
 
   public function saveState(): array {
@@ -97,6 +115,7 @@ class Cursor {
       'anchor' => $this->anchor,
       'caretBefore' => $this->caretBefore,
       'anchorBefore' => $this->anchorBefore,
+      'preferredCol' => $this->preferredCol,
       'freeSelectionMode' => $this->freeSelectionMode
     ];
   }
@@ -106,6 +125,7 @@ class Cursor {
     $this->anchor = $state['anchor'] ?? $this->caret;
     $this->caretBefore = $state['caretBefore'] ?? $this->caret;
     $this->anchorBefore = $state['anchorBefore'] ?? $this->anchor;
+    $this->preferredCol = $state['preferredCol'] ?? $this->caret[1];
     $this->freeSelectionMode = $state['freeSelectionMode'] ?? false;
   }
 
@@ -122,6 +142,7 @@ class Cursor {
     if ($anchorCol !== false) {
       $this->anchor[1] = $anchorCol;
     }
+    $this->resetPreferredColumn();
   }
 
   public function getSelection(): string {
@@ -160,43 +181,33 @@ class Cursor {
   }
 
   public function moveUp(bool $select = false): void {
-    $this->caret[0]--;
-    $this->checkDocStart();
-    $this->checkLineLength();
-    $this->resetSelection($select);
+    $this->moveVertical(-1, $select);
   }
 
   public function movePageUp(int $linesOnScreen, bool $select = false): void {
-    $this->caret[0] -= $linesOnScreen;
-    $this->checkDocStart();
-    $this->checkLineLength();
-    $this->resetSelection($select);
+    $this->moveVertical(-$linesOnScreen, $select);
   }
 
   public function moveDocStart(bool $select = false): void {
     $this->caret[0] = 0;
     $this->caret[1] = 0;
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
   public function moveDown(bool $select = false): void {
-    $this->caret[0]++;
-    $this->checkDocEnd();
-    $this->checkLineLength();
-    $this->resetSelection($select);
+    $this->moveVertical(1, $select);
   }
 
   public function movePageDown(int $linesOnScreen, bool $select = false): void {
-    $this->caret[0] += $linesOnScreen;
-    $this->checkDocEnd();
-    $this->checkLineLength();
-    $this->resetSelection($select);
+    $this->moveVertical($linesOnScreen, $select);
   }
 
   public function moveDocEnd(bool $select = false): void {
     $lines = $this->getLineCount() - 1;
     $this->caret[0] = $lines;
     $this->caret[1] = $this->getLineLength($lines);
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
@@ -211,17 +222,20 @@ class Cursor {
         $this->caret[1] = 0;
       }
     }
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
   public function moveScreenEnd(int $lettersOnScreen, bool $select = false): void {
     $this->caret[1] += $lettersOnScreen;
     $this->checkLineLength();
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
   public function moveLineEnd(bool $select = false): void {
     $this->caret[1] = $this->getLineLength($this->caret[0]);
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
@@ -234,16 +248,19 @@ class Cursor {
         $this->caret[1] = $this->getLineLength($this->caret[0]);
       }
     }
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
   public function moveScreenStart(int $lettersOnScreen, bool $select = false): void {
     $this->caret[1] = max(0, $this->caret[1] - $lettersOnScreen);
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
   public function moveLineStart(bool $select = false): void {
     $this->caret[1] = 0;
+    $this->resetPreferredColumn();
     $this->resetSelection($select);
   }
 
