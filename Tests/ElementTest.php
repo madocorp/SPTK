@@ -208,6 +208,27 @@ class InspectableListBox extends ListBox {
 
 }
 
+class InspectableMenuBox extends MenuBox {
+
+  public function setGridSize(int $columns, int $rows = 2): void {
+    $this->letterWidth = 1;
+    $this->lineHeight = 1;
+    $this->geometry->innerWidth = $columns;
+    $this->geometry->innerHeight = $rows * $this->rowHeight();
+    $this->rowPaddingLeft = 0;
+    $this->rowPaddingRight = 0;
+  }
+
+  public function renderedRows(): array {
+    $rows = array_map(
+      fn($row) => implode('', array_map(fn($cell) => $cell['glyph'], $row)),
+      $this->buildCells()
+    );
+    return array_slice($rows, 0, count($this->getItems()));
+  }
+
+}
+
 class GreedyInput extends HeadlessElement {
 
   protected function init(): void {
@@ -852,6 +873,13 @@ return [
     $layout->invoke($withRight);
 
     assertSame($withRight->getGeometry()->innerWidth, $withRight->getGeometry()->contentWidth, 'menus never preserve horizontal overflow width');
+
+    $reservedLeft = new InspectableMenuBox($root, 'reserved-left-menu');
+    $reservedLeft->setGridSize(8);
+    $reservedLeft->addItem(['text' => 'Table', 'leftReserve' => 2]);
+    $reservedLeft->addItem(['text' => 'View', 'left' => 'V', 'leftReserve' => 2]);
+
+    assertSame(['  Table ', 'V View  '], $reservedLeft->renderedRows(), 'plain menu rows can reserve marker columns without becoming selectable');
 
     $x = 0;
     $y = 0;
