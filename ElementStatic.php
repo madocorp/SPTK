@@ -6,6 +6,10 @@ trait ElementStatic {
 
   public static $root;
   private static $nextInternalId = 0;
+  private static int $refreshBatchDepth = 0;
+  private static bool $refreshFullRequested = false;
+  private static array $refreshElements = [];
+  private static bool $refreshFlushing = false;
 
   protected static function getNextId(): int {
     $id = static::$nextInternalId;
@@ -14,13 +18,99 @@ trait ElementStatic {
   }
 
   public static function refresh(): void {
+    static::requestRefresh(null, 'full');
+  }
+
+  public static function refreshNow(): void {
     $t = microtime(true);
     static::$root->recalculateGeometry();
     static::$root->render();
     // DEBUG:refresh echo "Refreshed:", microtime(true) - $t, "\n";
   }
 
+  public static function requestRefresh(?Element $element = null, string $mode = 'auto'): void {
+    if (static::$root === null || static::$refreshFlushing) {
+      return;
+    }
+    if ($element === null || $mode === 'full') {
+      static::$refreshFullRequested = true;
+      static::$refreshElements = [];
+    } else if (!static::$refreshFullRequested) {
+      static::$refreshElements[$element->id] = [
+        'element' => $element,
+        'layout' => $mode !== 'redraw'
+      ];
+    }
+    if (static::$refreshBatchDepth === 0) {
+      static::flushRefresh();
+    }
+  }
+
+  public static function beginBatch(): void {
+    static::$refreshBatchDepth++;
+  }
+
+  public static function endBatch(): void {
+    if (static::$refreshBatchDepth > 0) {
+      static::$refreshBatchDepth--;
+    }
+    if (static::$refreshBatchDepth === 0) {
+      static::flushRefresh();
+    }
+  }
+
+  public static function flushRefresh(): void {
+    if (static::$root === null || static::$refreshFlushing) {
+      return;
+    }
+    if (!static::$refreshFullRequested && empty(static::$refreshElements)) {
+      return;
+    }
+    $full = static::$refreshFullRequested || count(static::$refreshElements) !== 1;
+    $elements = static::$refreshElements;
+    static::$refreshFullRequested = false;
+    static::$refreshElements = [];
+    static::$refreshFlushing = true;
+    try {
+      if ($full) {
+        static::refreshNow();
+      } else {
+        $refresh = reset($elements);
+        if ($refresh === false || !static::isRefreshElementVisible($refresh['element'])) {
+          static::refreshNow();
+        } else {
+          static::immediateRenderNow($refresh['element'], $refresh['layout']);
+        }
+      }
+    } finally {
+      static::$refreshFlushing = false;
+    }
+  }
+
   public static function immediateRender(Element $element, bool $layout = true): void {
+    if (static::$refreshBatchDepth > 0) {
+      static::requestElementRefresh($element, $layout);
+      return;
+    }
+    static::immediateRenderNow($element, $layout);
+  }
+
+  private static function requestElementRefresh(Element $element, bool $layout = true): void {
+    if (static::$refreshFullRequested) {
+      return;
+    }
+    $id = $element->id;
+    if (isset(static::$refreshElements[$id])) {
+      static::$refreshElements[$id]['layout'] = static::$refreshElements[$id]['layout'] || $layout;
+    } else {
+      static::$refreshElements[$id] = [
+        'element' => $element,
+        'layout' => $layout
+      ];
+    }
+  }
+
+  private static function immediateRenderNow(Element $element, bool $layout = true): void {
     $t = microtime(true);
     if ($layout) {
       $element->recalculateGeometry();
@@ -29,12 +119,12 @@ trait ElementStatic {
     }
     $tmpTexture = $element->render();
     if ($tmpTexture === false) {
-      Element::refresh();
+      Element::refreshNow();
       return;
     }
     $window = $element->findAncestorByType('Window');
     if ($window->tmpTexture === false) {
-      Element::refresh();
+      Element::refreshNow();
       return;
     }
     $x = 0;
@@ -47,6 +137,10 @@ trait ElementStatic {
   }
 
   public static function immediateRefresh(Element $element, bool $layout = true): void {
+    if (static::$refreshBatchDepth > 0) {
+      static::requestElementRefresh($element, $layout);
+      return;
+    }
     $t = microtime(true);
     if ($layout) {
       $element->recalculateGeometry();
@@ -55,12 +149,12 @@ trait ElementStatic {
     }
     $tmpTexture = $element->render();
     if ($tmpTexture === false) {
-      Element::refresh();
+      Element::refreshNow();
       return;
     }
     $window = $element->findAncestorByType('Window');
     if ($window->tmpTexture === false) {
-      Element::refresh();
+      Element::refreshNow();
       return;
     }
     $x = 0;
@@ -73,14 +167,18 @@ trait ElementStatic {
   }
 
   public static function immediateCopy(Element $element): void {
+    if (static::$refreshBatchDepth > 0) {
+      static::requestElementRefresh($element, false);
+      return;
+    }
     $tmpTexture = $element->render();
     if ($tmpTexture === false) {
-      Element::refresh();
+      Element::refreshNow();
       return;
     }
     $window = $element->findAncestorByType('Window');
     if ($window->tmpTexture === false) {
-      Element::refresh();
+      Element::refreshNow();
       return;
     }
     $x = 0;
@@ -89,6 +187,16 @@ trait ElementStatic {
     $tmpTexture->copyTo($window->tmpTexture, $x, $y);
     $window->tmpTexture->copyTo(null, 0, 0);
     $window->sdl->SDL_RenderPresent($window->renderer);
+  }
+
+  private static function isRefreshElementVisible(Element $element): bool {
+    while ($element !== null) {
+      if (!$element->display) {
+        return false;
+      }
+      $element = $element->ancestor;
+    }
+    return true;
   }
 
 
