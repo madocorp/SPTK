@@ -24,6 +24,7 @@ class Panel extends Element {
   protected function init(): void {
     $this->display = false;
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
+    $this->inputList = [];
     $this->focusIndex = -1;
   }
 
