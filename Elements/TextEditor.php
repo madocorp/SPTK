@@ -283,8 +283,8 @@ class TextEditor extends TextGrid {
       return [0, min(300, count($this->lines))];
     }
     $lineHeight = $this->rowHeight();
-    $first = max(0, (int)(($this->scrollY + $this->geometry->paddingTop) / $lineHeight));
-    $rows = max(1, (int)($this->viewportHeight() / $lineHeight) + 1);
+    $first = max(0, (int)($this->scrollY / $lineHeight));
+    $rows = $this->renderedRowCount();
     return [$first, min($first + $rows, count($this->lines))];
   }
 
@@ -487,14 +487,15 @@ class TextEditor extends TextGrid {
     $row = $cursor[0];
     $col = $cursor[1];
     $lineHeight = $this->rowHeight();
-    $viewportHeight = $this->viewportHeight();
+    $visibleRows = $this->visibleRowCount();
+    $viewportHeight = $visibleRows * $lineHeight;
     $viewportWidth = $this->viewportWidth();
     $rowTop = $row * $lineHeight;
     $rowBottom = $rowTop + $lineHeight;
     if ($rowTop < $this->scrollY) {
       $this->scrollY = $rowTop;
     } else if ($rowBottom > $this->scrollY + $viewportHeight) {
-      $this->scrollY = $rowBottom - $viewportHeight;
+      $this->scrollY = max(0, ($row - $visibleRows + 1) * $lineHeight);
     }
     $letterWidth = $this->columnWidth();
     $colLeft = $col * $letterWidth;
@@ -508,12 +509,15 @@ class TextEditor extends TextGrid {
     $this->scrollX = max(0, $this->scrollX);
     $this->scrollX = min($this->scrollX, $maxScrollX);
     $this->scrollY = max(0, $this->scrollY);
+    $this->scrollY = min($this->scrollY, $this->maxTextScrollY());
   }
 
   protected function clampScroll(): void {
     $maxScrollX = max(0, $this->geometry->contentWidth - $this->viewportWidth());
+    $lineHeight = $this->rowHeight();
     $this->scrollX = max(0, min($this->scrollX, $maxScrollX));
-    $this->scrollY = max(0, $this->scrollY);
+    $this->scrollY = max(0, min($this->scrollY, $this->maxTextScrollY()));
+    $this->scrollY = min((int)(floor($this->scrollY / $lineHeight) * $lineHeight), $this->maxTextScrollY());
   }
 
   protected function rowHeight(): int {
@@ -526,6 +530,23 @@ class TextEditor extends TextGrid {
 
   protected function viewportHeight(): int {
     return is_int($this->geometry->innerHeight) ? max(1, $this->geometry->innerHeight) : $this->rowHeight();
+  }
+
+  protected function visibleRowCount(): int {
+    return max(1, (int)floor($this->viewportHeight() / $this->rowHeight()));
+  }
+
+  protected function renderedRowCount(): int {
+    $viewportHeight = $this->viewportHeight();
+    $rowHeight = $this->rowHeight();
+    $extra = $viewportHeight % $rowHeight > 0 ? 1 : 0;
+    return $this->visibleRowCount() + $extra;
+  }
+
+  protected function maxTextScrollY(): int {
+    $lineHeight = $this->rowHeight();
+    $contentHeight = max(count($this->lines) * $lineHeight, (int)$this->geometry->contentHeight);
+    return max(0, $contentHeight - $this->visibleRowCount() * $lineHeight);
   }
 
   protected function viewportWidth(): int {
@@ -594,7 +615,7 @@ class TextEditor extends TextGrid {
 
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
-    $linesOnScreen = (int)($this->viewportHeight() / $this->rowHeight()) - 1;
+    $linesOnScreen = $this->visibleRowCount() - 1;
     $lettersOnScreen = (int)($this->viewportWidth() / $this->columnWidth());
     $handled = $this->cursor->handleKeys($keycombo, $linesOnScreen, $lettersOnScreen);
     if ($handled) {

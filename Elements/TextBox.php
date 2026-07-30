@@ -44,7 +44,7 @@ class TextBox extends TextEditor {
 
   public function keyPressHandler($element, $event) {
     $keycombo = KeyCombo::resolve($event['mod'], $event['scancode'], $event['key']);
-    $linesOnScreen = (int)($this->viewportHeight() / $this->rowHeight()) - 1;
+    $linesOnScreen = $this->visibleRowCount() - 1;
     $lettersOnScreen = (int)($this->viewportWidth() / $this->columnWidth());
     $handled = $this->cursor->handleKeys($keycombo, $linesOnScreen, $lettersOnScreen);
     if ($handled) {
