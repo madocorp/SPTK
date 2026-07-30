@@ -16,6 +16,7 @@ $files = [
   __DIR__ . '/TemplateTest.php',
   __DIR__ . '/ElementTest.php',
   __DIR__ . '/CursorTest.php',
+  __DIR__ . '/TextEditorTest.php',
   __DIR__ . '/TextPreviewTest.php',
   __DIR__ . '/TableTest.php',
 ];
