@@ -39,20 +39,20 @@ class FilePanel extends Panel {
     $this->fileNameInput->setOnChange([$this, 'changed']);
     $this->fileNameInput->addEvent('KeyPress', [$this, 'handleReturn']);
     $buttons = new Element($content, null, null, 'ButtonBox');
-    $cancel = new Button($buttons);
-    $cancel->setHotKey('ESCAPE');
-    $cancel->addText('Cancel');
+    $this->okBtn = new Button($buttons, 'okBtn');
+    $this->okBtn->setDefault(true);
+    $this->okBtn->setHotKey('RETURN');
+    $this->okBtn->addText('OK');
+    $this->okBtn->setOnPress([$this, 'choose']);
     new Space($buttons);
     $this->createDirBtn = new Button($buttons);
     $this->createDirBtn->setHotKey('F7');
     $this->createDirBtn->addText('Create dir');
     $this->createDirBtn->setOnPress([$this, 'createDir']);
     $this->createSpace = new Space($buttons);
-    $this->okBtn = new Button($buttons, 'okBtn');
-    $this->okBtn->setDefault(true);
-    $this->okBtn->setHotKey('RETURN');
-    $this->okBtn->addText('OK');
-    $this->okBtn->setOnPress([$this, 'choose']);
+    $cancel = new Button($buttons);
+    $cancel->setHotKey('ESCAPE');
+    $cancel->addText('Cancel');
   }
 
   public function setOnSelect($callback) {
@@ -261,6 +261,8 @@ class FilePanel extends Panel {
           $this->theList->bringToMiddle();
         } else if (is_dir("{$this->dir}{$dir}")) {
           $this->setPath("{$this->dir}{$dir}");
+        } else {
+          $this->choose();
         }
         Element::refresh();
         return true;
