@@ -49,6 +49,10 @@ class SelectPanel extends Panel {
     $this->onSelect = $callback;
   }
 
+  public function addListClass(string $class): void {
+    $this->theList->addClass($class);
+  }
+
   public function setMultiple($value): void {
     $this->multiple = ($value === true || $value === 'true');
     if (!$this->multiple || $this->multipleButtonsAdded) {

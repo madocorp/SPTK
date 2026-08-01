@@ -88,7 +88,7 @@ class Geometry {
       $this->fullWidth = $this->width;
     } else {
       if ($this->width < 0) {
-        $this->width = $ancestorGeometry->innerWidth + $this->width;
+        $this->width = is_int($ancestorGeometry->innerWidth) ? $ancestorGeometry->innerWidth + $this->width : 0;
       }
       $this->limitateWidth();
       $this->setDerivedWidths();
@@ -99,7 +99,7 @@ class Geometry {
       $this->fullHeight = $this->height;
     } else {
       if ($this->height < 0) {
-        $this->height = $ancestorGeometry->innerHeight + $this->height;
+        $this->height = is_int($ancestorGeometry->innerHeight) ? $ancestorGeometry->innerHeight + $this->height : 0;
       }
       $this->limitateHeight();
       $this->setDerivedHeights();
