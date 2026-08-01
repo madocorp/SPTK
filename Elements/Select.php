@@ -162,6 +162,10 @@ class Select extends Element {
     }
     $panelName = is_string($this->name) ? $this->name . '/panel' : null;
     $panel = new SelectPanel($window, $panelName);
+    if ($this->hasClass('compact-select')) {
+      $panel->addClass('compact-select-panel');
+      $panel->addListClass('compact-select-list');
+    }
     $panel->setMultiple($this->multiple);
     $panel->setTitle($this->hint);
     $panel->setOptions($this->options, $this->value);
