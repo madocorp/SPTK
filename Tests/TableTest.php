@@ -253,6 +253,26 @@ return [
     assertSame('tableMarker', $multiMarker['variant'], 'return marker uses the marker variant');
   },
 
+  'table measures multiline cells by visible first line' => function (): void {
+    $root = root();
+    $hidden = str_repeat('hidden', 80);
+    $file = tempFile("multi\tplain\nabcdef\\n{$hidden}\tplain\n", 'tsv');
+
+    $table = new HeadlessTable($root, 'multiline-width', null, 'Table');
+    $table->setFile($file);
+    $table->recalculateGeometry();
+
+    $widths = $table->getColumnWidths();
+    assertTrue(
+      $widths[0] < $widths[1] * 3,
+      'multiline column width is based on the visible first line, not hidden continuation text'
+    );
+
+    $row = array_values(array_filter($table->visibleCells()['body'], fn($cell) => $cell['row'] === 0));
+    assertSame('abcdef', $row[0]['segments'][0]['text'], 'visible first line is still rendered without truncation');
+    assertSame('v', $row[0]['segments'][1]['text'], 'multiline marker fits after the visible first line');
+  },
+
   'table moves a cell cursor and scrolls it into view' => function (): void {
     KeyCombo::init();
     $root = root();

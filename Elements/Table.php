@@ -634,8 +634,7 @@ class Table extends TextGrid {
       $widths = [];
       foreach (array_merge([$this->header], $this->chunk) as $row) {
         foreach ($row as $i => $field) {
-          $text = $field === null ? '' : (string)$field;
-          $width = mb_strlen($text) * $this->letterWidth + $this->cellHorizontalChrome;
+          $width = $this->measuredCellWidth($field);
           $widths[$i] = max($widths[$i] ?? $this->minFieldWidth, $width, $this->minFieldWidth);
         }
       }
@@ -651,6 +650,19 @@ class Table extends TextGrid {
     $digits = max(mb_strlen((string)max(1, $this->rowCount)), 1);
     $this->rowNumberColumnWidth = $digits * $this->letterWidth + $this->cellHorizontalChrome;
     $this->limitColumnWidthsToBox();
+  }
+
+  protected function measuredCellWidth(mixed $value): int {
+    if ($value === null) {
+      return $this->cellHorizontalChrome;
+    }
+    $text = (string)$value;
+    if (!str_contains($text, "\n") && !str_contains($text, "\r")) {
+      return mb_strlen($text) * $this->letterWidth + $this->cellHorizontalChrome;
+    }
+    $parts = preg_split("/\r\n|\r|\n/", $text, 2);
+    $visible = ($parts[0] ?? '') . self::CELL_MULTILINE_MARKER;
+    return mb_strlen($visible) * $this->letterWidth + $this->cellHorizontalChrome;
   }
 
   protected function limitColumnWidthsToBox(): void {
