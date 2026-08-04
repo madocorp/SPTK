@@ -247,8 +247,18 @@ class TextGrid extends Element {
     self::$fgColor->b = 0xff;
     self::$fgColor->a = 0xff;
     $surface = $ttf->TTF_RenderGlyph_Blended($this->font->font, mb_ord($glyph), self::$fgColor);
+    if ($surface === null) {
+      $this->cacheBlankGlyph($glyph);
+      return;
+    }
     $surface2 = \FFI::cast($sdl->type("SDL_Surface*"), $surface);
     $srcSurface = $sdl->SDL_ConvertSurface($surface2, SDL::SDL_PIXELFORMAT_RGBA8888);
+    if ($srcSurface === null) {
+      $this->cacheBlankGlyph($glyph);
+      $ttf->SDL_DestroySurface($surface);
+      $sdl->SDL_DestroySurface($surface2);
+      return;
+    }
     $index = self::$nextGlyph[$key]++;
     $aw = $this->letterWidth;
     $ah = $this->lineHeight;
@@ -277,6 +287,19 @@ class TextGrid extends Element {
     $ttf->SDL_DestroySurface($surface);
     $sdl->SDL_DestroySurface($surface2);
     $sdl->SDL_DestroySurface($srcSurface);
+  }
+
+  protected function cacheBlankGlyph(string $glyph): void {
+    $key = $this->fontKey();
+    $index = self::$nextGlyph[$key]++;
+    $aw = $this->letterWidth;
+    $ah = $this->lineHeight;
+    $y = (int)($index / self::GLYPH_MAP_SIZE);
+    $x = $index % self::GLYPH_MAP_SIZE;
+    self::$glyphCache[$key][$glyph] = [
+      self::MAP_PAD + $x * ($aw + self::MAP_PAD * 2),
+      self::MAP_PAD + $y * ($ah + self::MAP_PAD * 2)
+    ];
   }
 
   protected function render(): Texture|false {
