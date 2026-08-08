@@ -12,6 +12,7 @@ class MenuBox extends ListBox {
 
   public $belongsTo = false;
   public $submenu = false;
+  protected bool $closeOnReturn = true;
   protected bool $jumpToSelected = false;
   protected int $separatorThickness = 3;
 
@@ -44,7 +45,7 @@ class MenuBox extends ListBox {
   }
 
   public function getAttributeList(): array {
-    return array_merge(parent::getAttributeList(), ['belongsTo', 'submenu', 'jumpToSelected']);
+    return array_merge(parent::getAttributeList(), ['belongsTo', 'submenu', 'closeOnReturn', 'jumpToSelected']);
   }
 
   public function setBelongsTo($value): void {
@@ -55,6 +56,10 @@ class MenuBox extends ListBox {
     if ($value === true || $value === 'true') {
       $this->submenu = true;
     }
+  }
+
+  public function setCloseOnReturn($value): void {
+    $this->closeOnReturn = !($value === false || $value === 'false' || $value === 0 || $value === '0');
   }
 
   public function setJumpToSelected($value): void {
@@ -399,28 +404,33 @@ class MenuBox extends ListBox {
         if ($active instanceof MenuBoxRow && $active->isSubmenu()) {
           return $active->openSubmenu();
         }
-        if (!$this->isActiveItemSelectable()) {
-          return true;
-        }
         parent::keyPressHandler($element, $event);
         if ($active instanceof MenuBoxRow) {
           $active->open();
         }
-        $this->raise();
-        Element::refresh();
+        if ($this->display) {
+          $this->raise();
+          Element::refresh();
+        }
         return true;
       case Action::DO_IT:
         if ($active instanceof MenuBoxRow && $active->isSubmenu()) {
           return $active->openSubmenu();
         }
         $menu = $this->findAncestorByType('Menu');
-        $menu->closeMenu();
+        if ($this->closeOnReturn) {
+          $menu->closeMenu();
+        }
         $selectOnReturn = $this->selectOnReturn;
         $this->selectOnReturn = true;
         parent::keyPressHandler($element, $event);
         $this->selectOnReturn = $selectOnReturn;
         if ($active instanceof MenuBoxRow) {
           $active->open();
+        }
+        if (!$this->closeOnReturn && $this->display) {
+          $this->raise();
+          Element::refresh();
         }
         return true;
     }

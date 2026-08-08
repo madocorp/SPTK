@@ -39,7 +39,7 @@ class ListItem extends Element {
   }
 
   public function getAttributeList(): array {
-    return ['value', 'selectable', 'selected', 'filterable', 'left', 'prefix', 'right', 'columns'];
+    return ['value', 'selectable', 'selected', 'filterable', 'left', 'leftReserve', 'prefix', 'right', 'columns'];
   }
 
   public function setValue($value): void {
@@ -102,6 +102,10 @@ class ListItem extends Element {
 
   public function setLeft($value): void {
     $this->row?->setLeft($value);
+  }
+
+  public function setLeftReserve($value): void {
+    $this->row?->setLeftReserve($value);
   }
 
   public function setPrefix($value): void {

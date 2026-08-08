@@ -47,6 +47,9 @@ class TextEditor extends TextGrid {
     if ($value === 'false' || $value === false) {
       $value = '\SPTK\Tokenizer';
     }
+    if (is_string($value) && $value !== '' && $value[0] !== '\\') {
+      $value = '\\' . $value;
+    }
     $this->tokenizer = $value;
   }
 
@@ -212,7 +215,8 @@ class TextEditor extends TextGrid {
 
   protected function calculateHeights(): void {
     parent::calculateHeights();
-    $maxY = count($this->lines) * $this->lineHeight + $this->geometry->borderTop + $this->geometry->paddingTop;
+    $lineCount = $this->isAutoWrap() ? $this->wrappedRowCount() : count($this->lines);
+    $maxY = $lineCount * $this->lineHeight + $this->geometry->borderTop + $this->geometry->paddingTop;
     $ascent = $this->style->get('ascent', $this->geometry);
     $this->geometry->setContentHeight($ascent, $maxY);
   }
@@ -223,7 +227,7 @@ class TextEditor extends TextGrid {
     foreach ($this->lines as $line) {
       $maxLen = max($maxLen, mb_strlen($line));
     }
-    $this->geometry->contentWidth = $maxLen * $this->letterWidth;
+    $this->geometry->contentWidth = $this->isAutoWrap() ? $this->viewportWidth() : $maxLen * $this->letterWidth;
     $this->refreshCells(false);
   }
 
@@ -397,7 +401,147 @@ class TextEditor extends TextGrid {
     }
   }
 
+  protected function isAutoWrap(): bool {
+    return $this->geometry->textWrap === 'auto';
+  }
+
+  protected function wrappedColumns(): int {
+    return max(1, (int)floor($this->viewportWidth() / $this->columnWidth()));
+  }
+
+  protected function wrappedRowCount(): int {
+    $columns = $this->wrappedColumns();
+    $rows = 0;
+    foreach ($this->lines as $line) {
+      $rows += count($this->wrappedLineSegments($line, $columns));
+    }
+    return max(1, $rows);
+  }
+
+  protected function cursorDisplayRow(): int {
+    $columns = $this->wrappedColumns();
+    $cursor = $this->cursor->get();
+    $displayRow = 0;
+    for ($row = 0; $row < $cursor[0]; $row++) {
+      $displayRow += count($this->wrappedLineSegments($this->lines[$row] ?? '', $columns));
+    }
+    $segments = $this->wrappedLineSegments($this->lines[$cursor[0]] ?? '', $columns);
+    foreach ($segments as $offset => $segment) {
+      $end = $segment['start'] + $segment['length'];
+      if ($cursor[1] >= $segment['start'] && ($cursor[1] < $end || $offset === count($segments) - 1)) {
+        return $displayRow + $offset;
+      }
+    }
+    return $displayRow;
+  }
+
+  protected function cursorDisplayColumn(): int {
+    $columns = $this->wrappedColumns();
+    $cursor = $this->cursor->get();
+    $segments = $this->wrappedLineSegments($this->lines[$cursor[0]] ?? '', $columns);
+    foreach ($segments as $offset => $segment) {
+      $end = $segment['start'] + $segment['length'];
+      if ($cursor[1] >= $segment['start'] && ($cursor[1] < $end || $offset === count($segments) - 1)) {
+        return max(0, $cursor[1] - $segment['start']);
+      }
+    }
+    return 0;
+  }
+
+  protected function wrappedLineSegments(string $line, int $cols): array {
+    $length = mb_strlen($line);
+    if ($length === 0) {
+      return [['start' => 0, 'length' => 0]];
+    }
+    $segments = [];
+    $start = 0;
+    while ($start < $length) {
+      $remaining = $length - $start;
+      if ($remaining <= $cols) {
+        $segments[] = ['start' => $start, 'length' => $remaining];
+        break;
+      }
+      $take = $cols;
+      $nextStart = $start + $cols;
+      if (preg_match('/\s/u', mb_substr($line, $start + $cols, 1))) {
+        $nextStart++;
+      } else for ($i = $cols - 1; $i > 0; $i--) {
+        if (preg_match('/\s/u', mb_substr($line, $start + $i, 1))) {
+          $take = $i;
+          $nextStart = $start + $i + 1;
+          break;
+        }
+      }
+      $segments[] = ['start' => $start, 'length' => $take];
+      $start = $nextStart;
+    }
+    return $segments;
+  }
+
+  protected function appendWrappedTokenCells(array &$lineCells, int $documentRow, int &$documentCol, string $text, string $styleClass): void {
+    $baseColors = $this->colorsForStyle($styleClass);
+    $matchedColors = $this->colorsForStyle(trim($styleClass . ' InputValue:matched'));
+    $selectedColors = $this->selectionColors($styleClass);
+    foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) as $glyph) {
+      $colors = $baseColors;
+      if ($this->inHighlight($documentRow, $documentCol)) {
+        $colors = $matchedColors;
+      }
+      if ($this->inSelection($documentRow, $documentCol)) {
+        $colors = $selectedColors;
+      }
+      $lineCells[] = $this->cell($glyph, $colors);
+      $documentCol++;
+    }
+  }
+
+  protected function buildWrappedRows(int $cols): array {
+    $tokens = $this->tokenize(0, count($this->lines));
+    $wrappedRows = [];
+    foreach ($this->lines as $documentRow => $line) {
+      $lineCells = [];
+      $documentCol = 0;
+      foreach ($tokens[$documentRow] ?? [] as $token) {
+        $this->appendWrappedTokenCells($lineCells, $documentRow, $documentCol, $token['value'], $token['style']);
+      }
+      foreach ($this->wrappedLineSegments($line, $cols) as $segment) {
+        $wrappedRows[] = array_slice($lineCells, $segment['start'], $segment['length']);
+      }
+    }
+    return $wrappedRows;
+  }
+
+  protected function buildWrappedCells(): array {
+    $cols = $this->wrappedColumns();
+    $lineHeight = $this->rowHeight();
+    $firstRow = max(0, (int)($this->scrollY / $lineHeight));
+    $rows = $this->renderedRowCount();
+    $wrappedRows = array_slice($this->buildWrappedRows($cols), $firstRow, $rows);
+    $plainColors = $this->colorsForStyle('');
+    $cursorColors = $this->drawCursor() ? $this->cursorColors() : false;
+    $cursorDisplayRow = $this->cursorDisplayRow();
+    $cursorCol = $this->cursorDisplayColumn();
+    $cells = [];
+    foreach ($wrappedRows as $offset => $rowCells) {
+      while (count($rowCells) < $cols) {
+        $rowCells[] = $this->cell(' ', $plainColors);
+      }
+      if ($cursorColors !== false && $firstRow + $offset === $cursorDisplayRow && $cursorCol < count($rowCells)) {
+        $rowCells[$cursorCol] = [
+          'glyph' => $rowCells[$cursorCol]['glyph'],
+          'fg' => $cursorColors['fg'],
+          'bg' => $cursorColors['bg']
+        ];
+      }
+      $cells[] = $rowCells;
+    }
+    return $cells;
+  }
+
   protected function buildCells(): array {
+    if ($this->isAutoWrap()) {
+      return $this->buildWrappedCells();
+    }
     [$firstRow, $lastRow] = $this->screenRange();
     [$firstCol, , $cols] = $this->screenColumns();
     $tokens = $this->tokenize($firstRow, $lastRow);
@@ -455,7 +599,7 @@ class TextEditor extends TextGrid {
       $this->setScroll();
     }
     [, $offsetX, ] = $this->screenColumns();
-    $this->setCells($this->buildCells(), $offsetX);
+    $this->setCells($this->buildCells(), $this->isAutoWrap() ? 0 : $offsetX);
     if ($render && $this->isVisibleInTree()) {
       Element::immediateRender($this);
     }
@@ -484,7 +628,7 @@ class TextEditor extends TextGrid {
 
   protected function setScroll(): void {
     $cursor = $this->cursor->get();
-    $row = $cursor[0];
+    $row = $this->isAutoWrap() ? $this->cursorDisplayRow() : $cursor[0];
     $col = $cursor[1];
     $lineHeight = $this->rowHeight();
     $visibleRows = $this->visibleRowCount();
@@ -496,6 +640,11 @@ class TextEditor extends TextGrid {
       $this->scrollY = $rowTop;
     } else if ($rowBottom > $this->scrollY + $viewportHeight) {
       $this->scrollY = max(0, ($row - $visibleRows + 1) * $lineHeight);
+    }
+    if ($this->isAutoWrap()) {
+      $this->scrollX = 0;
+      $this->scrollY = min($this->scrollY, $this->maxTextScrollY());
+      return;
     }
     $letterWidth = $this->columnWidth();
     $colLeft = $col * $letterWidth;
@@ -513,6 +662,13 @@ class TextEditor extends TextGrid {
   }
 
   protected function clampScroll(): void {
+    if ($this->isAutoWrap()) {
+      $lineHeight = $this->rowHeight();
+      $this->scrollX = 0;
+      $this->scrollY = max(0, min($this->scrollY, $this->maxTextScrollY()));
+      $this->scrollY = min((int)(floor($this->scrollY / $lineHeight) * $lineHeight), $this->maxTextScrollY());
+      return;
+    }
     $maxScrollX = max(0, $this->geometry->contentWidth - $this->viewportWidth());
     $lineHeight = $this->rowHeight();
     $this->scrollX = max(0, min($this->scrollX, $maxScrollX));
@@ -545,7 +701,8 @@ class TextEditor extends TextGrid {
 
   protected function maxTextScrollY(): int {
     $lineHeight = $this->rowHeight();
-    $contentHeight = max(count($this->lines) * $lineHeight, (int)$this->geometry->contentHeight);
+    $lineCount = $this->isAutoWrap() ? $this->wrappedRowCount() : count($this->lines);
+    $contentHeight = max($lineCount * $lineHeight, (int)$this->geometry->contentHeight);
     return max(0, $contentHeight - $this->visibleRowCount() * $lineHeight);
   }
 

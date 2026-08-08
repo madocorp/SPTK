@@ -11,12 +11,16 @@ use SPTK\Elements\Input;
 use SPTK\Elements\ListBox;
 use SPTK\Elements\ListHeaderRow;
 use SPTK\Elements\ListItem;
+use SPTK\Elements\Menu;
+use SPTK\Elements\MenuBar;
+use SPTK\Elements\MenuBarItem;
 use SPTK\Elements\MenuBox;
 use SPTK\Elements\MenuBoxItem;
 use SPTK\Elements\Panel;
 use SPTK\Elements\PasswordInput;
 use SPTK\Elements\RadioButton;
 use SPTK\Elements\Select;
+use SPTK\Elements\SubMenu;
 use SPTK\Elements\Tab;
 use SPTK\Elements\Tabs;
 use SPTK\Elements\TextReader;
@@ -405,6 +409,32 @@ class ButtonTestAction {
 
   public static function press($panel): void {
     self::$pressed++;
+  }
+
+}
+
+class MenuCloseTestAction {
+
+  public static int $closed = 0;
+  public static string|false $closedName = false;
+
+  public static function close($menu, string|false $closedName): void {
+    self::$closed++;
+    self::$closedName = $closedName;
+  }
+
+}
+
+class MenuHideTestAction {
+
+  public static int $hidden = 0;
+
+  public static function hide($row): void {
+    self::$hidden++;
+    $menu = $row->findAncestorByType('MenuBox');
+    if ($menu !== false) {
+      $menu->hide();
+    }
   }
 
 }
@@ -885,16 +915,117 @@ return [
     $selectable = new \ReflectionMethod(MenuBox::class, 'isActiveItemSelectable');
     $selectable->setAccessible(true);
 
-    assertFalse($selectable->invoke($menu), 'action-only menu items are not selectable for space');
+    assertFalse($selectable->invoke($menu), 'action-only menu items are not selectable rows');
     $menu->moveCursor(1);
     assertSame('separator text should not matter', $menu->getActive()->getText(), 'menu separator rows keep their content and cursor position');
     assertFalse($selectable->invoke($menu), 'separator rows remain action-only rows unless selectable');
 
     $menu->moveCursor(2);
-    assertTrue($selectable->invoke($menu), 'true-selectable menu items are selectable for space');
+    assertTrue($selectable->invoke($menu), 'true-selectable menu items are selectable rows');
 
     $menu->moveCursor(3);
-    assertTrue($selectable->invoke($menu), 'grouped selectable menu items are selectable for space');
+    assertTrue($selectable->invoke($menu), 'grouped selectable menu items are selectable rows');
+  },
+
+  'space opens menu action rows without closing the menu' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+    $menu = new MenuBox($root, 'menu');
+    $menu->show();
+    $menu->addItem([
+      'text' => 'Refresh',
+      'onOpen' => [ButtonTestAction::class, 'press']
+    ]);
+    ButtonTestAction::$pressed = 0;
+
+    $handled = $menu->keyPressHandler($menu, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::SPACE,
+      'key' => KeyCode::SPACE
+    ]);
+
+    assertTrue($handled, 'space is handled by visible menus');
+    assertSame(1, ButtonTestAction::$pressed, 'space invokes the active menu item action');
+    assertTrue($menu->isDisplayed(), 'space leaves the menu open after invoking the action');
+  },
+
+  'return can invoke menu action rows without closing configured menu boxes' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+    $menu = new MenuBox($root, 'menu');
+    $menu->setCloseOnReturn('false');
+    $menu->show();
+    $menu->addItem([
+      'text' => 'all',
+      'onOpen' => [ButtonTestAction::class, 'press']
+    ]);
+    ButtonTestAction::$pressed = 0;
+
+    $handled = $menu->keyPressHandler($menu, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN
+    ]);
+
+    assertTrue($handled, 'return is handled by visible non-closing menus');
+    assertSame(1, ButtonTestAction::$pressed, 'return invokes the active menu item action');
+    assertTrue($menu->isDisplayed(), 'configured return action leaves the menu open');
+    assertSame('all', $menu->getActive()->getText(), 'return does not reset the active row');
+  },
+
+  'return respects non closing menu actions that hide the menu' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+    $menu = new MenuBox($root, 'menu');
+    $menu->setCloseOnReturn('false');
+    $menu->show();
+    $menu->addItem([
+      'text' => 'Apply',
+      'onOpen' => [MenuHideTestAction::class, 'hide']
+    ]);
+    MenuHideTestAction::$hidden = 0;
+
+    $handled = $menu->keyPressHandler($menu, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::RETURN,
+      'key' => KeyCode::RETURN
+    ]);
+
+    assertTrue($handled, 'return is handled by non-closing menus');
+    assertSame(1, MenuHideTestAction::$hidden, 'return invokes the action that hides the menu');
+    assertFalse($menu->isDisplayed(), 'hidden menus are not re-raised after a non-closing return action');
+  },
+
+  'menus call on close with the closed bar item name' => function (): void {
+    resetToolkit();
+    $root = new RefreshCountingRoot(null, null, null, 'Root');
+    $menu = new Menu($root, 'main-menu');
+    $menu->setOnClose([MenuCloseTestAction::class, 'close']);
+    $bar = new MenuBar($menu);
+    $filters = new MenuBarItem($bar, 'menu-filters');
+    $filters->setText('Filters');
+    $tickets = new MenuBarItem($bar, 'menu-tickets');
+    $tickets->setText('Tickets');
+    $sub = new SubMenu($menu);
+    new MenuBox($sub, null, null, 'MenuBox');
+    MenuCloseTestAction::$closed = 0;
+    MenuCloseTestAction::$closedName = false;
+
+    $menu->openMenu(0);
+    $menu->closeMenu();
+
+    assertSame(1, MenuCloseTestAction::$closed, 'closing an open menu invokes the close callback once');
+    assertSame('menu-filters', MenuCloseTestAction::$closedName, 'close callback receives the closed menu bar item name');
+
+    $menu->openMenu(0);
+    $handled = $menu->keyPressHandler($menu, [
+      'mod' => KeyModifier::NONE,
+      'scancode' => ScanCode::ESCAPE,
+      'key' => KeyCode::ESCAPE
+    ]);
+
+    assertTrue($handled, 'escape close is handled by the menu and does not fall through');
+    assertSame(2, MenuCloseTestAction::$closed, 'escape close also invokes the close callback');
   },
 
   'menu box width follows marker item and submenu column formula' => function (): void {
