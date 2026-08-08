@@ -10,6 +10,9 @@ class LayoutXmlReader {
   private $current;
 
   public function __construct(string $file, ?Element $parent = null) {
+    if (substr($file, 0, 1) !== '/') {
+      $file = App::$instance->getDir() . '/' . $file;
+    }
     if (!file_exists($file)) {
       throw new \Exception("File not found: {$file}");
     }
@@ -34,6 +37,9 @@ class LayoutXmlReader {
             // skip
           } else if ($xml->name === 'Include') {
             $file = $xml->getAttribute('file');
+            if (substr($file, 0, 1) !== '/') {
+              $file = App::$instance->getDir() . '/' . $file;
+            }
             $included = new XmlReader();
             $included->open($file);
             $this->parseWithIncludes($included);

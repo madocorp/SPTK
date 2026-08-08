@@ -27,8 +27,20 @@ class HeadlessTextBox extends TextBox {
     $this->refreshCells(false);
   }
 
+  public function setAutoWrap(): void {
+    $this->geometry->textWrap = 'auto';
+  }
+
+  public function layoutForTest(): void {
+    $this->layout();
+  }
+
   public function scrollY(): int {
     return $this->scrollY;
+  }
+
+  public function contentWidth(): int {
+    return $this->geometry->contentWidth;
   }
 
 }
@@ -55,5 +67,17 @@ return [
 
     assertSame(30, $box->scrollY(), 'last cursor row remains fully visible');
     assertSame(['three', 'four'], textBoxRows($box), 'bottom viewport does not render beyond the document');
+  },
+  'text editor auto wrap prefers word boundaries' => function (): void {
+    $box = new HeadlessTextBox(root(), 'word-wrap', null, 'TextBox');
+    $box->setBox(10, 50, 10);
+    $box->setAutoWrap();
+    $box->setValue('alpha beta gamma delta');
+
+    $box->layoutForTest();
+    $box->setCursorForTest(0, 0);
+
+    assertSame(['alpha beta', 'gamma', 'delta'], textBoxRows($box), 'auto wrap moves whole words to the next visual row');
+    assertSame(10, $box->contentWidth(), 'auto wrap keeps content width at the viewport width');
   },
 ];

@@ -727,6 +727,8 @@ class Panel extends Element {
       }
     }
     $panel->show();
+    $panel->raise();
+    $panel->activateInput();
     $panel->refreshIfRendered();
   }
 

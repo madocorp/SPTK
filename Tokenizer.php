@@ -84,7 +84,7 @@ class Tokenizer {
     }
     if (isset($tokenizer->context['endRegexp'])) {
       if (preg_match($tokenizer->context['endRegexp'], $str, $matches)) {
-        return $match[0];
+        return $matches[0];
       }
     } else if (isset($tokenizer->context['end'])) {
       if (str_starts_with($str, $tokenizer->context['end'])) {

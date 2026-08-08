@@ -564,21 +564,23 @@ class ListBox extends TextGrid {
     return is_int($value) ? $value : 0;
   }
 
-  protected function rowBodyColumns(ListBoxRow $item): int {
+  protected function rowBodyColumns(ListBoxRow $item, ?int $leftSlotColumns = null): int {
+    $leftSlotColumns ??= $this->leftSlotColumns();
     if ($item->getColumns() !== false && $this->effectiveColumnWidths() !== false) {
-      return $this->leftSlotColumns() + $this->textGridColumns();
+      return $leftSlotColumns + $this->textGridColumns();
     }
     $prefix = $item->getPrefix();
     return
-      $this->leftSlotColumns() +
+      $leftSlotColumns +
       ($prefix === '' ? 0 : mb_strlen($prefix) + 1) +
       mb_strlen($item->getText());
   }
 
-  protected function maxBodyColumns(?array $items = null): int {
+  protected function maxBodyColumns(?array $items = null, ?int $leftSlotColumns = null): int {
+    $leftSlotColumns ??= $this->leftSlotColumns($items);
     $max = 1;
     foreach ($items ?? $this->items as $item) {
-      $max = max($max, $this->rowBodyColumns($item));
+      $max = max($max, $this->rowBodyColumns($item, $leftSlotColumns));
     }
     return $max;
   }
@@ -736,11 +738,11 @@ class ListBox extends TextGrid {
     return array_values(array_unique($classes));
   }
 
-  protected function buildRowCells(ListBoxRow $row, int $index, int $cols, int $bodyColumns, int $rightColumns): array {
+  protected function buildRowCells(ListBoxRow $row, int $index, int $cols, int $bodyColumns, int $rightColumns, int $leftSlotColumns): array {
     $columnValues = $row->getColumns();
     $columnWidths = $this->effectiveColumnWidths();
     if ($columnValues !== false && $columnWidths !== false) {
-      return $this->buildColumnRowCells($row, $index, $cols, $columnValues, $columnWidths);
+      return $this->buildColumnRowCells($row, $index, $cols, $columnValues, $columnWidths, $leftSlotColumns);
     }
     $type = $row->getType();
     $classes = $this->rowClasses($row, $index);
@@ -752,7 +754,7 @@ class ListBox extends TextGrid {
     $rightColors['bg'] = $baseColors['bg'];
     $matchColors = $this->colorsForStyle('InputValue', ['InputValue:matched']);
     $cells = [];
-    $this->appendLeftCells($cells, $row->getLeft(), $leftColors, $cols);
+    $this->appendLeftCells($cells, $row->getLeft(), $leftColors, $cols, $leftSlotColumns);
     if ($row->getPrefix() !== '') {
       $this->appendTextCells($cells, $row->getPrefix() . ' ', $prefixColors, $cols);
     }
@@ -786,14 +788,14 @@ class ListBox extends TextGrid {
     return $cells;
   }
 
-  protected function buildColumnRowCells(ListBoxRow $row, int $index, int $cols, array $values, array $widths): array {
+  protected function buildColumnRowCells(ListBoxRow $row, int $index, int $cols, array $values, array $widths, int $leftSlotColumns): array {
     $type = $row->getType();
     $classes = $this->rowClasses($row, $index);
     $baseColors = $this->colorsForStyle($type, $classes);
     $leftColors = $this->colorsForStyle('ItemLeft');
     $leftColors['bg'] = $baseColors['bg'];
     $cells = [];
-    $this->appendLeftCells($cells, $row->getLeft(), $leftColors, $cols);
+    $this->appendLeftCells($cells, $row->getLeft(), $leftColors, $cols, $leftSlotColumns);
     $textColumns = max(0, $cols - count($cells));
     $columnChars = $this->columnCharWidths($widths, $textColumns);
     foreach ($columnChars as $i => $width) {
@@ -809,17 +811,17 @@ class ListBox extends TextGrid {
     return $cells;
   }
 
-  protected function appendLeftCells(array &$cells, string $text, array $colors, int $limit): void {
-    $slot = $this->leftSlotColumns();
+  protected function appendLeftCells(array &$cells, string $text, array $colors, int $limit, ?int $slot = null): void {
+    $slot ??= $this->leftSlotColumns();
     $glyphs = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
     for ($i = 0; $i < $slot && count($cells) < $limit; $i++) {
       $cells[] = $this->cell($i === 0 ? ($glyphs[0] ?? ' ') : ' ', $colors);
     }
   }
 
-  protected function leftSlotColumns(): int {
+  protected function leftSlotColumns(?array $items = null): int {
     $columns = 0;
-    foreach ($this->visibleItems() as $item) {
+    foreach ($items ?? $this->visibleItems() as $item) {
       $columns = max($columns, $item->getLeftReserve());
       if ($item->isSelectable() !== false) {
         $columns = max($columns, 2);
@@ -916,7 +918,8 @@ class ListBox extends TextGrid {
     $cols = max(1, (int)floor($this->viewportWidth() / max(1, (int)$this->letterWidth)));
     $cells = [];
     $visible = $this->visibleItems();
-    $bodyColumns = $this->maxBodyColumns($visible);
+    $leftSlotColumns = $this->leftSlotColumns($visible);
+    $bodyColumns = $this->maxBodyColumns($visible, $leftSlotColumns);
     $rightColumns = $this->rightSlotColumns($visible);
     if ($rightColumns > 0) {
       $bodyColumns = min($bodyColumns, max(0, $cols - $rightColumns));
@@ -925,7 +928,7 @@ class ListBox extends TextGrid {
     $i = 0;
     foreach ($visible as $index => $row) {
       if ($i >= $first && $i < $last) {
-        $cells[] = $this->buildRowCells($row, $index, $cols, $bodyColumns, $rightColumns);
+        $cells[] = $this->buildRowCells($row, $index, $cols, $bodyColumns, $rightColumns, $leftSlotColumns);
       }
       $i++;
       if ($i >= $last) {

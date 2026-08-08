@@ -13,6 +13,9 @@ class StyleSheet {
   ];
 
   public static function load(string $path, bool $overwrite = false): void {
+    if (substr($path, 0, 1) !== '/') {
+      $path = App::$instance->getDir() . '/' . $path;
+    }
     if (!file_exists($path)) {
       throw new \Exception("File not found: {$path}");
     }

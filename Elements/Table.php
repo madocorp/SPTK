@@ -190,6 +190,19 @@ class Table extends TextGrid {
     return [$this->cursorRow, $this->cursorColumn];
   }
 
+  public function setCursor(int $row, int $column = 0): void {
+    $this->cursorRow = $row;
+    $this->cursorColumn = $column;
+    $this->resetSelection();
+    $this->keepCursorOnScreen();
+    $this->reloadVisibleChunk();
+    $this->changed = true;
+    if ($this->renderer !== false) {
+      $this->recalculateGeometry();
+    }
+    $this->triggerOnChange();
+  }
+
   public function getActiveCellValue(): mixed {
     if ($this->rowCount === 0) {
       return false;

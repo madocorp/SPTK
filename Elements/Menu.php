@@ -13,6 +13,8 @@ class Menu extends Element {
   protected $sub;
   protected array $subs = [];
   protected $openedIndex = false;
+  protected string|false $openedName = false;
+  protected array|false $onClose = false;
 
   protected function init(): void {
     $this->addEvent('KeyPress', [$this, 'keyPressHandler']);
@@ -30,21 +32,40 @@ class Menu extends Element {
     }
   }
 
+  public function getAttributeList(): array {
+    return array_merge(parent::getAttributeList(), ['onClose']);
+  }
+
+  public function setOnClose($value): void {
+    $this->onClose = Element::parseCallback($value);
+  }
+
   public function closeMenu() {
+    $closedName = $this->openedName;
+    $wasOpen = $this->openedIndex !== false;
     $this->bar->inactivateMenuBarItems();
     $this->openedIndex = false;
+    $this->openedName = false;
     foreach ($this->subs as $sub) {
       $sub->closeMenuBoxes();
+    }
+    if ($wasOpen && $this->onClose !== false) {
+      call_user_func($this->onClose, $this, $closedName);
     }
   }
 
   public function openMenu($menuIndex) {
+    if ($this->openedIndex !== false && $this->openedIndex !== $menuIndex) {
+      $this->closeMenu();
+    }
     $barItem = $this->bar->activateMenuBarItem($menuIndex);
     if ($barItem === false) {
       $this->openedIndex = false;
+      $this->openedName = false;
       return false;
     }
     $this->openedIndex = $menuIndex;
+    $this->openedName = $barItem->getName();
     foreach ($this->subs as $sub) {
       $sub->showMenuBox($barItem->getName(), $barItem->geometry->x, 0, true);
     }
@@ -82,7 +103,9 @@ class Menu extends Element {
       case KeyCode::F10: $menu = 9; break;
       case KeyCode::F11: $menu = 10; break;
       case KeyCode::F12: $menu = 11; break;
-      case Action::CLOSE: $this->closeMenu(); break;
+      case Action::CLOSE:
+        $this->closeMenu();
+        return true;
     }
     if ($menu !== false) {
       return $this->openMenu($menu);
