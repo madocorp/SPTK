@@ -15,7 +15,16 @@ class MenuBoxRow extends ListBoxRow {
       switch ($key) {
         case 'submenu': $this->setSubmenu($value); break;
         case 'onOpen': $this->setOnOpen($value); break;
+        case 'separator': $this->setSeparator($value); break;
       }
+    }
+  }
+
+  public function setSeparator($value): void {
+    if ($value === true || $value === 1 || $value === '1' || $value === 'true') {
+      $this->addClass('MenuSeparator');
+    } else {
+      $this->removeClass('MenuSeparator');
     }
   }
 
