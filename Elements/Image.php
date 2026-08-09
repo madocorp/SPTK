@@ -16,9 +16,15 @@ class Image extends Element {
   protected $sourceY = 0;
   protected $sourceWidth = null;
   protected $sourceHeight = null;
+  protected string $fit = 'stretch';
 
   public function getAttributeList(): array {
-    return ['value'];
+    return ['value', 'fit'];
+  }
+
+  public function setFit($value): void {
+    $value = (string)$value;
+    $this->fit = in_array($value, ['stretch', 'contain'], true) ? $value : 'stretch';
   }
 
   public function setValue($value): void {
@@ -158,6 +164,13 @@ class Image extends Element {
     $h = $this->geometry->innerHeight;
     $sourceWidth = $this->getSourceWidth();
     $sourceHeight = $this->getSourceHeight();
+    $drawWidth = $w;
+    $drawHeight = $h;
+    if ($this->fit === 'contain') {
+      $scale = min($w / $sourceWidth, $h / $sourceHeight);
+      $drawWidth = max(1, (int)round($sourceWidth * $scale));
+      $drawHeight = max(1, (int)round($sourceHeight * $scale));
+    }
     $img = imagecrop($this->img, [
       'x' => $this->sourceX,
       'y' => $this->sourceY,
@@ -167,13 +180,16 @@ class Image extends Element {
     if ($img === false) {
       $img = $this->img;
     }
-    $img = imagescale($img, $w, $h);
+    $img = imagescale($img, $drawWidth, $drawHeight);
+    if ($img === false) {
+      throw new \Exception('Failed to scale image.');
+    }
     // convert to RGBA (little-endian)
-    $size = $w * $h * 4;
+    $size = $drawWidth * $drawHeight * 4;
     $this->rgba = \FFI::new("uint8_t[{$size}]");
     $offset = 0;
-    for ($y = 0; $y < $h; $y++) {
-      for ($x = 0; $x < $w; $x++) {
+    for ($y = 0; $y < $drawHeight; $y++) {
+      for ($x = 0; $x < $drawWidth; $x++) {
         $c = imagecolorat($img, $x, $y);
         $a = 255 - intdiv((($c >> 24) & 0x7F) * 255, 127);
         $r = ($c >> 16) & 0xFF;
@@ -190,13 +206,24 @@ class Image extends Element {
     $bgcolor = $this->style->get('backgroundColor');
     $surface = $sdl->SDL_CreateSurface($this->geometry->width, $this->geometry->height, SDL::SDL_PIXELFORMAT_RGBA8888);
     $sdl->SDL_LockSurface($surface);
+    for ($y = 0; $y < $this->geometry->height; $y++) {
+      $dst = \FFI::cast("uint8_t*", $surface->pixels + $y * $surface->pitch);
+      $offset = 0;
+      for ($x = 0; $x < $this->geometry->width; $x++) {
+        $dst[$offset++] = $bgcolor[3] ?? 0xff;
+        $dst[$offset++] = $bgcolor[2];
+        $dst[$offset++] = $bgcolor[1];
+        $dst[$offset++] = $bgcolor[0];
+      }
+    }
     $pixels = $surface->pixels; // void* pointer
     $pitch  = $surface->pitch;  // int
-    $srcStride = $w * 4;
+    $srcStride = $drawWidth * 4;
     $srcOffset = 0;
-    $dstRef = $surface->pixels + ($this->geometry->borderLeft + $this->geometry->paddingLeft) * 4;
-    $vOffset = $this->geometry->borderTop + $this->geometry->paddingTop;
-    for ($y = $vOffset; $y < $h + $vOffset; $y++) {
+    $hOffset = $this->geometry->borderLeft + $this->geometry->paddingLeft + (int)floor(($w - $drawWidth) / 2);
+    $vOffset = $this->geometry->borderTop + $this->geometry->paddingTop + (int)floor(($h - $drawHeight) / 2);
+    $dstRef = $surface->pixels + $hOffset * 4;
+    for ($y = $vOffset; $y < $drawHeight + $vOffset; $y++) {
       $dst = \FFI::cast("uint8_t*", $dstRef + $y * $surface->pitch);
       \FFI::memcpy($dst, \FFI::addr($this->rgba[$srcOffset]), $srcStride);
       $srcOffset += $srcStride;
