@@ -214,7 +214,8 @@ class MenuBox extends ListBox {
       $this->appendTextCells($cells, $text, $baseColors, $textLimit);
     }
     $right = $this->menuRightText($row);
-    if ($right !== '') {
+    $rightGlyphs = $right === '' ? [] : preg_split('//u', $right, -1, PREG_SPLIT_NO_EMPTY);
+    if ($right !== '' && $row->getRightAlign() === 'left') {
       $this->appendTextCells($cells, '  ', $baseColors, $textLimit);
       $this->appendTextCells($cells, $right, $rightColors, $textLimit);
     }
@@ -231,6 +232,13 @@ class MenuBox extends ListBox {
       }
       if (count($cells) < $cols) {
         $cells[] = $this->cell('>', $rightColors);
+      }
+    } else if ($right !== '') {
+      $rightTextStart = max($itemStart, $cols - $rightColumns - count($rightGlyphs));
+      foreach ($rightGlyphs as $i => $glyph) {
+        if (isset($cells[$rightTextStart + $i])) {
+          $cells[$rightTextStart + $i] = $this->cell($glyph, $rightColors);
+        }
       }
     }
     while (count($cells) < $cols) {
