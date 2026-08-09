@@ -1088,6 +1088,13 @@ return [
 
     assertSame($withRight->getGeometry()->innerWidth, $withRight->getGeometry()->contentWidth, 'menus never preserve horizontal overflow width');
 
+    $rightAligned = new InspectableMenuBox($root, 'right-aligned-menu');
+    $rightAligned->setGridSize(30);
+    $rightAligned->addItem(['text' => 'Long sprint name']);
+    $rightAligned->addItem(['text' => 'Short', 'right' => 'active']);
+
+    assertSame([' Long sprint name ', ' Short     active '], $rightAligned->renderedRows(), 'right-aligned menu metadata uses the actual row edge');
+
     $reservedLeft = new InspectableMenuBox($root, 'reserved-left-menu');
     $reservedLeft->setGridSize(8);
     $reservedLeft->addItem(['text' => 'Table', 'leftReserve' => 2]);
