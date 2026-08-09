@@ -5,7 +5,7 @@ namespace SPTK\Elements;
 class MenuBoxItem extends ListItem {
 
   public function getAttributeList(): array {
-    return array_merge(parent::getAttributeList(), ['submenu', 'onOpen']);
+    return array_merge(parent::getAttributeList(), ['submenu', 'onOpen', 'separator']);
   }
 
   public function setSubmenu($value): void {
@@ -19,6 +19,17 @@ class MenuBoxItem extends ListItem {
     $row = $this->getBackingRow();
     if ($row instanceof MenuBoxRow) {
       $row->setOnOpen($value);
+    }
+  }
+
+  public function setSeparator($value): void {
+    $row = $this->getBackingRow();
+    if ($row instanceof MenuBoxRow) {
+      if ($value === true || $value === 1 || $value === '1' || $value === 'true') {
+        $row->addClass('MenuSeparator');
+      } else {
+        $row->removeClass('MenuSeparator');
+      }
     }
   }
 
