@@ -113,19 +113,30 @@ class MenuBox extends ListBox {
     $max = 1;
     foreach ($items as $item) {
       $right = $this->menuRightText($item);
-      $width = mb_strlen($this->menuText($item)) + mb_strlen($right) + ($right === '' ? 0 : 2);
+      $width = mb_strlen($this->menuText($item));
+      if ($right !== '' && $item->getRightAlign() === 'left') {
+        $width += mb_strlen($right) + 2;
+      } else if ($right !== '') {
+        $rightOverflow = mb_strlen($right) - $item->getRightReserve();
+        if ($rightOverflow > 0) {
+          $width += $rightOverflow + 2;
+        }
+      }
       $max = max($max, $width);
     }
     return $max;
   }
 
   protected function rightItemColumns(array $items): int {
+    $columns = 1;
     foreach ($items as $item) {
       if ($this->isSubmenuRow($item)) {
-        return 2;
+        $columns = max($columns, 2);
+      } else if ($item->getRightAlign() !== 'left') {
+        $columns = max($columns, $item->getRightReserve());
       }
     }
-    return 1;
+    return $columns;
   }
 
   protected function isSeparatorRow(ListBoxRow $item): bool {
@@ -234,7 +245,14 @@ class MenuBox extends ListBox {
         $cells[] = $this->cell('>', $rightColors);
       }
     } else if ($right !== '') {
-      $rightTextStart = max($itemStart, $cols - $rightColumns - count($rightGlyphs));
+      if ($row->getRightReserve() > 0) {
+        $rightTextStart = $rightStart + max(0, $rightColumns - count($rightGlyphs));
+        while (count($cells) < min($cols, $rightStart + $rightColumns)) {
+          $cells[] = $this->cell(' ', $baseColors);
+        }
+      } else {
+        $rightTextStart = max($itemStart, $cols - $rightColumns - count($rightGlyphs));
+      }
       foreach ($rightGlyphs as $i => $glyph) {
         if (isset($cells[$rightTextStart + $i])) {
           $cells[$rightTextStart + $i] = $this->cell($glyph, $rightColors);

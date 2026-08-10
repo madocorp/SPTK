@@ -42,6 +42,10 @@ class HeadlessElement extends Element {
 
 class HiddenHeadlessElement extends HeadlessElement {
 
+  public function show(): void {
+    $this->display = true;
+  }
+
   public function hideForTest(): void {
     $this->display = false;
   }
@@ -72,6 +76,36 @@ class HeadlessPanel extends Panel {
 
   public function raise(): void {
     ;
+  }
+
+}
+
+class DirectionalFocusPanel extends HeadlessPanel {
+
+  public function recalculateGeometry(): void {
+    $positions = [
+      'tabs' => [0, 0, 100, 20],
+      'button' => [0, 90, 100, 20],
+    ];
+    $contentA = Element::byName('content-a', $this);
+    if ($contentA !== false && $contentA->isDisplayed()) {
+      $positions['field-a'] = [0, 40, 100, 20];
+    }
+    $contentB = Element::byName('content-b', $this);
+    if ($contentB !== false && $contentB->isDisplayed()) {
+      $positions['field-b'] = [0, 40, 100, 20];
+    }
+    foreach ($positions as $name => [$x, $y, $width, $height]) {
+      $element = Element::byName($name, $this);
+      if ($element === false) {
+        continue;
+      }
+      $geometry = $element->getGeometry();
+      $geometry->x = $x;
+      $geometry->y = $y;
+      $geometry->width = $width;
+      $geometry->height = $height;
+    }
   }
 
 }
@@ -1095,6 +1129,15 @@ return [
 
     assertSame([' Long sprint name ', ' Short     active '], $rightAligned->renderedRows(), 'right-aligned menu metadata uses the actual row edge');
 
+    $reservedRight = new InspectableMenuBox($root, 'reserved-right-menu');
+    $reservedRight->setGridSize(20);
+    $reservedRight->addItem(['text' => 'Longest item', 'rightReserve' => 4]);
+    $reservedRight->addItem(['text' => 'Short', 'right' => 'DESC', 'rightReserve' => 4]);
+    $reservedRightRows = $reservedRight->renderedRows();
+    $reservedRight->getItems()[0]->setRight('ASC');
+    assertSame([' Longest item    ', ' Short       DESC'], $reservedRightRows, 'menu rows reserve right marker columns even before marker text is set');
+    assertSame([' Longest item ASC', ' Short       DESC'], $reservedRight->renderedRows(), 'reserved menu right markers do not resize the menu');
+
     $reservedLeft = new InspectableMenuBox($root, 'reserved-left-menu');
     $reservedLeft->setGridSize(8);
     $reservedLeft->addItem(['text' => 'Table', 'leftReserve' => 2]);
@@ -1350,6 +1393,37 @@ return [
     assertTrue($tabs->hasClass('Tabs:active'), 'tab strip remains active after first switch');
     assertTrue($panel->eventHandler($event), 'panel routes second right key to focused tab strip');
     assertSame(2, $tabs->getCurrentTab(), 'second right key switches to third tab');
+  },
+
+  'panel first show measures active tab content before directional focus' => function (): void {
+    $root = root();
+    KeyCombo::init();
+    $panel = new DirectionalFocusPanel($root, 'panel', null, 'Panel');
+    $content = new HeadlessElement($panel, 'content', null, 'PanelContent');
+    $tabs = new Tabs($content, 'tabs');
+    $tabA = new Tab($tabs);
+    $tabA->setContentName('content-a');
+    $tabB = new Tab($tabs);
+    $tabB->setContentName('content-b');
+    $contentA = new HiddenHeadlessElement($content, 'content-a', null, 'TabBox');
+    $contentA->hideForTest();
+    $field = new CheckBox($contentA, 'field-a');
+    $contentB = new HiddenHeadlessElement($content, 'content-b', null, 'TabBox');
+    $contentB->hideForTest();
+    $fieldB = new CheckBox($contentB, 'field-b');
+    $button = new Button($content, 'button');
+
+    $panel->show();
+    $event = ['name' => 'KeyPress', 'mod' => KeyModifier::NONE, 'scancode' => ScanCode::DOWN, 'key' => KeyCode::DOWN];
+
+    assertTrue($panel->eventHandler($event), 'panel handles first down key after show');
+    assertTrue($field->hasClass('CheckBox:active'), 'first down from tabs focuses active tab content before later buttons');
+    assertFalse($button->hasClass('Button:active'), 'first down from tabs does not skip stale tab content geometry');
+
+    $tabs->selectTab(1);
+    assertTrue($panel->eventHandler($event), 'panel handles first down key after switching tabs');
+    assertTrue($fieldB->hasClass('CheckBox:active'), 'first down after switching tabs focuses newly active tab content');
+    assertFalse($button->hasClass('Button:active'), 'first down after switching tabs does not skip newly active tab content geometry');
   },
 
   'tab switches reuse already laid out content' => function (): void {
