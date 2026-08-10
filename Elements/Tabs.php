@@ -135,7 +135,7 @@ class Tabs extends Element {
     }
     $panel = $this->findAncestorByType('Panel');
     if ($refreshPanel && $panel !== false && $panel->isDisplayed()) {
-      $panel->refreshInputList($focus, false);
+      $panel->refreshInputList($focus);
       if ($focus === $this) {
         $this->raiseLocal();
       }

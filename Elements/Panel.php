@@ -90,8 +90,8 @@ class Panel extends Element {
     }
     $this->inputList = [];
     if ($recalculate) {
-      $this->recalculateGeometry();
       $this->syncTabs($this);
+      $this->recalculateGeometry();
     }
     $this->setInputList($this);
     if (empty($this->inputList)) {
