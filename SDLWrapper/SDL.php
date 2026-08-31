@@ -2,230 +2,91 @@
 
 namespace SPTK\SDLWrapper;
 
-use \SPTK\SDLWrapper\KeyCombo;
-
+/**
+ * Loads SDL3 through FFI and exposes constants used by the SPTK SDL backend.
+ */
 class SDL {
 
-  const SDL_INIT_AUDIO = 0x10;
-  const SDL_INIT_VIDEO = 0x20;
+  public const SDL_INIT_VIDEO = 0x20;
 
-  const SDL_QUIT = 0x100;
-  const SDL_EVENT_WINDOW_EXPOSED = 0x204;
-  const SDL_EVENT_WINDOW_RESIZED = 0x206;
-  const SDL_EVENT_WINDOW_MAXIMIZED = 0x20a;
-  const SDL_EVENT_WINDOW_RESTORED = 0x20b;
-  const SDL_EVENT_WINDOW_CLOSE_REQUESTED = 0x210;
+  public const SDL_QUIT = 0x100;
+  public const SDL_EVENT_WINDOW_EXPOSED = 0x204;
+  public const SDL_EVENT_WINDOW_RESIZED = 0x206;
+  public const SDL_EVENT_WINDOW_MAXIMIZED = 0x20a;
+  public const SDL_EVENT_WINDOW_RESTORED = 0x20b;
+  public const SDL_EVENT_WINDOW_CLOSE_REQUESTED = 0x210;
 
-  const SDL_EVENT_KEY_DOWN = 0x300;
-  const SDL_EVENT_KEY_UP = 0x301;
-  const SDL_EVENT_TEXT_INPUT = 0x303;
+  public const SDL_EVENT_KEY_DOWN = 0x300;
+  public const SDL_EVENT_KEY_UP = 0x301;
+  public const SDL_EVENT_TEXT_INPUT = 0x303;
 
-  const SDL_PIXELFORMAT_RGBA8888 = 0x16462004; // ((1 << 28) | (6 << 24) | (4 << 20) | (6 << 16) | (32 << 8) | (4 << 0));
-  const SDL_TEXTUREACCESS_STATIC = 0;
-  const SDL_TEXTUREACCESS_STREAMING = 1;
-  const SDL_TEXTUREACCESS_TARGET = 2;
-  const SDL_BLENDMODE_BLEND = 0x1;
-  const SDL_SCALE_MODE_NEAREST = 0;
+  public const SDL_PIXELFORMAT_RGBA8888 = 0x16462004;
+  public const SDL_TEXTUREACCESS_STATIC = 0;
+  public const SDL_TEXTUREACCESS_TARGET = 2;
+  public const SDL_BLENDMODE_BLEND = 0x1;
+  public const SDL_SCALE_MODE_NEAREST = 0;
 
-  public static $instance;
+  public const SDL_WINDOW_RESIZABLE = 0x20;
+  public const SDL_WINDOW_HIDDEN = 0x8;
+  public const SDL_WINDOW_MAXIMIZED = 0x80;
+  public const SDL_WINDOW_FULLSCREEN = 0x01;
 
-  public $sdl;
-  private $waitForEvent = 100; // ms
-  private $timerPeriod = 1000; // ms
-  private $eventCallback = null;
-  private $loopCallback = null;
-  private $timerCallback = null;
-  private $endCallback = null;
-  private $end = false;
-  private $supressTextInput;
-  private $syncEvents = false;
+  public const KEY_RETURN = 13;
+  public const KEY_ESCAPE = 27;
+  public const KEY_BACKSPACE = 8;
+  public const KEY_TAB = 9;
+  public const KEY_SPACE = 32;
+  public const KEY_DELETE = 127;
+  public const KEY_SCANCODE_MASK = 1 << 30;
+  public const KEY_INSERT = self::KEY_SCANCODE_MASK | 73;
+  public const KEY_RIGHT = self::KEY_SCANCODE_MASK | 79;
+  public const KEY_LEFT = self::KEY_SCANCODE_MASK | 80;
+  public const KEY_DOWN = self::KEY_SCANCODE_MASK | 81;
+  public const KEY_UP = self::KEY_SCANCODE_MASK | 82;
+  public const KEY_HOME = self::KEY_SCANCODE_MASK | 74;
+  public const KEY_PAGEUP = self::KEY_SCANCODE_MASK | 75;
+  public const KEY_END = self::KEY_SCANCODE_MASK | 77;
+  public const KEY_PAGEDOWN = self::KEY_SCANCODE_MASK | 78;
+  public const KEY_F1 = self::KEY_SCANCODE_MASK | 58;
+  public const KEY_F2 = self::KEY_SCANCODE_MASK | 59;
+  public const KEY_F3 = self::KEY_SCANCODE_MASK | 60;
+  public const KEY_F4 = self::KEY_SCANCODE_MASK | 61;
+  public const KEY_F5 = self::KEY_SCANCODE_MASK | 62;
+  public const KEY_F6 = self::KEY_SCANCODE_MASK | 63;
+  public const KEY_F7 = self::KEY_SCANCODE_MASK | 64;
+  public const KEY_F8 = self::KEY_SCANCODE_MASK | 65;
+  public const KEY_F9 = self::KEY_SCANCODE_MASK | 66;
+  public const KEY_F10 = self::KEY_SCANCODE_MASK | 67;
+  public const KEY_F11 = self::KEY_SCANCODE_MASK | 68;
+  public const KEY_F12 = self::KEY_SCANCODE_MASK | 69;
+  public const KEY_KP_1 = self::KEY_SCANCODE_MASK | 89;
+  public const KEY_KP_3 = self::KEY_SCANCODE_MASK | 91;
+  public const KEY_KP_7 = self::KEY_SCANCODE_MASK | 95;
+  public const KEY_KP_9 = self::KEY_SCANCODE_MASK | 97;
 
-  public function __construct(?callable $initCallback) {
-    if (!is_null(self::$instance)) {
-      throw new \Exception("SPTK\\SDL is a singleton, you can't instantiate more than once");
+  public const MOD_SHIFT = 0x0003;
+  public const MOD_CTRL = 0x00c0;
+  public const MOD_ALT = 0x0300;
+
+  public \FFI $ffi;
+
+  public function __construct(?string $basePath = null) {
+    $basePath ??= dirname(__DIR__) . '/SDLWrapper';
+    $this->ffi = \FFI::cdef(
+      file_get_contents($basePath . '/sdl_extract.h'),
+      $basePath . '/libSDL3.so.0.2.21'
+    );
+  }
+
+  public function error(): string {
+    $error = $this->ffi->SDL_GetError();
+    if ($error === null) {
+      return '';
     }
-    self::$instance = $this;
-    pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-    $dir = \SPTK\App::$instance->getDir();
-    $this->sdl = \FFI::cdef(file_get_contents(SPTK_PATH . "/SDLWrapper/sdl_extract.h"), SPTK_PATH . "/SDLWrapper/libSDL3.so");
-    $this->sdl->SDL_Init(self::SDL_INIT_VIDEO);
-    KeyCombo::init();
-    if ($initCallback !== null) {
-      call_user_func($initCallback, $this);
+    if (is_string($error)) {
+      return $error;
     }
-    try {
-      $this->eventLoop();
-    } catch (\Exception $e) {
-      echo "ERROR: Uncaught exception in the event loop!\n";
-      echo '       ' . $e->getMessage(), "\n";
-    }
-    if ($this->endCallback !== null) {
-      call_user_func($this->endCallback);
-    }
-    $this->sdl->SDL_Quit();
-  }
-
-  public function sigIntHandler(int $signo, mixed $siginfo): void {
-    $this->end = true;
-  }
-
-  protected function eventLoop(): void {
-    $event = $this->sdl->new('SDL_Event');
-    $timer = microtime(true) * 1000;
-    while (!$this->end) {
-      $hasEvent = $this->sdl->SDL_WaitEventTimeout(\FFI::addr($event), $this->waitForEvent);
-      if ($hasEvent) {
-        do {
-          $parsedEvent = $this->parseEvent($event);
-          if ($this->supressTextInput && $parsedEvent['name'] === 'TextInput') {
-            continue;
-          }
-          if ($this->eventCallback !== false) {
-            \SPTK\Element::beginBatch();
-            try {
-              call_user_func($this->eventCallback, $parsedEvent);
-            } finally {
-              \SPTK\Element::endBatch();
-            }
-          }
-        } while (!$this->end && $this->sdl->SDL_PollEvent(\FFI::addr($event)));
-      }
-      if ($this->loopCallback !== null) {
-        \SPTK\Element::beginBatch();
-        try {
-          call_user_func($this->loopCallback);
-        } finally {
-          \SPTK\Element::endBatch();
-        }
-      }
-      pcntl_signal_dispatch();
-      if ($this->timerCallback !== null) {
-        $now = microtime(true) * 1000;
-        if ($this->syncEvents) {
-          while ($now < $timer + $this->timerPeriod) {
-            usleep($timer + $this->timerPeriod - $now);
-            $now = microtime(true) * 1000;
-          }
-        }
-        if ($now >= $timer + $this->timerPeriod) {
-          \SPTK\Element::beginBatch();
-          try {
-            call_user_func($this->timerCallback, $now);
-          } finally {
-            \SPTK\Element::endBatch();
-          }
-          $timer = $now;
-        }
-      }
-      $this->supressTextInput = false;
-    }
-  }
-
-  public function syncEvents(bool $sync = true): void {
-    $this->syncEvents = $sync;
-  }
-
-  public function supressTextInput(bool $supress = true): void {
-    $this->supressTextInput = $supress;
-  }
-
-  public function parseEvent(\FFI\CData $event): array {
-    $parsedEvent = [];
-    $data = false;
-    switch ($event->type) {
-      case SDL::SDL_EVENT_KEY_DOWN:
-        $parsedEvent = $this->keyboardEventToArray($event->key);
-        $parsedEvent['name'] = 'KeyPress';
-        break;
-      case SDL::SDL_EVENT_KEY_UP:
-        $parsedEvent = $this->keyboardEventToArray($event->key);
-        $parsedEvent['name'] = 'KeyRelease';
-        break;
-      case SDL::SDL_EVENT_TEXT_INPUT:
-        $parsedEvent = $this->textInputEventToArray($event->text);
-        $parsedEvent['name'] = 'TextInput';
-        break;
-      case SDL::SDL_EVENT_WINDOW_EXPOSED:
-      case SDL::SDL_EVENT_WINDOW_MAXIMIZED:
-      case SDL::SDL_EVENT_WINDOW_RESTORED:
-      case SDL::SDL_EVENT_WINDOW_RESIZED:
-      case SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-        $parsedEvent = $this->windowEventToArray($event->window);
-        $parsedEvent['name'] = 'WindowEvent';
-        break;
-      default:
-        $parsedEvent['type'] = $event->type;
-        break;
-    }
-    return $parsedEvent;
-  }
-
-  private function keyboardEventToArray(\FFI\CData  $keyEvent): array {
-    return [
-      'type' => $keyEvent->type,
-      'timestamp' => $keyEvent->timestamp,
-      'windowID' => $keyEvent->windowID,
-      'which' => $keyEvent->which,
-      'scancode' => $keyEvent->scancode,
-      'key' => $keyEvent->key,
-      'mod' => $keyEvent->mod,
-      'raw' => $keyEvent->raw,
-      'down' => (bool)$keyEvent->down,
-      'repeat' => (bool)$keyEvent->repeat
-    ];
-  }
-
-  private function textInputEventToArray(\FFI\CData  $textInputEvent): array {
-    return [
-      'type' => $textInputEvent->type,
-      'timestamp' => $textInputEvent->timestamp,
-      'windowID' => $textInputEvent->windowID,
-      'text' => $textInputEvent->text
-    ];
-  }
-
-  private function windowEventToArray(\FFI\CData $windowEvent): array {
-    return [
-      'type' => $windowEvent->type,
-      'timestamp' => $windowEvent->timestamp,
-      'windowID' => $windowEvent->windowID,
-      'data1' => $windowEvent->data1,
-      'data2' => $windowEvent->data2
-    ];
-  }
-
-  public function end(): void {
-    $this->end = true;
-  }
-
-  public function setTimer(int $timerPeriod): void {
-    $this->timerPeriod = $timerPeriod;
-    if ($this->timerPeriod < $this->waitForEvent) {
-      throw new \Exception('TimerPeriod must be greater than waitForEvent!');
-    }
-  }
-
-  public function setWaitTime(int $waitForEvent): void {
-    $this->waitForEvent = $waitForEvent;
-    if ($this->timerPeriod < $this->waitForEvent) {
-      throw new \Exception('TimerPeriod must be greater than waitForEvent!');
-    }
-  }
-
-  public function setEventCallback(?callable $callback): void {
-    $this->eventCallback = $callback;
-  }
-
-  public function setLoopCallback(?callable $callback): void {
-    $this->loopCallback = $callback;
-  }
-
-  public function setTimerCallback(?callable $callback): void {
-    $this->timerCallback = $callback;
-  }
-
-  public function setEndCallback(?callable $callback): void {
-    $this->endCallback = $callback;
+    return \FFI::string($error);
   }
 
 }

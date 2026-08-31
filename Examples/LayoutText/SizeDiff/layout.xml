@@ -1,9 +1,0 @@
-<Root>
-
-  <Window title="SizeDiff">
-    Lorem ipsum dolor <AC class="big">sit</AC> amet, <AC class="small">consectetur adipiscing</AC> elit.
-    Nulla sagittis <AC class="tiny">erat est, ac porta ex egestas ut</AC>. Donec tincidunt porttitor <AC class="huge">est</AC>, eu ultrices nisl congue laoreet.
-    Suspendisse eu sem faucibus, ornare quam id, ultricies nisi. 
-  </Window>
-
-</Root>
