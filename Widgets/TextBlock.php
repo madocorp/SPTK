@@ -24,6 +24,10 @@ class TextBlock extends Element {
     return $this;
   }
 
+  public function text(): string {
+    return $this->text;
+  }
+
   public function preferredRowsForColumns(int $columns): int {
     return count($this->wrappedLines($columns));
   }

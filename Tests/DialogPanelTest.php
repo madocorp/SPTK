@@ -2,6 +2,7 @@
 
 namespace SPTK\Tests;
 
+use SPTK\Core\Clipboard;
 use SPTK\Core\FocusManager;
 use SPTK\Core\GridBuffer;
 use SPTK\Core\InputEvent;
@@ -293,6 +294,25 @@ return [
     $focus = new FocusManager($root);
     assertSame(true, $focus->dispatch(InputEvent::key('Enter', ['ctrl' => true])), 'Ctrl+Enter should activate the default dialog button.');
     assertSame('first', $pressed, 'The first dialog button should be the default button.');
+  },
+
+  'ctrl c copies dialog text blocks' => function(): void {
+    Clipboard::setProvider(null);
+    Clipboard::set('');
+    $root = new \SPTK\Widgets\Dock('root');
+    $dialogs = new DialogLayer('dialogs');
+    $panel = new DialogPanel('panel', ['title' => 'Warning', 'variant' => 'warning']);
+    $panel->addContent(new TextBlock('first-message', "First line\nSecond line"));
+    $panel->addContent(new Label('label', 'Not copied'));
+    $panel->addContent(new TextBlock('second-message', 'More detail'));
+    $panel->addButton(new Button('close', 'Close'));
+    $dialogs->push($panel);
+    $root->add($dialogs);
+    $root->setFrame(new Rect(0, 0, 60, 12));
+
+    $focus = new FocusManager($root);
+    assertSame(true, $focus->dispatch(InputEvent::key('c', ['ctrl' => true])), 'Ctrl+C should be handled by dialog text copy.');
+    assertSame("First line\nSecond line\n\nMore detail", Clipboard::get(), 'Dialog copy should concatenate TextBlocks with a blank line.');
   },
 
   'escape closes closeable dialog by default' => function(): void {

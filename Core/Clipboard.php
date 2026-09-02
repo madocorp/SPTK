@@ -19,6 +19,9 @@ class Clipboard {
     if (self::$provider !== null && method_exists(self::$provider, 'set')) {
       self::$provider->set($text);
     }
+    if (self::$provider !== null && method_exists(self::$provider, 'setPrimary')) {
+      self::$provider->setPrimary($text);
+    }
   }
 
   public static function get(): string {
