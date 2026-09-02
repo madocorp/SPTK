@@ -16,6 +16,10 @@ class SdlClipboard {
     $this->sdl->ffi->SDL_SetClipboardText($text);
   }
 
+  public function setPrimary(string $text): void {
+    $this->sdl->ffi->SDL_SetPrimarySelectionText($text);
+  }
+
   public function get(): string {
     if (!$this->sdl->ffi->SDL_HasClipboardText()) {
       return '';

@@ -59,8 +59,13 @@ class FocusManager {
     $handled = $current !== null && $current->handle($event);
     if ($handled) {
       $this->flushPostEvent();
+      return true;
     }
-    return $handled;
+    if ($this->dialogReturnFallback($focusRoot, $event)) {
+      $this->next();
+      return true;
+    }
+    return false;
   }
 
   public function rebuild(?Element $preferred = null): void {
@@ -180,6 +185,15 @@ class FocusManager {
       $this->rebuild($context->takeRequestedFocus());
     }
     $context->runDeferredActions();
+  }
+
+  protected function dialogReturnFallback(Element $focusRoot, InputEvent $event): bool {
+    return $focusRoot->focusScope() === 'dialog'
+      && $event->type === 'key'
+      && InputAction::normalizedKey($event->key) === 'Enter'
+      && empty($event->modifiers['ctrl'])
+      && empty($event->modifiers['alt'])
+      && empty($event->modifiers['shift']);
   }
 
 }

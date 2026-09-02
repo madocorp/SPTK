@@ -7,6 +7,7 @@ require_once __DIR__ . '/Support.php';
 
 $files = [
   __DIR__ . '/AppDataTest.php',
+  __DIR__ . '/ClipboardTest.php',
   __DIR__ . '/ColorTest.php',
   __DIR__ . '/GridBufferTest.php',
   __DIR__ . '/LayoutTest.php',

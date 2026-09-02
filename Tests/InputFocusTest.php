@@ -9,6 +9,7 @@ use SPTK\Core\ElementContext;
 use SPTK\Core\RenderTarget;
 use SPTK\Widgets\Dock;
 use SPTK\Widgets\DialogBox;
+use SPTK\Widgets\Input;
 use SPTK\Widgets\ListView;
 use SPTK\Widgets\MenuBar;
 use SPTK\Widgets\TextEditor;
@@ -102,6 +103,30 @@ return [
     assertSame('list', $focus->current()?->name(), 'Dialog should focus its first descendant.');
     $focus->dispatch(InputEvent::key('Tab'));
     assertSame('editor', $focus->current()?->name(), 'Dialog Tab order should follow add order.');
+  },
+
+  'enter advances dialog focus when focused widget does not handle it' => function(): void {
+    $dialog = new DialogBox('dialog');
+    $first = new Input('first', '');
+    $second = new Input('second', '');
+    $dialog->add($first)->add($second);
+    $dialog->setFrame(new Rect(0, 0, 20, 5));
+    $focus = new FocusManager($dialog);
+    assertSame('first', $focus->current()?->name(), 'Dialog should start on the first input.');
+    assertSame(true, $focus->dispatch(InputEvent::key('Enter')), 'Unhandled Enter should advance dialog focus.');
+    assertSame('second', $focus->current()?->name(), 'Enter should move to the next focusable dialog widget.');
+  },
+
+  'enter stays with dialog widget that handles it' => function(): void {
+    $dialog = new DialogBox('dialog');
+    $editor = new TextEditor('editor', 'a');
+    $input = new Input('input', '');
+    $dialog->add($editor)->add($input);
+    $dialog->setFrame(new Rect(0, 0, 20, 5));
+    $focus = new FocusManager($dialog);
+    assertSame(true, $focus->dispatch(InputEvent::key('Enter')), 'Handled Enter should stay with the focused widget.');
+    assertSame('editor', $focus->current()?->name(), 'Enter should not advance when the widget handles it.');
+    assertSame("\na", $editor->text(), 'The editor should receive Enter as a newline.');
   },
 
   'workspace box is one focus stop and remembers descendant focus' => function(): void {

@@ -3,6 +3,7 @@
 namespace SPTK\Widgets;
 
 use SPTK\Core\Color;
+use SPTK\Core\Clipboard;
 use SPTK\Core\Element;
 use SPTK\Core\InputAction;
 use SPTK\Core\InputEvent;
@@ -323,6 +324,9 @@ class DialogPanel extends Element {
     if (InputAction::confirm($event, 'dialog')) {
       return $this->pressDefaultButton();
     }
+    if (InputAction::copy($event, 'dialog')) {
+      return $this->copyTextBlocks();
+    }
     if (preg_match('/^F([1-9]|1[0-2])$/', $event->key)) {
       return $this->pressHotKeyButton($event->key);
     }
@@ -345,6 +349,25 @@ class DialogPanel extends Element {
       }
     }
     return false;
+  }
+
+  protected function copyTextBlocks(): bool {
+    $blocks = [];
+    $this->collectTextBlocks($this, $blocks);
+    if ($blocks === []) {
+      return false;
+    }
+    Clipboard::set(implode("\n\n", array_map(fn(TextBlock $block): string => $block->text(), $blocks)));
+    return true;
+  }
+
+  protected function collectTextBlocks(Element $element, array &$blocks): void {
+    if ($element instanceof TextBlock) {
+      $blocks[] = $element;
+    }
+    foreach ($element->children() as $child) {
+      $this->collectTextBlocks($child, $blocks);
+    }
   }
 
   protected function close(): bool {
