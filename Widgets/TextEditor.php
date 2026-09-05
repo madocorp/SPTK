@@ -34,6 +34,7 @@ class TextEditor extends Element {
   protected array $lineFillStyles = [];
   protected int $scrollX = 0;
   protected int $scrollY = 0;
+  protected int|false $preferredVisualColumn = false;
   protected array $highlightRanges = [];
   protected Color|string|int|null $fieldFg = null;
   protected Color|string|int|null $fieldBg = null;
@@ -341,21 +342,35 @@ class TextEditor extends Element {
 
     $handled = true;
     if (InputAction::left($event, 'editor')) {
-      $ctrl ? $this->cursor->moveLineStart($shift) : $this->cursor->moveLeft($shift);
+      if ($ctrl) {
+        $this->cursor->moveLineStart($shift);
+        $this->preferredVisualColumn = false;
+      } else {
+        $this->moveHorizontal(-1, $shift);
+      }
     } else if (InputAction::right($event, 'editor')) {
-      $ctrl ? $this->cursor->moveLineEnd($shift) : $this->cursor->moveRight($shift);
+      if ($ctrl) {
+        $this->cursor->moveLineEnd($shift);
+        $this->preferredVisualColumn = false;
+      } else {
+        $this->moveHorizontal(1, $shift);
+      }
     } else if (InputAction::up($event, 'editor')) {
-      $this->cursor->moveUp($shift);
+      $this->moveVerticalVisual(-1, $shift);
     } else if (InputAction::down($event, 'editor')) {
-      $this->cursor->moveDown($shift);
+      $this->moveVerticalVisual(1, $shift);
     } else if (InputAction::home($event, 'editor')) {
       $ctrl ? $this->pageToFirstHorizontalEdge($shift) : $this->cursor->moveLineStart($shift);
+      $this->preferredVisualColumn = false;
     } else if (InputAction::end($event, 'editor')) {
       $ctrl ? $this->pageToLastHorizontalEdge($shift) : $this->cursor->moveLineEnd($shift);
+      $this->preferredVisualColumn = false;
     } else if (InputAction::pageUp($event, 'editor')) {
       $ctrl ? $this->moveToDocumentRowPreservingColumn(0, $shift) : $this->cursor->moveUp($shift, $this->visibleRows());
+      $this->preferredVisualColumn = false;
     } else if (InputAction::pageDown($event, 'editor')) {
       $ctrl ? $this->moveToDocumentRowPreservingColumn(count($this->lines) - 1, $shift) : $this->cursor->moveDown($shift, $this->visibleRows());
+      $this->preferredVisualColumn = false;
     } else if (!$this->readOnly && InputAction::newline($event, 'editor')) {
       $this->insertText("\n");
     } else if (!$this->readOnly && InputAction::backspace($event, 'editor')) {
@@ -637,7 +652,17 @@ class TextEditor extends Element {
         ? (int)$rowInfo['start']
         : (int)($this->autoWrap ? $this->scrollX : $rowInfo['start']);
       $screenIndent = (int)($rowInfo['screenIndent'] ?? 0);
-      if ($col < $firstCol || $col > $firstCol + $content->width - $screenIndent - 1) {
+      if ((bool)($rowInfo['wrapped'] ?? false)) {
+        $lineLength = $this->lineLength($row);
+        $end = $firstCol + (int)$rowInfo['length'];
+        $nextStart = $this->nextWrappedSegmentStart($row, $firstCol);
+        $canShowSegmentEnd = $col === $end
+          && $screenIndent + (int)$rowInfo['length'] < $content->width
+          && ($col === $lineLength || ($nextStart !== null && $nextStart > $end));
+        if (($col < $firstCol || $col >= $end) && !$canShowSegmentEnd) {
+          continue;
+        }
+      } else if ($col < $firstCol || $col > $firstCol + $content->width - $screenIndent - 1) {
         continue;
       }
       $x = $content->x + $screenIndent + $col - $firstCol;
@@ -720,12 +745,83 @@ class TextEditor extends Element {
     $this->cursor->setPosition($row, $col, $select);
   }
 
+  protected function moveHorizontal(int $delta, bool $select): void {
+    if ($delta < 0) {
+      $this->cursor->moveLeft($select);
+    } else {
+      $this->cursor->moveRight($select);
+    }
+    $this->preferredVisualColumn = false;
+    $this->normalizeWrappedCursor($delta, $select);
+  }
+
+  protected function moveVerticalVisual(int $delta, bool $select): void {
+    if (!$this->autoWrap) {
+      $delta < 0 ? $this->cursor->moveUp($select) : $this->cursor->moveDown($select);
+      $this->preferredVisualColumn = false;
+      return;
+    }
+
+    [$row, $col] = $this->cursor->position();
+    if ($this->lineWrapExempt($row)) {
+      $delta < 0 ? $this->cursor->moveUp($select) : $this->cursor->moveDown($select);
+      $this->preferredVisualColumn = false;
+      return;
+    }
+
+    $rows = $this->wrappedRows();
+    $current = $this->wrappedVisualIndexForCursor($row, $col);
+    $target = max(0, min(count($rows) - 1, $current + $delta));
+    if ($target === $current) {
+      return;
+    }
+
+    $currentInfo = $rows[$current] ?? null;
+    $targetInfo = $rows[$target] ?? null;
+    if ($currentInfo === null || $targetInfo === null || !(bool)($targetInfo['wrapped'] ?? false)) {
+      $delta < 0 ? $this->cursor->moveUp($select) : $this->cursor->moveDown($select);
+      $this->preferredVisualColumn = false;
+      return;
+    }
+
+    if ($this->preferredVisualColumn === false) {
+      $this->preferredVisualColumn = $this->visualColumnInWrappedRow($currentInfo, $col);
+    }
+    $newCol = $this->documentColumnForWrappedVisualColumn($targetInfo, $this->preferredVisualColumn);
+    $this->cursor->setPosition((int)$targetInfo['row'], $newCol, $select);
+  }
+
+  protected function normalizeWrappedCursor(int $direction, bool $select): void {
+    [$row, $col] = $this->cursor->position();
+    if (!$this->autoWrap || $this->lineWrapExempt($row)) {
+      return;
+    }
+    $segments = $this->wrappedLineSegments($this->lines[$row] ?? '', $this->contentColumns(), $this->wrapIndentForLine($row));
+    foreach ($segments as $index => $segment) {
+      $start = (int)$segment['start'];
+      $end = $start + (int)$segment['length'];
+      if ($col >= $start && $col < $end) {
+        return;
+      }
+      $next = $segments[$index + 1] ?? null;
+      if ($next !== null && $col >= $end && $col < (int)$next['start']) {
+        $this->cursor->setPosition(
+          $row,
+          $direction < 0 ? $this->visibleWrappedSegmentEndColumn($row, $segment) : (int)$next['start'],
+          $select
+        );
+        return;
+      }
+    }
+  }
+
   protected function pageToFirstHorizontalEdge(bool $select): void {
     $content = $this->contentRect();
     $viewport = max(1, $content->width);
     [$row, $col] = $this->cursor->position();
     if ($this->autoWrap && !$this->lineWrapExempt($row)) {
-      $this->cursor->moveLineStart($select);
+      $segment = $this->wrappedSegmentForCursor($row, $col);
+      $this->cursor->setPosition($row, (int)($segment['start'] ?? 0), $select);
       return;
     }
     $first = min($this->lineLength($row), $this->scrollX);
@@ -744,7 +840,10 @@ class TextEditor extends Element {
     $viewport = max(1, $content->width);
     [$row, $col] = $this->cursor->position();
     if ($this->autoWrap && !$this->lineWrapExempt($row)) {
-      $this->cursor->moveLineEnd($select);
+      $segment = $this->wrappedSegmentForCursor($row, $col);
+      $start = (int)($segment['start'] ?? 0);
+      $length = (int)($segment['length'] ?? 0);
+      $this->cursor->setPosition($row, $length > 0 ? $this->visibleWrappedSegmentEndColumn($row, $segment) : $start, $select);
       return;
     }
     $maxOffset = max(0, $this->horizontalColumnCount() - $viewport);
@@ -765,14 +864,84 @@ class TextEditor extends Element {
     if ($this->lineWrapExempt($row)) {
       return $visual;
     }
-    $segments = $this->wrappedLineSegments($this->lines[$row] ?? '', $columns, $this->wrapIndentForLine($row));
+    return $visual + $this->wrappedSegmentIndexForColumn($row, $col);
+  }
+
+  protected function wrappedVisualIndexForCursor(int $row, int $col): int {
+    $visual = 0;
+    $columns = $this->contentColumns();
+    for ($i = 0; $i < $row; $i++) {
+      $visual += $this->lineWrapExempt($i) ? 1 : count($this->wrappedLineSegments($this->lines[$i] ?? '', $columns, $this->wrapIndentForLine($i)));
+    }
+    return $visual + ($this->lineWrapExempt($row) ? 0 : $this->wrappedSegmentIndexForColumn($row, $col));
+  }
+
+  protected function wrappedSegmentForCursor(int $row, int $col): array {
+    $segments = $this->wrappedLineSegments($this->lines[$row] ?? '', $this->contentColumns(), $this->wrapIndentForLine($row));
+    return $segments[$this->wrappedSegmentIndexForColumn($row, $col)] ?? ['start' => 0, 'length' => 0];
+  }
+
+  protected function wrappedSegmentIndexForColumn(int $row, int $col): int {
+    $segments = $this->wrappedLineSegments($this->lines[$row] ?? '', $this->contentColumns(), $this->wrapIndentForLine($row));
+    $last = max(0, count($segments) - 1);
     foreach ($segments as $offset => $segment) {
-      $end = $segment['start'] + $segment['length'];
-      if ($col >= $segment['start'] && ($col < $end || $offset === 0 || $offset === count($segments) - 1)) {
-        return $visual + $offset;
+      $start = (int)$segment['start'];
+      $end = $start + (int)$segment['length'];
+      if ($col >= $start && $col < $end) {
+        return (int)$offset;
+      }
+      $next = $segments[$offset + 1] ?? null;
+      if ($next !== null && $col >= $end && $col < (int)$next['start']) {
+        return (int)$offset;
       }
     }
-    return $visual;
+    return $col >= $this->lineLength($row) ? $last : 0;
+  }
+
+  protected function visibleWrappedSegmentEndColumn(int $row, array $segment): int {
+    $start = (int)$segment['start'];
+    $length = (int)$segment['length'];
+    if ($length <= 0) {
+      return $start;
+    }
+    $end = $start + $length;
+    $nextStart = $this->nextWrappedSegmentStart($row, $start);
+    if ($this->wrappedSegmentScreenIndent($row, $start) + $length < $this->contentColumns() && ($end === $this->lineLength($row) || ($nextStart !== null && $nextStart > $end))) {
+      return $end;
+    }
+    return $end - 1;
+  }
+
+  protected function wrappedSegmentScreenIndent(int $row, int $segmentStart): int {
+    if ($segmentStart === 0) {
+      return 0;
+    }
+    $segments = $this->wrappedLineSegments($this->lines[$row] ?? '', $this->contentColumns(), $this->wrapIndentForLine($row));
+    return isset($segments[0]) && (int)$segments[0]['start'] === $segmentStart ? 0 : $this->wrapIndentForLine($row);
+  }
+
+  protected function nextWrappedSegmentStart(int $row, int $segmentStart): ?int {
+    $segments = $this->wrappedLineSegments($this->lines[$row] ?? '', $this->contentColumns(), $this->wrapIndentForLine($row));
+    foreach ($segments as $index => $segment) {
+      if ((int)$segment['start'] === $segmentStart) {
+        return isset($segments[$index + 1]) ? (int)$segments[$index + 1]['start'] : null;
+      }
+    }
+    return null;
+  }
+
+  protected function visualColumnInWrappedRow(array $rowInfo, int $col): int {
+    $start = (int)$rowInfo['start'];
+    $length = (int)$rowInfo['length'];
+    $sourceColumn = max(0, min(max(0, $length - 1), $col - $start));
+    return (int)($rowInfo['screenIndent'] ?? 0) + $sourceColumn;
+  }
+
+  protected function documentColumnForWrappedVisualColumn(array $rowInfo, int $visualColumn): int {
+    $start = (int)$rowInfo['start'];
+    $length = (int)$rowInfo['length'];
+    $sourceColumn = max(0, $visualColumn - (int)($rowInfo['screenIndent'] ?? 0));
+    return $start + min(max(0, $length - 1), $sourceColumn);
   }
 
   protected function visualRowCount(): int {
