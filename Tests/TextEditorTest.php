@@ -364,6 +364,61 @@ return [
     assertSame('delta', rtrim($buffer->line(2)), 'Third wrapped row should contain the final word.');
   },
 
+  'text editor auto wrap does not paint cursor past wrapped segment end' => function(): void {
+    $editor = new TextEditor('editor', 'alpha beta gamma');
+    $editor->setAutoWrap();
+    $editor->setFrame(new Rect(0, 0, 10, 2));
+    $editor->setCursorPosition(0, 12);
+
+    $buffer = new GridBuffer(10, 2);
+    $editor->render($buffer);
+    assertSame('alpha beta', rtrim($buffer->line(0)), 'First visual row should not expose characters from the next wrapped row.');
+    assertSame('gamma', rtrim($buffer->line(1)), 'The wrapped word should render only on its own visual row.');
+    assertSame('a', $buffer->cell(1, 1)?->glyph, 'Cursor should paint inside the actual wrapped segment.');
+  },
+
+  'text editor ctrl home and end move to wrapped visual row edges' => function(): void {
+    $editor = new TextEditor('editor', 'alpha beta gamma delta');
+    $editor->setAutoWrap();
+    $editor->setFrame(new Rect(0, 0, 10, 3));
+    $editor->setCursorPosition(0, 13);
+
+    $editor->handle(InputEvent::key('Home', ['ctrl' => true]));
+    assertSame([0, 11], $editor->cursorPosition(), 'Ctrl+Home should move to the start of the current wrapped row.');
+
+    $editor->handle(InputEvent::key('End', ['ctrl' => true]));
+    assertSame([0, 16], $editor->cursorPosition(), 'Ctrl+End should move to the end of the current wrapped row.');
+  },
+
+  'text editor auto wrap up and down move by visual rows' => function(): void {
+    $editor = new TextEditor('editor', 'alpha beta gamma delta');
+    $editor->setAutoWrap();
+    $editor->setFrame(new Rect(0, 0, 10, 3));
+    $editor->setCursorPosition(0, 2);
+
+    $editor->handle(InputEvent::key('Down'));
+    assertSame([0, 13], $editor->cursorPosition(), 'Down should move from the first wrapped row to the next visual row.');
+
+    $editor->handle(InputEvent::key('Down'));
+    assertSame([0, 19], $editor->cursorPosition(), 'Down should continue through wrapped visual rows before leaving the document line.');
+
+    $editor->handle(InputEvent::key('Up'));
+    assertSame([0, 13], $editor->cursorPosition(), 'Up should move back to the previous wrapped visual row.');
+  },
+
+  'text editor auto wrap skips hidden break spaces while moving horizontally' => function(): void {
+    $editor = new TextEditor('editor', 'alpha beta gamma');
+    $editor->setAutoWrap();
+    $editor->setFrame(new Rect(0, 0, 10, 2));
+    $editor->setCursorPosition(0, 9);
+
+    $editor->handle(InputEvent::key('Right'));
+    assertSame([0, 11], $editor->cursorPosition(), 'Right should skip the hidden wrap separator and land on the next visual row.');
+
+    $editor->handle(InputEvent::key('Left'));
+    assertSame([0, 9], $editor->cursorPosition(), 'Left should skip back to the visible edge of the previous visual row.');
+  },
+
   'text editor auto wrap keeps prose wrapped with exempt styles configured' => function(): void {
     $editor = new TextEditor('editor', 'alpha beta gamma delta');
     $editor->setHighlighter([
