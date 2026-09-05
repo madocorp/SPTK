@@ -138,7 +138,13 @@ class SdlGridRenderer implements SurfaceRenderTarget, ImageRenderTarget, PixelTe
     $extraX = max(0, $pixelRect->width - $this->gridPixelWidth);
     $extraY = max(0, $pixelRect->height - $this->gridPixelHeight);
     $alignX = str_contains($gridAlignment, 'left') ? 0 : intdiv($extraX, 2);
-    $alignY = str_contains($gridAlignment, 'top') || $pixelRect->height === $rows * $this->font->rowHeight ? 0 : intdiv($extraY, 2);
+    if (str_contains($gridAlignment, 'top') || $pixelRect->height === $rows * $this->font->rowHeight) {
+      $alignY = 0;
+    } else if (str_contains($gridAlignment, 'bottom')) {
+      $alignY = $extraY;
+    } else {
+      $alignY = intdiv($extraY, 2);
+    }
     $this->offsetX = $pixelRect->x + $alignX;
     $this->offsetY = $pixelRect->y + $alignY;
     $this->clips = [];

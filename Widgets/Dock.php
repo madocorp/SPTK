@@ -2,6 +2,7 @@
 
 namespace SPTK\Widgets;
 
+use SPTK\Core\Color;
 use SPTK\Core\Element;
 use SPTK\Core\ImageRenderTarget;
 use SPTK\Core\Len;
@@ -72,7 +73,11 @@ class Dock extends Element {
       if ($placement->mode() === 'dock') {
         [$childFrame, $separatorFrame, $remaining] = $this->dockCellFrames($child, $remaining, $placement);
         if ($separatorFrame !== null) {
-          $this->separators[] = ['frame' => $separatorFrame, 'orientation' => $this->separatorOrientation($placement->edge())];
+          $this->separators[] = [
+            'frame' => $separatorFrame,
+            'orientation' => $this->separatorOrientation($placement->edge()),
+            'color' => $this->separatorColor($child, $placement),
+          ];
         }
         $child->setFrame($childFrame);
       } else if ($placement->mode() === 'at') {
@@ -92,7 +97,7 @@ class Dock extends Element {
       if ($frame->width <= 0 || $frame->height <= 0) {
         continue;
       }
-      $color = $this->insideDialog() ? $this->theme->bg : $this->theme->muted;
+      $color = $separator['color'];
       $target->fill($frame, ' ', $this->theme->fg, $color);
     }
   }
@@ -141,7 +146,11 @@ class Dock extends Element {
       if ($placement->mode() === 'dock') {
         [$pixelFrame, $separatorFrame, $remaining] = $this->dockPixelFrames($target, $child, $remaining, $placement);
         if ($separatorFrame !== null) {
-          $pixelSeparators[] = ['frame' => $separatorFrame, 'orientation' => $this->separatorOrientation($placement->edge())];
+          $pixelSeparators[] = [
+            'frame' => $separatorFrame,
+            'orientation' => $this->separatorOrientation($placement->edge()),
+            'color' => $this->separatorColor($child, $placement),
+          ];
         }
       } else if ($placement->mode() === 'at') {
         $pixelFrame = $this->placedPixelFrame($target, $child, $remaining, $placement);
@@ -322,7 +331,7 @@ class Dock extends Element {
       if ($frame->width <= 0 || $frame->height <= 0) {
         continue;
       }
-      $color = $this->insideDialog() ? $this->theme->bg : $this->theme->muted;
+      $color = $separator['color'];
       if ($separator['orientation'] === 'vertical') {
         for ($x = 0; $x < $frame->width; $x++) {
           $target->fillPixels(new Rect($frame->x + $x, $frame->y, 1, $frame->height), $color);
@@ -395,9 +404,14 @@ class Dock extends Element {
       $separators[] = [
         'frame' => $this->cellFramePixelRect($target, $separator['frame']),
         'orientation' => $separator['orientation'],
+        'color' => $separator['color'],
       ];
     }
     return $separators;
+  }
+
+  protected function separatorColor(Element $child, Place $placement): Color|string|int {
+    return $this->insideDialog() ? $this->theme->bg : $this->theme->muted;
   }
 
   protected function dockPixelSurfaceRect(SurfaceRenderTarget $target): Rect {
