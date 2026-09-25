@@ -63,12 +63,13 @@ final class XmlParser {
         if ($reader->name !== 'Screen') {
           throw new \RuntimeException("Window must contain Screen elements!");
         }
-        $this->assertAttributes($reader, ['file']);
+        $this->assertAttributes($reader, ['file', 'borderColor']);
         $screenFile = $this->attrString($reader, 'file');
         if ($screenFile === null) {
           throw new \RuntimeException("Screen must have a file attribute!");
         }
-        $window['screens'][] = $this->parseScreen($screenFile);
+        $borderColor = $this->attrColor($reader, 'borderColor', new Color(85, 85, 85));
+        $window['screens'][] = $this->parseScreen($screenFile, $borderColor);
       }
       if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->name === 'Window') {
         $this->windows[] = $window;
@@ -77,7 +78,7 @@ final class XmlParser {
     }
   }
 
-  private function parseScreen($file): Screen {
+  private function parseScreen($file, Color $borderColor): Screen {
     $reader = $this->open(APP_DIR . '/Layout/' . $file);
     $reader->read();
     if ($reader->nodeType !== XMLReader::ELEMENT || $reader->name !== 'Layout') {
@@ -85,7 +86,7 @@ final class XmlParser {
     }
     $layout = $this->parseLayout($reader);
     $reader->close();
-    return new Screen($layout);
+    return new Screen($layout, $borderColor);
   }
 
   private function parseLayout($reader, ?string $parentDirection = null) {

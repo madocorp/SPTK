@@ -4,7 +4,7 @@ namespace SPTK\Core;
 
 final class Screen {
 
-  public function __construct(public \SPTK\Layout\LayoutNode $layout) {
+  public function __construct(public \SPTK\Layout\LayoutNode $layout, public Color $borderColor = new Color(85, 85, 85)) {
   }
 
   public function handleEvent(mixed $event): bool {
@@ -21,6 +21,10 @@ final class Screen {
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer): void {
     $this->layout->drawBackgrounds($renderer);
+  }
+
+  public function drawSeparators(\SPTK\Rendering\PixelRenderer $renderer): void {
+    $this->layout->drawSeparators($renderer, $this->borderColor);
   }
 
   public function paint(\SPTK\Rendering\Grid $grid): void {

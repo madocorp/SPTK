@@ -17,6 +17,14 @@ final class LayoutLeaf {
     $this->grid = $grid;
   }
 
+  public function grid(): Tile {
+    return $this->grid;
+  }
+
+  public function isSeparator(): bool {
+    return $this->widget === 'Separator';
+  }
+
   public function paint(Grid $grid): void {
     $this->instance->paint(new GridWriter($grid, $this->grid));
   }
@@ -41,11 +49,29 @@ final class LayoutLeaf {
     $this->area = new Tile($left, $top, $right - $left, $bottom - $top);
   }
 
+  public function setSeparatorArea(Tile $area): void {
+    $this->area = $area;
+  }
+
+  public function area(): ?Tile {
+    return $this->area;
+  }
+
   public function drawBackground(\SPTK\Rendering\PixelRenderer $renderer): void {
+    if ($this->isSeparator()) {
+      return;
+    }
     if ($this->area === null) {
       throw new \LogicException('Leaf area has not been measured.');
     }
     $renderer->fill($this->area, $this->instance->background());
+  }
+
+  public function drawSeparator(\SPTK\Rendering\PixelRenderer $renderer, \SPTK\Core\Color $color): void {
+    if ($this->area === null) {
+      throw new \LogicException('Separator area has not been measured.');
+    }
+    $renderer->fill($this->area, $color);
   }
 
   public function name() {

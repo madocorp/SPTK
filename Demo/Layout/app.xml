@@ -1,5 +1,5 @@
 <App font="LiberationMono-Bold" fontSize="17">
   <Window title="SPTK mad4" width="64" height="16">
-    <Screen file="screen.xml" />
+    <Screen file="screen.xml" borderColor="#ffffff"/>
   </Window>
 </App>

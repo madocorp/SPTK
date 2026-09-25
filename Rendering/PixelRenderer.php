@@ -6,7 +6,7 @@ use SPTK\Core\Color;
 use SPTK\Layout\Tile;
 use SPTK\SDLWrapper\SDL;
 
-/** Clears the window and paints one background rectangle per layout leaf. */
+/** Paints tile backgrounds and separator lines as pixel rectangles. */
 final class PixelRenderer {
 
   private SDL $sdl;
