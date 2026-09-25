@@ -62,7 +62,24 @@ final class LayoutNode {
     }
   }
 
-  public function measureArea(\SPTK\Layout\Tile $grid, array $paddings) {
+  public function measureArea(\SPTK\Layout\Tile $grid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        $child->measureArea($grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
+      } else {
+        $child->measureArea($grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
+      }
+    }
+  }
+
+  public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer): void {
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        $child->drawBackgrounds($renderer);
+      } else {
+        $child->drawBackground($renderer);
+      }
+    }
   }
 
   public function debug(int $level = 0) {

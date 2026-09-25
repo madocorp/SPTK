@@ -64,11 +64,11 @@ final class Window {
       throw new \RuntimeException('Cannot create renderer: ' . $sdl->error());
     }
     $this->sdl->ffi->SDL_StartTextInput($this->window);
+    $this->grid = new \SPTK\Rendering\Grid(1, 1);
+    $this->resize();
     if ($data['state'] !== 'hidden') {
       $this->show();
     }
-    $this->grid = new \SPTK\Rendering\Grid(1, 1);
-    $this->resize();
   }
 
   public function close() {
@@ -81,42 +81,34 @@ final class Window {
 
   public function show(): void {
     $this->sdl->ffi->SDL_ShowWindow($this->window);
-    $this->clear();
     $this->sdl->ffi->SDL_SyncWindow($this->window);
   }
 
-  public function clear() {
-    $this->sdl->ffi->SDL_SetRenderDrawColor($this->ffiRenderer, 0, 0, 0, 255);
-    $this->sdl->ffi->SDL_RenderClear($this->ffiRenderer);
-    $this->sdl->ffi->SDL_RenderPresent($this->ffiRenderer);
-  }
-
   public function resize() {
-    $this->clear();
     $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
     $this->width = (int)$this->ffiWidth->cdata;
     $this->height = (int)$this->ffiHeight->cdata;
-    $this->columns = max(1, intdiv($this->width, $this->font->cellWidth()));
-    $this->rows = max(1, intdiv($this->height, $this->font->cellHeight()));
+    $this->columns = max(1, intdiv($this->width, $this->font->cellWidth()) - 2);
+    $this->rows = max(1, intdiv($this->height, $this->font->cellHeight()) - 1);
+    $offsetX = intdiv($this->width - $this->columns * $this->font->cellWidth(), 2);
+    $offsetY = intdiv($this->height - $this->rows * $this->font->cellHeight(), 2);
     $this->grid->resize($this->columns, $this->rows);
     $grid = new \SPTK\Layout\Tile(0, 0, $this->columns, $this->rows);
-    $this->grid->clear();
     foreach ($this->screens as $screen) {
       $screen->measureGrid($grid);
-      $screen->paint($this->grid);
+      $screen->measureArea($grid, $this->font->cellWidth(), $this->font->cellHeight(), $offsetX, $offsetY, $this->width, $this->height);
     }
-    $this->gridRenderer->setOffset(0, 0);
-    $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
+    $this->gridRenderer->setOffset($offsetX, $offsetY);
+    $this->renderScreens();
   }
 
-  private function calculatePaddings(): array {
-    $verticalPadding = $this->height - $this->rows * 20;
-    $paddingTop = intdiv($verticalPadding, 2);
-    $paddingBottom = $verticalPadding - $paddingTop;
-    $horizontalPadding = $this->width - $this->columns * 10;
-    $paddingLeft = intdiv($horizontalPadding, 2);
-    $paddingRight = $horizontalPadding - $paddingLeft;
-    return [$paddingTop, $paddingLeft, $paddingBottom, $paddingRight];
+  private function renderScreens(): void {
+    $this->grid->clear();
+    foreach ($this->screens as $screen) {
+      $screen->drawBackgrounds($this->pixelRenderer);
+      $screen->paint($this->grid);
+    }
+    $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
   }
 
   public function handleEvent(mixed $event): bool {
@@ -133,10 +125,7 @@ final class Window {
       return true;
     }
     if ($event->type === SDL::SDL_EVENT_WINDOW_EXPOSED) {
-      foreach ($this->screens as $screen) {
-        $screen->paint($this->grid);
-      }
-      $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
+      $this->renderScreens();
       return true;
     }
     if (
