@@ -75,12 +75,16 @@ final class LayoutNode {
     }
   }
 
-  public function paint(\SPTK\Rendering\Grid $grid): void {
+  public function paint(\SPTK\Rendering\Grid $grid, ?LayoutLeaf $selected = null): void {
     foreach ($this->children as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
       }
-      $child->paint($grid);
+      if ($child instanceof self) {
+        $child->paint($grid, $selected);
+      } else {
+        $child->paint($grid, $selected === null || $child === $selected);
+      }
     }
   }
 
@@ -131,14 +135,27 @@ final class LayoutNode {
     }
   }
 
-  public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer): void {
+  public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer, ?LayoutLeaf $selected = null): void {
     foreach ($this->children as $child) {
       if ($child instanceof self) {
-        $child->drawBackgrounds($renderer);
+        $child->drawBackgrounds($renderer, $selected);
       } else if (!$child instanceof LayoutSeparator) {
-        $child->drawBackground($renderer);
+        $child->drawBackground($renderer, $selected === null || $child === $selected);
       }
     }
+  }
+
+  /** Return widget leaves in their XML definition order. */
+  public function leaves(): array {
+    $leaves = [];
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        array_push($leaves, ...$child->leaves());
+      } else if ($child instanceof LayoutLeaf) {
+        $leaves[] = $child;
+      }
+    }
+    return $leaves;
   }
 
   public function drawSeparators(\SPTK\Rendering\PixelRenderer $renderer, \SPTK\Core\Color $color): void {

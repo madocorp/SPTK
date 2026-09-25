@@ -79,6 +79,15 @@ final class Window {
     return $this->id;
   }
 
+  /** Select a screen by its zero-based XML definition index. */
+  public function setCurrentScreen(int $index): void {
+    if (!isset($this->screens[$index])) {
+      throw new \OutOfBoundsException("Unknown screen index: {$index}");
+    }
+    $this->currentScreen = $index;
+    $this->renderScreens();
+  }
+
   public function show(): void {
     $this->sdl->ffi->SDL_ShowWindow($this->window);
     $this->sdl->ffi->SDL_SyncWindow($this->window);
@@ -104,13 +113,10 @@ final class Window {
 
   private function renderScreens(): void {
     $this->grid->clear();
-    foreach ($this->screens as $screen) {
-      $screen->drawBackgrounds($this->pixelRenderer);
-    }
-    foreach ($this->screens as $screen) {
-      $screen->drawSeparators($this->pixelRenderer);
-      $screen->paint($this->grid);
-    }
+    $screen = $this->screens[$this->currentScreen];
+    $screen->drawBackgrounds($this->pixelRenderer);
+    $screen->drawSeparators($this->pixelRenderer);
+    $screen->paint($this->grid);
     $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
   }
 
@@ -137,6 +143,7 @@ final class Window {
       $event->type === SDL::SDL_EVENT_KEY_UP
     ) {
       $this->screens[$this->currentScreen]->handleEvent($event);
+      $this->renderScreens();
       return true;
     }
     return false;

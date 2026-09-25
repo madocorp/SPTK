@@ -21,8 +21,12 @@ final class LayoutLeaf {
     return $this->grid;
   }
 
-  public function paint(Grid $grid): void {
+  /** Paint this widget and dim its cell colors when it is not selected. */
+  public function paint(Grid $grid, bool $selected = true): void {
     $this->instance->paint(new GridWriter($grid, $this->grid));
+    if (!$selected) {
+      $grid->darken($this->grid);
+    }
   }
 
   public function measureArea(Tile $windowGrid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
@@ -45,11 +49,18 @@ final class LayoutLeaf {
     $this->area = new Tile($left, $top, $right - $left, $bottom - $top);
   }
 
-  public function drawBackground(\SPTK\Rendering\PixelRenderer $renderer): void {
+  /** Draw this widget's background, dimmed when it is not selected. */
+  public function drawBackground(\SPTK\Rendering\PixelRenderer $renderer, bool $selected = true): void {
     if ($this->area === null) {
       throw new \LogicException('Leaf area has not been measured.');
     }
-    $renderer->fill($this->area, $this->instance->background());
+    $color = $this->instance->background();
+    $renderer->fill($this->area, $selected ? $color : $color->darkened());
+  }
+
+  /** Forward input events to widgets that implement the optional input contract. */
+  public function handleEvent(mixed $event): bool {
+    return $this->instance instanceof InputHandler && $this->instance->handleInput($event);
   }
 
   public function name() {
