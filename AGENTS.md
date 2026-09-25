@@ -22,7 +22,7 @@ in the new environment instead of copy them.  Don't let the user to mix them too
 ## Structure
 
 - See Docs/classes.md
-- App -> Windows -> Screens -> Tiles (tree) -> Widgets (one per tiel)
+- App (EventLoop) -> Windows -> Screens -> Tiles (tree) -> Widgets (one per tile)
 - User can move between tiles with arrow, the selected widget is highlighted
 - Activate a widget wit return, release it with esc (or return)
 - Only the activated widget can receive inputs

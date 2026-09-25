@@ -16,7 +16,7 @@ final class GridRenderer {
 
   public function __construct(\FFI\CData $ffiRenderer) {
     $this->sdl = \SPTK\App::sdl();
-    $this->font = \SPTK\App::sdl();
+    $this->font = \SPTK\App::font();
     $this->atlas = new GlyphAtlas($this->sdl, $ffiRenderer, $this->font);
   }
 

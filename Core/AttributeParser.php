@@ -27,7 +27,7 @@ trait AttributeParser {
   }
 
   protected function attrColor(\XMLReader $reader, string $name, Color $default): Color {
-    $value = $reader->getAttribute($name) ?? $default;
+    $value = $reader->getAttribute($name);
     if ($value === null) {
       return $default;
     }

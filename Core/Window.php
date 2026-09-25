@@ -15,6 +15,7 @@ final class Window {
   private $sdl;
   private $font;
   private $gridRenderer;
+  private $pixelRenderer;
   private $ffiWidth;
   private $ffiHeight;
   private $width;
@@ -28,7 +29,6 @@ final class Window {
     $this->ffiHeight = \FFI::new('int');
     $this->sdl = \SPTK\App::sdl();
     $this->font = \SPTK\App::font();
-    $this->gridRenderer = \SPTK\App::gridRenderer();
     $this->screens = $data['screens'];
     $this->currentScreen = 0; // screen id...
     $this->open($data);
@@ -58,6 +58,8 @@ final class Window {
     }
     $this->id = (int)$this->sdl->ffi->SDL_GetWindowID($this->window);
     $this->ffiRenderer = $this->sdl->ffi->SDL_CreateRenderer($this->window, null);
+    $this->gridRenderer = new \SPTK\Rendering\GridRenderer($this->ffiRenderer);
+    $this->pixelRenderer = new \SPTK\Rendering\PixelRenderer($this->ffiRenderer);
     if ($this->ffiRenderer === null) {
       throw new \RuntimeException('Cannot create renderer: ' . $sdl->error());
     }
@@ -94,16 +96,17 @@ final class Window {
     $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
     $this->width = (int)$this->ffiWidth->cdata;
     $this->height = (int)$this->ffiHeight->cdata;
-    $this->columns = max(1, intdiv($this->width, 10)) - 1;
-    $this->rows = max(1, intdiv($this->height, 20)) - 1;
+    $this->columns = max(1, intdiv($this->width, $this->font->cellWidth()));
+    $this->rows = max(1, intdiv($this->height, $this->font->cellHeight()));
     $this->grid->resize($this->columns, $this->rows);
     $grid = new \SPTK\Layout\Tile(0, 0, $this->columns, $this->rows);
-    $paddings = $this->calculatePaddings();
+    $this->grid->clear();
     foreach ($this->screens as $screen) {
       $screen->measureGrid($grid);
-      $screen->measureArea($grid, $paddings);
-      $screen->paint();
+      $screen->paint($this->grid);
     }
+    $this->gridRenderer->setOffset(0, 0);
+    $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
   }
 
   private function calculatePaddings(): array {
@@ -131,8 +134,9 @@ final class Window {
     }
     if ($event->type === SDL::SDL_EVENT_WINDOW_EXPOSED) {
       foreach ($this->screens as $screen) {
-        $screen->paint();
+        $screen->paint($this->grid);
       }
+      $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
       return true;
     }
     if (

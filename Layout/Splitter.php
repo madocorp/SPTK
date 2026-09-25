@@ -29,7 +29,7 @@ final class Splitter {
 
   public static function horizontal(Tile $grid, array $sizes): array {
     $parsed = self::parseSizes($sizes);
-    $columns = $grid->height;
+    $columns = $grid->width;
     $remainingSpace = $columns - $parsed['fixedSize'];
     $result = [];
     $x = 0;
