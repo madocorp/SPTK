@@ -38,13 +38,17 @@ final class LayoutNode {
     $this->children[] = $leaf;
   }
 
+  public function addSeparator(LayoutSeparator $separator): void {
+    $this->children[] = $separator;
+  }
+
   public function measureGrid(\SPTK\Layout\Tile $grid) {
     $this->grid = $grid;
     $content = [];
     foreach ($this->children as $index => $child) {
-      if (!$child instanceof LayoutLeaf || !$child->isSeparator()) {
+      if (!$child instanceof LayoutSeparator) {
         $content[$index] = $child;
-      } else if ($index === 0 || $index === count($this->children) - 1 || $this->children[$index - 1] instanceof LayoutLeaf && $this->children[$index - 1]->isSeparator() || $this->children[$index + 1] instanceof LayoutLeaf && $this->children[$index + 1]->isSeparator()) {
+      } else if ($index === 0 || $index === count($this->children) - 1 || $this->children[$index - 1] instanceof LayoutSeparator || $this->children[$index + 1] instanceof LayoutSeparator) {
         throw new \RuntimeException('Separator must be placed between two layout items.');
       }
     }
@@ -73,7 +77,7 @@ final class LayoutNode {
 
   public function paint(\SPTK\Rendering\Grid $grid): void {
     foreach ($this->children as $child) {
-      if ($child instanceof LayoutLeaf && $child->isSeparator()) {
+      if ($child instanceof LayoutSeparator) {
         continue;
       }
       $child->paint($grid);
@@ -82,7 +86,7 @@ final class LayoutNode {
 
   public function measureArea(\SPTK\Layout\Tile $grid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
     foreach ($this->children as $child) {
-      if ($child instanceof LayoutLeaf && $child->isSeparator()) {
+      if ($child instanceof LayoutSeparator) {
         continue;
       }
       if ($child instanceof self) {
@@ -92,7 +96,7 @@ final class LayoutNode {
       }
     }
     foreach ($this->children as $index => $child) {
-      if ($child instanceof LayoutLeaf && $child->isSeparator()) {
+      if ($child instanceof LayoutSeparator) {
         $this->measureSeparatorArea($index, $grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
       }
     }
@@ -120,10 +124,10 @@ final class LayoutNode {
     }
     if ($this->direction === 'horizontal') {
       $boundary = ($beforeGrid->x + $beforeGrid->width) * $cellWidth + $offsetX + $cellWidth;
-      $separator->setSeparatorArea(new Tile($boundary - 1, $top, 2, $bottom - $top));
+      $separator->setArea(new Tile($boundary - 1, $top, 2, $bottom - $top));
     } else {
       $boundary = ($beforeGrid->y + $beforeGrid->height) * $cellHeight + $offsetY + intdiv($cellHeight + 1, 2);
-      $separator->setSeparatorArea(new Tile($left, $boundary - 1, $right - $left, 2));
+      $separator->setArea(new Tile($left, $boundary - 1, $right - $left, 2));
     }
   }
 
@@ -131,7 +135,7 @@ final class LayoutNode {
     foreach ($this->children as $child) {
       if ($child instanceof self) {
         $child->drawBackgrounds($renderer);
-      } else if (!$child->isSeparator()) {
+      } else if (!$child instanceof LayoutSeparator) {
         $child->drawBackground($renderer);
       }
     }
@@ -141,8 +145,8 @@ final class LayoutNode {
     foreach ($this->children as $child) {
       if ($child instanceof self) {
         $child->drawSeparators($renderer, $color);
-      } else if ($child->isSeparator()) {
-        $child->drawSeparator($renderer, $color);
+      } else if ($child instanceof LayoutSeparator) {
+        $child->draw($renderer, $color);
       }
     }
   }

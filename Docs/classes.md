@@ -27,6 +27,7 @@ Classes that belongs strictly to a screen
 - Core\Screen: defines a screen that covers the whole window, one screen is visible at once
 - Layout\LayoutNode: holds the layout structure, tree of vertical and horizontal subdivisions plus leafs
 - Layout\LayoutLeaf: container for the widgets
+- Layout\LayoutSeparator: marks a split boundary for screen-level separator drawing
 
 
 ## Helpers
@@ -50,4 +51,3 @@ Classes under Widgets directory. Each widget should have an own namespace and di
 and the widget definition. There can be other classes for complex widgets.
 
 - Widgets\Text: shows a text, can be wrapped and scrollable
-- Widgets\Separator: special widget to draw separators between tiles

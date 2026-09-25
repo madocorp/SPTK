@@ -106,6 +106,9 @@ final class XmlParser {
         if ($reader->name === 'Layout') {
           $subLayout = $this->parseLayout($reader, $direction);
           $layout->addNode($subLayout);
+        } else if ($reader->name === 'Separator') {
+          $this->assertAttributes($reader, []);
+          $layout->addSeparator(new \SPTK\Layout\LayoutSeparator());
         } else {
           $parserClass = 'SPTK\\Widgets\\' . $reader->name . '\\Parser';
           if (!class_exists($parserClass)) {
