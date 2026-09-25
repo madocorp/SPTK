@@ -5,6 +5,20 @@ namespace SPTK\Core;
 /** Shared XML reading and validation; contains no widget or layout decisions. */
 trait AttributeParser {
 
+  protected function assertAttributes(\XMLReader $reader, array $allowed): void {
+    $element = $reader->name;
+    if ($reader->moveToFirstAttribute()) {
+      do {
+        if (!in_array($reader->name, $allowed, true)) {
+          $attribute = $reader->name;
+          $reader->moveToElement();
+          throw new \RuntimeException("<{$element}> does not accept the '{$attribute}' attribute.");
+        }
+      } while ($reader->moveToNextAttribute());
+      $reader->moveToElement();
+    }
+  }
+
   public function attrSize(\XMLReader $reader, string $name, string $default = '1*'): string {
     $value = $reader->getAttribute($name) ?? $default;
 // validate as size, integer - fixed size, * - weighted
@@ -35,14 +49,14 @@ trait AttributeParser {
   }
 
   protected function attrBoolean(\XMLReader $reader, string $name, bool $default = false): bool {
-    $value = $reader->getAttribute($name) ?? $default;
+    $value = $reader->getAttribute($name);
     if ($value === null) {
       return $default;
     }
     return match (strtolower($value)) {
       '1', 'true', 'yes', 'on' => true,
       '0', 'false', 'no', 'off' => false,
-      default => throw new \RuntimeException("<{$xml->getName()}> attribute '{$name}' must be boolean."),
+      default => throw new \RuntimeException("<{$reader->name}> attribute '{$name}' must be boolean."),
     };
   }
 
