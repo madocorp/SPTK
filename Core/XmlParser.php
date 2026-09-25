@@ -35,6 +35,7 @@ final class XmlParser {
     if ($reader->nodeType !== XMLReader::ELEMENT || $reader->name !== 'App') {
       throw new \RuntimeException("App must be the first element in app.xml!");
     }
+    $this->assertAttributes($reader, ['font', 'fontSize']);
     $this->fontName = $this->attrString($reader, 'font', $this->fontName);
     $this->fontSize = $this->attrInteger($reader, 'fontSize', $this->fontSize);
     while ($reader->read()) {
@@ -48,11 +49,13 @@ final class XmlParser {
   }
 
   private function parseWindow($reader): void {
+    $this->assertAttributes($reader, ['title', 'width', 'height', 'mode', 'resizable']);
     $window = [
       'title' => $this->attrString($reader, 'title', 'SPTK window'),
       'width' => $this->attrSize($reader, 'width', 80),
       'height' => $this->attrSize($reader, 'height', 25),
       'state' => $this->attrEnum($reader, 'mode', ['normal', 'minimized', 'maximized', 'fullscreen']),
+      'resizable' => $this->attrBoolean($reader, 'resizable', true),
       'screens' => []
     ];
     while ($reader->read()) {
@@ -60,6 +63,7 @@ final class XmlParser {
         if ($reader->name !== 'Screen') {
           throw new \RuntimeException("Window must contain Screen elements!");
         }
+        $this->assertAttributes($reader, ['file']);
         $screenFile = $this->attrString($reader, 'file');
         if ($screenFile === null) {
           throw new \RuntimeException("Screen must have a file attribute!");
@@ -84,25 +88,39 @@ final class XmlParser {
     return new Screen($layout);
   }
 
-  private function parseLayout($reader) {
+  private function parseLayout($reader, ?string $parentDirection = null) {
     $direction = $this->attrEnum($reader, 'direction', ['vertical', 'horizontal']);
+    $allowed = ['direction'];
+    if ($parentDirection === 'horizontal') {
+      $allowed[] = 'width';
+    } else if ($parentDirection === 'vertical') {
+      $allowed[] = 'height';
+    }
+    $this->assertAttributes($reader, $allowed);
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
     $layout = new \SPTK\Layout\LayoutNode($direction, $width, $height);
     while ($reader->read()) {
       if ($reader->nodeType === XMLReader::ELEMENT) {
         if ($reader->name === 'Layout') {
-          $subLayout = $this->parseLayout($reader);
+          $subLayout = $this->parseLayout($reader, $direction);
           $layout->addNode($subLayout);
         } else {
-          $width = $this->attrSize($reader, 'width');
-          $height = $this->attrSize($reader, 'height');
           $parserClass = 'SPTK\\Widgets\\' . $reader->name . '\\Parser';
           if (!class_exists($parserClass)) {
             throw new \RuntimeException("Unknown widget: {$reader->name}");
           }
-          $widget = (new $parserClass())->parse($reader);
-          $layout->addLeaf(new \SPTK\Layout\LayoutLeaf($reader->name, $width, $height, $widget));
+          $widgetName = $reader->name;
+          $parser = new $parserClass();
+          if (!$parser instanceof WidgetParser) {
+            throw new \RuntimeException("Widget parser must implement WidgetParser: {$parserClass}");
+          }
+          $allowed = $direction === 'horizontal' ? ['width'] : ['height'];
+          $parser->validateAttributes($reader, $allowed);
+          $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width') : '1*';
+          $height = $direction === 'vertical' ? $this->attrSize($reader, 'height') : '1*';
+          $widget = $parser->parse($reader);
+          $layout->addLeaf(new \SPTK\Layout\LayoutLeaf($widgetName, $width, $height, $widget));
         }
       } else if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->name === 'Layout') {
         break;

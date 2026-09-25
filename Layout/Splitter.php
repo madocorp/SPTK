@@ -27,49 +27,55 @@ final class Splitter {
     ];
   }
 
-  public static function horizontal(Tile $grid, array $sizes): array {
+  private static function allocateSizes(array $sizes, int $space): array {
     $parsed = self::parseSizes($sizes);
+    $remaining = $space - $parsed['fixedSize'];
+    $allocated = [];
+    $weighted = [];
+    $used = 0;
+    foreach ($parsed['sizes'] as $index => $size) {
+      if ($size['fixed']) {
+        $allocated[$index] = $size['value'];
+      } else {
+        $allocated[$index] = (int)($remaining * $size['value'] / $parsed['sumWeight']);
+        $weighted[] = $index;
+        $used += $allocated[$index];
+      }
+    }
+    $extra = $remaining - $used;
+    foreach ($weighted as $index) {
+      if ($extra === 0) {
+        break;
+      }
+      $allocated[$index]++;
+      $extra--;
+    }
+    return $allocated;
+  }
+
+  public static function horizontal(Tile $grid, array $sizes): array {
     $columns = $grid->width;
-    $remainingSpace = $columns - $parsed['fixedSize'];
+    $allocated = self::allocateSizes($sizes, $columns - (count($sizes) - 1));
     $result = [];
     $x = 0;
-    foreach ($parsed['sizes'] as $size) {
-      if ($size['fixed']) {
-        $width = $size['value'];
-        $result[] = new Tile($grid->x + $x, $grid->y, $width, $grid->height);
-      } else {
-        $width = (int)($remainingSpace * $size['value'] / $parsed['sumWeight']);
-        $result[] = new Tile($grid->x + $x, $grid->y, $width, $grid->height);
-      }
-      $x += $width + 1;
+    foreach ($allocated as $width) {
+      $result[] = new Tile($grid->x + $x, $grid->y, $width, $grid->height);
+      $x += $width + 2;
     }
     return $result;
 
   }
 
   public static function vertical(Tile $grid, array $sizes): array {
-    $parsed = self::parseSizes($sizes);
     $rows = $grid->height;
-    $remainingSpace = $rows - $parsed['fixedSize'];
+    $allocated = self::allocateSizes($sizes, $rows);
     $result = [];
     $y = 0;
-    foreach ($parsed['sizes'] as $size) {
-      if ($size['fixed']) {
-        $height = $size['value'];
-        $result[] = new Tile($grid->x, $grid->y + $y, $grid->width, $height);
-      } else {
-        $height = (int)($remainingSpace * $size['value'] / $parsed['sumWeight']);
-        $result[] = new Tile($grid->x, $grid->y + $y, $grid->width, $height);
-      }
+    foreach ($allocated as $height) {
+      $result[] = new Tile($grid->x, $grid->y + $y, $grid->width, $height);
       $y += $height + 1;
     }
     return $result;
   }
 
 }
-/*
-require_once 'Tile.php';
-$t = new Tile(0, 0, 80, 25);
-$res = Splitter::vertical($t, ["1", "2", "1*"]);
-var_dump($res);
-*/

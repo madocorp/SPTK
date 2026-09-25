@@ -2,12 +2,16 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{AttributeParser, Color};
+use SPTK\Core\{AttributeParser, Color, WidgetParser};
 
 /** Reads the Text widget's XML */
-final class Parser {
+final class Parser implements WidgetParser {
 
   use AttributeParser;
+
+  public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
+    $this->assertAttributes($reader, array_merge($layoutAttributes, ['fg', 'bg']));
+  }
 
   public function parse(\XMLReader $reader): Text {
     $fg = $this->attrColor($reader, 'fg', new Color(230, 235, 245));
