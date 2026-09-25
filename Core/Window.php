@@ -106,6 +106,9 @@ final class Window {
     $this->grid->clear();
     foreach ($this->screens as $screen) {
       $screen->drawBackgrounds($this->pixelRenderer);
+    }
+    foreach ($this->screens as $screen) {
+      $screen->drawSeparators($this->pixelRenderer);
       $screen->paint($this->grid);
     }
     $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
