@@ -105,6 +105,13 @@ class SDL {
     return \FFI::string($error);
   }
 
+  /** Throw when an SDL call fails, including its operation and current SDL error. */
+  public function checkReturnValue(bool $success, string $operation): void {
+    if (!$success) {
+      throw new \RuntimeException($operation . ' failed: ' . $this->error());
+    }
+  }
+
   public function close() {
     $this->ffi->SDL_Quit();
   }

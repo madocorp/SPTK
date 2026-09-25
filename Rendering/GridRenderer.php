@@ -39,31 +39,28 @@ final class GridRenderer {
     } finally {
       $ffi->SDL_SetRenderClipRect($ffiRenderer, null);
     }
-    $this->check($ffi->SDL_RenderPresent($ffiRenderer));
+    $ret = $ffi->SDL_RenderPresent($ffiRenderer);
+    $this->sdl->checkReturnValue($ret, 'SDL_RenderPresent');
   }
 
   private function drawGlyph(\FFI\CData $ffiRenderer, Cell $cell, int $x, int $y): void {
     $ffi = $this->sdl->ffi;
     $source = $this->atlas->map($cell->glyph, $cell->width);
     $texture = $this->atlas->texture();
-    $this->check($ffi->SDL_SetTextureColorMod($texture, $cell->fg->r, $cell->fg->g, $cell->fg->b));
+    $ret = $ffi->SDL_SetTextureColorMod($texture, $cell->fg->r, $cell->fg->g, $cell->fg->b);
+    $this->sdl->checkReturnValue($ret, 'SDL_SetTextureColorMod');
     $destination = $ffi->new('SDL_FRect');
     $destination->x = $x * $this->font->cellWidth() + $this->ox;
     $destination->y = $y * $this->font->cellHeight() + $this->oy;
     $destination->w = $source->w;
     $destination->h = $source->h;
-    $this->check($ffi->SDL_RenderTexture($ffiRenderer, $texture, \FFI::addr($source), \FFI::addr($destination)));
+    $ret = $ffi->SDL_RenderTexture($ffiRenderer, $texture, \FFI::addr($source), \FFI::addr($destination));
+    $this->sdl->checkReturnValue($ret, 'SDL_RenderTexture');
   }
 
   /** Release the atlas before its native renderer dies, or after a device reset. */
   public function close(): void {
     $this->atlas->close();
-  }
-
-  private function check(bool $success): void {
-    if (!$success) {
-      throw new \RuntimeException('SDL rendering failed: ' . $this->sdl->error());
-    }
   }
 
 }

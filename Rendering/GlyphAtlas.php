@@ -33,8 +33,10 @@ final class GlyphAtlas {
       throw new \RuntimeException('Cannot create glyph atlas: ' . $sdl->error());
     }
     try {
-      $this->check((bool) $sdl->ffi->SDL_SetTextureBlendMode($this->texture, SDL::SDL_BLENDMODE_BLEND));
-      $this->check($sdl->ffi->SDL_SetTextureScaleMode($this->texture, SDL::SDL_SCALE_MODE_NEAREST));
+      $ret = (bool) $sdl->ffi->SDL_SetTextureBlendMode($this->texture, SDL::SDL_BLENDMODE_BLEND);
+      $sdl->checkReturnValue($ret, 'SDL_SetTextureBlendMode');
+      $ret = $sdl->ffi->SDL_SetTextureScaleMode($this->texture, SDL::SDL_SCALE_MODE_NEAREST);
+      $sdl->checkReturnValue($ret, 'SDL_SetTextureScaleMode');
     } catch (\Throwable $error) {
       $this->close();
       throw $error;
@@ -92,29 +94,27 @@ final class GlyphAtlas {
         throw new \RuntimeException('Cannot allocate atlas slot: ' . $this->sdl->error());
       }
       try {
-        $this->check($ffi->SDL_ClearSurface($slot, 0, 0, 0, 0));
+        $ret = $ffi->SDL_ClearSurface($slot, 0, 0, 0, 0);
+        $this->sdl->checkReturnValue($ret, 'SDL_ClearSurface');
         $source = $ffi->cast('SDL_Surface *', $surface);
-        $this->check($ffi->SDL_SetSurfaceBlendMode($source, 0));
+        $ret = $ffi->SDL_SetSurfaceBlendMode($source, 0);
+        $this->sdl->checkReturnValue($ret, 'SDL_SetSurfaceBlendMode');
         $position = $ffi->new('SDL_Rect');
         $position->x = $position->y = 1;
-        $this->check($ffi->SDL_BlitSurface($source, null, $slot, \FFI::addr($position)));
+        $ret = $ffi->SDL_BlitSurface($source, null, $slot, \FFI::addr($position));
+        $this->sdl->checkReturnValue($ret, 'SDL_BlitSurface');
         $rect = $ffi->new('SDL_Rect');
         $rect->x = $x;
         $rect->y = $y;
         $rect->w = $this->slotWidth;
         $rect->h = $this->slotHeight;
-        $this->check($ffi->SDL_UpdateTexture($this->texture(), \FFI::addr($rect), $slot->pixels, $slot->pitch));
+        $ret = $ffi->SDL_UpdateTexture($this->texture(), \FFI::addr($rect), $slot->pixels, $slot->pitch);
+        $this->sdl->checkReturnValue($ret, 'SDL_UpdateTexture');
       } finally {
         $ffi->SDL_DestroySurface($slot);
       }
     } finally {
       $this->font->releaseSurface($surface);
-    }
-  }
-
-  private function check(bool $success): void {
-    if (!$success) {
-      throw new \RuntimeException('Glyph atlas operation failed: ' . $this->sdl->error());
     }
   }
 

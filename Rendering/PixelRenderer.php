@@ -24,14 +24,10 @@ final class PixelRenderer {
     $rect->y = $area->y;
     $rect->w = $area->width;
     $rect->h = $area->height;
-    $this->check($this->sdl->ffi->SDL_SetRenderDrawColor($this->ffiRenderer, $color->r, $color->g, $color->b, 255));
-    $this->check($this->sdl->ffi->SDL_RenderFillRect($this->ffiRenderer, \FFI::addr($rect)));
-  }
-
-  private function check(bool $success): void {
-    if (!$success) {
-      throw new \RuntimeException('SDL pixel rendering failed: ' . $this->sdl->error());
-    }
+    $ret = $this->sdl->ffi->SDL_SetRenderDrawColor($this->ffiRenderer, $color->r, $color->g, $color->b, 255);
+    $this->sdl->checkReturnValue($ret, 'SDL_SetRenderDrawColor');
+    $ret = $this->sdl->ffi->SDL_RenderFillRect($this->ffiRenderer, \FFI::addr($rect));
+    $this->sdl->checkReturnValue($ret, 'SDL_RenderFillRect');
   }
 
 }
