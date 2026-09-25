@@ -40,6 +40,12 @@ Static or resusable classes.
 - Layout\Tile: defines a non overlapping rectangle inside the window; can be measured in pixels or cells, depending of the caller
 - Layout\Splitter: splits a Tile horizontally or vertically to other Tiles measured in cells
 - Core\AttributeParser: parses xml attributes, and validates the type
+- Core\EventParser: parses XML event declarations and key chords
+- Core\EventDefinition: stores one parsed event subscription
+- Core\EventContext: provides event type, source widget, and native input to actions
+- Core\EventDispatcher: invokes matching static actions and handles input consumption
+- Core\WidgetDefinition: bundles a widget with its event subscriptions
+- Core\ChangeAwareWidget: optional widget contract for value change notifications
 - Core\XmlParser: reads the app layout, calls the widget parsers
 - Rendering\FontFinder: search for a font based it's name
 - Rendering\GridWriter: clips the writings to a tile

@@ -2,15 +2,22 @@
 
 namespace SPTK\Layout;
 
-use SPTK\Core\Widget;
+use SPTK\Core\{ChangeAwareWidget, EventContext, EventDispatcher, Widget};
 use SPTK\Rendering\{Grid, GridWriter};
 
 final class LayoutLeaf {
 
   private $grid;
   private ?Tile $area = null;
+  private array $screenEvents = [];
+  private EventDispatcher $eventDispatcher;
 
-  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance) {
+  /** Build a leaf and connect change-aware widgets to its XML handlers. */
+  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = []) {
+    $this->eventDispatcher = new EventDispatcher();
+    if ($this->instance instanceof ChangeAwareWidget) {
+      $this->instance->setChangeListener([$this, 'notifyChange']);
+    }
   }
 
   public function setGrid($grid) {
@@ -63,8 +70,35 @@ final class LayoutLeaf {
     return $this->instance instanceof InputHandler && $this->instance->handleInput($event);
   }
 
+  /** Dispatch raw input to this widget's XML event subscriptions. */
+  public function dispatchInput(string $type, mixed $event): bool {
+    return $this->eventDispatcher->dispatch($this->events, new EventContext($type, $this->instance, $event), true);
+  }
+
+  /** Deliver a lifecycle notification to widget and screen subscriptions. */
+  public function dispatchNotification(string $type): void {
+    $context = new EventContext($type, $this->instance);
+    $this->eventDispatcher->dispatch($this->events, $context, false);
+    $this->eventDispatcher->dispatch($this->screenEvents, $context, false);
+  }
+
+  /** Set the screen-level event subscriptions inherited by this leaf. */
+  public function setScreenEvents(array $events): void {
+    $this->screenEvents = $events;
+  }
+
+  /** Notify the leaf that its widget value changed. */
+  public function notifyChange(): void {
+    $this->dispatchNotification('change');
+  }
+
   public function name() {
     return $this->widget;
+  }
+
+  /** Return this leaf's widget instance for event context. */
+  public function instance(): Widget {
+    return $this->instance;
   }
 
   public function width() {
