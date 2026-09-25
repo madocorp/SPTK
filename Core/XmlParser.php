@@ -81,12 +81,31 @@ final class XmlParser {
   private function parseScreen($file, Color $borderColor): Screen {
     $reader = $this->open(APP_DIR . '/Layout/' . $file);
     $reader->read();
-    if ($reader->nodeType !== XMLReader::ELEMENT || $reader->name !== 'Layout') {
-      throw new \RuntimeException("Screen must be started with a Layout!");
+    if ($reader->nodeType !== XMLReader::ELEMENT || $reader->name !== 'Screen') {
+      throw new \RuntimeException("Screen file must be started with a Screen element!");
     }
-    $layout = $this->parseLayout($reader);
+    $this->assertAttributes($reader, []);
+    $layout = null;
+    $events = [];
+    while ($reader->read()) {
+      if ($reader->nodeType === XMLReader::ELEMENT && $reader->name === 'Event') {
+        $events[] = (new EventParser())->parse($reader);
+      } else if ($reader->nodeType === XMLReader::ELEMENT && $reader->name === 'Layout') {
+        if ($layout !== null) {
+          throw new \RuntimeException("Screen must contain exactly one Layout!");
+        }
+        $layout = $this->parseLayout($reader);
+      } else if ($reader->nodeType === XMLReader::ELEMENT) {
+        throw new \RuntimeException("Screen may contain Event declarations and one Layout!");
+      } else if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->name === 'Screen') {
+        break;
+      }
+    }
     $reader->close();
-    return new Screen($layout, $borderColor);
+    if ($layout === null) {
+      throw new \RuntimeException("Screen must contain a Layout!");
+    }
+    return new Screen($layout, $borderColor, $events);
   }
 
   private function parseLayout($reader, ?string $parentDirection = null) {
@@ -123,8 +142,8 @@ final class XmlParser {
           $parser->validateAttributes($reader, $allowed);
           $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width') : '1*';
           $height = $direction === 'vertical' ? $this->attrSize($reader, 'height') : '1*';
-          $widget = $parser->parse($reader);
-          $layout->addLeaf(new \SPTK\Layout\LayoutLeaf($widgetName, $width, $height, $widget));
+          $definition = $parser->parse($reader);
+          $layout->addLeaf(new \SPTK\Layout\LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events));
         }
       } else if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->name === 'Layout') {
         break;

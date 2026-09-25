@@ -7,33 +7,57 @@ final class Screen {
   private array $leaves;
   private int $selectedIndex = 0;
   private bool $inputMode = false;
+  private bool $initialSelectionNotified = false;
+  private array $events;
+  private EventDispatcher $eventDispatcher;
 
-  public function __construct(public \SPTK\Layout\LayoutNode $layout, public Color $borderColor = new Color(85, 85, 85)) {
+  /** Create a screen and attach screen-level event subscriptions to its leaves. */
+  public function __construct(public \SPTK\Layout\LayoutNode $layout, public Color $borderColor = new Color(85, 85, 85), array $events = []) {
     $this->leaves = $layout->leaves();
+    $this->events = $events;
+    $this->eventDispatcher = new EventDispatcher();
+    foreach ($this->leaves as $leaf) {
+      $leaf->setScreenEvents($events);
+    }
   }
 
-  /** Handle widget navigation, activation, and active-widget input. */
+  /** Route input through the active widget, screen subscriptions, and screen controls. */
   public function handleEvent(mixed $event): bool {
-    if ($this->inputMode) {
-      if ($this->selectedLeaf() === null) {
-        $this->inputMode = false;
-        return false;
-      }
-      if ($event->type === \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN) {
-        $key = $event->key->key;
-        if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN || $key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE) {
-          $this->inputMode = false;
-          return true;
-        }
-      }
-      return $this->leaves[$this->selectedIndex]->handleEvent($event);
+    $type = $this->inputType($event);
+    if ($type === null) {
+      return false;
     }
-    if ($event->type !== \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN) {
+    if (!$this->initialSelectionNotified) {
+      $this->selectedLeaf()?->dispatchNotification('select');
+      $this->initialSelectionNotified = true;
+    }
+    $leaf = $this->selectedLeaf();
+    if ($this->inputMode && $leaf !== null) {
+      if ($leaf->handleEvent($event) || $leaf->dispatchInput($type, $event)) {
+        return true;
+      }
+      if ($this->dispatchInput($type, $leaf->instance(), $event)) {
+        return true;
+      }
+    } else if ($this->dispatchInput($type, $leaf?->instance(), $event)) {
+      return true;
+    }
+    if ($type !== 'keyDown') {
       return false;
     }
     $key = $event->key->key;
-    if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
+    if ($this->inputMode) {
+      if ($key !== \SPTK\SDLWrapper\SDL::KEY_RETURN && $key !== \SPTK\SDLWrapper\SDL::KEY_KP_ENTER && $key !== \SPTK\SDLWrapper\SDL::KEY_ESCAPE) {
+        return false;
+      }
+      $this->inputMode = false;
+      $this->selectedLeaf()?->dispatchNotification($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE ? 'cancel' : 'accept');
+      $this->selectedLeaf()?->dispatchNotification('deactivate');
+      return true;
+    }
+    if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN || $key === \SPTK\SDLWrapper\SDL::KEY_KP_ENTER) {
       $this->inputMode = true;
+      $this->selectedLeaf()?->dispatchNotification('activate');
       return true;
     }
     $direction = match ($key) {
@@ -44,10 +68,30 @@ final class Screen {
       default => null,
     };
     if ($direction !== null) {
+      $previousIndex = $this->selectedIndex;
       $this->moveSelection($direction);
+      if ($previousIndex !== $this->selectedIndex) {
+        $this->leaves[$previousIndex]->dispatchNotification('unselect');
+        $this->selectedLeaf()?->dispatchNotification('select');
+      }
       return true;
     }
-    return true;
+    return false;
+  }
+
+  /** Run matching screen event declarations for keyboard and text input. */
+  private function dispatchInput(string $type, ?\SPTK\Core\Widget $widget, mixed $event): bool {
+    return $this->eventDispatcher->dispatch($this->events, new EventContext($type, $widget, $event), true);
+  }
+
+  /** Map an SDL input event to its XML event type. */
+  private function inputType(mixed $event): ?string {
+    return match ($event->type) {
+      \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN => 'keyDown',
+      \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_UP => 'keyUp',
+      \SPTK\SDLWrapper\SDL::SDL_EVENT_TEXT_INPUT => 'textInput',
+      default => null,
+    };
   }
 
   public function measureGrid(\SPTK\Layout\Tile $grid) {
