@@ -1,0 +1,4 @@
+<Layout direction="vertical">
+  <Text height="1">A</Text>
+  <Text height="*">B</Text>
+</Layout>
