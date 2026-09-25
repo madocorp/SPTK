@@ -1,4 +1,7 @@
 
+# Classes
+
+
 ## App level: one instance per app
 
 Never pass these as function arguments because it's accessible globally through the App's static helpers.
@@ -24,7 +27,7 @@ Pass further as function arguments.
 
 Classes that belongs strictly to a screen
 
-- Core\Screen: defines a screen that covers the whole window, one screen is visible at once
+- Core\Screen: defines one visible screen and manages widget selection and activation
 - Layout\LayoutNode: holds the layout structure, tree of vertical and horizontal subdivisions plus leafs
 - Layout\LayoutLeaf: container for the widgets
 - Layout\LayoutSeparator: marks a split boundary for screen-level separator drawing
@@ -41,7 +44,8 @@ Static or resusable classes.
 - Rendering\FontFinder: search for a font based it's name
 - Rendering\GridWriter: clips the writings to a tile
 - Rendering\TextMetrics: to get glyph attribites
-- Core\Widget: abstract base class for widgets
+- Core\Widget: common widget interface
+- Core\InputHandler: optional input contract for an activated widget
 - Core\Color: rgb color data
 - Core\Cell: a character grid cell; glyph, fg, bg, width
 

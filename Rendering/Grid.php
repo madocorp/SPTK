@@ -3,6 +3,7 @@
 namespace SPTK\Rendering;
 
 use SPTK\Core\{Cell, Color};
+use SPTK\Layout\Tile;
 
 /** The window's character storage; widgets write through a clipped GridWriter. */
 final class Grid {
@@ -52,6 +53,18 @@ final class Grid {
       $glyph, $fg ?? $this->cells[$y][$x]->fg, $bg ?? $this->cells[$y][$x]->bg,
       TextMetrics::glyphWidth($glyph),
     ));
+  }
+
+  /** Darken every rendered cell within a tile. */
+  public function darken(Tile $tile): void {
+    $right = min($this->width, $tile->x + $tile->width);
+    $bottom = min($this->height, $tile->y + $tile->height);
+    for ($y = max(0, $tile->y); $y < $bottom; $y++) {
+      for ($x = max(0, $tile->x); $x < $right; $x++) {
+        $cell = $this->cells[$y][$x];
+        $this->cells[$y][$x] = new Cell($cell->glyph, $cell->fg->darkened(), $cell->bg->darkened(), $cell->width);
+      }
+    }
   }
 
   /** Store an already prepared cell without inspecting or measuring its glyph. */
