@@ -36,4 +36,8 @@ final class Text implements Widget {
     }
   }
 
+  public function background(): Color {
+    return $this->bg;
+  }
+
 }

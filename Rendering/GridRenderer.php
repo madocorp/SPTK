@@ -5,7 +5,7 @@ namespace SPTK\Rendering;
 use SPTK\Core\Cell;
 use SPTK\SDLWrapper\SDL;
 
-/** Paints cell backgrounds, then leading glyphs clipped to their allocated columns. */
+/** Paints leading glyphs clipped to their allocated columns. */
 final class GridRenderer {
 
   private GlyphAtlas $atlas;
@@ -27,10 +27,7 @@ final class GridRenderer {
 
   public function draw(\FFI\CData $ffiRenderer, Grid $grid): void {
     $ffi = $this->sdl->ffi;
-    $this->check($ffi->SDL_SetRenderDrawColor($ffiRenderer, 24, 28, 36, 255));
-    $this->check($ffi->SDL_RenderClear($ffiRenderer));
     try {
-      $this->drawBackgrounds($ffiRenderer, $grid);
       for ($y = 0; $y < $grid->height(); $y++) {
         for ($x = 0; $x < $grid->width(); $x++) {
           $cell = $grid->cell($x, $y);
@@ -43,26 +40,6 @@ final class GridRenderer {
       $ffi->SDL_SetRenderClipRect($ffiRenderer, null);
     }
     $this->check($ffi->SDL_RenderPresent($ffiRenderer));
-  }
-
-  private function drawBackgrounds(\FFI\CData $ffiRenderer, Grid $grid): void {
-    $ffi = $this->sdl->ffi;
-    $rect = $ffi->new('SDL_FRect');
-    $rect->h = $this->font->cellHeight();
-    for ($y = 0; $y < $grid->height(); $y++) {
-      $rect->y = $y * $rect->h + $this->oy;;
-      for ($x = 0; $x < $grid->width(); $x = $end) {
-        $color = $grid->cell($x, $y)->bg;
-        $end = $x + 1;
-        while ($end < $grid->width() && $grid->cell($end, $y)->bg == $color) {
-          $end++;
-        }
-        $rect->x = $x * $this->font->cellWidth() + $this->ox;
-        $rect->w = ($end - $x) * $this->font->cellWidth();
-        $this->check($ffi->SDL_SetRenderDrawColor($ffiRenderer, $color->r, $color->g, $color->b, 255));
-        $this->check($ffi->SDL_RenderFillRect($ffiRenderer, \FFI::addr($rect)));
-      }
-    }
   }
 
   private function drawGlyph(\FFI\CData $ffiRenderer, Cell $cell, int $x, int $y): void {

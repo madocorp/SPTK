@@ -1,8 +1,8 @@
 <Layout direction="vertical">
-  <Text height="1" bg="#ff0000" fg="#ffffff">Top</Text>
+  <Text height="1" bg="#ff00ff" fg="#ffffff">Top</Text>
   <Layout direction="horizontal">
     <Text width="1*" bg="#0000ff" fg="#000000">Left</Text>
     <Text width="2*" bg="#ffff00" fg="#000000">Right</Text>
   </Layout>
-  <Text height="2" bg="#ff0000" fg="#ffffff">Bottom</Text>
+  <Text height="2" bg="#00ff00" fg="#ffffff">Bottom</Text>
 </Layout>

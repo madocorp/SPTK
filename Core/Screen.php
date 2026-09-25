@@ -15,8 +15,12 @@ final class Screen {
     $this->layout->measureGrid($grid);
   }
 
-  public function measureArea(\SPTK\Layout\Tile $grid, array $paddings) {
-    $this->layout->measureArea($grid, $paddings);
+  public function measureArea(\SPTK\Layout\Tile $grid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
+    $this->layout->measureArea($grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
+  }
+
+  public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer): void {
+    $this->layout->drawBackgrounds($renderer);
   }
 
   public function paint(\SPTK\Rendering\Grid $grid): void {
