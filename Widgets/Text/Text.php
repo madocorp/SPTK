@@ -2,7 +2,6 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Layout\Size;
 use SPTK\Rendering\GridWriter;
 use SPTK\Core\{Color, Widget};
 use SPTK\Rendering\TextMetrics;
@@ -25,14 +24,6 @@ final class Text implements Widget {
       throw new \InvalidArgumentException('Text supports printable characters and newlines.');
     }
     $this->lines = explode("\n", $text);
-  }
-
-  public function measure(Size $available): Size {
-    $width = 0;
-    foreach ($this->lines as $line) {
-      $width = max($width, TextMetrics::width($line));
-    }
-    return new Size(min($width, $available->width), min(count($this->lines), $available->height));
   }
 
   public function paint(GridWriter $writer): void {

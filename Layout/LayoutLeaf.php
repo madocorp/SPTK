@@ -2,15 +2,22 @@
 
 namespace SPTK\Layout;
 
+use SPTK\Core\Widget;
+use SPTK\Rendering\{Grid, GridWriter};
+
 final class LayoutLeaf {
 
   private $grid;
 
-  public function __construct(public string $widget, private string $width, private string $height) {
+  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance) {
   }
 
   public function setGrid($grid) {
     $this->grid = $grid;
+  }
+
+  public function paint(Grid $grid): void {
+    $this->instance->paint(new GridWriter($grid, $this->grid));
   }
 
   public function name() {

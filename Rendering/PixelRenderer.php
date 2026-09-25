@@ -6,7 +6,7 @@ use SPTK\SDLWrapper\SDL;
 
 final class PixelRenderer {
 
-  public function __construct() {
+  public function __construct(\FFI\CData $ffiRenderer) {
   }
 
 }

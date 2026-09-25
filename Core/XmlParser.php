@@ -80,7 +80,6 @@ final class XmlParser {
       throw new \RuntimeException("Screen must be started with a Layout!");
     }
     $layout = $this->parseLayout($reader);
-$layout->debug();
     $reader->close();
     return new Screen($layout);
   }
@@ -96,10 +95,14 @@ $layout->debug();
           $subLayout = $this->parseLayout($reader);
           $layout->addNode($subLayout);
         } else {
-          // parse widget
           $width = $this->attrSize($reader, 'width');
           $height = $this->attrSize($reader, 'height');
-          $layout->addLeaf(new \SPTK\Layout\LayoutLeaf($reader->name, $width, $height));
+          $parserClass = 'SPTK\\Widgets\\' . $reader->name . '\\Parser';
+          if (!class_exists($parserClass)) {
+            throw new \RuntimeException("Unknown widget: {$reader->name}");
+          }
+          $widget = (new $parserClass())->parse($reader);
+          $layout->addLeaf(new \SPTK\Layout\LayoutLeaf($reader->name, $width, $height, $widget));
         }
       } else if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->name === 'Layout') {
         break;

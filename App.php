@@ -9,7 +9,6 @@ final class App {
   private $sdl;
   private $ttf;
   private $font;
-  private $gridRenderer;
 
   public static function load(string $class): void {
     $prefix = 'SPTK\\';
@@ -29,10 +28,6 @@ final class App {
 
   public static function ttf() {
     return self::$instance->ttf;
-  }
-
-  public static function gridRenderer() {
-    return self::$instance->gridRenderer;
   }
 
   public static function font() {
@@ -60,7 +55,6 @@ final class App {
     $this->openSdl();
     $this->eventLoop = new Core\EventLoop;
     $this->openFont($xmlParser->fontName, $xmlParser->fontSize);
-    $this->gridRenderer = new Rendering\GridRenderer();
     foreach ($xmlParser->windows as $windowData) {
       $window = new Core\Window($windowData);
       $this->eventLoop->registerWindow($window);
@@ -68,10 +62,6 @@ final class App {
   }
 
   private function close() {
-    $this->gridRenderer->close();
-    foreach ($this->windows as $window) {
-      $window->close();
-    }
     $this->font->close();
     $this->ttf->close();
     $this->sdl->close();

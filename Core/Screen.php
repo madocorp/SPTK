@@ -5,7 +5,6 @@ namespace SPTK\Core;
 final class Screen {
 
   public function __construct(public \SPTK\Layout\LayoutNode $layout) {
-
   }
 
   public function handleEvent(mixed $event): bool {
@@ -20,8 +19,8 @@ final class Screen {
     $this->layout->measureArea($grid, $paddings);
   }
 
-  public function paint() {
-
+  public function paint(\SPTK\Rendering\Grid $grid): void {
+    $this->layout->paint($grid);
   }
 
 }

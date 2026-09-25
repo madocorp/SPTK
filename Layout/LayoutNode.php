@@ -40,7 +40,7 @@ final class LayoutNode {
       foreach ($this->children as $child) {
         $widths[] = $child->width();
       }
-      $grids = Splitter::horizontal($grid, $heights);
+      $grids = Splitter::horizontal($grid, $widths);
     } else {
       $heights = [];
       foreach ($this->children as $child) {
@@ -50,6 +50,15 @@ final class LayoutNode {
     }
     foreach ($this->children as $i => $child) {
       $child->setGrid($grids[$i]);
+      if ($child instanceof self) {
+        $child->measureGrid($grids[$i]);
+      }
+    }
+  }
+
+  public function paint(\SPTK\Rendering\Grid $grid): void {
+    foreach ($this->children as $child) {
+      $child->paint($grid);
     }
   }
 
