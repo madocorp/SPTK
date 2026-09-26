@@ -84,6 +84,10 @@ final class Window {
     if (!isset($this->screens[$index])) {
       throw new \OutOfBoundsException("Unknown screen index: {$index}");
     }
+    if ($index === $this->currentScreen) {
+      return;
+    }
+    $this->screens[$this->currentScreen]->release();
     $this->currentScreen = $index;
     $this->renderScreens();
   }
@@ -122,7 +126,13 @@ final class Window {
 
   public function handleEvent(mixed $event): bool {
     if ($event->type === SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+      $this->screens[$this->currentScreen]->release();
       \SPTK\App::eventLoop()->quitWindow($this->id);
+      return true;
+    }
+    if ($event->type === SDL::SDL_EVENT_WINDOW_FOCUS_LOST) {
+      $this->screens[$this->currentScreen]->release();
+      $this->renderScreens();
       return true;
     }
     if (

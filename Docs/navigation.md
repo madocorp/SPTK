@@ -13,13 +13,15 @@ Press Return or keypad Enter to activate the selected widget and enter input mod
 
 ## Input mode
 
-The activated widget receives input first. Press Return or keypad Enter to accept and deactivate it, or Escape
-to cancel and deactivate it. If widget handling and event actions do not consume those keys, the screen applies
-these controls. Arrow keys do not move selection while input mode is active.
+The activated widget receives input first. By default, Return or keypad Enter accepts and deactivates it, while
+Escape cancels and deactivates it. If widget handling and event actions do not consume those keys, the screen applies
+the widget's release rule. Arrow keys do not move selection while input mode is active.
 
 Widget-specific input behavior is documented on each widget's page.
+Input and TextEditor keep edits and emit `accept` on Escape. TextEditor inserts a newline on Return and releases on Ctrl+Return. Switching screens releases the active widget with `accept`.
 
 ## Screens
 
 The first screen listed in a window is shown initially. Applications can switch screens with
 `Window::setCurrentScreen()`.
+The demo uses F1 for its original screen and F2 for its Editors screen.

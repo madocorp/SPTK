@@ -22,6 +22,15 @@ abstract class Widget {
   /** Paint the widget into its allocated tile. */
   abstract public function paint(GridWriter $writer): void;
 
+  /** Choose the notification that releases this widget for a key, or keep it active. */
+  public function releaseNotification(int $key, int $modifiers): ?string {
+    return match ($key) {
+      \SPTK\SDLWrapper\SDL::KEY_RETURN => 'accept',
+      \SPTK\SDLWrapper\SDL::KEY_ESCAPE => 'cancel',
+      default => null,
+    };
+  }
+
   /** Return the preferred width in grid cells, or null when it has no preference. */
   public function preferredWidth(): ?int {
     return null;

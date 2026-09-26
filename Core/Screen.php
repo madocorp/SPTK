@@ -50,12 +50,11 @@ final class Screen {
     }
     $key = KeyNormalizer::normalize((int)$event->key->key, (int)$event->key->mod);
     if ($this->inputMode) {
-      if ($key !== \SPTK\SDLWrapper\SDL::KEY_RETURN && $key !== \SPTK\SDLWrapper\SDL::KEY_ESCAPE) {
+      $notification = $leaf?->instance()->releaseNotification($key, (int)$event->key->mod);
+      if ($notification === null) {
         return false;
       }
-      $this->inputMode = false;
-      $this->selectedLeaf()?->dispatchNotification($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE ? 'cancel' : 'accept');
-      $this->selectedLeaf()?->dispatchNotification('deactivate');
+      $this->release($notification);
       return true;
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
@@ -79,6 +78,16 @@ final class Screen {
       return true;
     }
     return false;
+  }
+
+  /** Release the active widget when a screen is hidden or an exit key is pressed. */
+  public function release(string $notification = 'accept'): void {
+    if (!$this->inputMode) {
+      return;
+    }
+    $this->inputMode = false;
+    $this->selectedLeaf()?->dispatchNotification($notification);
+    $this->selectedLeaf()?->dispatchNotification('deactivate');
   }
 
   /** Run matching screen event declarations for keyboard and text input. */

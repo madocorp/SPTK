@@ -17,6 +17,7 @@ class SDL {
   public const SDL_EVENT_WINDOW_RESIZED = 0x206;
   public const SDL_EVENT_WINDOW_MAXIMIZED = 0x20a;
   public const SDL_EVENT_WINDOW_RESTORED = 0x20b;
+  public const SDL_EVENT_WINDOW_FOCUS_LOST = 0x20f;
   public const SDL_EVENT_WINDOW_CLOSE_REQUESTED = 0x210;
 
   public const SDL_EVENT_KEY_DOWN = 0x300;

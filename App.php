@@ -25,7 +25,7 @@ final class App {
   }
 
   public static function sdl() {
-    return self::$instance->sdl;
+    return self::$instance?->sdl;
   }
 
   public static function ttf() {

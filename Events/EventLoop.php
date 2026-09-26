@@ -23,6 +23,11 @@ final class EventLoop {
     $this->windows[$windowId] = $window;
   }
 
+  /** Return a registered window for a screen-switching action. */
+  public function window(int $id): ?Window {
+    return $this->windows[$id] ?? null;
+  }
+
   /** Register a repeating timer action and return its handle. */
   public function addTimer(string $action, int $period): int {
     if ($period < 1) {
@@ -154,6 +159,7 @@ final class EventLoop {
       SDL::SDL_EVENT_WINDOW_RESIZED,
       SDL::SDL_EVENT_WINDOW_MAXIMIZED,
       SDL::SDL_EVENT_WINDOW_RESTORED,
+      SDL::SDL_EVENT_WINDOW_FOCUS_LOST,
       SDL::SDL_EVENT_WINDOW_EXPOSED => (int)$event->window->windowID,
       SDL::SDL_EVENT_TEXT_INPUT => (int)$event->text->windowID,
       SDL::SDL_EVENT_KEY_DOWN,
