@@ -58,6 +58,8 @@ Static or reusable classes.
 - Core\EventDefinition: stores one parsed event subscription
 - Core\EventContext: provides event type, source widget, and native input to actions
 - Core\EventDispatcher: invokes matching static actions and handles input consumption
+- Core\WidgetEventEmitter: lets widgets subscribe named handlers to their lifecycle events
+- Core\ScrollIndicator: formats textual marks for hidden content beyond a viewport
 - Core\WidgetDefinition: bundles a widget with its event subscriptions
 - Core\ChangeAwareWidget: optional widget contract for value change notifications
 - Rendering\FontFinder: search for a font based it's name
@@ -74,4 +76,5 @@ Static or reusable classes.
 Classes under Widgets directory. Each widget should have an own namespace and directory with an XML parser (Parser.php),
 and the widget definition. There can be other classes for complex widgets.
 
-- Widgets\Text: shows a text, can be wrapped and scrollable
+- Widgets\Text: shows read-only text with word wrapping, scrolling, and an active cursor
+- Widgets\Empty: reserves a tile as a blank placeholder

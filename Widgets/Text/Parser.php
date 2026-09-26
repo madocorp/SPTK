@@ -35,7 +35,15 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Text($text, $style->foreground, $style->background), $events);
+    $text = preg_replace('/\A(?:[ \t]*\R)+|(?:\R[ \t]*)+\z/u', '', $text);
+    return new WidgetDefinition(new Text(
+      $text,
+      $style->foreground,
+      $style->background,
+      $style->cursorBackground,
+      $style->cursorForeground,
+      $style->highlight,
+    ), $events);
   }
 
 }
