@@ -19,6 +19,14 @@ final class GridWriter {
     return $this->tile->height;
   }
 
+  /** Return a clipped writer for the rows below a fixed top margin. */
+  public function below(int $rows): self {
+    if ($rows < 0 || $rows > $this->tile->height) {
+      throw new \InvalidArgumentException('Top margin must fit inside the tile.');
+    }
+    return new self($this->grid, new Tile($this->tile->x, $this->tile->y + $rows, $this->tile->width, $this->tile->height - $rows));
+  }
+
   public function set(int $x, int $y, string $glyph, ?Color $fg = null, ?Color $bg = null): void {
     if (count(TextMetrics::glyphs($glyph)) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $glyph)) {
       throw new \InvalidArgumentException('A cell needs one printable grapheme.');

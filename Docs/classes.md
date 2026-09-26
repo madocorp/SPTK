@@ -76,4 +76,4 @@ Static or reusable classes.
 
 ## Widgets
 
-Widget behavior and XML attributes are documented by widget in the [widget documentation](Widgets/README.md).
+Widget behavior and XML attributes are documented by widget in the [widget documentation](Widgets/Widgets.md).

@@ -12,7 +12,7 @@ final class ScrollIndicator {
     }
     $pages = intdiv($hidden, max(1, $page));
     $count = $pages > 0 ? (string)$pages : '';
-    return in_array($arrow, ['▲', '◀'], true) ? $arrow . $count : $count . $arrow;
+    return $arrow === '◀' ? $arrow . $count : $count . $arrow;
   }
 
 }

@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Color, TextCursor, Widget};
+use SPTK\Core\{Clipboard, Color, TextCursor, TextRows, Widget};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -15,6 +15,7 @@ final class Text extends Widget {
   private array $lines;
   private TextCursor $cursor;
   private Painter $painter;
+  private TextRows $rows;
   private int $scrollY = 0;
   private int $scrollX = 0;
   private bool $active = false;
@@ -30,16 +31,18 @@ final class Text extends Widget {
     private readonly Color $cursorFg = new Color(255, 255, 255),
     private readonly Color $indicatorFg = new Color(0, 255, 255),
     private readonly bool $wrap = true,
+    private readonly int $tabSize = 8,
   ) {
     if (!mb_check_encoding($text, 'UTF-8')) {
       throw new \InvalidArgumentException('Text must be valid UTF-8.');
     }
     $text = str_replace(["\r\n", "\r"], "\n", $text);
-    if (preg_match('/[\x00-\x09\x0b-\x1f\x7f]/', $text)) {
+    if (preg_match('/[\x00-\x08\x0b-\x1f\x7f]/', $text)) {
       throw new \InvalidArgumentException('Text supports printable characters and newlines.');
     }
     $this->lines = explode("\n", $text);
-    $this->cursor = new TextCursor($this->lines);
+    $this->cursor = new TextCursor($this->lines, $this->tabSize);
+    $this->rows = new TextRows();
     $this->painter = new Painter($this->fg, $this->bg, $this->cursorFg, $this->cursorBg, $this->indicatorFg);
     $this->on('activate', $this->activateCursor(...));
     $this->on('deactivate', $this->deactivateCursor(...));
@@ -60,12 +63,11 @@ final class Text extends Widget {
       $this->scrollY = max(0, min($this->scrollY, $cursor[0]));
       $this->scrollY = max($this->scrollY, $cursor[0] - $writer->height() + 1);
       $this->syncHorizontalCursor($cursor);
-      $cursor[1] -= $this->scrollX;
       if ($this->wrap) {
         $cursor[1] = min($writer->width() - 1, $cursor[1]);
       }
     }
-    $this->painter->paint($writer, $rows, $this->cursor, $this->scrollY, $this->scrollX, $this->wrap, $this->active ? $cursor : [-1, -1]);
+    $this->painter->paint($writer, $rows, $this->lines, $this->cursor, $this->scrollY, $this->scrollX, $this->wrap, $this->active ? $cursor : [-1, -1], $this->tabSize);
   }
 
   /** Return the background used behind the text tile. */
@@ -82,6 +84,14 @@ final class Text extends Widget {
     $key = KeyNormalizer::normalize((int)$event->key->key, $modifiers);
     $select = ($modifiers & SDL::MOD_SHIFT) !== 0;
     $document = ($modifiers & SDL::MOD_CTRL) !== 0;
+    if ($document && $key === ord('a')) {
+      $this->cursor->selectAll();
+      return true;
+    }
+    if (($document && $key === ord('c')) || ($document && $key === SDL::KEY_INSERT)) {
+      Clipboard::set($this->cursor->selectedText());
+      return true;
+    }
     if ($document && $key === SDL::KEY_PAGEUP) {
       $this->cursor->moveDocumentStart($select);
       $this->scrollY = 0;
@@ -134,79 +144,12 @@ final class Text extends Widget {
 
   /** Split document lines into word-wrapped visual rows. */
   private function visualRows(int $width): array {
-    $rows = [];
-    foreach ($this->lines as $lineNumber => $line) {
-      foreach ($this->wrapLine($line, $width) as $row) {
-        $row['line'] = $lineNumber;
-        $rows[] = $row;
-      }
-    }
-    return $rows;
-  }
-
-  /** Wrap at whitespace and split any word wider than the available row. */
-  private function wrapLine(string $line, int $width): array {
-    if (!$this->wrap) {
-      return [['start' => 0, 'length' => TextMetrics::length($line), 'text' => $line]];
-    }
-    preg_match_all('/\S+/u', $line, $matches, PREG_OFFSET_CAPTURE);
-    if ($matches[0] === []) {
-      return [['start' => 0, 'length' => 0, 'text' => '']];
-    }
-    $rows = [];
-    $current = null;
-    $previousEnd = 0;
-    foreach ($matches[0] as [$word, $byteOffset]) {
-      $wordStart = TextMetrics::length(substr($line, 0, $byteOffset));
-      $wordLength = TextMetrics::length($word);
-      $separator = $current === null ? '' : TextMetrics::slice($line, $previousEnd, $wordStart - $previousEnd);
-      if (TextMetrics::width($word) > $width) {
-        if ($current !== null) {
-          $rows[] = $current;
-          $current = null;
-        }
-        $chunk = '';
-        $chunkStart = $wordStart;
-        foreach (TextMetrics::glyphs($word) as $index => $glyph) {
-          if ($chunk !== '' && TextMetrics::width($chunk . $glyph) > $width) {
-            $rows[] = ['start' => $chunkStart, 'length' => TextMetrics::length($chunk), 'text' => $chunk];
-            $chunkStart = $wordStart + $index;
-            $chunk = '';
-          }
-          $chunk .= $glyph;
-        }
-        $rows[] = ['start' => $chunkStart, 'length' => TextMetrics::length($chunk), 'text' => $chunk];
-      } else if ($current === null) {
-        $current = ['start' => $wordStart, 'length' => $wordLength, 'text' => $word];
-      } else if (TextMetrics::width($current['text'] . $separator . $word) <= $width) {
-        $current['length'] = $wordStart + $wordLength - $current['start'];
-        $current['text'] .= $separator . $word;
-      } else {
-        $rows[] = $current;
-        $current = ['start' => $wordStart, 'length' => $wordLength, 'text' => $word];
-      }
-      $previousEnd = $wordStart + $wordLength;
-    }
-    if ($current !== null) {
-      $rows[] = $current;
-    }
-    return $rows;
+    return $this->rows->build($this->lines, $width, $this->wrap ? 'word' : 'none', $this->tabSize);
   }
 
   /** Find the wrapped row and cell column for the logical text cursor. */
   private function visualCursor(array $rows): array {
-    [$line, $column] = $this->cursor->position();
-    $visualRow = 0;
-    $cellColumn = 0;
-    foreach ($rows as $index => $row) {
-      if ($row['line'] !== $line || $column < $row['start']) {
-        continue;
-      }
-      $visualRow = $index;
-      $offset = min($row['length'], max(0, $column - $row['start']));
-      $cellColumn = TextMetrics::width(TextMetrics::slice($row['text'], 0, $offset));
-    }
-    return [$visualRow, $cellColumn];
+    return $this->rows->cursor($rows, $this->cursor, $this->tabSize);
   }
 
   /** Move vertically between wrapped rows while retaining the display column. */
@@ -217,7 +160,7 @@ final class Text extends Widget {
     $target = max(0, min(count($rows) - 1, $visualRow + $distance));
     $row = $rows[$target];
     $grapheme = 0;
-    while ($grapheme < $row['length'] && TextMetrics::width(TextMetrics::slice($row['text'], 0, $grapheme + 1)) <= $this->preferredColumn) {
+    while ($grapheme < $row['length'] && TextMetrics::width(TextMetrics::slice($row['text'], 0, $grapheme + 1), $this->tabSize) <= $this->preferredColumn) {
       $grapheme++;
     }
     $this->cursor->setPosition($row['line'], $row['start'] + $grapheme, $select);
@@ -257,7 +200,7 @@ final class Text extends Widget {
     }
     $index = 0;
     while ($index < TextMetrics::length($text)
-      && TextMetrics::width(TextMetrics::slice($text, 0, $index + 1)) <= $target) {
+      && TextMetrics::width(TextMetrics::slice($text, 0, $index + 1), $this->tabSize) <= $target) {
       $index++;
     }
     $this->cursor->setPosition($row['line'], $row['start'] + $index, $select);
@@ -269,8 +212,11 @@ final class Text extends Widget {
       $this->scrollX = 0;
       return;
     }
-    $lineWidths = array_map(static fn(string $line): int => TextMetrics::width($line), $this->lines);
-    $this->scrollX = min($this->scrollX, max(0, max($lineWidths) - $this->viewportWidth + 1));
+    $maxWidth = 0;
+    foreach ($this->lines as $line) {
+      $maxWidth = max($maxWidth, TextMetrics::width($line, $this->tabSize));
+    }
+    $this->scrollX = min($this->scrollX, max(0, $maxWidth - $this->viewportWidth + 1));
     if ($cursor[1] < $this->scrollX) {
       $this->scrollX = $cursor[1];
     } else if ($cursor[1] >= $this->scrollX + $this->viewportWidth) {

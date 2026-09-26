@@ -13,7 +13,7 @@ children are arranged:
 
 Children can be widgets, nested `<Layout>` elements, or `<Separator>` elements. A separator must appear between
 two layout items; it cannot be first or last, and two separators cannot be adjacent. Separators are visual
-boundaries and do not take a size attribute. See the [widget documentation](Widgets/README.md) for widget-specific
+boundaries and do not take a size attribute. See the [widget documentation](Widgets/Widgets.md) for widget-specific
 attributes and behavior.
 
 ## Sizing

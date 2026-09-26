@@ -86,9 +86,8 @@ The framework emits these notifications:
 
 - `select` and `unselect` when focus changes
 - `activate` when the selected widget enters input mode
-- `accept` or `cancel` when input mode ends with Return or Escape
+- `accept` or `cancel` when a widget leaves input mode; its release rule determines which
 - `deactivate` after either accept or cancel
-- `change` when a widget implementing `ChangeAwareWidget` reports a committed value change
 
 Matching widget-level notification actions run before screen-level notification actions. Notification return
 values are ignored. The first selected widget receives its initial `select` notification on the screen's first

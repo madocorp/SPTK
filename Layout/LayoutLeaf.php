@@ -2,7 +2,7 @@
 
 namespace SPTK\Layout;
 
-use SPTK\Core\{ChangeAwareWidget, Widget};
+use SPTK\Core\Widget;
 use SPTK\Events\{EventContext, EventDispatcher};
 use SPTK\Rendering\{Grid, GridWriter};
 
@@ -13,12 +13,9 @@ final class LayoutLeaf {
   private array $screenEvents = [];
   private EventDispatcher $eventDispatcher;
 
-  /** Build a leaf and connect change-aware widgets to its XML handlers. */
+  /** Build a leaf and retain its XML event subscriptions. */
   public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = []) {
     $this->eventDispatcher = new EventDispatcher();
-    if ($this->instance instanceof ChangeAwareWidget) {
-      $this->instance->setChangeListener([$this, 'notifyChange']);
-    }
   }
 
   public function setGrid($grid) {
@@ -87,11 +84,6 @@ final class LayoutLeaf {
   /** Set the screen-level event subscriptions inherited by this leaf. */
   public function setScreenEvents(array $events): void {
     $this->screenEvents = $events;
-  }
-
-  /** Notify the leaf that its widget value changed. */
-  public function notifyChange(): void {
-    $this->dispatchNotification('change');
   }
 
   public function name() {

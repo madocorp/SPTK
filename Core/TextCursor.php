@@ -12,7 +12,7 @@ final class TextCursor {
   private int|false $preferredColumn = false;
 
   /** Track a cursor through the supplied logical lines. */
-  public function __construct(private array &$lines) {
+  public function __construct(private array &$lines, private readonly int $tabSize = 8) {
     if ($lines === []) {
       $lines = [''];
     }
@@ -42,7 +42,7 @@ final class TextCursor {
   public function setPosition(int $row, int $column, bool $select = false): void {
     $this->caret[0] = max(0, min(count($this->lines) - 1, $row));
     $this->caret[1] = max(0, min($this->lineLength($this->caret[0]), $column));
-    $this->preferredColumn = TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1]));
+    $this->preferredColumn = TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1]), $this->tabSize);
     if (!$select) {
       $this->collapse();
     }
@@ -88,6 +88,9 @@ final class TextCursor {
   public function selectedText(): string {
     if (!$this->hasSelection()) {
       [$row, $column] = $this->caret;
+      if ($column === $this->lineLength($row) && $row < count($this->lines) - 1) {
+        return "\n";
+      }
       return TextMetrics::slice($this->lines[$row], $column, 1);
     }
     [$startRow, $startColumn, $endRow, $endColumn] = $this->selectionRange();
@@ -170,12 +173,12 @@ final class TextCursor {
   /** Move vertically and preserve the anchor when extending selection. */
   private function moveVertical(int $distance, bool $select): void {
     if ($this->preferredColumn === false) {
-      $this->preferredColumn = TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1]));
+      $this->preferredColumn = TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1]), $this->tabSize);
     }
     $this->caret[0] = max(0, min(count($this->lines) - 1, $this->caret[0] + $distance));
     $this->caret[1] = 0;
     while ($this->caret[1] < $this->lineLength($this->caret[0])
-      && TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1] + 1)) <= $this->preferredColumn) {
+      && TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1] + 1), $this->tabSize) <= $this->preferredColumn) {
       $this->caret[1]++;
     }
     if (!$select) {
@@ -185,7 +188,7 @@ final class TextCursor {
 
   /** Update preferred column and selection anchor after horizontal movement. */
   private function afterMove(bool $select): void {
-    $this->preferredColumn = TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1]));
+    $this->preferredColumn = TextMetrics::width(TextMetrics::slice($this->lines[$this->caret[0]], 0, $this->caret[1]), $this->tabSize);
     if (!$select) {
       $this->collapse();
     }

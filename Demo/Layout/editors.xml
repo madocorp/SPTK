@@ -1,0 +1,14 @@
+<Screen>
+  <Event type="keyDown" key="f1" action="Controller::showMain" />
+  <Layout direction="vertical">
+    <Text height="1">Editors: F1 main | Return activate | Escape keep edits</Text>
+    <Separator />
+    <Input height="2" label="Name" value="Edit this line: 🌿" />
+    <Separator />
+    <TextEditor height="1*" textWrap="true" label="Document"><![CDATA[TextEditor wraps by character.
+Return inserts a newline; Ctrl+Return exits.
+Try selection, copy, paste, undo and redo.
+
+This is a deliberately long line that wraps when the demo window is resized.]]></TextEditor>
+  </Layout>
+</Screen>

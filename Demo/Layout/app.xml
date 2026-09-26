@@ -1,10 +1,10 @@
 <App font="LiberationMono-Bold" fontSize="17">
   <Style>
-    <Background>#000000</Background>
+    <Background>#323232</Background>
     <Foreground>#ffffff</Foreground>
     <Separator>#aaaaaa</Separator>
     <Highlight>#00ffff</Highlight>
-    <Selected>#ffffff</Selected>
+    <Selected>#ffff00</Selected>
     <CursorBackground>#555555</CursorBackground>
     <CursorForeground>#ffffff</CursorForeground>
   </Style>
@@ -12,5 +12,6 @@
   <Event type="timer" period="2000" action="Controller::test" />
   <Window title="SPTK mad4" width="64" height="16">
     <Screen file="screen.xml" />
+    <Screen file="editors.xml" />
   </Window>
 </App>
