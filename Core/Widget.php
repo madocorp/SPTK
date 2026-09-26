@@ -4,22 +4,32 @@ namespace SPTK\Core;
 
 use SPTK\Rendering\GridWriter;
 
-/** A tile's content: measure it, then paint within the space allocated to it. */
-interface Widget {
+/** Base behavior shared by widgets that measure themselves and paint into a tile. */
+abstract class Widget {
 
   /** Subscribe a named handler to an event emitted by this widget. */
-  public function on(string $event, callable $listener): void;
+  abstract public function on(string $event, callable $listener): void;
 
   /** Emit an event to this widget's registered handlers. */
-  public function emit(string $event): void;
+  abstract public function emit(string $event): void;
 
   /** Handle a raw input event while this widget is activated. */
-  public function handleInput(mixed $event): bool;
+  abstract public function handleInput(mixed $event): bool;
 
   /** Return the color used to fill the widget's tile. */
-  public function background(): Color;
+  abstract public function background(): Color;
 
   /** Paint the widget into its allocated tile. */
-  public function paint(GridWriter $writer): void;
+  abstract public function paint(GridWriter $writer): void;
+
+  /** Return the preferred width in grid cells, or null when it has no preference. */
+  public function preferredWidth(): ?int {
+    return null;
+  }
+
+  /** Return the preferred height in grid cells, or null when it has no preference. */
+  public function preferredHeight(): ?int {
+    return null;
+  }
 
 }

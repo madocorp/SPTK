@@ -9,8 +9,10 @@ final class EventLoop {
 
   private $windows = [];
   private $running;
-  private $eventTimeout = 100;
+  private $eventTimeout = 1000;
   private $sdl;
+  private $timers = [];
+  private $nextTimerId = 1;
 
   public function __construct() {
     $this->sdl = \SPTK\App::sdl();
@@ -21,21 +23,105 @@ final class EventLoop {
     $this->windows[$windowId] = $window;
   }
 
+  /** Register a repeating timer action and return its handle. */
+  public function addTimer(string $action, int $period): int {
+    if ($period < 1) {
+      throw new \InvalidArgumentException('Timer period must be positive.');
+    }
+    $id = $this->nextTimerId++;
+    $this->timers[$id] = [
+      'action' => $action,
+      'period' => $period,
+      'deadline' => hrtime(true) + $period * 1000000,
+    ];
+    return $id;
+  }
+
+  /** Change a timer period and restart its countdown. */
+  public function setTimerPeriod(int|string $timerId, int $period): void {
+    if ($period < 1) {
+      throw new \InvalidArgumentException('Timer period must be positive.');
+    }
+    $timerIds = $this->timerIds($timerId);
+    if ($timerIds === []) {
+      throw new \OutOfBoundsException("Unknown timer: {$timerId}");
+    }
+    foreach ($timerIds as $id) {
+      $this->timers[$id]['period'] = $period;
+      $this->timers[$id]['deadline'] = hrtime(true) + $period * 1000000;
+    }
+  }
+
+  /** Remove a timer by its handle. */
+  public function removeTimer(int|string $timerId): void {
+    foreach ($this->timerIds($timerId) as $id) {
+      unset($this->timers[$id]);
+    }
+  }
+
+  /** Resolve a timer handle or all timers registered for one action. */
+  private function timerIds(int|string $timerId): array {
+    if (is_int($timerId)) {
+      return isset($this->timers[$timerId]) ? [$timerId] : [];
+    }
+    $timerIds = [];
+    foreach ($this->timers as $id => $timer) {
+      if ($timer['action'] === $timerId) {
+        $timerIds[] = $id;
+      }
+    }
+    return $timerIds;
+  }
+
   public function quitWindow(int $windowId) {
     unset($this->windows[$windowId]);
   }
 
   public function start(): void {
     $this->running = true;
+    $now = hrtime(true);
+    foreach ($this->timers as &$timer) {
+      $timer['deadline'] = $now + $timer['period'] * 1000000;
+    }
+    unset($timer);
     $event = $this->sdl->ffi->new('SDL_Event');
     while ($this->running && !empty($this->windows)) {
-      $hasEvent = $this->sdl->ffi->SDL_WaitEventTimeout(\FFI::addr($event), $this->eventTimeout);
+      $hasEvent = $this->sdl->ffi->SDL_WaitEventTimeout(\FFI::addr($event), $this->waitTimeout());
       if ($hasEvent) {
         do {
           $this->handleSdlEvent($event);
         } while ($this->running && $this->sdl->ffi->SDL_PollEvent(\FFI::addr($event)));
       }
+      if ($this->running) {
+        $this->dispatchDueTimers();
+      }
       pcntl_signal_dispatch();
+    }
+  }
+
+  /** Bound the SDL wait by the nearest timer deadline. */
+  private function waitTimeout(): int {
+    if ($this->timers === []) {
+      return $this->eventTimeout;
+    }
+    $deadline = min(array_column($this->timers, 'deadline'));
+    $remaining = $deadline - hrtime(true);
+    return max(1, min($this->eventTimeout, (int)ceil($remaining / 1000000)));
+  }
+
+  /** Dispatch expired timers and advance their deadlines without accumulating drift. */
+  private function dispatchDueTimers(): void {
+    $now = hrtime(true);
+    foreach (array_keys($this->timers) as $timerId) {
+      if (!isset($this->timers[$timerId]) || $this->timers[$timerId]['deadline'] > $now) {
+        continue;
+      }
+      $timer = $this->timers[$timerId];
+      $periodNs = $timer['period'] * 1000000;
+      $elapsedPeriods = intdiv($now - $timer['deadline'], $periodNs) + 1;
+      $this->timers[$timerId]['deadline'] += $elapsedPeriods * $periodNs;
+      $event = new EventDefinition('timer', null, $timer['action']);
+      (new EventDispatcher())->dispatch([$event], new EventContext('timer'), false);
     }
   }
 

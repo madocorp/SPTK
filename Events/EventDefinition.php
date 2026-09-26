@@ -10,6 +10,7 @@ final class EventDefinition {
     public readonly string $type,
     public readonly ?string $key,
     public readonly string $action,
+    public readonly ?int $period = null,
   ) {
   }
 

@@ -9,6 +9,8 @@ final class App {
   private $sdl;
   private $ttf;
   private $font;
+  private $events = [];
+  private $initialized = false;
 
   public static function load(string $class): void {
     $prefix = 'SPTK\\';
@@ -39,21 +41,44 @@ final class App {
   }
 
   public function __construct() {
+    $failed = false;
     try {
       self::$instance = $this;
       spl_autoload_register([self::class, 'load']);
       $this->init();
+      $this->initialized = true;
+      $this->dispatchLifecycleEvent('init');
       $this->eventLoop->start();
     } catch (Throwable $error) {
       fwrite(STDERR, $error->getMessage() . "\n");
+      $failed = true;
+    } finally {
+      try {
+        if ($this->initialized) {
+          $this->dispatchLifecycleEvent('close');
+        }
+      } catch (Throwable $error) {
+        fwrite(STDERR, $error->getMessage() . "\n");
+        $failed = true;
+      } finally {
+        $this->close();
+      }
+    }
+    if ($failed) {
       exit(1);
     }
   }
 
   private function init() {
     $xmlParser = new XmlParser\XmlParser;
+    $this->events = $xmlParser->events;
     $this->openSdl();
     $this->eventLoop = new Events\EventLoop;
+    foreach ($this->events as $event) {
+      if ($event->type === 'timer') {
+        $this->eventLoop->addTimer($event->action, $event->period);
+      }
+    }
     $this->openFont($xmlParser->fontName, $xmlParser->fontSize);
     foreach ($xmlParser->windows as $windowData) {
       $window = new Core\Window($windowData);
@@ -62,9 +87,21 @@ final class App {
   }
 
   private function close() {
-    $this->font->close();
-    $this->ttf->close();
-    $this->sdl->close();
+    if ($this->font !== null) {
+      $this->font->close();
+    }
+    if ($this->ttf !== null) {
+      $this->ttf->close();
+    }
+    if ($this->sdl !== null) {
+      $this->sdl->close();
+    }
+  }
+
+  /** Dispatch an app lifecycle event to its declared actions. */
+  private function dispatchLifecycleEvent(string $type): void {
+    $dispatcher = new Events\EventDispatcher();
+    $dispatcher->dispatch($this->events, new Events\EventContext($type), false);
   }
 
   private function openSdl() {
@@ -76,12 +113,12 @@ final class App {
   }
 
   private function openFont($name, $size) {
-    $ttf = new SDLWrapper\TTF();
-    $ttfReady = $ttf->ffi->TTF_Init();
+    $this->ttf = new SDLWrapper\TTF();
+    $ttfReady = $this->ttf->ffi->TTF_Init();
     if (!$ttfReady) {
       throw new \RuntimeException('TTF initialization failed: ' . $this->sdl->error());
     }
-    $this->font = new Rendering\Font($ttf);
+    $this->font = new Rendering\Font($this->ttf);
     $this->font->open($name, $size);
   }
 

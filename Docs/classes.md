@@ -59,7 +59,7 @@ Static or reusable classes.
 - Rendering\FontFinder: search for a font based it's name
 - Rendering\GridWriter: clips the writings to a tile
 - Rendering\TextMetrics: to get glyph attribites
-- Core\Widget: common widget interface
+- Core\Widget: abstract base class for widget behavior and preferred layout sizing
 - Core\WidgetSelection: tracks focus and chooses the next widget from tile geometry
 - Core\Color: rgb color data
 - Core\Style: inherited application colors with defaults and local overrides
@@ -67,7 +67,7 @@ Static or reusable classes.
 
 ## Events
 
-- Events\EventLoop: stores the windows and hands events to them
+- Events\EventLoop: stores windows and timers and dispatches SDL and timer events
 - Events\KeyNormalizer: canonicalizes SDL key names and modifier masks, including keypad navigation keys
 - Events\EventDefinition: stores one parsed event subscription
 - Events\EventContext: provides event type, source widget, and native input to actions

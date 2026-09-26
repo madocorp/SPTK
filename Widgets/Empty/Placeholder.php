@@ -7,7 +7,7 @@ use SPTK\Events\WidgetEventEmitter;
 use SPTK\Rendering\GridWriter;
 
 /** A blank placeholder widget that reserves a tile without drawing content. */
-final class Placeholder implements Widget {
+final class Placeholder extends Widget {
 
   use WidgetEventEmitter;
 

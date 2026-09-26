@@ -8,7 +8,7 @@ use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
 
 /** Displays read-only text with word wrapping, scrolling, and an active grid cursor. */
-final class Text implements Widget {
+final class Text extends Widget {
 
   use WidgetEventEmitter;
 

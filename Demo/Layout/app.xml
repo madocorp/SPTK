@@ -8,6 +8,8 @@
     <CursorBackground>#555555</CursorBackground>
     <CursorForeground>#ffffff</CursorForeground>
   </Style>
+  <Event type="init" action="Controller::init" />
+  <Event type="timer" period="2000" action="Controller::test" />
   <Window title="SPTK mad4" width="64" height="16">
     <Screen file="screen.xml" />
   </Window>
