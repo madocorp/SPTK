@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\Events;
 
 /** Adds named event subscriptions to a widget. */
 trait WidgetEventEmitter {

@@ -1,6 +1,6 @@
 # Events
 
-Events connect XML declarations to static PHP methods. A method receives an `SPTK\Core\EventContext` with the
+Events connect XML declarations to static PHP methods. A method receives an `SPTK\Events\EventContext` with the
 event `type`, its source `widget` (if any), and native SDL `input` (for raw input events).
 
 ## Declaring events
@@ -30,7 +30,7 @@ and `keyUp`. Keys can be letters, digits, `f1` through `f12`, or named keys such
 `home`, and `backspace`. The optional modifiers are `ctrl`, `shift`, and `alt`, joined with `+`, as in
 `key="ctrl+shift+a"`. Modifier and key names are case-insensitive.
 
-For raw input, a widget's optional `InputHandler` runs first when that widget is activated. If it does not
+For raw input, the activated widget's `handleInput` method runs first. If it does not
 consume the event, matching widget-level actions run, then matching screen-level actions. A handler or action
 consumes input by returning `true`; `false` lets it continue. A screen action can run in either layout mode or
 input mode. Returning `true` from a screen action prevents the screen from applying its navigation or

@@ -2,7 +2,8 @@
 
 namespace SPTK\Layout;
 
-use SPTK\Core\{ChangeAwareWidget, EventContext, EventDispatcher, InputHandler, Widget};
+use SPTK\Core\{ChangeAwareWidget, Widget};
+use SPTK\Events\{EventContext, EventDispatcher};
 use SPTK\Rendering\{Grid, GridWriter};
 
 final class LayoutLeaf {
@@ -65,9 +66,9 @@ final class LayoutLeaf {
     $renderer->fill($this->area, $selected ? $color : $color->darkened());
   }
 
-  /** Forward input events to widgets that implement the optional input contract. */
+  /** Forward raw input events to this widget. */
   public function handleEvent(mixed $event): bool {
-    return $this->instance instanceof InputHandler && $this->instance->handleInput($event);
+    return $this->instance->handleInput($event);
   }
 
   /** Dispatch raw input to this widget's XML event subscriptions. */

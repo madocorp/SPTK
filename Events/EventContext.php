@@ -1,6 +1,8 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\Events;
+
+use SPTK\Core\Widget;
 
 /** Carries an event and its optional widget and native input source to an action. */
 final class EventContext {
