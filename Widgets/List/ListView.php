@@ -1,0 +1,279 @@
+<?php
+
+namespace SPTK\Widgets\List;
+
+use SPTK\Core\{Color, ItemData, ItemViewport, Widget};
+use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
+use SPTK\Rendering\{GridWriter, TextMetrics};
+use SPTK\SDLWrapper\SDL;
+
+/** Displays a scrollable list with selection, prefix filtering, and optional ordering. */
+final class ListView extends Widget {
+
+  use WidgetEventEmitter;
+
+  private array $items = [];
+  private array $visible = [];
+  private ItemViewport $viewport;
+  private Painter $painter;
+  private int $cursorItem = 0;
+  private string $query = '';
+  private bool $active = false;
+
+  /** Create a list and register its activation lifecycle. */
+  public function __construct(array $items = [], private readonly bool $multiple = false, private readonly bool $filterable = true, private readonly bool $searchable = true, private readonly bool $reorderable = false, private readonly Color $fg = new Color(255, 255, 255), private readonly Color $bg = new Color(0, 0, 0), private readonly Color $cursorBg = new Color(85, 85, 85), private readonly Color $highlight = new Color(0, 255, 255)) {
+    $this->viewport = new ItemViewport();
+    $this->painter = new Painter($fg, $bg, $cursorBg, $highlight);
+    $this->setItems($items);
+    $this->on('activate', $this->activate(...));
+    $this->on('deactivate', $this->deactivate(...));
+  }
+
+  /** Replace items and reset filtering, cursor, and scroll. */
+  public function setItems(array $items): void {
+    $normalized = ItemData::normalize($items, 'selected');
+    $selected = array_keys(array_filter(array_column($normalized, 'selected')));
+    if (!$this->multiple && count($selected) > 1) {
+      throw new \InvalidArgumentException('Single-selection List accepts only one selected item.');
+    }
+    $this->items = $normalized;
+    $this->query = '';
+    $this->visible = array_keys($normalized);
+    $this->viewport->reset(count($normalized));
+    $this->cursorItem = $selected[0] ?? 0;
+    $this->viewport->setPosition($this->cursorItem);
+  }
+
+  /** Return item records with their current selected state. */
+  public function items(): array {
+    $items = $this->items;
+    if (!$this->multiple) {
+      foreach ($items as $index => &$item) {
+        $item['selected'] = $index === $this->cursorPosition() && $this->activeValue() !== null;
+      }
+      unset($item);
+    }
+    return $items;
+  }
+
+  /** Return all values in their current display order. */
+  public function values(): array {
+    return array_column($this->items, 'value');
+  }
+
+  /** Return the value under the cursor or null when no row is visible. */
+  public function activeValue(): ?string {
+    $index = $this->visible[$this->viewport->position()] ?? null;
+    return $index === null ? null : $this->items[$index]['value'];
+  }
+
+  /** Return one current value or all selected values in item order. */
+  public function getValue(): string|array|null {
+    if (!$this->multiple) {
+      return $this->activeValue();
+    }
+    return array_column(array_filter($this->items, $this->isSelected(...)), 'value');
+  }
+
+  /** Set selection without notifying user-change subscribers. */
+  public function setValue(string|array $value): void {
+    $values = $this->multiple ? (is_array($value) ? $value : [$value]) : (is_string($value) ? [$value] : $value);
+    if (!$this->multiple && count($values) !== 1) {
+      throw new \InvalidArgumentException('Single-selection List needs one value.');
+    }
+    foreach ($values as $candidate) {
+      if (!is_string($candidate) || !in_array($candidate, $this->values(), true)) {
+        throw new \InvalidArgumentException('Unknown list value.');
+      }
+    }
+    if (!$this->multiple) {
+      $this->setFilter('');
+      $this->cursorItem = array_search($values[0], $this->values(), true);
+      $this->viewport->setPosition($this->cursorItem);
+      return;
+    }
+    foreach ($this->items as &$item) {
+      $item['selected'] = in_array($item['value'], $values, true);
+    }
+    unset($item);
+  }
+
+  /** Report whether the list has keyboard focus. */
+  public function active(): bool {
+    return $this->active;
+  }
+
+  /** Return the zero-based item index under the cursor. */
+  public function cursorPosition(): int {
+    return $this->visible[$this->viewport->position()] ?? $this->cursorItem;
+  }
+
+  /** Return the current prefix query. */
+  public function filter(): string {
+    return $this->query;
+  }
+
+  /** Apply a prefix query without emitting an input event. */
+  public function setFilter(string $query): void {
+    if (!mb_check_encoding($query, 'UTF-8')) {
+      throw new \InvalidArgumentException('List filter must be valid UTF-8.');
+    }
+    if (preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', $query)) {
+      throw new \InvalidArgumentException('List filter must be printable text.');
+    }
+    $query = preg_replace('/[\r\n\t]+/u', ' ', $query);
+    if ($this->query === $query) {
+      return;
+    }
+    $oldIndex = $this->cursorPosition();
+    $this->query = $query;
+    $matches = $this->matchingIndices($query);
+    $this->visible = $query !== '' && ($this->filterable || $matches === []) ? $matches : array_keys($this->items);
+    $position = array_search($oldIndex, $this->visible, true);
+    $this->viewport->setCount(count($this->visible));
+    $target = $position === false ? 0 : $position;
+    if (!$this->filterable && $query !== '' && $matches !== []) {
+      $target = array_search($matches[0], $this->visible, true);
+    }
+    $this->viewport->setPosition($target);
+    if ($this->visible !== []) {
+      $this->cursorItem = $this->visible[$this->viewport->position()];
+    }
+  }
+
+  /** Use the tile background for inactive cells. */
+  public function background(): Color {
+    return $this->bg;
+  }
+
+  /** Measure the widest item label. */
+  public function preferredWidth(): ?int {
+    $width = 12;
+    foreach ($this->items as $item) {
+      $width = max($width, TextMetrics::width($item['label']));
+    }
+    return $width;
+  }
+
+  /** Reserve one row per item or an empty-state row. */
+  public function preferredHeight(): ?int {
+    return max(1, count($this->items));
+  }
+
+  /** Paint visible rows, search matches, and inverted scroll arrows. */
+  public function paint(GridWriter $writer): void {
+    $this->viewport->setHeight($writer->height());
+    $this->painter->paint($writer, $this->items, $this->visible, $this->viewport, $this->query, $this->active, $this->multiple);
+  }
+
+  /** Handle query typing, movement, selection, and optional item ordering. */
+  public function handleInput(mixed $event): bool {
+    if ($event->type === SDL::SDL_EVENT_TEXT_INPUT) {
+      $text = \FFI::string($event->text->text);
+      if (($this->filterable || $this->searchable) && $text !== ' ' && ($this->query === '' || $this->matchingIndices($this->query) !== [])) {
+        $this->changeValue($this->appendQuery(...), $text);
+      }
+      return true;
+    }
+    if ($event->type !== SDL::SDL_EVENT_KEY_DOWN) {
+      return false;
+    }
+    $mod = (int)$event->key->mod;
+    $key = KeyNormalizer::normalize((int)$event->key->key, $mod);
+    if ($key === SDL::KEY_LEFT || $key === SDL::KEY_RIGHT) {
+      return false;
+    }
+    if ($key === SDL::KEY_BACKSPACE || $key === SDL::KEY_DELETE) {
+      $query = $key === SDL::KEY_DELETE ? '' : mb_substr($this->query, 0, max(0, mb_strlen($this->query) - 1));
+      $this->changeValue($this->setFilter(...), $query);
+      return true;
+    }
+    if ($key === SDL::KEY_SPACE) {
+      if (!$event->key->repeat && $this->multiple && $this->activeValue() !== null) {
+        $this->changeValue($this->toggleCurrent(...));
+      }
+      return true;
+    }
+    if (in_array($key, [SDL::KEY_UP, SDL::KEY_DOWN, SDL::KEY_HOME, SDL::KEY_END, SDL::KEY_PAGEUP, SDL::KEY_PAGEDOWN], true)) {
+      $this->changeValue($this->move(...), $key, $mod);
+      return true;
+    }
+    return false;
+  }
+
+  /** Accept the list value when Escape releases the widget. */
+  public function releaseNotification(int $key, int $modifiers): ?string {
+    return $key === SDL::KEY_ESCAPE ? 'accept' : parent::releaseNotification($key, $modifiers);
+  }
+
+  /** Find item indices whose labels start with a Unicode-insensitive query. */
+  private function matchingIndices(string $query): array {
+    $matches = [];
+    foreach ($this->items as $index => $item) {
+      if ($query === '' || str_starts_with(mb_strtolower($item['label']), mb_strtolower($query))) {
+        $matches[] = $index;
+      }
+    }
+    return $matches;
+  }
+
+  /** Apply a user operation and notify only when the public value changes. */
+  private function changeValue(callable $operation, mixed ...$arguments): void {
+    $before = $this->getValue();
+    $operation(...$arguments);
+    if ($before !== $this->getValue()) {
+      $this->emit('change');
+    }
+  }
+
+  /** Append valid text to the current prefix query. */
+  private function appendQuery(string $text): void {
+    $this->setFilter($this->query . $text);
+  }
+
+  /** Toggle the selected flag at the cursor. */
+  private function toggleCurrent(): void {
+    $index = $this->visible[$this->viewport->position()] ?? null;
+    if ($index !== null) {
+      $this->items[$index]['selected'] = !$this->items[$index]['selected'];
+    }
+  }
+
+  /** Move the cursor or reorder one row with Shift and an arrow. */
+  private function move(int $key, int $mod): void {
+    if (($mod & SDL::MOD_SHIFT) !== 0 && ($key === SDL::KEY_UP || $key === SDL::KEY_DOWN)) {
+      if ($this->reorderable && $this->query === '') {
+        $from = $this->viewport->position();
+        $to = max(0, min(count($this->items) - 1, $from + ($key === SDL::KEY_DOWN ? 1 : -1)));
+        if ($to !== $from) {
+          $item = array_splice($this->items, $from, 1);
+          array_splice($this->items, $to, 0, $item);
+          $this->viewport->setPosition($to);
+          $this->cursorItem = $to;
+        }
+      }
+      return;
+    }
+    $this->viewport->move($key);
+    if ($this->visible !== []) {
+      $this->cursorItem = $this->visible[$this->viewport->position()];
+    }
+  }
+
+  /** Return a record's selected flag for value collection. */
+  private function isSelected(array $item): bool {
+    return $item['selected'];
+  }
+
+  /** Mark the list active after tile activation. */
+  private function activate(): void {
+    $this->active = true;
+  }
+
+  /** Clear transient search state when leaving input mode. */
+  private function deactivate(): void {
+    $this->active = false;
+    $this->changeValue($this->setFilter(...), '');
+  }
+
+}

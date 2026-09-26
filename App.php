@@ -36,6 +36,11 @@ final class App {
     return self::$instance->font;
   }
 
+  /** Return the current font when layout measurement runs after app initialization. */
+  public static function fontOrNull(): ?Rendering\Font {
+    return self::$instance?->font;
+  }
+
   public static function eventLoop() {
     return self::$instance->eventLoop;
   }
@@ -87,6 +92,7 @@ final class App {
   }
 
   private function close() {
+    $this->eventLoop?->closeWindows();
     if ($this->font !== null) {
       $this->font->close();
     }

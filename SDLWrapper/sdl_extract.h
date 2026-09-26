@@ -124,6 +124,7 @@ SDL_Renderer *SDL_CreateRenderer(SDL_Window *window, const char *name);
 bool SDL_SetRenderDrawColor(SDL_Renderer *renderer, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 bool SDL_RenderClear(SDL_Renderer *renderer);
 bool SDL_RenderPresent(SDL_Renderer *renderer);
+SDL_Surface *SDL_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rect *rect);
 bool SDL_SetWindowTitle(SDL_Window *window, const char *title);
 bool SDL_SetWindowIcon(SDL_Window *window, SDL_Surface *icon);
 int SDL_SetHint(const char *name, const char *value);
@@ -135,7 +136,7 @@ bool SDL_RenderTexture(SDL_Renderer *renderer, SDL_Texture *texture, const SDL_F
 SDL_Texture *SDL_CreateTexture(SDL_Renderer *renderer, Uint32 format, int access, int w, int h);
 int SDL_LockTexture(SDL_Texture *texture, const SDL_Rect *rect, void* *pixels, int *pitch);
 void SDL_UnlockTexture(SDL_Texture *texture);
-int SDL_SetTextureBlendMode(SDL_Texture *texture, int blendMode);
+bool SDL_SetTextureBlendMode(SDL_Texture *texture, int blendMode);
 void SDL_DestroyTexture(SDL_Texture *texture);
 const char *SDL_GetError(void);
 bool SDL_SetTextureScaleMode(SDL_Texture *texture, int scaleMode);

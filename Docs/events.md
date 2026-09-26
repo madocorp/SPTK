@@ -88,6 +88,7 @@ The framework emits these notifications:
 - `activate` when the selected widget enters input mode
 - `accept` or `cancel` when a widget leaves input mode; its release rule determines which
 - `deactivate` after either accept or cancel
+- `change` when a choice or list widget changes its value through user input
 
 Matching widget-level notification actions run before screen-level notification actions. Notification return
 values are ignored. The first selected widget receives its initial `select` notification on the screen's first

@@ -43,6 +43,7 @@ into runtime objects.
 - XmlParser\AttributeParser: shared XML attribute validation and conversion
 - XmlParser\EventParser: parses XML event declarations and key chords
 - XmlParser\StyleParser: parses `<Style>` color overrides and applies them to inherited styles
+- XmlParser\ItemParser: reads item records shared by choice and list widgets
 
 The `Core\Style` defaults are passed down the XML tree. A `<Style>` element at app, window, screen, layout, or
 widget level overrides only the colors it declares; descendants inherit the resulting style.
@@ -55,6 +56,9 @@ Static or reusable classes.
   depending on the caller
 - Layout\Splitter: splits a Tile horizontally or vertically to other Tiles measured in cells
 - Core\ScrollIndicator: formats textual marks for hidden content beyond a viewport
+- Core\ItemData: validates unique item values and labels
+- Core\ItemViewport: tracks item cursor and vertical scrolling
+- Core\RasterImage: stores GD-decoded pixels for SDL texture upload
 - Core\WidgetDefinition: bundles a widget with its event subscriptions
 - Rendering\FontFinder: search for a font based it's name
 - Rendering\GridWriter: clips the writings to a tile
@@ -72,6 +76,7 @@ Static or reusable classes.
 - Events\EventDefinition: stores one parsed event subscription
 - Events\EventContext: provides event type, source widget, and native input to actions
 - Events\EventDispatcher: invokes matching static actions and handles input consumption
+- Events\KeyboardEvent: converts SDL keyboard fields to PHP scalars before dispatch
 - Events\WidgetEventEmitter: lets widgets subscribe named handlers to their lifecycle events
 
 ## Widgets

@@ -24,4 +24,4 @@ Input and TextEditor keep edits and emit `accept` on Escape. TextEditor inserts 
 
 The first screen listed in a window is shown initially. Applications can switch screens with
 `Window::setCurrentScreen()`.
-The demo uses F1 for its original screen and F2 for its Editors screen.
+The demo uses F1 for its original screen, F2 for Editors, F3 for Choices, F4 for Lists, and F5 for Images.

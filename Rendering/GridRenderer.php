@@ -58,8 +58,6 @@ final class GridRenderer {
     } finally {
       $ffi->SDL_SetRenderClipRect($ffiRenderer, null);
     }
-    $ret = $ffi->SDL_RenderPresent($ffiRenderer);
-    $this->sdl->checkReturnValue($ret, 'SDL_RenderPresent');
   }
 
   private function drawGlyph(\FFI\CData $ffiRenderer, Cell $cell, int $x, int $y): void {
