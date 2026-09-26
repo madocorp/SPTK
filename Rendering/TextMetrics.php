@@ -25,6 +25,16 @@ final class TextMetrics {
     return $glyphs;
   }
 
+  /** Count grapheme clusters in text. */
+  public static function length(string $text): int {
+    return count(self::glyphs($text));
+  }
+
+  /** Return a grapheme-based slice of text. */
+  public static function slice(string $text, int $start, ?int $length = null): string {
+    return implode('', array_slice(self::glyphs($text), $start, $length));
+  }
+
   public static function glyphWidth(string $glyph): int {
     if (strlen($glyph) === 1) {
       return 1;

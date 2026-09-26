@@ -2,7 +2,7 @@
 
 namespace SPTK\Layout;
 
-use SPTK\Core\{ChangeAwareWidget, EventContext, EventDispatcher, Widget};
+use SPTK\Core\{ChangeAwareWidget, EventContext, EventDispatcher, InputHandler, Widget};
 use SPTK\Rendering\{Grid, GridWriter};
 
 final class LayoutLeaf {
@@ -77,6 +77,7 @@ final class LayoutLeaf {
 
   /** Deliver a lifecycle notification to widget and screen subscriptions. */
   public function dispatchNotification(string $type): void {
+    $this->instance->emit($type);
     $context = new EventContext($type, $this->instance);
     $this->eventDispatcher->dispatch($this->events, $context, false);
     $this->eventDispatcher->dispatch($this->screenEvents, $context, false);

@@ -3,6 +3,7 @@
 namespace SPTK\Rendering;
 
 use SPTK\Core\Cell;
+use SPTK\Layout\Tile;
 use SPTK\SDLWrapper\SDL;
 
 /** Paints leading glyphs clipped to their allocated columns. */
@@ -13,10 +14,12 @@ final class GridRenderer {
   private int $oy = 0;
   private SDL $sdl;
   private Font $font;
+  private PixelRenderer $pixels;
 
   public function __construct(\FFI\CData $ffiRenderer) {
     $this->sdl = \SPTK\App::sdl();
     $this->font = \SPTK\App::font();
+    $this->pixels = new PixelRenderer($ffiRenderer);
     $this->atlas = new GlyphAtlas($this->sdl, $ffiRenderer, $this->font);
   }
 
@@ -28,6 +31,21 @@ final class GridRenderer {
   public function draw(\FFI\CData $ffiRenderer, Grid $grid): void {
     $ffi = $this->sdl->ffi;
     try {
+      for ($y = 0; $y < $grid->height(); $y++) {
+        for ($x = 0; $x < $grid->width(); $x++) {
+          $cell = $grid->cell($x, $y);
+          if ($cell->width === 0 || ($cell->bg->r === 0 && $cell->bg->g === 0 && $cell->bg->b === 0)) {
+            continue;
+          }
+          $area = new Tile(
+            $x * $this->font->cellWidth() + $this->ox,
+            $y * $this->font->cellHeight() + $this->oy,
+            $this->font->cellWidth() * $cell->width,
+            $this->font->cellHeight(),
+          );
+          $this->pixels->fill($area, $cell->bg);
+        }
+      }
       for ($y = 0; $y < $grid->height(); $y++) {
         for ($x = 0; $x < $grid->width(); $x++) {
           $cell = $grid->cell($x, $y);
