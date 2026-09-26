@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\XmlParser;
 
 /** Shared XML reading and validation; contains no widget or layout decisions. */
 trait AttributeParser {
@@ -38,14 +38,6 @@ trait AttributeParser {
   public function attrEnum(\XMLReader $reader, string $name, array $expectedValues): string {
     $value = $reader->getAttribute($name) ?? $expectedValues[0] ?? '';
     return $value;
-  }
-
-  protected function attrColor(\XMLReader $reader, string $name, Color $default): Color {
-    $value = $reader->getAttribute($name);
-    if ($value === null) {
-      return $default;
-    }
-    return Color::from($value);
   }
 
   protected function attrBoolean(\XMLReader $reader, string $name, bool $default = false): bool {

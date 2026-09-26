@@ -1,5 +1,14 @@
 <App font="LiberationMono-Bold" fontSize="17">
+  <Style>
+    <Background>#000000</Background>
+    <Foreground>#ffffff</Foreground>
+    <Separator>#aaaaaa</Separator>
+    <Highlight>#00ffff</Highlight>
+    <Selected>#ffffff</Selected>
+    <CursorBackground>#555555</CursorBackground>
+    <CursorForeground>#ffffff</CursorForeground>
+  </Style>
   <Window title="SPTK mad4" width="64" height="16">
-    <Screen file="screen.xml" borderColor="#ffffff"/>
+    <Screen file="screen.xml" />
   </Window>
 </App>

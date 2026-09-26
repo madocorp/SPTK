@@ -51,7 +51,7 @@ final class App {
   }
 
   private function init() {
-    $xmlParser = new Core\XmlParser;
+    $xmlParser = new XmlParser\XmlParser;
     $this->openSdl();
     $this->eventLoop = new Core\EventLoop;
     $this->openFont($xmlParser->fontName, $xmlParser->fontSize);
