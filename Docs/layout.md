@@ -24,7 +24,9 @@ The root layout fills the screen and does not accept `width` or `height`.
 
 Sizes are expressed in grid cells. A whole number is a fixed size. A value ending in `*` is a weight for sharing
 the remaining space. For example, `1*` and `2*` divide the remaining space in a 1:2 ratio. If a size is
-omitted, it defaults to `1*`. Give a nested layout its size on the axis of its parent, just like a widget.
+omitted on a widget, its `Widget` base class can provide a preferred fixed size for that axis; otherwise it
+defaults to `1*`. An explicit size always takes precedence. Give a nested layout its size on the axis
+of its parent, just like a widget; omitted nested-layout sizes default to `1*`.
 
 ## Example
 

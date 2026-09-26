@@ -31,7 +31,11 @@ final class ScreenParser {
       if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'Style') {
         $style = $this->styleParser->parse($reader, $style);
       } else if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'Event') {
-        $events[] = (new EventParser())->parse($reader);
+        $event = (new EventParser())->parse($reader);
+        if (in_array($event->type, ['init', 'close', 'timer'], true)) {
+          throw new \RuntimeException('App lifecycle and timer events must be declared in app.xml.');
+        }
+        $events[] = $event;
       } else if ($reader->nodeType === \XMLReader::ELEMENT && $reader->name === 'Layout') {
         if ($layout !== null) {
           throw new \RuntimeException("Screen must contain exactly one Layout!");
@@ -96,8 +100,8 @@ final class ScreenParser {
     }
     $allowed = $direction === 'horizontal' ? ['width'] : ['height'];
     $parser->validateAttributes($reader, $allowed);
-    $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width') : '1*';
-    $height = $direction === 'vertical' ? $this->attrSize($reader, 'height') : '1*';
+    $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width', '') : '';
+    $height = $direction === 'vertical' ? $this->attrSize($reader, 'height', '') : '';
     $definition = $parser->parse($reader, $style);
     $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events));
   }

@@ -13,6 +13,7 @@ final class XmlParser {
   public $fontName = 'LiberationMono-Bold';
   public $fontSize = 17;
   public $windows = [];
+  public $events = [];
   private StyleParser $styleParser;
   private ScreenParser $screenParser;
 
@@ -48,10 +49,16 @@ final class XmlParser {
       if ($reader->nodeType === XMLReader::ELEMENT) {
         if ($reader->name === 'Style') {
           $style = $this->styleParser->parse($reader, $style);
+        } else if ($reader->name === 'Event') {
+          $event = (new EventParser())->parse($reader);
+          if (!in_array($event->type, ['init', 'close', 'timer'], true)) {
+            throw new RuntimeException('App-level events must use init, close, or timer type.');
+          }
+          $this->events[] = $event;
         } else if ($reader->name === 'Window') {
           $this->parseWindow($reader, $style);
         } else {
-          throw new \RuntimeException("App must contain Window elements!");
+          throw new \RuntimeException("App must contain Style, Event, or Window elements!");
         }
       }
     }

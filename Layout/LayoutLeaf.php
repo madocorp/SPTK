@@ -103,12 +103,26 @@ final class LayoutLeaf {
     return $this->instance;
   }
 
+  /** Return the explicit or preferred width used by the parent layout. */
   public function width() {
-    return $this->width;
+    return $this->size($this->width, 'width');
   }
 
+  /** Return the explicit or preferred height used by the parent layout. */
   public function height() {
-    return $this->height;
+    return $this->size($this->height, 'height');
+  }
+
+  /** Resolve an omitted XML size from the widget preference or use the flexible default. */
+  private function size(string $size, string $axis): string {
+    if ($size !== '') {
+      return $size;
+    }
+    $preferred = $axis === 'width' ? $this->instance->preferredWidth() : $this->instance->preferredHeight();
+    if ($preferred !== null && $preferred > 0) {
+      return (string)$preferred;
+    }
+    return '1*';
   }
 
   public function debug(int $level = 0) {

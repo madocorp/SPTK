@@ -10,11 +10,11 @@ final class EventParser {
 
   use AttributeParser;
 
-  private const TYPES = ['keyDown', 'keyUp', 'textInput', 'select', 'unselect', 'activate', 'deactivate', 'accept', 'cancel', 'change'];
+  private const TYPES = ['keyDown', 'keyUp', 'textInput', 'select', 'unselect', 'activate', 'deactivate', 'accept', 'cancel', 'change', 'init', 'close', 'timer'];
 
   /** Parse the current Event element and leave the reader on its closing element. */
   public function parse(\XMLReader $reader): EventDefinition {
-    $this->assertAttributes($reader, ['type', 'key', 'action']);
+    $this->assertAttributes($reader, ['type', 'key', 'period', 'action']);
     $type = $this->attrString($reader, 'type');
     if (!in_array($type, self::TYPES, true)) {
       throw new \RuntimeException("Unknown event type: {$type}");
@@ -24,12 +24,21 @@ final class EventParser {
       throw new \RuntimeException("<Event key> is only valid for keyDown and keyUp.");
     }
     $key = $key === null ? null : $this->normalizeKey($key);
+    $period = $reader->getAttribute('period');
+    if ($type === 'timer') {
+      if ($period === null || !ctype_digit($period) || (int)$period < 1) {
+        throw new \RuntimeException('<Event type="timer"> requires a positive period in milliseconds.');
+      }
+      $period = (int)$period;
+    } else if ($period !== null) {
+      throw new \RuntimeException('<Event period> is only valid for timer events.');
+    }
     $action = $this->attrString($reader, 'action');
     if (!preg_match('/^[A-Za-z_\\\\][A-Za-z0-9_\\\\]*::[A-Za-z_][A-Za-z0-9_]*$/', $action)) {
       throw new \RuntimeException("Event action must name a static method as Class::method.");
     }
     $this->consumeEmptyElement($reader);
-    return new EventDefinition($type, $key, $action);
+    return new EventDefinition($type, $key, $action, $period);
   }
 
   /** Normalize a key chord and reject unsupported key or modifier names. */

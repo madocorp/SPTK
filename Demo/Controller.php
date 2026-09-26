@@ -12,4 +12,9 @@ class Controller {
     return true;
   }
 
+  public static function init() {
+    echo "init callback\n";
+    return true;
+  }
+
 }

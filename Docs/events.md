@@ -20,6 +20,44 @@ inside that widget's element. For example:
 </Screen>
 ```
 
+Put app lifecycle declarations directly inside the `<App>` element in `Layout/app.xml`:
+
+```xml
+<App>
+  <Event type="init" action="Controller::initialize" />
+  <Window title="Example">
+    <Screen file="screen.xml" />
+  </Window>
+  <Event type="close" action="Controller::shutdown" />
+</App>
+```
+
+The `init` action runs after SDL, fonts, windows, and screens have been initialized, immediately before the event
+loop starts. The `close` action runs after the event loop ends and before SDL resources are released. Both receive
+an `EventContext` whose `type` is `init` or `close`; `widget` and `input` are `null`.
+
+Timer declarations also go directly inside `<App>`. Their callbacks run on the event loop thread and receive a
+timer `EventContext` with `widget` and `input` set to `null`:
+
+```xml
+<Event type="timer" period="100" action="Controller::tick" />
+```
+
+Periods are positive milliseconds. Timers repeat from their original cadence; if the process is delayed across
+multiple periods, the callback runs once and the next deadline advances to the next cadence point. The event loop
+waits up to one second when no timer is active, or until the nearest timer deadline when timers are active.
+
+Code can create and manage timers through `SPTK\App::eventLoop()`:
+
+```php
+$timerId = \SPTK\App::eventLoop()->addTimer('Controller::tick', 100);
+\SPTK\App::eventLoop()->setTimerPeriod($timerId, 250);
+\SPTK\App::eventLoop()->removeTimer($timerId);
+```
+
+For timers declared in XML, pass the action string to `setTimerPeriod` or `removeTimer`; this affects every timer
+using that action. `addTimer` returns an integer handle for managing a code-created timer.
+
 Each declaration names a static method using `Class::method`. The class must be loaded by the application. A
 method can be public static, for example `public static function selectAll(EventContext $event): bool`.
 

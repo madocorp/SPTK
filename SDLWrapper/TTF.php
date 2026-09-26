@@ -20,7 +20,7 @@ class TTF {
   }
 
   public function close() {
-    $this->ffi->SDL_Quit();
+    $this->ffi->TTF_Quit();
   }
 
 }
