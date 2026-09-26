@@ -3,6 +3,7 @@
 namespace SPTK\XmlParser;
 
 use SPTK\Events\EventDefinition;
+use SPTK\Events\KeyNormalizer;
 
 /** Parses and validates event declarations from XML. */
 final class EventParser {
@@ -37,21 +38,17 @@ final class EventParser {
     $name = array_pop($parts);
     $modifiers = [];
     foreach ($parts as $modifier) {
-      if (!in_array($modifier, ['ctrl', 'shift', 'alt'], true) || in_array($modifier, $modifiers, true)) {
+      $modifier = KeyNormalizer::normalizeModifierName($modifier);
+      if ($modifier === null || in_array($modifier, $modifiers, true)) {
         throw new \RuntimeException("Invalid key modifier in '{$key}'.");
       }
       $modifiers[] = $modifier;
     }
     sort($modifiers);
-    $validKeys = ['enter', 'return', 'escape', 'esc', 'backspace', 'tab', 'space', 'delete', 'up', 'down', 'left', 'right', 'home', 'end', 'pageup', 'pagedown', 'insert'];
-    if (!in_array($name, $validKeys, true) && !preg_match('/^(?:[a-z0-9]|f(?:[1-9]|1[0-2]))$/', $name)) {
+    $name = KeyNormalizer::normalizeName($name);
+    if ($name === null) {
       throw new \RuntimeException("Invalid key name in '{$key}'.");
     }
-    $name = match ($name) {
-      'return' => 'enter',
-      'esc' => 'escape',
-      default => $name,
-    };
     return implode('+', array_merge($modifiers, [$name]));
   }
 

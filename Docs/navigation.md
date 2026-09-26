@@ -17,6 +17,8 @@ The activated widget receives input first. Press Return or keypad Enter to accep
 to cancel and deactivate it. If widget handling and event actions do not consume those keys, the screen applies
 these controls. Arrow keys do not move selection while input mode is active.
 
+Widget-specific input behavior is documented on each widget's page.
+
 ## Screens
 
 The first screen listed in a window is shown initially. Applications can switch screens with

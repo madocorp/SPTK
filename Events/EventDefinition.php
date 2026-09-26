@@ -23,20 +23,11 @@ final class EventDefinition {
     }
     [$modifiers, $expectedKey] = self::keyParts($this->key);
     $nativeModifiers = (int)$input->key->mod;
-    $actualModifiers = 0;
-    if (($nativeModifiers & \SPTK\SDLWrapper\SDL::MOD_CTRL) !== 0) {
-      $actualModifiers |= \SPTK\SDLWrapper\SDL::MOD_CTRL;
-    }
-    if (($nativeModifiers & \SPTK\SDLWrapper\SDL::MOD_SHIFT) !== 0) {
-      $actualModifiers |= \SPTK\SDLWrapper\SDL::MOD_SHIFT;
-    }
-    if (($nativeModifiers & \SPTK\SDLWrapper\SDL::MOD_ALT) !== 0) {
-      $actualModifiers |= \SPTK\SDLWrapper\SDL::MOD_ALT;
-    }
+    $actualModifiers = KeyNormalizer::normalizeModifiers($nativeModifiers);
     if ($actualModifiers !== $modifiers) {
       return false;
     }
-    return self::keyName((int)$input->key->key) === $expectedKey;
+    return KeyNormalizer::keyName((int)$input->key->key, $nativeModifiers) === $expectedKey;
   }
 
   /** Convert a normalized key chord into its modifier mask and key name. */
@@ -45,57 +36,9 @@ final class EventDefinition {
     $name = array_pop($parts);
     $modifiers = 0;
     foreach ($parts as $part) {
-      $modifiers |= match ($part) {
-        'ctrl' => \SPTK\SDLWrapper\SDL::MOD_CTRL,
-        'shift' => \SPTK\SDLWrapper\SDL::MOD_SHIFT,
-        'alt' => \SPTK\SDLWrapper\SDL::MOD_ALT,
-        default => 0,
-      };
+      $modifiers |= KeyNormalizer::modifierMask($part);
     }
     return [$modifiers, $name];
-  }
-
-  /** Convert an SDL keycode into the key spelling accepted by EventParser. */
-  private static function keyName(int $key): string {
-    $names = [
-      \SPTK\SDLWrapper\SDL::KEY_RETURN => 'enter',
-      \SPTK\SDLWrapper\SDL::KEY_KP_ENTER => 'enter',
-      \SPTK\SDLWrapper\SDL::KEY_ESCAPE => 'escape',
-      \SPTK\SDLWrapper\SDL::KEY_BACKSPACE => 'backspace',
-      \SPTK\SDLWrapper\SDL::KEY_TAB => 'tab',
-      \SPTK\SDLWrapper\SDL::KEY_SPACE => 'space',
-      \SPTK\SDLWrapper\SDL::KEY_DELETE => 'delete',
-      \SPTK\SDLWrapper\SDL::KEY_UP => 'up',
-      \SPTK\SDLWrapper\SDL::KEY_DOWN => 'down',
-      \SPTK\SDLWrapper\SDL::KEY_LEFT => 'left',
-      \SPTK\SDLWrapper\SDL::KEY_RIGHT => 'right',
-      \SPTK\SDLWrapper\SDL::KEY_HOME => 'home',
-      \SPTK\SDLWrapper\SDL::KEY_END => 'end',
-      \SPTK\SDLWrapper\SDL::KEY_PAGEUP => 'pageup',
-      \SPTK\SDLWrapper\SDL::KEY_PAGEDOWN => 'pagedown',
-      \SPTK\SDLWrapper\SDL::KEY_INSERT => 'insert',
-    ];
-    if (isset($names[$key])) {
-      return $names[$key];
-    }
-    if ($key >= 32 && $key <= 126) {
-      return strtolower(chr($key));
-    }
-    return match ($key) {
-      \SPTK\SDLWrapper\SDL::KEY_F1 => 'f1',
-      \SPTK\SDLWrapper\SDL::KEY_F2 => 'f2',
-      \SPTK\SDLWrapper\SDL::KEY_F3 => 'f3',
-      \SPTK\SDLWrapper\SDL::KEY_F4 => 'f4',
-      \SPTK\SDLWrapper\SDL::KEY_F5 => 'f5',
-      \SPTK\SDLWrapper\SDL::KEY_F6 => 'f6',
-      \SPTK\SDLWrapper\SDL::KEY_F7 => 'f7',
-      \SPTK\SDLWrapper\SDL::KEY_F8 => 'f8',
-      \SPTK\SDLWrapper\SDL::KEY_F9 => 'f9',
-      \SPTK\SDLWrapper\SDL::KEY_F10 => 'f10',
-      \SPTK\SDLWrapper\SDL::KEY_F11 => 'f11',
-      \SPTK\SDLWrapper\SDL::KEY_F12 => 'f12',
-      default => '',
-    };
   }
 
 }
