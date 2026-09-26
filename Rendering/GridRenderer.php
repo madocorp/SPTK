@@ -3,6 +3,7 @@
 namespace SPTK\Rendering;
 
 use SPTK\Core\Cell;
+use SPTK\Rendering\Glyph\GeometryGlyph;
 use SPTK\Layout\Tile;
 use SPTK\SDLWrapper\SDL;
 
@@ -62,14 +63,23 @@ final class GridRenderer {
   }
 
   private function drawGlyph(\FFI\CData $ffiRenderer, Cell $cell, int $x, int $y): void {
+    $area = new Tile(
+      $x * $this->font->cellWidth() + $this->ox,
+      $y * $this->font->cellHeight() + $this->oy,
+      $this->font->cellWidth() * $cell->width,
+      $this->font->cellHeight(),
+    );
+    if (GeometryGlyph::draw($cell->glyph, $area, $cell->fg, $this->pixels)) {
+      return;
+    }
     $ffi = $this->sdl->ffi;
     $source = $this->atlas->map($cell->glyph, $cell->width);
     $texture = $this->atlas->texture();
     $ret = $ffi->SDL_SetTextureColorMod($texture, $cell->fg->r, $cell->fg->g, $cell->fg->b);
     $this->sdl->checkReturnValue($ret, 'SDL_SetTextureColorMod');
     $destination = $ffi->new('SDL_FRect');
-    $destination->x = $x * $this->font->cellWidth() + $this->ox;
-    $destination->y = $y * $this->font->cellHeight() + $this->oy;
+    $destination->x = $area->x;
+    $destination->y = $area->y;
     $destination->w = $source->w;
     $destination->h = $source->h;
     $ret = $ffi->SDL_RenderTexture($ffiRenderer, $texture, \FFI::addr($source), \FFI::addr($destination));

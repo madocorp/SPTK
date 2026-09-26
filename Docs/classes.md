@@ -68,6 +68,7 @@ Static or reusable classes.
 ## Events
 
 - Events\EventLoop: stores the windows and hands events to them
+- Events\KeyNormalizer: canonicalizes SDL key names and modifier masks, including keypad navigation keys
 - Events\EventDefinition: stores one parsed event subscription
 - Events\EventContext: provides event type, source widget, and native input to actions
 - Events\EventDispatcher: invokes matching static actions and handles input consumption
@@ -75,8 +76,4 @@ Static or reusable classes.
 
 ## Widgets
 
-Classes under Widgets directory. Each widget should have an own namespace and directory with an XML parser (Parser.php),
-and the widget definition. There can be other classes for complex widgets.
-
-- Widgets\Text: shows read-only text with word wrapping, scrolling, and an active cursor
-- Widgets\Empty: reserves a tile as a blank placeholder
+Widget behavior and XML attributes are documented by widget in the [widget documentation](Widgets/README.md).

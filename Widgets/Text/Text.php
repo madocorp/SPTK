@@ -2,8 +2,8 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Color, Cursor, ScrollIndicator, Widget};
-use SPTK\Events\WidgetEventEmitter;
+use SPTK\Core\{Color, TextCursor, Widget};
+use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
 
@@ -13,8 +13,10 @@ final class Text implements Widget {
   use WidgetEventEmitter;
 
   private array $lines;
-  private Cursor $cursor;
+  private TextCursor $cursor;
+  private Painter $painter;
   private int $scrollY = 0;
+  private int $scrollX = 0;
   private bool $active = false;
   private int $viewportWidth = 1;
   private int $viewportHeight = 1;
@@ -27,6 +29,7 @@ final class Text implements Widget {
     private readonly Color $cursorBg = new Color(85, 85, 85),
     private readonly Color $cursorFg = new Color(255, 255, 255),
     private readonly Color $indicatorFg = new Color(0, 255, 255),
+    private readonly bool $wrap = true,
   ) {
     if (!mb_check_encoding($text, 'UTF-8')) {
       throw new \InvalidArgumentException('Text must be valid UTF-8.');
@@ -36,7 +39,8 @@ final class Text implements Widget {
       throw new \InvalidArgumentException('Text supports printable characters and newlines.');
     }
     $this->lines = explode("\n", $text);
-    $this->cursor = new Cursor($this->lines);
+    $this->cursor = new TextCursor($this->lines);
+    $this->painter = new Painter($this->fg, $this->bg, $this->cursorFg, $this->cursorBg, $this->indicatorFg);
     $this->on('activate', $this->activateCursor(...));
     $this->on('deactivate', $this->deactivateCursor(...));
   }
@@ -55,17 +59,13 @@ final class Text implements Widget {
     if ($this->active) {
       $this->scrollY = max(0, min($this->scrollY, $cursor[0]));
       $this->scrollY = max($this->scrollY, $cursor[0] - $writer->height() + 1);
-    }
-    for ($y = 0; $y < $writer->height(); $y++) {
-      $row = $rows[$this->scrollY + $y] ?? null;
-      if ($row !== null) {
-        $writer->write(0, $y, $row['text'], $this->fg, $this->bg);
+      $this->syncHorizontalCursor($cursor);
+      $cursor[1] -= $this->scrollX;
+      if ($this->wrap) {
+        $cursor[1] = min($writer->width() - 1, $cursor[1]);
       }
     }
-    $this->paintIndicators($writer, count($rows));
-    if ($this->active) {
-      $this->paintCursor($writer, $cursor, $rows);
-    }
+    $this->painter->paint($writer, $rows, $this->cursor, $this->scrollY, $this->scrollX, $this->wrap, $this->active ? $cursor : [-1, -1]);
   }
 
   /** Return the background used behind the text tile. */
@@ -78,28 +78,43 @@ final class Text implements Widget {
     if ($event->type !== SDL::SDL_EVENT_KEY_DOWN) {
       return false;
     }
-    $key = (int)$event->key->key;
+    $modifiers = (int)$event->key->mod;
+    $key = KeyNormalizer::normalize((int)$event->key->key, $modifiers);
+    $select = ($modifiers & SDL::MOD_SHIFT) !== 0;
+    $document = ($modifiers & SDL::MOD_CTRL) !== 0;
+    if ($document && $key === SDL::KEY_PAGEUP) {
+      $this->cursor->moveDocumentStart($select);
+      $this->scrollY = 0;
+      $this->scrollX = 0;
+      $this->preferredColumn = false;
+      return true;
+    } else if ($document && $key === SDL::KEY_PAGEDOWN) {
+      $this->cursor->moveDocumentEnd($select);
+      $this->preferredColumn = false;
+      return true;
+    }
+    if ($document && ($key === SDL::KEY_HOME || $key === SDL::KEY_END)) {
+      $this->moveHorizontalViewportEdge($key === SDL::KEY_END, $select);
+      $this->preferredColumn = false;
+      return true;
+    }
     if ($key === SDL::KEY_LEFT) {
-      $this->cursor->moveLeft();
+      $this->cursor->moveLeft($select);
       $this->preferredColumn = false;
     } else if ($key === SDL::KEY_RIGHT) {
-      $this->cursor->moveRight();
+      $this->cursor->moveRight($select);
       $this->preferredColumn = false;
     } else if ($key === SDL::KEY_UP || $key === SDL::KEY_DOWN || $key === SDL::KEY_PAGEUP || $key === SDL::KEY_PAGEDOWN) {
-      $distance = match ($key) {
-        SDL::KEY_UP => -1,
-        SDL::KEY_DOWN => 1,
-        SDL::KEY_PAGEUP => -$this->viewportHeight,
-        default => $this->viewportHeight,
-      };
-      $this->moveVisualCursor($distance);
+      if ($key === SDL::KEY_PAGEUP || $key === SDL::KEY_PAGEDOWN) {
+        $this->movePageEdge($key === SDL::KEY_PAGEDOWN, $select);
+      } else {
+        $this->moveVisualCursor($key === SDL::KEY_UP ? -1 : 1, $select);
+      }
     } else if ($key === SDL::KEY_HOME) {
-      [$row] = $this->cursor->position();
-      $this->cursor->setPosition($row, 0);
+      $this->cursor->moveLineStart($select);
       $this->preferredColumn = false;
     } else if ($key === SDL::KEY_END) {
-      [$row] = $this->cursor->position();
-      $this->cursor->setPosition($row, TextMetrics::length($this->lines[$row]));
+      $this->cursor->moveLineEnd($select);
       $this->preferredColumn = false;
     } else {
       return false;
@@ -121,12 +136,9 @@ final class Text implements Widget {
   private function visualRows(int $width): array {
     $rows = [];
     foreach ($this->lines as $lineNumber => $line) {
-      $segments = $this->wrapLine($line, $width);
-      $start = 0;
-      foreach ($segments as $segment) {
-        $length = TextMetrics::length($segment);
-        $rows[] = ['line' => $lineNumber, 'start' => $start, 'length' => $length, 'text' => $segment];
-        $start += $length;
+      foreach ($this->wrapLine($line, $width) as $row) {
+        $row['line'] = $lineNumber;
+        $rows[] = $row;
       }
     }
     return $rows;
@@ -134,40 +146,51 @@ final class Text implements Widget {
 
   /** Wrap at whitespace and split any word wider than the available row. */
   private function wrapLine(string $line, int $width): array {
-    $words = preg_split('/\s+/u', trim($line), -1, PREG_SPLIT_NO_EMPTY);
-    if ($words === [] || $words === false) {
-      return [''];
+    if (!$this->wrap) {
+      return [['start' => 0, 'length' => TextMetrics::length($line), 'text' => $line]];
+    }
+    preg_match_all('/\S+/u', $line, $matches, PREG_OFFSET_CAPTURE);
+    if ($matches[0] === []) {
+      return [['start' => 0, 'length' => 0, 'text' => '']];
     }
     $rows = [];
-    $current = '';
-    foreach ($words as $word) {
+    $current = null;
+    $previousEnd = 0;
+    foreach ($matches[0] as [$word, $byteOffset]) {
+      $wordStart = TextMetrics::length(substr($line, 0, $byteOffset));
+      $wordLength = TextMetrics::length($word);
+      $separator = $current === null ? '' : TextMetrics::slice($line, $previousEnd, $wordStart - $previousEnd);
       if (TextMetrics::width($word) > $width) {
-        if ($current !== '') {
+        if ($current !== null) {
           $rows[] = $current;
-          $current = '';
+          $current = null;
         }
-        foreach (TextMetrics::glyphs($word) as $glyph) {
-          if ($current !== '' && TextMetrics::width($current . $glyph) > $width) {
-            $rows[] = $current;
-            $current = '';
+        $chunk = '';
+        $chunkStart = $wordStart;
+        foreach (TextMetrics::glyphs($word) as $index => $glyph) {
+          if ($chunk !== '' && TextMetrics::width($chunk . $glyph) > $width) {
+            $rows[] = ['start' => $chunkStart, 'length' => TextMetrics::length($chunk), 'text' => $chunk];
+            $chunkStart = $wordStart + $index;
+            $chunk = '';
           }
-          $current .= $glyph;
+          $chunk .= $glyph;
         }
-        $rows[] = $current;
-        $current = '';
-      } else if ($current === '') {
-        $current = $word;
-      } else if (TextMetrics::width($current . ' ' . $word) <= $width) {
-        $current .= ' ' . $word;
+        $rows[] = ['start' => $chunkStart, 'length' => TextMetrics::length($chunk), 'text' => $chunk];
+      } else if ($current === null) {
+        $current = ['start' => $wordStart, 'length' => $wordLength, 'text' => $word];
+      } else if (TextMetrics::width($current['text'] . $separator . $word) <= $width) {
+        $current['length'] = $wordStart + $wordLength - $current['start'];
+        $current['text'] .= $separator . $word;
       } else {
         $rows[] = $current;
-        $current = $word;
+        $current = ['start' => $wordStart, 'length' => $wordLength, 'text' => $word];
       }
+      $previousEnd = $wordStart + $wordLength;
     }
-    if ($current !== '') {
+    if ($current !== null) {
       $rows[] = $current;
     }
-    return $rows === [] ? [''] : $rows;
+    return $rows;
   }
 
   /** Find the wrapped row and cell column for the logical text cursor. */
@@ -180,14 +203,14 @@ final class Text implements Widget {
         continue;
       }
       $visualRow = $index;
-      $offset = min($row['length'], $column - $row['start']);
+      $offset = min($row['length'], max(0, $column - $row['start']));
       $cellColumn = TextMetrics::width(TextMetrics::slice($row['text'], 0, $offset));
     }
-    return [$visualRow, min($cellColumn, max(0, $this->viewportWidth - 1))];
+    return [$visualRow, $cellColumn];
   }
 
   /** Move vertically between wrapped rows while retaining the display column. */
-  private function moveVisualCursor(int $distance): void {
+  private function moveVisualCursor(int $distance, bool $select): void {
     $rows = $this->visualRows($this->viewportWidth);
     [$visualRow, $column] = $this->visualCursor($rows);
     $this->preferredColumn = $this->preferredColumn === false ? $column : $this->preferredColumn;
@@ -197,35 +220,62 @@ final class Text implements Widget {
     while ($grapheme < $row['length'] && TextMetrics::width(TextMetrics::slice($row['text'], 0, $grapheme + 1)) <= $this->preferredColumn) {
       $grapheme++;
     }
-    $this->cursor->setPosition($row['line'], $row['start'] + $grapheme);
+    $this->cursor->setPosition($row['line'], $row['start'] + $grapheme, $select);
   }
 
-  /** Paint mad2-style textual marks for hidden rows above and below. */
-  private function paintIndicators(GridWriter $writer, int $rowCount): void {
-    $above = ScrollIndicator::label($this->scrollY, $writer->height(), '▲');
-    $below = ScrollIndicator::label(max(0, $rowCount - $this->scrollY - $writer->height()), $writer->height(), '▼');
-    if ($above !== '') {
-      $writer->write(0, 0, $above, $this->indicatorFg, $this->bg);
+  /** Move to a vertical viewport edge, scrolling a page when already there. */
+  private function movePageEdge(bool $end, bool $select): void {
+    $rows = $this->visualRows($this->viewportWidth);
+    [$visualRow, $column] = $this->visualCursor($rows);
+    $edge = $end ? min(count($rows) - 1, $this->scrollY + $this->viewportHeight - 1) : $this->scrollY;
+    if ($visualRow === $edge) {
+      $this->scrollY = max(0, min(max(0, count($rows) - $this->viewportHeight), $this->scrollY + ($end ? 1 : -1) * $this->viewportHeight));
+      $edge = $end ? min(count($rows) - 1, $this->scrollY + $this->viewportHeight - 1) : $this->scrollY;
     }
-    if ($below !== '') {
-      $writer->write(max(0, $writer->width() - TextMetrics::width($below)), $writer->height() - 1, $below, $this->indicatorFg, $this->bg);
-    }
+    $this->setVisualPosition($rows, $edge, $this->wrap ? $column : $column - $this->scrollX, $select);
   }
 
-  /** Paint the active cursor over the corresponding visible text cell. */
-  private function paintCursor(GridWriter $writer, array $cursor, array $rows): void {
-    [$row, $column] = $cursor;
-    $y = $row - $this->scrollY;
-    if ($y < 0 || $y >= $writer->height()) {
+  /** Move to a horizontal viewport edge, paging when the caret is already there. */
+  private function moveHorizontalViewportEdge(bool $end, bool $select): void {
+    $rows = $this->visualRows($this->viewportWidth);
+    [$visualRow, $column] = $this->visualCursor($rows);
+    $atEdge = $end ? $column >= $this->scrollX + $this->viewportWidth - 1 : $column <= $this->scrollX;
+    if ($atEdge) {
+      $this->scrollX = max(0, $this->scrollX + ($end ? 1 : -1) * $this->viewportWidth);
+    }
+    $column = $end ? $this->viewportWidth - 1 : 0;
+    $this->setVisualPosition($rows, $visualRow, $column, $select);
+  }
+
+  /** Place the caret at a display column in a visual row. */
+  private function setVisualPosition(array $rows, int $visualRow, int $column, bool $select): void {
+    $row = $rows[$visualRow];
+    $text = $row['text'];
+    $target = max(0, $column);
+    if (!$this->wrap) {
+      $target += $this->scrollX;
+    }
+    $index = 0;
+    while ($index < TextMetrics::length($text)
+      && TextMetrics::width(TextMetrics::slice($text, 0, $index + 1)) <= $target) {
+      $index++;
+    }
+    $this->cursor->setPosition($row['line'], $row['start'] + $index, $select);
+  }
+
+  /** Keep the active caret inside the horizontal viewport and clamp its scroll. */
+  private function syncHorizontalCursor(array $cursor): void {
+    if ($this->wrap) {
+      $this->scrollX = 0;
       return;
     }
-    $rowData = $rows[$row];
-    [, $textColumn] = $this->cursor->position();
-    $glyph = TextMetrics::slice($rowData['text'], $textColumn - $rowData['start'], 1);
-    if ($glyph === '' || TextMetrics::width($glyph) + $column > $writer->width()) {
-      $glyph = ' ';
+    $lineWidths = array_map(static fn(string $line): int => TextMetrics::width($line), $this->lines);
+    $this->scrollX = min($this->scrollX, max(0, max($lineWidths) - $this->viewportWidth + 1));
+    if ($cursor[1] < $this->scrollX) {
+      $this->scrollX = $cursor[1];
+    } else if ($cursor[1] >= $this->scrollX + $this->viewportWidth) {
+      $this->scrollX = $cursor[1] - $this->viewportWidth + 1;
     }
-    $writer->set($column, $y, $glyph, $this->cursorFg, $this->cursorBg);
   }
 
 }

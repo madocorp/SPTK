@@ -30,6 +30,12 @@ and `keyUp`. Keys can be letters, digits, `f1` through `f12`, or named keys such
 `home`, and `backspace`. The optional modifiers are `ctrl`, `shift`, and `alt`, joined with `+`, as in
 `key="ctrl+shift+a"`. Modifier and key names are case-insensitive.
 
+Modifiers match by category: either physical Control key matches `ctrl`, and likewise for Shift and Alt. Extra
+lock modifiers do not affect chord matching.
+
+Keypad navigation keys follow Num Lock: with Num Lock off, keypad positions such as KP 7 and KP 1 match
+`home` and `end`; with Num Lock on, they remain keypad digits. Keypad Enter matches `enter` in either mode.
+
 For raw input, the activated widget's `handleInput` method runs first. If it does not
 consume the event, matching widget-level actions run, then matching screen-level actions. A handler or action
 consumes input by returning `true`; `false` lets it continue. A screen action can run in either layout mode or

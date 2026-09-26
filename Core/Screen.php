@@ -2,7 +2,7 @@
 
 namespace SPTK\Core;
 
-use SPTK\Events\{EventContext, EventDispatcher};
+use SPTK\Events\{EventContext, EventDispatcher, KeyNormalizer};
 
 final class Screen {
 
@@ -48,9 +48,9 @@ final class Screen {
     if ($type !== 'keyDown') {
       return false;
     }
-    $key = $event->key->key;
+    $key = KeyNormalizer::normalize((int)$event->key->key, (int)$event->key->mod);
     if ($this->inputMode) {
-      if ($key !== \SPTK\SDLWrapper\SDL::KEY_RETURN && $key !== \SPTK\SDLWrapper\SDL::KEY_KP_ENTER && $key !== \SPTK\SDLWrapper\SDL::KEY_ESCAPE) {
+      if ($key !== \SPTK\SDLWrapper\SDL::KEY_RETURN && $key !== \SPTK\SDLWrapper\SDL::KEY_ESCAPE) {
         return false;
       }
       $this->inputMode = false;
@@ -58,7 +58,7 @@ final class Screen {
       $this->selectedLeaf()?->dispatchNotification('deactivate');
       return true;
     }
-    if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN || $key === \SPTK\SDLWrapper\SDL::KEY_KP_ENTER) {
+    if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
       $this->inputMode = true;
       $this->selectedLeaf()?->dispatchNotification('activate');
       return true;

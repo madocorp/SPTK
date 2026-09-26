@@ -12,12 +12,13 @@ final class Parser implements WidgetParser {
 
   /** Validate Text attributes together with size attributes inherited from the layout. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, $layoutAttributes);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'wrap']);
   }
 
   /** Parse text content and event declarations from a Text element. */
   public function parse(\XMLReader $reader, Style $style): \SPTK\Core\WidgetDefinition {
     $styleParser = new StyleParser();
+    $wrap = $this->attrBoolean($reader, 'wrap', true);
     $events = [];
     $text = '';
     if (!$reader->isEmptyElement) {
@@ -43,6 +44,7 @@ final class Parser implements WidgetParser {
       $style->cursorBackground,
       $style->cursorForeground,
       $style->highlight,
+      $wrap,
     ), $events);
   }
 
