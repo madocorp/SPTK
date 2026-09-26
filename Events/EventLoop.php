@@ -1,8 +1,9 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\Events;
 
 use \SPTK\SDLWrapper\SDL;
+use SPTK\Core\Window;
 
 final class EventLoop {
 

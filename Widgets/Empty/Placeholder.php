@@ -2,7 +2,8 @@
 
 namespace SPTK\Widgets\Empty;
 
-use SPTK\Core\{Color, Widget, WidgetEventEmitter};
+use SPTK\Core\{Color, Widget};
+use SPTK\Events\WidgetEventEmitter;
 use SPTK\Rendering\GridWriter;
 
 /** A blank placeholder widget that reserves a tile without drawing content. */
@@ -21,6 +22,11 @@ final class Placeholder implements Widget {
   /** Return the color used to fill the tile behind its content. */
   public function background(): Color {
     return $this->bg;
+  }
+
+  /** Ignore raw input while this placeholder is activated. */
+  public function handleInput(mixed $event): bool {
+    return false;
   }
 
 }

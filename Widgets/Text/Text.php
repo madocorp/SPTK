@@ -2,12 +2,13 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Color, Cursor, InputHandler, ScrollIndicator, Widget, WidgetEventEmitter};
+use SPTK\Core\{Color, Cursor, ScrollIndicator, Widget};
+use SPTK\Events\WidgetEventEmitter;
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
 
 /** Displays read-only text with word wrapping, scrolling, and an active grid cursor. */
-final class Text implements Widget, InputHandler {
+final class Text implements Widget {
 
   use WidgetEventEmitter;
 

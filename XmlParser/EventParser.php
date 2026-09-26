@@ -2,7 +2,7 @@
 
 namespace SPTK\XmlParser;
 
-use SPTK\Core\EventDefinition;
+use SPTK\Events\EventDefinition;
 
 /** Parses and validates event declarations from XML. */
 final class EventParser {

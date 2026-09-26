@@ -9,7 +9,6 @@ Never pass these as function arguments because it's accessible globally through 
 - Rendering\Font: app font, can be used rendering other fonts, but there is one common app font
 - SDLWrapper\SDL: the sdl ffi instance
 - SDLWrapper\TTF: the sdl-ttf ffi instance
-- Core\EventLoop: stores the windows and hand out events to the them
 
 
 ## Window level: one instance per window
@@ -55,21 +54,24 @@ Static or reusable classes.
 - Layout\Tile: defines a non overlapping rectangle inside the window; it can be measured in pixels or cells,
   depending on the caller
 - Layout\Splitter: splits a Tile horizontally or vertically to other Tiles measured in cells
-- Core\EventDefinition: stores one parsed event subscription
-- Core\EventContext: provides event type, source widget, and native input to actions
-- Core\EventDispatcher: invokes matching static actions and handles input consumption
-- Core\WidgetEventEmitter: lets widgets subscribe named handlers to their lifecycle events
 - Core\ScrollIndicator: formats textual marks for hidden content beyond a viewport
 - Core\WidgetDefinition: bundles a widget with its event subscriptions
-- Core\ChangeAwareWidget: optional widget contract for value change notifications
 - Rendering\FontFinder: search for a font based it's name
 - Rendering\GridWriter: clips the writings to a tile
 - Rendering\TextMetrics: to get glyph attribites
 - Core\Widget: common widget interface
-- Core\InputHandler: optional input contract for an activated widget
+- Core\WidgetSelection: tracks focus and chooses the next widget from tile geometry
 - Core\Color: rgb color data
 - Core\Style: inherited application colors with defaults and local overrides
 - Core\Cell: a character grid cell; glyph, fg, bg, width
+
+## Events
+
+- Events\EventLoop: stores the windows and hands events to them
+- Events\EventDefinition: stores one parsed event subscription
+- Events\EventContext: provides event type, source widget, and native input to actions
+- Events\EventDispatcher: invokes matching static actions and handles input consumption
+- Events\WidgetEventEmitter: lets widgets subscribe named handlers to their lifecycle events
 
 ## Widgets
 

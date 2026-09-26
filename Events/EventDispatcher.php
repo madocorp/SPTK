@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\Events;
 
 /** Invokes matching XML event actions and reports whether raw input was consumed. */
 final class EventDispatcher {

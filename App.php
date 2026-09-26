@@ -53,7 +53,7 @@ final class App {
   private function init() {
     $xmlParser = new XmlParser\XmlParser;
     $this->openSdl();
-    $this->eventLoop = new Core\EventLoop;
+    $this->eventLoop = new Events\EventLoop;
     $this->openFont($xmlParser->fontName, $xmlParser->fontSize);
     foreach ($xmlParser->windows as $windowData) {
       $window = new Core\Window($windowData);

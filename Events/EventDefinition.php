@@ -1,6 +1,6 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\Events;
 
 /** Defines one XML event subscription and its static controller action. */
 final class EventDefinition {

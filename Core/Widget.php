@@ -13,6 +13,9 @@ interface Widget {
   /** Emit an event to this widget's registered handlers. */
   public function emit(string $event): void;
 
+  /** Handle a raw input event while this widget is activated. */
+  public function handleInput(mixed $event): bool;
+
   /** Return the color used to fill the widget's tile. */
   public function background(): Color;
 
