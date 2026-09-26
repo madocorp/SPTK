@@ -1,6 +1,8 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\XmlParser;
+
+use SPTK\Core\EventDefinition;
 
 /** Parses and validates event declarations from XML. */
 final class EventParser {

@@ -1,6 +1,8 @@
 <?php
 
-namespace SPTK\Core;
+namespace SPTK\XmlParser;
+
+use SPTK\Core\{Style, WidgetDefinition};
 
 /** Defines how a widget parser validates XML attributes and creates its widget. */
 interface WidgetParser {
@@ -9,6 +11,6 @@ interface WidgetParser {
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void;
 
   /** Parse a widget and its nested event declarations. */
-  public function parse(\XMLReader $reader): WidgetDefinition;
+  public function parse(\XMLReader $reader, Style $style): WidgetDefinition;
 
 }
