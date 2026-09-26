@@ -3,6 +3,8 @@
 namespace SPTK\Core;
 
 use SPTK\Rendering\GridWriter;
+use SPTK\Rendering\PixelRenderer;
+use SPTK\Layout\Tile;
 
 /** Base behavior shared by widgets that measure themselves and paint into a tile. */
 abstract class Widget {
@@ -21,6 +23,10 @@ abstract class Widget {
 
   /** Paint the widget into its allocated tile. */
   abstract public function paint(GridWriter $writer): void;
+
+  /** Paint optional pixel content over the completed character grid. */
+  public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
+  }
 
   /** Choose the notification that releases this widget for a key, or keep it active. */
   public function releaseNotification(int $key, int $modifiers): ?string {

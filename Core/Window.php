@@ -23,6 +23,8 @@ final class Window {
   private $columns;
   private $rows;
   private $grid;
+  private int $offsetX = 0;
+  private int $offsetY = 0;
 
   public function __construct(array $data) {
     $this->ffiWidth = \FFI::new('int');
@@ -72,7 +74,16 @@ final class Window {
   }
 
   public function close() {
-    
+    $this->pixelRenderer?->close();
+    $this->gridRenderer?->close();
+    if ($this->ffiRenderer !== null) {
+      $this->sdl->ffi->SDL_DestroyRenderer($this->ffiRenderer);
+      $this->ffiRenderer = null;
+    }
+    if ($this->window !== null) {
+      $this->sdl->ffi->SDL_DestroyWindow($this->window);
+      $this->window = null;
+    }
   }
 
   public function id(): int {
@@ -105,6 +116,8 @@ final class Window {
     $this->rows = max(1, intdiv($this->height, $this->font->cellHeight()) - 1);
     $offsetX = intdiv($this->width - $this->columns * $this->font->cellWidth(), 2);
     $offsetY = intdiv($this->height - $this->rows * $this->font->cellHeight(), 2);
+    $this->offsetX = $offsetX;
+    $this->offsetY = $offsetY;
     $this->grid->resize($this->columns, $this->rows);
     $grid = new \SPTK\Layout\Tile(0, 0, $this->columns, $this->rows);
     foreach ($this->screens as $screen) {
@@ -122,6 +135,10 @@ final class Window {
     $screen->drawSeparators($this->pixelRenderer);
     $screen->paint($this->grid);
     $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
+    $this->pixelRenderer->beginImages();
+    $screen->paintPixels($this->pixelRenderer, $this->font->cellWidth(), $this->font->cellHeight(), $this->offsetX, $this->offsetY);
+    $this->pixelRenderer->endImages();
+    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderPresent($this->ffiRenderer), 'SDL_RenderPresent');
   }
 
   public function handleEvent(mixed $event): bool {

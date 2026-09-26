@@ -33,6 +33,7 @@ class SDL {
   public const SDL_TEXTUREACCESS_TARGET = 2;
   public const SDL_BLENDMODE_BLEND = 0x1;
   public const SDL_SCALE_MODE_NEAREST = 0;
+  public const SDL_SCALE_MODE_LINEAR = 1;
 
   public const SDL_WINDOW_RESIZABLE = 0x20;
   public const SDL_WINDOW_HIDDEN = 0x8;
@@ -44,6 +45,11 @@ class SDL {
   public const KEY_BACKSPACE = 8;
   public const KEY_TAB = 9;
   public const KEY_SPACE = 32;
+  public const KEY_ASTERISK = 42;
+  public const KEY_PLUS = 43;
+  public const KEY_MINUS = 45;
+  public const KEY_SLASH = 47;
+  public const KEY_EQUALS = 61;
   public const KEY_DELETE = 127;
   public const KEY_SCANCODE_MASK = 1 << 30;
   public const KEY_INSERT = self::KEY_SCANCODE_MASK | 73;
@@ -70,6 +76,11 @@ class SDL {
   public const KEY_LSHIFT = self::KEY_SCANCODE_MASK | 225;
   public const KEY_RSHIFT = self::KEY_SCANCODE_MASK | 229;
   public const KEY_KP_ENTER = self::KEY_SCANCODE_MASK | 88;
+  public const KEY_KP_DIVIDE = self::KEY_SCANCODE_MASK | 84;
+  public const KEY_KP_MULTIPLY = self::KEY_SCANCODE_MASK | 85;
+  public const KEY_KP_MINUS = self::KEY_SCANCODE_MASK | 86;
+  public const KEY_KP_PLUS = self::KEY_SCANCODE_MASK | 87;
+  public const KEY_KP_EQUALS = self::KEY_SCANCODE_MASK | 103;
   public const KEY_KP_0 = self::KEY_SCANCODE_MASK | 98;
   public const KEY_KP_2 = self::KEY_SCANCODE_MASK | 90;
   public const KEY_KP_4 = self::KEY_SCANCODE_MASK | 92;

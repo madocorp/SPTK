@@ -1,0 +1,29 @@
+<Screen>
+  <Event type="keyDown" key="f1" action="Controller::showMain" />
+  <Event type="keyDown" key="f2" action="Controller::showEditors" />
+  <Event type="keyDown" key="f3" action="Controller::showChoices" />
+  <Event type="keyDown" key="f5" action="Controller::showImages" />
+  <Layout direction="vertical">
+    <Text height="1">Lists: F1 main | F2 editors | F3 choices | F5 images | Type prefix | Space toggle</Text>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <List width="1*" reorderable="true">
+        <Item value="alpha">Alpha</Item>
+        <Item value="beta" selected="true">Beta</Item>
+        <Item value="gamma">Gamma</Item>
+        <Item value="delta">Delta</Item>
+        <Item value="epsilon">Epsilon</Item>
+        <Event type="change" action="Controller::listChanged" />
+      </List>
+      <Separator />
+      <List width="1*" multiple="true" filterable="true">
+        <Item value="apples" selected="true">Apples</Item>
+        <Item value="bananas">Bananas</Item>
+        <Item value="cherries">Cherries</Item>
+        <Item value="dates">Dates</Item>
+        <Item value="elderberries">Elderberries</Item>
+        <Event type="change" action="Controller::listChanged" />
+      </List>
+    </Layout>
+  </Layout>
+</Screen>

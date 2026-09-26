@@ -79,7 +79,18 @@ final class EventLoop {
   }
 
   public function quitWindow(int $windowId) {
-    unset($this->windows[$windowId]);
+    if (isset($this->windows[$windowId])) {
+      $this->windows[$windowId]->close();
+      unset($this->windows[$windowId]);
+    }
+  }
+
+  /** Release remaining windows before SDL shuts down. */
+  public function closeWindows(): void {
+    foreach ($this->windows as $window) {
+      $window->close();
+    }
+    $this->windows = [];
   }
 
   public function start(): void {
@@ -134,6 +145,9 @@ final class EventLoop {
     if ($event->type === SDL::SDL_QUIT) {
       $this->running = false;
       return;
+    }
+    if ($event->type === SDL::SDL_EVENT_KEY_DOWN || $event->type === SDL::SDL_EVENT_KEY_UP) {
+      $event = new KeyboardEvent($event);
     }
     $windowId = $this->eventWindowId($event);
     if ($windowId !== 0 && isset($this->windows[$windowId])) {

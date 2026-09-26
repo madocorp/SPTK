@@ -1,9 +1,12 @@
 <Screen>
   <Event type="keyDown" key="f2" action="Controller::showEditors" />
+  <Event type="keyDown" key="f3" action="Controller::showChoices" />
+  <Event type="keyDown" key="f4" action="Controller::showLists" />
+  <Event type="keyDown" key="f5" action="Controller::showImages" />
   <Event type="keyDown" key="a" action="Controller::test" />
   <Layout direction="vertical">
     <Text height="1">
-Top | F2 Editors
+Top | F2 Editors | F3 Choices | F4 Lists | F5 Images
       <Event type="keyDown" key="a" action="Controller::testTop" />
     </Text>
     <Separator />

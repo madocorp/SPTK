@@ -16,6 +16,7 @@ final class LayoutLeaf {
   /** Build a leaf and retain its XML event subscriptions. */
   public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = []) {
     $this->eventDispatcher = new EventDispatcher();
+    $this->instance->on('change', $this->notifyChange(...));
   }
 
   public function setGrid($grid) {
@@ -32,6 +33,12 @@ final class LayoutLeaf {
     if (!$selected) {
       $grid->darken($this->grid);
     }
+  }
+
+  /** Paint this widget's optional pixel content in its grid cell rectangle. */
+  public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, bool $selected): void {
+    $area = new Tile($this->grid->x * $cellWidth + $offsetX, $this->grid->y * $cellHeight + $offsetY, $this->grid->width * $cellWidth, $this->grid->height * $cellHeight);
+    $this->instance->paintPixels($renderer, $area, $selected);
   }
 
   public function measureArea(Tile $windowGrid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
@@ -76,6 +83,16 @@ final class LayoutLeaf {
   /** Deliver a lifecycle notification to widget and screen subscriptions. */
   public function dispatchNotification(string $type): void {
     $this->instance->emit($type);
+    $this->dispatchXmlNotification($type);
+  }
+
+  /** Forward a widget-originated change event to XML subscriptions. */
+  private function notifyChange(): void {
+    $this->dispatchXmlNotification('change');
+  }
+
+  /** Dispatch XML notifications without recursively emitting into the widget. */
+  private function dispatchXmlNotification(string $type): void {
     $context = new EventContext($type, $this->instance);
     $this->eventDispatcher->dispatch($this->events, $context, false);
     $this->eventDispatcher->dispatch($this->screenEvents, $context, false);

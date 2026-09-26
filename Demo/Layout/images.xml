@@ -1,0 +1,19 @@
+<Screen>
+  <Event type="keyDown" key="f1" action="Controller::showMain" />
+  <Event type="keyDown" key="f2" action="Controller::showEditors" />
+  <Event type="keyDown" key="f3" action="Controller::showChoices" />
+  <Event type="keyDown" key="f4" action="Controller::showLists" />
+  <Layout direction="vertical">
+    <Text height="1">Images: +/- zoom | arrows pan | Home/End/PgUp/PgDn edges | Space native | = fit</Text>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <Image src="../Assets/sample.png" width="12" />
+      <Separator />
+      <Image src="../Assets/sample.png" width="1*" zoom="8" x="40" y="-20">
+        <Style><Background>#204050</Background></Style>
+      </Image>
+      <Separator />
+      <Image src="../Assets/sample.png" width="8" fill="true" />
+    </Layout>
+  </Layout>
+</Screen>

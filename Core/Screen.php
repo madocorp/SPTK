@@ -70,14 +70,21 @@ final class Screen {
       default => null,
     };
     if ($direction !== null) {
-      $previousLeaf = $this->selectedLeaf();
-      if ($this->selection->move($direction)) {
-        $previousLeaf?->dispatchNotification('unselect');
-        $this->selectedLeaf()?->dispatchNotification('select');
-      }
+      $this->moveSelection($direction);
       return true;
     }
     return false;
+  }
+
+  /** Move focus between tiles while no widget is active. */
+  private function moveSelection(string $direction): bool {
+    $previous = $this->selectedLeaf();
+    if (!$this->selection->move($direction)) {
+      return false;
+    }
+    $previous?->dispatchNotification('unselect');
+    $this->selectedLeaf()?->dispatchNotification('select');
+    return true;
   }
 
   /** Release the active widget when a screen is hidden or an exit key is pressed. */
@@ -123,6 +130,14 @@ final class Screen {
 
   public function paint(\SPTK\Rendering\Grid $grid): void {
     $this->layout->paint($grid, $this->selectedLeaf());
+  }
+
+  /** Paint each widget's optional pixel content after the character grid. */
+  public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY): void {
+    $selected = $this->selectedLeaf();
+    foreach ($this->leaves as $leaf) {
+      $leaf->paintPixels($renderer, $cellWidth, $cellHeight, $offsetX, $offsetY, $leaf === $selected);
+    }
   }
 
   /** Return the currently selected widget leaf. */
