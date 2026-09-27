@@ -184,7 +184,9 @@ final class Window {
     $screen->drawBackgrounds($this->pixelRenderer);
     $screen->drawSeparators($this->pixelRenderer);
     $screen->paint($this->grid);
-    $this->gridRenderer->draw($this->ffiRenderer, $this->grid);
+    foreach ($screen->layout->leaves() as $leaf) {
+      $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+    }
     $this->pixelRenderer->beginImages();
     $screen->paintPixels($this->pixelRenderer, $this->font->cellWidth(), $this->font->cellHeight(), $this->offsetX, $this->offsetY);
     $this->pixelRenderer->endImages();

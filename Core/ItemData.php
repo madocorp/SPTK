@@ -27,8 +27,16 @@ final class ItemData {
       if (isset($seen[$value])) {
         throw new \InvalidArgumentException("Duplicate item value: {$value}");
       }
+      $searchOffset = $item['searchOffset'] ?? 0;
+      if (!is_int($searchOffset) || $searchOffset < 0 || $searchOffset > mb_strlen($label)) {
+        throw new \InvalidArgumentException('Item search offset must fit its label.');
+      }
       $seen[$value] = true;
-      $normalized[] = ['value' => $value, 'label' => preg_replace('/[\r\n\t]+/u', ' ', $label), $stateName => (bool)($item[$stateName] ?? false)];
+      $record = ['value' => $value, 'label' => preg_replace('/[\r\n\t]+/u', ' ', $label), $stateName => (bool)($item[$stateName] ?? false)];
+      if (isset($item['searchOffset'])) {
+        $record['searchOffset'] = $searchOffset;
+      }
+      $normalized[] = $record;
     }
     return $normalized;
   }

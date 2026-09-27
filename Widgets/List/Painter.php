@@ -57,15 +57,17 @@ final class Painter {
     $selected = $multiple ? $item['selected'] : $position === $viewport->position();
     $cursorBg = $active && $position === $viewport->position() ? $this->cursorBg : $this->bg;
     $writer->write(0, $y, $item['label'], $selected ? $this->selected : $this->fg, $cursorBg);
-    $this->paintMatch($writer, $item['label'], $query, $y, $cursorBg);
+    $this->paintMatch($writer, $item, $query, $y, $cursorBg);
   }
 
   /** Overlay a matching prefix in the highlight color. */
-  private function paintMatch(GridWriter $writer, string $label, string $query, int $y, Color $bg): void {
+  private function paintMatch(GridWriter $writer, array $item, string $query, int $y, Color $bg): void {
+    $offset = $item['searchOffset'] ?? 0;
+    $label = mb_substr($item['label'], $offset);
     if ($query === '' || !str_starts_with(mb_strtolower($label), mb_strtolower($query))) {
       return;
     }
-    $writer->write(0, $y, mb_substr($label, 0, mb_strlen($query)), $this->highlight, $bg);
+    $writer->write($offset, $y, mb_substr($label, 0, mb_strlen($query)), $this->highlight, $bg);
   }
 
   /** Draw an inverted scroll mark against the right edge. */

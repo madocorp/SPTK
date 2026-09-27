@@ -31,37 +31,6 @@ final class GridRenderer {
     $this->oy = $oy;
   }
 
-  public function draw(\FFI\CData $ffiRenderer, Grid $grid): void {
-    $ffi = $this->sdl->ffi;
-    try {
-      for ($y = 0; $y < $grid->height(); $y++) {
-        for ($x = 0; $x < $grid->width(); $x++) {
-          $cell = $grid->cell($x, $y);
-          if ($cell->width === 0 || ($cell->bg->r === 0 && $cell->bg->g === 0 && $cell->bg->b === 0)) {
-            continue;
-          }
-          $area = new Tile(
-            $x * $this->font->cellWidth() + $this->ox,
-            $y * $this->font->cellHeight() + $this->oy,
-            $this->font->cellWidth() * $cell->width,
-            $this->font->cellHeight(),
-          );
-          $this->pixels->fill($area, $cell->bg);
-        }
-      }
-      for ($y = 0; $y < $grid->height(); $y++) {
-        for ($x = 0; $x < $grid->width(); $x++) {
-          $cell = $grid->cell($x, $y);
-          if ($cell->width !== 0 && $cell->glyph !== ' ') {
-            $this->drawGlyph($ffiRenderer, $cell, $x, $y);
-          }
-        }
-      }
-    } finally {
-      $ffi->SDL_SetRenderClipRect($ffiRenderer, null);
-    }
-  }
-
   /** Redraw cells written by the current widget update. */
   public function drawDirty(\FFI\CData $ffiRenderer, Grid $grid): int {
     $dirty = $grid->dirtyCells();
@@ -85,7 +54,7 @@ final class GridRenderer {
     return count($dirty);
   }
 
-  /** Redraw every cell of a pixel widget tile after its background is cleared. */
+  /** Draw every cell inside one widget tile, leaving separator gaps untouched. */
   public function drawTile(\FFI\CData $ffiRenderer, Grid $grid, Tile $tile): void {
     $right = min($grid->width(), $tile->x + $tile->width);
     $bottom = min($grid->height(), $tile->y + $tile->height);

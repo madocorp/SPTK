@@ -9,7 +9,8 @@ final class ItemSearch {
   public static function matchingIndices(array $items, string $query): array {
     $matches = [];
     foreach ($items as $index => $item) {
-      if ($query === '' || str_starts_with(mb_strtolower($item['label']), mb_strtolower($query))) {
+      $label = mb_substr($item['label'], $item['searchOffset'] ?? 0);
+      if ($query === '' || str_starts_with(mb_strtolower($label), mb_strtolower($query))) {
         $matches[] = $index;
       }
     }
