@@ -9,7 +9,8 @@ Layout mode is the default. Use the arrow keys to move focus to a nearby widget 
 widget lies in that direction, focus stays where it is. Movement follows tile geometry rather than cycling
 through widgets in XML order. The selected tile is drawn at full brightness; other widget tiles are dimmed.
 
-Press Return or keypad Enter to activate the selected widget and enter input mode.
+Press Return or keypad Enter to activate the selected widget and enter input mode. A Button runs its action
+immediately and stays in layout mode.
 
 ## Input mode
 
@@ -23,5 +24,8 @@ Input and TextEditor keep edits and emit `accept` on Escape. TextEditor inserts 
 ## Screens
 
 The first screen listed in a window is shown initially. Applications can switch screens with
-`Window::setCurrentScreen()`.
-The demo uses F1 for its original screen, F2 for Editors, F3 for Choices, F4 for Lists, and F5 for Images.
+`Window::setCurrentScreenId()` or the zero-based `Window::setCurrentScreen()`.
+The demo's selector uses F1 for Main, F2 for Editors, F3 for Lists, F4 for Choices, and F5 for Images.
+Each screen remembers its selected widget. When that widget is a screen selector button, returning to the
+screen moves selection to its own button so focus agrees with the current screen.
+Pressing the current screen's hotkey focuses its selector button, releasing an active widget if needed.

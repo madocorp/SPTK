@@ -9,6 +9,18 @@ use SPTK\Layout\Tile;
 /** Base behavior shared by widgets that measure themselves and paint into a tile. */
 abstract class Widget {
 
+  private ?string $id = null;
+
+  /** Assign the optional XML identifier. */
+  public function setId(?string $id): void {
+    $this->id = $id;
+  }
+
+  /** Return the optional XML identifier. */
+  public function id(): ?string {
+    return $this->id;
+  }
+
   /** Subscribe a named handler to an event emitted by this widget. */
   abstract public function on(string $event, callable $listener): void;
 
@@ -26,6 +38,11 @@ abstract class Widget {
 
   /** Paint optional pixel content over the completed character grid. */
   public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
+  }
+
+  /** Report whether Return may put this widget into input mode. */
+  public function canActivate(): bool {
+    return true;
   }
 
   /** Choose the notification that releases this widget for a key, or keep it active. */

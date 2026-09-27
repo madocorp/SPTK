@@ -17,7 +17,7 @@ final class ScreenParser {
   }
 
   /** Parse a screen file using the style inherited from its window. */
-  public function parse(string $file, Style $parentStyle): Screen {
+  public function parse(string $file, Style $parentStyle, string $id, string $title): Screen {
     $reader = $this->open(APP_DIR . '/Layout/' . $file);
     $reader->read();
     if ($reader->nodeType !== \XMLReader::ELEMENT || $reader->name !== 'Screen') {
@@ -51,7 +51,7 @@ final class ScreenParser {
     if ($layout === null) {
       throw new \RuntimeException("Screen must contain a Layout!");
     }
-    return new Screen($layout, $style->separator, $events);
+    return new Screen($layout, $style->separator, $events, $id, $title);
   }
 
   /** Parse a layout tree and pass inherited styles to nested layouts and widgets. */
@@ -98,11 +98,16 @@ final class ScreenParser {
     if (!$parser instanceof WidgetParser) {
       throw new \RuntimeException("Widget parser must implement WidgetParser: {$parserClass}");
     }
-    $allowed = $direction === 'horizontal' ? ['width'] : ['height'];
+    $allowed = $direction === 'horizontal' ? ['width', 'id'] : ['height', 'id'];
     $parser->validateAttributes($reader, $allowed);
     $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width', '') : '';
     $height = $direction === 'vertical' ? $this->attrSize($reader, 'height', '') : '';
+    $id = $reader->getAttribute('id');
+    if ($id !== null && !preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $id)) {
+      throw new \RuntimeException("Invalid widget id: {$id}");
+    }
     $definition = $parser->parse($reader, $style);
+    $definition->widget->setId($id);
     $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events));
   }
 

@@ -80,6 +80,9 @@ consumes input by returning `true`; `false` lets it continue. A screen action ca
 input mode. Returning `true` from a screen action prevents the screen from applying its navigation or
 activation controls for that event.
 
+Buttons with a `hotkey` register that key at screen scope. Pressing the key runs the button action even when
+another widget is selected or active. The action receives an `EventContext` whose `widget` is that button.
+
 ## Notifications
 
 The framework emits these notifications:

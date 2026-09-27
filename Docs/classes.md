@@ -44,6 +44,7 @@ into runtime objects.
 - XmlParser\EventParser: parses XML event declarations and key chords
 - XmlParser\StyleParser: parses `<Style>` color overrides and applies them to inherited styles
 - XmlParser\ItemParser: reads item records shared by choice and list widgets
+- XmlParser\ScreenSelector: expands a window-level selector into button layouts on its screens
 
 The `Core\Style` defaults are passed down the XML tree. A `<Style>` element at app, window, screen, layout, or
 widget level overrides only the colors it declares; descendants inherit the resulting style.
@@ -82,3 +83,4 @@ Static or reusable classes.
 ## Widgets
 
 Widget behavior and XML attributes are documented by widget in the [widget documentation](Widgets/Widgets.md).
+`Widgets\Button\Button` runs actions and paints the selected screen state; its parser handles standalone buttons.

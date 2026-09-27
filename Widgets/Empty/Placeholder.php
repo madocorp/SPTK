@@ -24,7 +24,12 @@ final class Placeholder extends Widget {
     return $this->bg;
   }
 
-  /** Ignore raw input while this placeholder is activated. */
+  /** Keep this tile navigable without allowing activation. */
+  public function canActivate(): bool {
+    return false;
+  }
+
+  /** Ignore raw input; this placeholder never enters input mode. */
   public function handleInput(mixed $event): bool {
     return false;
   }

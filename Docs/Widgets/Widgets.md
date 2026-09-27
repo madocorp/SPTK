@@ -10,3 +10,4 @@ Each widget page describes that widget's XML attributes and behavior.
 - [List](List.md): browses, filters, selects, and optionally reorders items
 - [Image](Image.md): draws a local image with aspect-preserving scaling
 - [Empty](Empty.md): reserves a tile without drawing content
+- [Button](Button.md): runs an action on Return or an optional screen-level hotkey

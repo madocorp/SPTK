@@ -3,7 +3,10 @@
 namespace SPTK\Core;
 
 use SPTK\Events\{EventContext, EventDispatcher, KeyNormalizer};
+use SPTK\Layout\{LayoutLeaf, LayoutNode};
+use SPTK\Widgets\Button\Button;
 
+/** Owns one screen's layout, widget selection, and screen-level input. */
 final class Screen {
 
   private array $leaves;
@@ -12,16 +15,98 @@ final class Screen {
   private bool $initialSelectionNotified = false;
   private array $events;
   private EventDispatcher $eventDispatcher;
+  private array $hotkeys = [];
+  private array $widgetsById = [];
 
   /** Create a screen and attach screen-level event subscriptions to its leaves. */
-  public function __construct(public \SPTK\Layout\LayoutNode $layout, public Color $borderColor = new Color(85, 85, 85), array $events = []) {
-    $this->leaves = $layout->leaves();
-    $this->selection = new WidgetSelection($this->leaves);
+  public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(85, 85, 85), array $events = [], public string $id = '', public string $title = '') {
     $this->events = $events;
     $this->eventDispatcher = new EventDispatcher();
+    $this->indexWidgets();
+  }
+
+  /** Replace the root layout after adding a window-level selector. */
+  public function setLayout(LayoutNode $layout): void {
+    $this->layout = $layout;
+    $this->indexWidgets();
+  }
+
+  /** Index widget IDs and register button hotkeys at screen scope. */
+  private function indexWidgets(): void {
+    $this->leaves = $this->layout->leaves();
+    $this->selection = new WidgetSelection($this->leaves);
+    $this->hotkeys = [];
+    $this->widgetsById = [];
     foreach ($this->leaves as $leaf) {
-      $leaf->setScreenEvents($events);
+      $leaf->setScreenEvents($this->events);
+      $widget = $leaf->instance();
+      if ($widget->id() !== null) {
+        if (isset($this->widgetsById[$widget->id()])) {
+          throw new \RuntimeException("Duplicate widget id: {$widget->id()}");
+        }
+        $this->widgetsById[$widget->id()] = $widget;
+      }
+      if ($widget instanceof Button && $widget->hotkey() !== null) {
+        if (isset($this->hotkeys[$widget->hotkey()])) {
+          throw new \RuntimeException("Duplicate button hotkey: {$widget->hotkey()}");
+        }
+        $this->hotkeys[$widget->hotkey()] = $widget;
+      }
     }
+  }
+
+  /** Find a widget by its XML identifier. */
+  public function widget(string $id): ?Widget {
+    return $this->widgetsById[$id] ?? null;
+  }
+
+  /** Bind all buttons to their owning window. */
+  public function setWindow(Window $window): void {
+    foreach ($this->leaves as $leaf) {
+      if ($leaf->instance() instanceof Button) {
+        $leaf->instance()->setWindow($window);
+      }
+    }
+  }
+
+  /** Mark the current screen button and align selector focus when this screen is shown. */
+  public function setCurrentScreenId(string $id): void {
+    $selected = $this->selectedLeaf();
+    $selectorFocused = $id === $this->id && $selected?->instance() instanceof Button && $selected->instance()->screenId() !== null;
+    foreach ($this->leaves as $leaf) {
+      $widget = $leaf->instance();
+      if ($widget instanceof Button && $widget->screenId() !== null) {
+        $widget->setActivated($widget->screenId() === $id);
+        if ($selectorFocused && $widget->screenId() === $id) {
+          $this->selectLeaf($leaf);
+        }
+      }
+    }
+  }
+
+  /** Focus this screen's own selector button when its hotkey is pressed again. */
+  public function focusScreenSelectorButton(): bool {
+    foreach ($this->leaves as $leaf) {
+      $widget = $leaf->instance();
+      if ($widget instanceof Button && $widget->screenId() === $this->id) {
+        $this->release();
+        return $this->selectLeaf($leaf);
+      }
+    }
+    return false;
+  }
+
+  /** Select a known leaf and send focus notifications after initial selection. */
+  private function selectLeaf(LayoutLeaf $leaf): bool {
+    $previous = $this->selectedLeaf();
+    if (!$this->selection->select($leaf)) {
+      return false;
+    }
+    if ($this->initialSelectionNotified) {
+      $previous?->dispatchNotification('unselect');
+      $leaf->dispatchNotification('select');
+    }
+    return true;
   }
 
   /** Route input through the active widget, screen subscriptions, and screen controls. */
@@ -58,8 +143,16 @@ final class Screen {
       return true;
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
+      if ($leaf?->instance() instanceof Button) {
+        $leaf->dispatchNotification('activate');
+        $leaf->instance()->press($event);
+        return true;
+      }
+      if ($leaf === null || !$leaf->instance()->canActivate()) {
+        return true;
+      }
       $this->inputMode = true;
-      $this->selectedLeaf()?->dispatchNotification('activate');
+      $leaf->dispatchNotification('activate');
       return true;
     }
     $direction = match ($key) {
@@ -99,7 +192,18 @@ final class Screen {
 
   /** Run matching screen event declarations for keyboard and text input. */
   private function dispatchInput(string $type, ?\SPTK\Core\Widget $widget, mixed $event): bool {
-    return $this->eventDispatcher->dispatch($this->events, new EventContext($type, $widget, $event), true);
+    if ($this->eventDispatcher->dispatch($this->events, new EventContext($type, $widget, $event), true)) {
+      return true;
+    }
+    if ($type === 'keyDown') {
+      foreach ($this->hotkeys as $key => $button) {
+        if ((new \SPTK\Events\EventDefinition('keyDown', $key, ''))->matches($event)) {
+          $button->press($event);
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /** Map an SDL input event to its XML event type. */
