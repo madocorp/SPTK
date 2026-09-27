@@ -180,9 +180,17 @@ final class Table extends Widget {
     $before = [$this->cursorRow, $this->cursorColumn];
     $beforeScroll = [$this->rowScroll, $this->columnScroll];
     $beforeSelection = $this->selection->bounds();
-    $page = max(1, $this->viewportHeight - 1);
     $extend = ($modifiers & SDL::MOD_SHIFT) !== 0;
-    if ($key === SDL::KEY_UP) {
+    $control = ($modifiers & SDL::MOD_CTRL) !== 0;
+    if ($control && $key === SDL::KEY_PAGEUP) {
+      $this->moveCursor(0, 0, $extend);
+    } else if ($control && $key === SDL::KEY_PAGEDOWN) {
+      $this->moveCursor($this->rowCount() - 1, $this->data->columns() - 1, $extend);
+    } else if ($control && ($key === SDL::KEY_HOME || $key === SDL::KEY_END)) {
+      $numberWidth = $this->rowNumbers ? strlen((string)max(1, $this->rowCount())) + 2 : 0;
+      [$column, $this->columnScroll] = Navigator::pageColumn($this->cursorColumn, $this->columnScroll, $this->viewportWidth - $numberWidth, $this->widths, $key === SDL::KEY_END);
+      $this->moveCursor($this->cursorRow, $column, $extend);
+    } else if ($key === SDL::KEY_UP) {
       $this->moveCursor($this->cursorRow - 1, $this->cursorColumn, $extend);
     } else if ($key === SDL::KEY_DOWN) {
       $this->moveCursor($this->cursorRow + 1, $this->cursorColumn, $extend);
@@ -191,9 +199,11 @@ final class Table extends Widget {
     } else if ($key === SDL::KEY_RIGHT) {
       $this->moveCursor($this->cursorRow, $this->cursorColumn + 1, $extend);
     } else if ($key === SDL::KEY_PAGEUP) {
-      $this->moveCursor($this->cursorRow - $page, $this->cursorColumn, $extend);
+      [$row, $this->rowScroll] = Navigator::pageRow($this->cursorRow, $this->rowScroll, $this->viewportHeight - 1, $this->rowCount(), false);
+      $this->moveCursor($row, $this->cursorColumn, $extend);
     } else if ($key === SDL::KEY_PAGEDOWN) {
-      $this->moveCursor($this->cursorRow + $page, $this->cursorColumn, $extend);
+      [$row, $this->rowScroll] = Navigator::pageRow($this->cursorRow, $this->rowScroll, $this->viewportHeight - 1, $this->rowCount(), true);
+      $this->moveCursor($row, $this->cursorColumn, $extend);
     } else if ($key === SDL::KEY_HOME) {
       $this->moveCursor($this->cursorRow, 0, $extend);
     } else if ($key === SDL::KEY_END) {

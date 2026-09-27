@@ -21,8 +21,8 @@ final class Painter {
     foreach ([$data->header(), ...$data->measurementRows()] as $row) {
       foreach ($row as $column => $field) {
         if (!isset($specified[$column])) {
-          $text = $this->display($field);
-          $widths[$column] = max($widths[$column] ?? 6, TextMetrics::width($text) + 2);
+          [$text, $multiline] = $this->display($field);
+          $widths[$column] = max($widths[$column] ?? 6, TextMetrics::width($text) + ($multiline ? 1 : 0) + 2);
         }
       }
     }
@@ -86,14 +86,16 @@ final class Painter {
         $inverted = $selected || $highlighted;
         $fg = $header ? $this->style->background : ($inverted ? $this->style->cursorForeground : $this->style->foreground);
         $bg = $header ? $this->style->foreground : ($inverted ? $this->style->cursorBackground : $this->style->background);
-        $this->cell($writer, $x, $y, $width, $this->display($fields[$column] ?? null), $fg, $bg, $inverted, false, $numberWidth, !$header);
+        $value = $fields[$column] ?? null;
+        [$text, $multiline] = $this->display($value);
+        $this->cell($writer, $x, $y, $width, $text, $fg, $bg, $inverted, false, $numberWidth, !$header, $multiline ? 'V' : '', $value === null);
       }
       $x += $width;
     }
   }
 
   /** Paint one padded cell without allowing its text to enter another column. */
-  private function cell(GridWriter $writer, int $x, int $y, int $width, string $value, Color $fg, Color $bg, bool $fill, bool $right = false, int $clipLeft = 0, bool $bodySeparator = false): void {
+  private function cell(GridWriter $writer, int $x, int $y, int $width, string $value, Color $fg, Color $bg, bool $fill, bool $right = false, int $clipLeft = 0, bool $bodySeparator = false, string $marker = '', bool $nullValue = false): void {
     $visibleLeft = max($clipLeft, $x);
     $visibleRight = min($writer->width(), $x + $width);
     if ($fill) {
@@ -103,48 +105,53 @@ final class Painter {
       }
     }
     $textWidth = max(0, $width - 2);
-    $text = $this->clip($value, $textWidth);
-    $position = $right ? $x + max(0, $width - 1 - TextMetrics::width($text)) : $x + 1;
-    foreach (TextMetrics::glyphs($text) as $glyph) {
-      $glyphWidth = TextMetrics::glyphWidth($glyph);
-      if ($position >= $visibleLeft && $position + $glyphWidth <= $visibleRight) {
-        $writer->put($position, $y, new Cell($glyph, $fg, $bg, $glyphWidth));
+    [$text, $suffix] = $this->clip($value, $textWidth, $marker);
+    $position = $right ? $x + max(0, $width - 1 - TextMetrics::width($text . $suffix)) : $x + 1;
+    foreach ([[$text, $nullValue ? $this->style->highlight : $fg], [$suffix, $this->style->highlight]] as [$run, $color]) {
+      foreach (TextMetrics::glyphs($run) as $glyph) {
+        $glyphWidth = TextMetrics::glyphWidth($glyph);
+        if ($position >= $visibleLeft && $position + $glyphWidth <= $visibleRight) {
+          $writer->put($position, $y, new Cell($glyph, $color, $bg, $glyphWidth));
+        }
+        $position += $glyphWidth;
       }
-      $position += $glyphWidth;
     }
     if ($x + $width - 1 >= $visibleLeft && $x + $width - 1 < $visibleRight) {
       $writer->put($x + $width - 1, $y, new Cell('│', $bodySeparator ? $this->style->foreground : $fg, $bodySeparator ? $this->style->background : $bg));
     }
   }
 
-  /** Clip a field and mark hidden text. */
-  private function clip(string $value, int $width): string {
+  /** Clip a field while preserving its truncation and multiline markers. */
+  private function clip(string $value, int $width, string $marker): array {
     if ($width < 1) {
-      return '';
+      return ['', ''];
     }
-    if (TextMetrics::width($value) <= $width) {
-      return $value;
+    $truncated = TextMetrics::width($value . $marker) > $width;
+    if (!$truncated) {
+      return [$value, $marker];
     }
+    $suffix = $width > TextMetrics::width($marker) ? '~' . $marker : $marker;
+    $room = max(0, $width - TextMetrics::width($suffix));
     $text = '';
     $used = 0;
     foreach (TextMetrics::glyphs($value) as $glyph) {
       $glyphWidth = TextMetrics::glyphWidth($glyph);
-      if ($used + $glyphWidth > $width - 1) {
+      if ($used + $glyphWidth > $room) {
         break;
       }
       $text .= $glyph;
       $used += $glyphWidth;
     }
-    return $text . '~';
+    return [$text, $suffix];
   }
 
   /** Format null and multiline values for a single display row. */
-  private function display(?string $value): string {
+  private function display(?string $value): array {
     if ($value === null) {
-      return 'NULL';
+      return ['NULL', false];
     }
     $first = preg_split('/\r\n|\r|\n/', $value, 2);
-    return count($first) > 1 ? $first[0] . 'v' : str_replace("\t", ' ', $value);
+    return [str_replace("\t", ' ', $first[0]), count($first) > 1];
   }
 
   /** Mark hidden rows and columns at the tile edges. */

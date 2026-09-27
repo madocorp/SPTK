@@ -12,7 +12,7 @@ It clears the frame texture and the grid, then renders the current screen in thi
 1. `Screen::drawBackgrounds()` paints tile backgrounds; `drawSeparators()` paints layout boundaries.
 2. `Screen::paint()` asks each widget to write its cells into the grid. Unselected tiles have their cell colors
    darkened by `LayoutLeaf`.
-3. `GridRenderer::draw()` draws cell backgrounds, then glyphs, into the frame texture.
+3. `GridRenderer::drawTile()` draws the backgrounds and glyphs inside each widget tile. Tile bounds leave separator gaps untouched, and black swatches render normally.
 4. `Screen::paintPixels()` draws pixel widgets over the grid. `PixelRenderer` tracks the image textures used in
    this frame and releases textures no longer used.
 5. `Window::presentFrame()` copies the frame texture to the window backbuffer and calls `SDL_RenderPresent()`.

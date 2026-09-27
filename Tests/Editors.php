@@ -78,8 +78,8 @@ function editorScreen(Input|TextEditor $widget): Screen {
 $parser = new SPTK\XmlParser\XmlParser();
 expectEditor(count($parser->windows[0]['screens']) >= 2, true, 'demo XML screens');
 foreach ($parser->windows[0]['screens'] as $demoScreen) {
-  $demoScreen->measureGrid(new Tile(0, 0, 64, 16));
-  $demoScreen->paint(new Grid(64, 16));
+  $demoScreen->measureGrid(new Tile(0, 0, 100, 30));
+  $demoScreen->paint(new Grid(100, 30));
 }
 $editorLeaves = $parser->windows[0]['screens'][1]->layout->leaves();
 $editorWidgets = [];
