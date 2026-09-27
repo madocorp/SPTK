@@ -66,6 +66,11 @@ final class Image extends Widget {
     $writer->fill(new Color(255, 255, 255), $this->bg);
   }
 
+  /** Report that image movement needs its pixel tile redrawn. */
+  public function paintsPixels(): bool {
+    return true;
+  }
+
   /** Draw the source after text cells have been rendered. */
   public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
     $renderer->image($this->image, $this->destination($area), $area, $selected);

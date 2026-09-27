@@ -1,6 +1,6 @@
 # TextEditor
 
-`<TextEditor>` edits multiline text in a tile. XML text and CDATA preserve whitespace; a `value` attribute takes precedence. It accepts nested `<Style>` and `<Event>` elements and the layout size for its parent direction. Without an explicit height, it prefers sixteen cells, or seventeen when labeled.
+`<TextEditor>` edits multiline text in a tile. XML text and CDATA preserve whitespace; a `value` attribute takes precedence. It accepts nested `<Style>` and `<Event>` elements and the layout size for its parent direction. Text stays left aligned. Without an explicit height, it prefers sixteen cells, or seventeen when labeled.
 
 ```xml
 <TextEditor height="1*" label="Document" textWrap="true"><![CDATA[First line

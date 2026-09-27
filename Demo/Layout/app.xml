@@ -10,12 +10,11 @@
   </Style>
   <Event type="init" action="Controller::init" />
   <Event type="timer" period="2000" action="Controller::test" />
-  <Window title="SPTK mad4" width="82" height="16">
-    <ScreenSelector screens="main,editors,lists,choices,image" />
-    <Screen file="screen.xml" id="main" title="Main screen" />
+  <Window title="SPTK mad4" width="100" height="30" mode="maximized">
+    <ScreenSelector screens="text,editors,lists,image" />
+    <Screen file="text.xml" id="text" title="Text" />
     <Screen file="editors.xml" id="editors" title="Editors"  />
-    <Screen file="choices.xml" id="choices" title="Choice widgets"  />
-    <Screen file="lists.xml" id="lists" title="Lists"  />
+    <Screen file="lists.xml" id="lists" title="List"  />
     <Screen file="images.xml" id="image" title="Images"  />
   </Window>
 </App>

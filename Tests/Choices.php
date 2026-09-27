@@ -8,7 +8,7 @@ spl_autoload_register(['SPTK\\App', 'load']);
 
 use SPTK\Core\{Color, Screen};
 use SPTK\Events\{EventContext, EventDefinition, KeyboardEvent};
-use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile};
+use SPTK\Layout\{LayoutLeaf, LayoutNode, LayoutSeparator, Tile};
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\SDLWrapper\SDL;
 use SPTK\Widgets\CheckboxArray\CheckboxArray;
@@ -72,17 +72,48 @@ function expectChoiceError(RadioButton|CheckboxArray|ListView $widget, string $n
 }
 
 $parser = new SPTK\XmlParser\XmlParser();
-expectChoice(count($parser->windows[0]['screens']), 5, 'demo screen count');
+expectChoice(count($parser->windows[0]['screens']), 4, 'demo screen count');
 foreach ($parser->windows[0]['screens'] as $screen) {
+  $children = (new ReflectionProperty(LayoutNode::class, 'children'))->getValue($screen->layout);
+  expectChoice($children[1] instanceof LayoutSeparator, true, 'selector separates screen content');
   $screen->measureGrid(new Tile(0, 0, 80, 12));
   $screen->paint(new Grid(80, 12));
 }
-$choiceLeaves = $parser->windows[0]['screens'][2]->layout->leaves();
-expectChoice($choiceLeaves[1]->instance() instanceof RadioButton, true, 'RadioButton XML');
-expectChoice($choiceLeaves[2]->instance() instanceof CheckboxArray, true, 'CheckboxArray XML');
-$listLeaves = $parser->windows[0]['screens'][3]->layout->leaves();
-expectChoice($listLeaves[1]->instance() instanceof ListView, true, 'single List XML');
-expectChoice($listLeaves[2]->instance() instanceof ListView, true, 'multiple List XML');
+$listLeaves = $parser->windows[0]['screens'][2]->layout->leaves();
+$listWidgets = [];
+foreach ($listLeaves as $leaf) {
+  if ($leaf->instance() instanceof ListView || $leaf->instance() instanceof RadioButton || $leaf->instance() instanceof CheckboxArray) {
+    $listWidgets[] = $leaf->instance();
+  }
+}
+expectChoice(count($listWidgets), 4, 'combined List screen widget count');
+expectChoice($listWidgets[0] instanceof ListView, true, 'single List XML');
+expectChoice($listWidgets[1] instanceof ListView, true, 'multiple List XML');
+expectChoice($listWidgets[2] instanceof RadioButton, true, 'RadioButton XML');
+expectChoice($listWidgets[3] instanceof CheckboxArray, true, 'CheckboxArray XML');
+$partialList = new ListView(['One', 'Two', 'Three']);
+$partialList->emit('activate');
+$grid = new Grid(10, 3);
+$writer = new GridWriter($grid, new Tile(0, 0, 10, 3));
+$partialList->paint($writer);
+$grid->beginUpdate();
+$partialList->handleInput(choiceKey(SDL::KEY_DOWN));
+expectChoice($partialList->paintUpdate($writer), true, 'List cursor paints rows only');
+$dirtyRows = array_unique(array_column($grid->dirtyCells(), 1));
+sort($dirtyRows);
+expectChoice($dirtyRows, [0, 1], 'List cursor changed two rows');
+$fullGrid = new Grid(10, 3);
+$partialList->paint(new GridWriter($fullGrid, new Tile(0, 0, 10, 3)));
+for ($y = 0; $y < 3; $y++) {
+  for ($x = 0; $x < 10; $x++) {
+    expectChoice($grid->cell($x, $y) == $fullGrid->cell($x, $y), true, 'partial List row matches full paint');
+  }
+}
+$scrollingList = new ListView(['One', 'Two', 'Three']);
+$scrollingList->emit('activate');
+$scrollingList->paint(new GridWriter(new Grid(10, 1), new Tile(0, 0, 10, 1)));
+$scrollingList->handleInput(choiceKey(SDL::KEY_DOWN));
+expectChoice($scrollingList->paintUpdate(new GridWriter(new Grid(10, 1), new Tile(0, 0, 10, 1))), false, 'List scroll repaints tile');
 $radio = new RadioButton(['alpha', 'beta', 'gamma']);
 expectChoice($radio->getValue(), 'alpha', 'radio default');
 $radio->on('change', [ChoiceTestListener::class, 'change']);

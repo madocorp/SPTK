@@ -16,6 +16,7 @@ final class ListView extends Widget {
   private array $visible = [];
   private ItemViewport $viewport;
   private Painter $painter;
+  private Redraw $redraw;
   private int $cursorItem = 0;
   private string $query = '';
   private bool $active = false;
@@ -24,6 +25,7 @@ final class ListView extends Widget {
   public function __construct(array $items = [], private readonly bool $multiple = false, private readonly bool $filterable = true, private readonly bool $searchable = true, private readonly bool $reorderable = false, private readonly Color $fg = new Color(255, 255, 255), private readonly Color $bg = new Color(0, 0, 0), private readonly Color $cursorBg = new Color(85, 85, 85), private readonly Color $highlight = new Color(0, 255, 255), private readonly Color $selected = new Color(255, 255, 0)) {
     $this->viewport = new ItemViewport();
     $this->painter = new Painter($fg, $bg, $cursorBg, $highlight, $selected);
+    $this->redraw = new Redraw();
     $this->setItems($items);
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
@@ -42,6 +44,7 @@ final class ListView extends Widget {
     $this->viewport->reset(count($normalized));
     $this->cursorItem = $selected[0] ?? 0;
     $this->viewport->setPosition($this->cursorItem);
+    $this->redraw->full();
   }
 
   /** Return item records with their current selected state. */
@@ -87,6 +90,7 @@ final class ListView extends Widget {
       }
     }
     if (!$this->multiple) {
+      $this->redraw->full();
       $this->setFilter('');
       $this->cursorItem = array_search($values[0], $this->values(), true);
       $this->viewport->setPosition($this->cursorItem);
@@ -96,6 +100,7 @@ final class ListView extends Widget {
       $item['selected'] = in_array($item['value'], $values, true);
     }
     unset($item);
+    $this->redraw->full();
   }
 
   /** Report whether the list has keyboard focus. */
@@ -126,8 +131,9 @@ final class ListView extends Widget {
       return;
     }
     $oldIndex = $this->cursorPosition();
+    $this->redraw->full();
     $this->query = $query;
-    $matches = $this->matchingIndices($query);
+    $matches = ItemSearch::matchingIndices($this->items, $query);
     $this->visible = $query !== '' && ($this->filterable || $matches === []) ? $matches : array_keys($this->items);
     $position = array_search($oldIndex, $this->visible, true);
     $this->viewport->setCount(count($this->visible));
@@ -164,13 +170,25 @@ final class ListView extends Widget {
   public function paint(GridWriter $writer): void {
     $this->viewport->setHeight($writer->height());
     $this->painter->paint($writer, $this->items, $this->visible, $this->viewport, $this->query, $this->active, $this->multiple);
+    $this->redraw->painted();
+  }
+
+  /** Paint only cursor or selection rows while the viewport stays fixed. */
+  public function paintUpdate(GridWriter $writer): bool {
+    $rows = $this->redraw->rows();
+    if ($rows === null) {
+      return false;
+    }
+    $this->painter->paintRows($writer, $this->items, $this->visible, $this->viewport, $this->query, $this->active, $this->multiple, $rows);
+    $this->redraw->painted();
+    return true;
   }
 
   /** Handle query typing, movement, selection, and optional item ordering. */
   public function handleInput(mixed $event): bool {
     if ($event->type === SDL::SDL_EVENT_TEXT_INPUT) {
       $text = \FFI::string($event->text->text);
-      if (($this->filterable || $this->searchable) && $text !== ' ' && ($this->query === '' || $this->matchingIndices($this->query) !== [])) {
+      if (($this->filterable || $this->searchable) && $text !== ' ' && ($this->query === '' || ItemSearch::matchingIndices($this->items, $this->query) !== [])) {
         $this->changeValue($this->appendQuery(...), $text);
       }
       return true;
@@ -206,17 +224,6 @@ final class ListView extends Widget {
     return $key === SDL::KEY_ESCAPE ? 'accept' : parent::releaseNotification($key, $modifiers);
   }
 
-  /** Find item indices whose labels start with a Unicode-insensitive query. */
-  private function matchingIndices(string $query): array {
-    $matches = [];
-    foreach ($this->items as $index => $item) {
-      if ($query === '' || str_starts_with(mb_strtolower($item['label']), mb_strtolower($query))) {
-        $matches[] = $index;
-      }
-    }
-    return $matches;
-  }
-
   /** Apply a user operation and notify only when the public value changes. */
   private function changeValue(callable $operation, mixed ...$arguments): void {
     $before = $this->getValue();
@@ -236,12 +243,14 @@ final class ListView extends Widget {
     $index = $this->visible[$this->viewport->position()] ?? null;
     if ($index !== null) {
       $this->items[$index]['selected'] = !$this->items[$index]['selected'];
+      $this->redraw->current($this->viewport->position(), $this->viewport->scroll());
     }
   }
 
   /** Move the cursor or reorder one row with Shift and an arrow. */
   private function move(int $key, int $mod): void {
     if (($mod & SDL::MOD_SHIFT) !== 0 && ($key === SDL::KEY_UP || $key === SDL::KEY_DOWN)) {
+      $this->redraw->full();
       if ($this->reorderable && $this->query === '') {
         $from = $this->viewport->position();
         $to = max(0, min(count($this->items) - 1, $from + ($key === SDL::KEY_DOWN ? 1 : -1)));
@@ -254,7 +263,10 @@ final class ListView extends Widget {
       }
       return;
     }
+    $oldPosition = $this->viewport->position();
+    $oldScroll = $this->viewport->scroll();
     $this->viewport->move($key);
+    $this->redraw->moved($oldPosition, $oldScroll, $this->viewport->position(), $this->viewport->scroll());
     if ($this->visible !== []) {
       $this->cursorItem = $this->visible[$this->viewport->position()];
     }
@@ -268,11 +280,13 @@ final class ListView extends Widget {
   /** Mark the list active after tile activation. */
   private function activate(): void {
     $this->active = true;
+    $this->redraw->full();
   }
 
   /** Clear transient search state when leaving input mode. */
   private function deactivate(): void {
     $this->active = false;
+    $this->redraw->full();
     $this->changeValue($this->setFilter(...), '');
   }
 

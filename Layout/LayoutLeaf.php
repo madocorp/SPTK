@@ -35,6 +35,13 @@ final class LayoutLeaf {
     }
   }
 
+  /** Paint pending widget cells or fall back to its full tile. */
+  public function paintUpdate(Grid $grid): void {
+    if (!$this->instance->paintUpdate(new GridWriter($grid, $this->grid))) {
+      $this->paint($grid);
+    }
+  }
+
   /** Paint this widget's optional pixel content in its grid cell rectangle. */
   public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, bool $selected): void {
     $area = new Tile($this->grid->x * $cellWidth + $offsetX, $this->grid->y * $cellHeight + $offsetY, $this->grid->width * $cellWidth, $this->grid->height * $cellHeight);

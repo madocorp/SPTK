@@ -15,6 +15,11 @@ final class Navigator {
   private int $scrollX = 0;
   private int $scrollY = 0;
   private ?int $preferredColumn = null;
+  private int $revision = -1;
+  private int $cachedRevision = -2;
+  private int $cachedVisualWidth = -1;
+  private array $cachedVisualRows = [];
+  private int $contentWidth = 0;
 
   /** Create a navigator for a fixed wrapping mode and tab size. */
   public function __construct(private readonly bool $wrap, private readonly int $tabSize) {
@@ -26,11 +31,22 @@ final class Navigator {
     $this->scrollX = 0;
     $this->scrollY = 0;
     $this->preferredColumn = null;
+    $this->cachedRevision = -2;
+  }
+
+  /** Use the document version to keep visual rows until text or width changes. */
+  public function setRevision(int $revision): void {
+    $this->revision = $revision;
   }
 
   /** Return the current horizontal and vertical scroll offsets. */
   public function scroll(): array {
     return [$this->scrollX, $this->scrollY];
+  }
+
+  /** Return the cached display width of the widest document line. */
+  public function contentWidth(): int {
+    return $this->contentWidth;
   }
 
   /** Measure rows and keep an active caret visible inside the viewport. */
@@ -39,11 +55,7 @@ final class Navigator {
     $this->height = max(1, $height);
     $rows = $this->rows($lines);
     $this->scrollY = min($this->scrollY, max(0, count($rows) - $this->height));
-    $maxWidth = 0;
-    foreach ($lines as $line) {
-      $maxWidth = max($maxWidth, TextMetrics::width($line, $this->tabSize));
-    }
-    $maxWidth += $active ? 1 : 0;
+    $maxWidth = $this->contentWidth + ($active ? 1 : 0);
     $this->scrollX = $this->wrap ? 0 : min($this->scrollX, max(0, $maxWidth - $this->width));
     $visual = $this->layout->cursor($rows, $cursor, $this->tabSize);
     if ($active) {
@@ -80,7 +92,18 @@ final class Navigator {
 
   /** Build visual rows from the current document lines. */
   private function rows(array $lines): array {
-    return $this->layout->build($lines, $this->width, $this->wrap ? 'character' : 'none', $this->tabSize, true);
+    if ($this->cachedRevision !== $this->revision || $this->cachedVisualWidth !== $this->width) {
+      $this->cachedVisualRows = $this->layout->build($lines, $this->width, $this->wrap ? 'character' : 'none', $this->tabSize, true);
+      $this->contentWidth = 0;
+      if (!$this->wrap) {
+        foreach ($lines as $line) {
+          $this->contentWidth = max($this->contentWidth, TextMetrics::width($line, $this->tabSize));
+        }
+      }
+      $this->cachedVisualWidth = $this->width;
+      $this->cachedRevision = $this->revision;
+    }
+    return $this->cachedVisualRows;
   }
 
   /** Move by visual rows while retaining the preferred display column. */

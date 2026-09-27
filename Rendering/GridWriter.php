@@ -19,6 +19,14 @@ final class GridWriter {
     return $this->tile->height;
   }
 
+  /** Read a painted cell using widget-local coordinates. */
+  public function cellAt(int $x, int $y): Cell {
+    if ($x < 0 || $x >= $this->width() || $y < 0 || $y >= $this->height()) {
+      throw new \OutOfBoundsException('Cell outside widget tile.');
+    }
+    return $this->grid->cell($this->tile->x + $x, $this->tile->y + $y);
+  }
+
   /** Return a clipped writer for the rows below a fixed top margin. */
   public function below(int $rows): self {
     if ($rows < 0 || $rows > $this->tile->height) {
@@ -77,6 +85,14 @@ final class GridWriter {
       for ($x = 0; $x < $this->width(); $x++) {
         $this->put($x, $y, $blank);
       }
+    }
+  }
+
+  /** Fill one local row without touching the rest of the widget tile. */
+  public function fillRow(int $y, Color $fg, Color $bg): void {
+    $blank = new Cell(' ', $fg, $bg);
+    for ($x = 0; $x < $this->width(); $x++) {
+      $this->put($x, $y, $blank);
     }
   }
 

@@ -82,8 +82,15 @@ foreach ($parser->windows[0]['screens'] as $demoScreen) {
   $demoScreen->paint(new Grid(64, 16));
 }
 $editorLeaves = $parser->windows[0]['screens'][1]->layout->leaves();
-expectEditor($editorLeaves[1]->instance() instanceof Input, true, 'Input XML parser');
-expectEditor($editorLeaves[2]->instance() instanceof TextEditor, true, 'TextEditor XML parser');
+$editorWidgets = [];
+foreach ($editorLeaves as $leaf) {
+  if ($leaf->instance() instanceof Input || $leaf->instance() instanceof TextEditor) {
+    $editorWidgets[] = $leaf->instance();
+  }
+}
+expectEditor(count($editorWidgets), 2, 'Editors screen widget count');
+expectEditor($editorWidgets[0] instanceof Input, true, 'Input XML parser');
+expectEditor($editorWidgets[1] instanceof TextEditor, true, 'TextEditor XML parser');
 $labeledInput = new Input('value', indicatorFg: new Color(30, 180, 220), label: 'Name');
 expectEditor($labeledInput->preferredHeight(), 2, 'labeled Input preferred height');
 $grid = new Grid(10, 2);
@@ -107,6 +114,15 @@ expectEditor($labeledEditor->getValue(), 'first', 'TextEditor label outside valu
 $grid = new Grid(10, 1);
 $labeledEditor->paint(new GridWriter($grid, new Tile(0, 0, 10, 1)));
 expectEditor($grid->cell(0, 0)->glyph, 'D', 'label in one-row tile');
+$movingEditor = new TextEditor('abcd', label: 'Document');
+$movingEditor->emit('activate');
+$grid = new Grid(10, 3);
+$writer = new GridWriter($grid, new Tile(0, 0, 10, 3));
+$movingEditor->paint($writer);
+$grid->beginUpdate();
+$movingEditor->handleInput(keyEvent(SDL::KEY_RIGHT));
+expectEditor($movingEditor->paintUpdate($writer), true, 'TextEditor cursor update');
+expectEditor(count($grid->dirtyCells()), 2, 'TextEditor cursor dirties two cells');
 $input = new Input('A🌿');
 $screen = editorScreen($input);
 $input->on('accept', [EditorTestListener::class, 'accept']);
@@ -136,11 +152,15 @@ $screen->handleEvent(keyEvent(SDL::KEY_RETURN, SDL::MOD_CTRL));
 expectEditor(EditorTestListener::$accepted, 2, 'Ctrl+Return accepts editor');
 expectEditor($editor->editing(), false, 'TextEditor deactivates');
 $document = new TextEdit(true, "a\nb");
+$revision = $document->revision();
 $document->cursor()->setPosition(0, 1);
+expectEditor($document->revision(), $revision, 'cursor movement keeps text layout revision');
 expectEditor($document->cursor()->selectedText(), "\n", 'copy newline at caret');
 $document->delete(false);
+expectEditor($document->revision(), $revision + 1, 'text deletion changes layout revision');
 expectEditor($document->text(), 'ab', 'delete newline');
 $document->travel(false);
+expectEditor($document->revision(), $revision + 2, 'undo changes layout revision');
 expectEditor($document->text(), "a\nb", 'undo newline deletion');
 $tabInput = new Input("a\tb", tabSize: 4);
 $tabInput->emit('activate');

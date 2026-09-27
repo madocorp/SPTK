@@ -60,6 +60,55 @@ final class GridRenderer {
     }
   }
 
+  /** Redraw cells written by the current widget update. */
+  public function drawDirty(\FFI\CData $ffiRenderer, Grid $grid): int {
+    $dirty = $grid->dirtyCells();
+    try {
+      foreach ($dirty as [$x, $y, $cell]) {
+        $this->pixels->fill(new Tile(
+          $x * $this->font->cellWidth() + $this->ox,
+          $y * $this->font->cellHeight() + $this->oy,
+          $this->font->cellWidth() * $cell->width,
+          $this->font->cellHeight(),
+        ), $cell->bg);
+      }
+      foreach ($dirty as [$x, $y, $cell]) {
+        if ($cell->glyph !== ' ') {
+          $this->drawGlyph($ffiRenderer, $cell, $x, $y);
+        }
+      }
+    } finally {
+      $this->sdl->ffi->SDL_SetRenderClipRect($ffiRenderer, null);
+    }
+    return count($dirty);
+  }
+
+  /** Redraw every cell of a pixel widget tile after its background is cleared. */
+  public function drawTile(\FFI\CData $ffiRenderer, Grid $grid, Tile $tile): void {
+    $right = min($grid->width(), $tile->x + $tile->width);
+    $bottom = min($grid->height(), $tile->y + $tile->height);
+    try {
+      for ($y = max(0, $tile->y); $y < $bottom; $y++) {
+        for ($x = max(0, $tile->x); $x < $right; $x++) {
+          $cell = $grid->cell($x, $y);
+          if ($cell->width !== 0) {
+            $this->pixels->fill(new Tile($x * $this->font->cellWidth() + $this->ox, $y * $this->font->cellHeight() + $this->oy, $this->font->cellWidth() * $cell->width, $this->font->cellHeight()), $cell->bg);
+          }
+        }
+      }
+      for ($y = max(0, $tile->y); $y < $bottom; $y++) {
+        for ($x = max(0, $tile->x); $x < $right; $x++) {
+          $cell = $grid->cell($x, $y);
+          if ($cell->width !== 0 && $cell->glyph !== ' ') {
+            $this->drawGlyph($ffiRenderer, $cell, $x, $y);
+          }
+        }
+      }
+    } finally {
+      $this->sdl->ffi->SDL_SetRenderClipRect($ffiRenderer, null);
+    }
+  }
+
   private function drawGlyph(\FFI\CData $ffiRenderer, Cell $cell, int $x, int $y): void {
     $area = new Tile(
       $x * $this->font->cellWidth() + $this->ox,

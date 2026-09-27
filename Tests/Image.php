@@ -12,6 +12,7 @@ use SPTK\Rendering\{Font, PixelRenderer};
 use SPTK\SDLWrapper\SDL;
 use SPTK\SDLWrapper\TTF;
 use SPTK\Widgets\Image\Image;
+use SPTK\Widgets\Text\Text;
 
 /** Assert a named image behavior. */
 function expectImage(mixed $actual, mixed $expected, string $name): void {
@@ -173,10 +174,14 @@ imagedestroy($gd);
 expectImage($memory->source()->src, null, 'caller-owned GD source');
 expectImage(strlen($memory->source()->pixels), 8, 'RGBA byte count');
 $parser = new SPTK\XmlParser\XmlParser();
-$leaves = $parser->windows[0]['screens'][4]->layout->leaves();
-expectImage($leaves[1]->instance() instanceof Image, true, 'first Image XML');
-expectImage($leaves[2]->instance() instanceof Image, true, 'second Image XML');
-expectImage($leaves[3]->instance() instanceof Image, true, 'third Image XML');
+$leaves = $parser->windows[0]['screens'][3]->layout->leaves();
+$images = [];
+foreach ($leaves as $leaf) {
+  if ($leaf->instance() instanceof Image) {
+    $images[] = $leaf->instance();
+  }
+}
+expectImage(count($images), 3, 'Image screen widget count');
 putenv('SDL_VIDEODRIVER=dummy');
 $sdl = new SDL();
 expectImage($sdl->ffi->SDL_Init(SDL::SDL_INIT_VIDEO), true, 'dummy SDL initialization');
@@ -221,10 +226,29 @@ try {
   $font->open('LiberationMono-Bold', 17);
   (new ReflectionProperty(SPTK\App::class, 'font'))->setValue($app, $font);
   $definition = $parser->windows[0];
-  $definition['screens'] = [$parser->windows[0]['screens'][4]];
+  $definition['screens'] = [$parser->windows[0]['screens'][3]];
   $definition['state'] = 'hidden';
   $windowWidget = new Window($definition);
   $windowWidget->close();
+  $interactiveImage = new Image($source, zoom: 2);
+  $layout = new LayoutNode('horizontal', '1*', '1*');
+  $layout->addLeaf(new LayoutLeaf('Image', '', '', $interactiveImage));
+  $layout->addLeaf(new LayoutLeaf('Text', '', '', new Text('Aside')));
+  $definition['screens'] = [new Screen($layout)];
+  $definition['width'] = 24;
+  $definition['height'] = 8;
+  $interactiveWindow = new Window($definition);
+  try {
+    $interactiveWindow->handleEvent(imageKey(SDL::KEY_RIGHT));
+    expectImage($definition['screens'][0]->selectedLeaf()?->instance() instanceof Text, true, 'focus redraw selects second tile');
+    $interactiveWindow->handleEvent(imageKey(SDL::KEY_LEFT));
+    expectImage($definition['screens'][0]->selectedLeaf()?->instance() instanceof Image, true, 'focus redraw returns to image');
+    $interactiveWindow->handleEvent(imageKey(SDL::KEY_RETURN));
+    $interactiveWindow->handleEvent(imageKey(SDL::KEY_RIGHT));
+    expectImage((new ReflectionProperty(Image::class, 'x'))->getValue($interactiveImage) < 0, true, 'pixel widget redraw after input');
+  } finally {
+    $interactiveWindow->close();
+  }
   $font->close();
   $ttf->close();
 } finally {

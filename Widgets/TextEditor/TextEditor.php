@@ -17,6 +17,13 @@ final class TextEditor extends Widget {
   private Navigator $navigator;
   private Painter $painter;
   private bool $active = false;
+  private ?array $paintedCursorCell = null;
+  private int $paintedScrollY = 0;
+  private int $paintedScrollX = 0;
+  private int $paintedRevision = -1;
+  private int $paintedWidth = -1;
+  private int $paintedHeight = -1;
+  private bool $paintedSelection = false;
 
   /** Create a multiline editor with inherited style colors. */
   public function __construct(string $value = '', private readonly Color $fg = new Color(255, 255, 255), private readonly Color $bg = new Color(0, 0, 0), Color $cursorBg = new Color(85, 85, 85), private readonly Color $indicatorFg = new Color(0, 255, 255), private readonly bool $wrap = false, private readonly int $tabSize = 8, private readonly ?string $label = null) {
@@ -72,8 +79,37 @@ final class TextEditor extends Widget {
       $writer = $writer->below(min(1, $writer->height()));
     }
     $lines = $this->document->lines();
+    $this->navigator->setRevision($this->document->revision());
     [$rows, $caret, $scrollY, $scrollX] = $this->navigator->layout($lines, $this->document->cursor(), $writer->width(), $writer->height(), $this->active);
-    $this->painter->paint($writer, $rows, $lines, $this->document->cursor(), $scrollY, $scrollX, $this->wrap, $this->active ? $caret : [-1, -1], $this->tabSize, $this->active);
+    $this->paintedCursorCell = $this->painter->paint($writer, $rows, $lines, $this->document->cursor(), $scrollY, $scrollX, $this->wrap, $this->active ? $caret : [-1, -1], $this->tabSize, $this->active, contentWidth: $this->navigator->contentWidth());
+    $this->paintedScrollY = $scrollY;
+    $this->paintedScrollX = $scrollX;
+    $this->paintedRevision = $this->document->revision();
+    $this->paintedWidth = $writer->width();
+    $this->paintedHeight = $writer->height();
+    $this->paintedSelection = $this->document->cursor()->hasSelection();
+  }
+
+  /** Repaint only the old and new caret cells when the document and viewport are fixed. */
+  public function paintUpdate(GridWriter $writer): bool {
+    if ($this->label !== null) {
+      $writer = $writer->below(min(1, $writer->height()));
+    }
+    if (!$this->active || $this->paintedCursorCell === null || $this->paintedRevision !== $this->document->revision()
+      || $this->paintedSelection || $this->document->cursor()->hasSelection()
+      || $this->paintedWidth !== $writer->width() || $this->paintedHeight !== $writer->height()) {
+      return false;
+    }
+    $lines = $this->document->lines();
+    $this->navigator->setRevision($this->document->revision());
+    [$rows, $caret, $scrollY, $scrollX] = $this->navigator->layout($lines, $this->document->cursor(), $writer->width(), $writer->height(), true);
+    if ($scrollY !== $this->paintedScrollY || $scrollX !== $this->paintedScrollX) {
+      return false;
+    }
+    [$x, $y, $cell] = $this->paintedCursorCell;
+    $writer->put($x, $y, $cell);
+    $this->paintedCursorCell = $this->painter->paintActiveCursor($writer, $rows, $lines, $this->document->cursor(), $caret, $scrollY, $scrollX, $this->tabSize, 'left');
+    return $this->paintedCursorCell !== null;
   }
 
   /** Return the tile background color. */
@@ -92,6 +128,7 @@ final class TextEditor extends Widget {
     }
     $mod = (int)$event->key->mod;
     $key = KeyNormalizer::normalize((int)$event->key->key, $mod);
+    $this->navigator->setRevision($this->document->revision());
     if ($this->navigator->handle($key, $mod, $this->document->lines(), $this->document->cursor())) {
       return true;
     }

@@ -59,8 +59,8 @@ Navigation uses the resulting tile positions to choose the nearest widget in the
 
 Put `<ScreenSelector screens="main,editors,lists" />` inside a window in `app.xml`. Each name refers to a
 `<Screen id="..." title="..." file="..." />` in that window. The selector creates a one-row horizontal
-layout above each screen's content. Its buttons follow the `screens` order, display screen titles, and use
-F1 through F12 in that order. A selector accepts 1 to 12 unique screen IDs. The screen's own layout still
+layout above each screen's content, with a separator between them. Its buttons follow the `screens` order,
+display screen titles, and use F1 through F12 in that order. A selector accepts 1 to 12 unique screen IDs. The screen's own layout still
 comes from its separate XML file. Allow enough window columns for all button labels and hotkeys.
 
 Every widget may have an `id` attribute unique within its screen. In code,

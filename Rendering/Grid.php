@@ -9,6 +9,8 @@ use SPTK\Layout\Tile;
 final class Grid {
 
   private array $cells = [];
+  private array $dirty = [];
+  private bool $tracking = false;
 
   public function __construct(private int $width, private int $height) {
     $this->resize($width, $height);
@@ -32,6 +34,8 @@ final class Grid {
   }
 
   public function clear(): void {
+    $this->tracking = false;
+    $this->dirty = [];
     $this->cells = array_fill(0, $this->height, array_fill(0, $this->width, new Cell()));
   }
 
@@ -40,6 +44,28 @@ final class Grid {
       throw new \OutOfBoundsException("Cell outside grid: {$x}, {$y}");
     }
     return $this->cells[$y][$x];
+  }
+
+  /** Start collecting cells written by a widget repaint. */
+  public function beginUpdate(): void {
+    $this->dirty = [];
+    $this->tracking = true;
+  }
+
+  /** Return dirty leading cells and finish the current update. */
+  public function dirtyCells(): array {
+    $cells = [];
+    foreach ($this->dirty as $y => $row) {
+      foreach ($row as $x => $_) {
+        $cell = $this->cells[$y][$x];
+        if ($cell->width !== 0) {
+          $cells[] = [$x, $y, $cell];
+        }
+      }
+    }
+    $this->dirty = [];
+    $this->tracking = false;
+    return $cells;
   }
 
   public function set(int $x, int $y, string $glyph, ?Color $fg = null, ?Color $bg = null): void {
@@ -62,6 +88,7 @@ final class Grid {
     for ($y = max(0, $tile->y); $y < $bottom; $y++) {
       for ($x = max(0, $tile->x); $x < $right; $x++) {
         $cell = $this->cells[$y][$x];
+        $this->markDirty($x, $y);
         $this->cells[$y][$x] = new Cell($cell->glyph, $cell->fg->darkened(), $cell->bg->darkened(), $cell->width);
       }
     }
@@ -87,13 +114,23 @@ final class Grid {
       }
       $lead = $old->width === 0 ? $column - 1 : $column;
       for ($part = $lead; $part <= $lead + 1; $part++) {
+        $this->markDirty($part, $y);
         $previous = $this->cells[$y][$part];
         $this->cells[$y][$part] = new Cell(' ', $previous->fg, $previous->bg);
       }
     }
+    $this->markDirty($x, $y);
     $this->cells[$y][$x] = $cell;
     if ($width === 2) {
+      $this->markDirty($x + 1, $y);
       $this->cells[$y][$x + 1] = new Cell('', $cell->fg, $cell->bg, 0);
+    }
+  }
+
+  /** Mark a written cell once in the current update. */
+  private function markDirty(int $x, int $y): void {
+    if ($this->tracking) {
+      $this->dirty[$y][$x] = true;
     }
   }
 

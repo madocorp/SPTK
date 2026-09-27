@@ -36,8 +36,18 @@ abstract class Widget {
   /** Paint the widget into its allocated tile. */
   abstract public function paint(GridWriter $writer): void;
 
+  /** Paint only pending cells when the widget supports a smaller update. */
+  public function paintUpdate(GridWriter $writer): bool {
+    return false;
+  }
+
   /** Paint optional pixel content over the completed character grid. */
   public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
+  }
+
+  /** Report whether the widget draws pixels beyond its character cells. */
+  public function paintsPixels(): bool {
+    return false;
   }
 
   /** Report whether Return may put this widget into input mode. */

@@ -1,6 +1,6 @@
 <Screen>
   <Layout direction="vertical">
-    <Text height="1">Images: +/- zoom | arrows pan | Home/End/PgUp/PgDn edges | Space native | = fit</Text>
+    <Text height="1">Images: +/- zoom | Arrows pan | Space resets | = fits</Text>
     <Separator />
     <Layout direction="horizontal" height="1*">
       <Image src="../Assets/sample.png" width="12" />
