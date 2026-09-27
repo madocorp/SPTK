@@ -60,6 +60,11 @@ final class Screen {
     return $this->widgetsById[$id] ?? null;
   }
 
+  /** Return the leaf receiving input while a widget is activated. */
+  public function activeLeaf(): ?LayoutLeaf {
+    return $this->inputMode ? $this->selectedLeaf() : null;
+  }
+
   /** Bind all buttons to their owning window. */
   public function setWindow(Window $window): void {
     foreach ($this->leaves as $leaf) {
@@ -245,7 +250,7 @@ final class Screen {
   }
 
   /** Return the currently selected widget leaf. */
-  private function selectedLeaf(): ?\SPTK\Layout\LayoutLeaf {
+  public function selectedLeaf(): ?\SPTK\Layout\LayoutLeaf {
     return $this->selection->selectedLeaf();
   }
 

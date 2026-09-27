@@ -22,7 +22,15 @@ final class Text extends Widget {
   private int $viewportWidth = 1;
   private int $viewportHeight = 1;
   private int|false $preferredColumn = false;
+  private int $cachedVisualWidth = -1;
+  private array $cachedVisualRows = [];
+  private ?int $contentWidth = null;
+  private ?array $paintedCursorCell = null;
+  private int $paintedScrollY = 0;
+  private int $paintedScrollX = 0;
+  private bool $paintedSelection = false;
 
+  /** Create read-only text with optional row alignment. */
   public function __construct(
     string $text,
     private readonly Color $fg = new Color(230, 235, 245),
@@ -32,7 +40,11 @@ final class Text extends Widget {
     private readonly Color $indicatorFg = new Color(0, 255, 255),
     private readonly bool $wrap = true,
     private readonly int $tabSize = 8,
+    private readonly string $align = 'left',
   ) {
+    if (!in_array($align, ['left', 'center', 'right'], true)) {
+      throw new \InvalidArgumentException('Text align must be left, center, or right.');
+    }
     if (!mb_check_encoding($text, 'UTF-8')) {
       throw new \InvalidArgumentException('Text must be valid UTF-8.');
     }
@@ -50,10 +62,35 @@ final class Text extends Widget {
 
   /** Paint the visible wrapped rows, scroll marks, and active cursor. */
   public function paint(GridWriter $writer): void {
-    $writer->fill($this->fg, $this->bg);
     if ($writer->width() < 1 || $writer->height() < 1) {
+      $this->paintedCursorCell = null;
       return;
     }
+    [$rows, $cursor] = $this->layout($writer);
+    $this->paintedCursorCell = $this->painter->paint($writer, $rows, $this->lines, $this->cursor, $this->scrollY, $this->scrollX, $this->wrap, $this->active ? $cursor : [-1, -1], $this->tabSize, align: $this->align, contentWidth: $this->wrap ? null : $this->contentWidth());
+    $this->paintedScrollY = $this->scrollY;
+    $this->paintedScrollX = $this->scrollX;
+    $this->paintedSelection = $this->cursor->hasSelection();
+  }
+
+  /** Move only the old and new cursor cells when the text viewport stays fixed. */
+  public function paintUpdate(GridWriter $writer): bool {
+    if (!$this->active || $this->paintedCursorCell === null || $this->paintedSelection || $this->cursor->hasSelection()
+      || $writer->width() !== $this->viewportWidth || $writer->height() !== $this->viewportHeight) {
+      return false;
+    }
+    [$rows, $cursor] = $this->layout($writer);
+    if ($this->scrollY !== $this->paintedScrollY || $this->scrollX !== $this->paintedScrollX) {
+      return false;
+    }
+    [$x, $y, $cell] = $this->paintedCursorCell;
+    $writer->put($x, $y, $cell);
+    $this->paintedCursorCell = $this->painter->paintActiveCursor($writer, $rows, $this->lines, $this->cursor, $cursor, $this->scrollY, $this->scrollX, $this->tabSize, $this->align);
+    return $this->paintedCursorCell !== null;
+  }
+
+  /** Resolve wrapped rows and keep the active cursor inside the viewport. */
+  private function layout(GridWriter $writer): array {
     $this->viewportWidth = $writer->width();
     $this->viewportHeight = $writer->height();
     $rows = $this->visualRows($writer->width());
@@ -67,7 +104,7 @@ final class Text extends Widget {
         $cursor[1] = min($writer->width() - 1, $cursor[1]);
       }
     }
-    $this->painter->paint($writer, $rows, $this->lines, $this->cursor, $this->scrollY, $this->scrollX, $this->wrap, $this->active ? $cursor : [-1, -1], $this->tabSize);
+    return [$rows, $cursor];
   }
 
   /** Return the background used behind the text tile. */
@@ -144,7 +181,11 @@ final class Text extends Widget {
 
   /** Split document lines into word-wrapped visual rows. */
   private function visualRows(int $width): array {
-    return $this->rows->build($this->lines, $width, $this->wrap ? 'word' : 'none', $this->tabSize);
+    if ($this->cachedVisualWidth !== $width) {
+      $this->cachedVisualRows = $this->rows->build($this->lines, $width, $this->wrap ? 'word' : 'none', $this->tabSize);
+      $this->cachedVisualWidth = $width;
+    }
+    return $this->cachedVisualRows;
   }
 
   /** Find the wrapped row and cell column for the logical text cursor. */
@@ -212,16 +253,23 @@ final class Text extends Widget {
       $this->scrollX = 0;
       return;
     }
-    $maxWidth = 0;
-    foreach ($this->lines as $line) {
-      $maxWidth = max($maxWidth, TextMetrics::width($line, $this->tabSize));
-    }
-    $this->scrollX = min($this->scrollX, max(0, $maxWidth - $this->viewportWidth + 1));
+    $this->scrollX = min($this->scrollX, max(0, $this->contentWidth() - $this->viewportWidth + 1));
     if ($cursor[1] < $this->scrollX) {
       $this->scrollX = $cursor[1];
     } else if ($cursor[1] >= $this->scrollX + $this->viewportWidth) {
       $this->scrollX = $cursor[1] - $this->viewportWidth + 1;
     }
+  }
+
+  /** Measure the widest source line once for horizontal scrolling. */
+  private function contentWidth(): int {
+    if ($this->contentWidth === null) {
+      $this->contentWidth = 0;
+      foreach ($this->lines as $line) {
+        $this->contentWidth = max($this->contentWidth, TextMetrics::width($line, $this->tabSize));
+      }
+    }
+    return $this->contentWidth;
   }
 
 }

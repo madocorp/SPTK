@@ -11,6 +11,7 @@ final class TextEdit {
   private array $lines = [''];
   private TextCursor $cursor;
   private TextHistory $history;
+  private int $revision = 0;
 
   /** Create a single-line or multiline editing document. */
   public function __construct(private readonly bool $multiline, string $value = '', int $tabSize = 8) {
@@ -21,6 +22,11 @@ final class TextEdit {
   /** Return the current lines for layout and painting. */
   public function lines(): array {
     return $this->lines;
+  }
+
+  /** Return the version of the text content for cached visual layout. */
+  public function revision(): int {
+    return $this->revision;
   }
 
   /** Return the shared grapheme cursor. */
@@ -36,6 +42,7 @@ final class TextEdit {
   /** Replace all content and reset the cursor and history. */
   public function setValue(string $value): void {
     $this->lines = explode("\n", $this->normalize($value));
+    $this->revision++;
     $this->cursor->setPosition(0, 0);
     $this->history = new TextHistory();
   }
@@ -56,6 +63,9 @@ final class TextEdit {
     $caret = TextMetrics::length($replacement[$last]);
     $replacement[$last] .= $suffix;
     array_splice($this->lines, $row1, $row2 - $row1 + 1, $replacement);
+    if ($before !== $this->lines) {
+      $this->revision++;
+    }
     $this->cursor->setPosition($row1 + $last, $caret);
     $this->history->record($before, $beforeCursor, $this->lines, $this->cursor->selectionState(), $typing && $last === 0 ? $row1 : null);
     return $before !== $this->lines;
@@ -78,6 +88,7 @@ final class TextEdit {
       return false;
     }
     $this->cursor->restoreState($state);
+    $this->revision++;
     return true;
   }
 

@@ -1,6 +1,6 @@
 <Screen>
   <Layout direction="vertical">
-    <Text height="1">Lists: Type a prefix or use Space to toggle</Text>
+    <Text height="1">List: Type a prefix | Space toggles choices | Return activates</Text>
     <Separator />
     <Layout direction="horizontal" height="1*">
       <List width="1*" reorderable="true">
@@ -20,6 +20,23 @@
         <Item value="elderberries">Elderberries</Item>
         <Event type="change" action="Controller::listChanged" />
       </List>
+    </Layout>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <RadioButton width="1*">
+        <Item value="local" checked="true">Local database</Item>
+        <Item value="remote">Remote database</Item>
+        <Item value="memory">In-memory database</Item>
+        <Event type="change" action="Controller::choiceChanged" />
+      </RadioButton>
+      <Separator />
+      <CheckboxArray width="1*">
+        <Item value="tables" checked="true">Show tables</Item>
+        <Item value="views">Show views</Item>
+        <Item value="indexes">Show indexes</Item>
+        <Item value="triggers">Show triggers</Item>
+        <Event type="change" action="Controller::choiceChanged" />
+      </CheckboxArray>
     </Layout>
   </Layout>
 </Screen>

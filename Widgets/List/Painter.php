@@ -24,19 +24,40 @@ final class Painter {
     }
     $scroll = $viewport->scroll();
     for ($y = 0; $y < $writer->height(); $y++) {
-      $index = $visible[$scroll + $y] ?? null;
-      if ($index === null) {
-        continue;
-      }
-      $item = $items[$index];
-      $selected = $multiple ? $item['selected'] : $scroll + $y === $viewport->position();
-      $cursorBg = $active && $scroll + $y === $viewport->position() ? $this->cursorBg : $this->bg;
-      $writer->write(0, $y, $item['label'], $selected ? $this->selected : $this->fg, $cursorBg);
-      $this->paintMatch($writer, $item['label'], $query, $y, $cursorBg);
+      $this->paintItem($writer, $items, $visible, $viewport, $query, $active, $multiple, $y);
     }
     $this->indicator($writer, ScrollIndicator::label($scroll, $writer->height(), '▲'), 0);
     $below = max(0, count($visible) - $scroll - $writer->height());
     $this->indicator($writer, ScrollIndicator::label($below, $writer->height(), '▼'), $writer->height() - 1);
+  }
+
+  /** Repaint selected local rows and any scroll marks they overlap. */
+  public function paintRows(GridWriter $writer, array $items, array $visible, ItemViewport $viewport, string $query, bool $active, bool $multiple, array $rows): void {
+    foreach ($rows as $y) {
+      $writer->fillRow($y, $this->fg, $this->bg);
+      $this->paintItem($writer, $items, $visible, $viewport, $query, $active, $multiple, $y);
+      if ($y === 0) {
+        $this->indicator($writer, ScrollIndicator::label($viewport->scroll(), $writer->height(), '▲'), 0);
+      }
+      if ($y === $writer->height() - 1) {
+        $below = max(0, count($visible) - $viewport->scroll() - $writer->height());
+        $this->indicator($writer, ScrollIndicator::label($below, $writer->height(), '▼'), $y);
+      }
+    }
+  }
+
+  /** Paint one visible item with its cursor and query colors. */
+  private function paintItem(GridWriter $writer, array $items, array $visible, ItemViewport $viewport, string $query, bool $active, bool $multiple, int $y): void {
+    $position = $viewport->scroll() + $y;
+    $index = $visible[$position] ?? null;
+    if ($index === null) {
+      return;
+    }
+    $item = $items[$index];
+    $selected = $multiple ? $item['selected'] : $position === $viewport->position();
+    $cursorBg = $active && $position === $viewport->position() ? $this->cursorBg : $this->bg;
+    $writer->write(0, $y, $item['label'], $selected ? $this->selected : $this->fg, $cursorBg);
+    $this->paintMatch($writer, $item['label'], $query, $y, $cursorBg);
   }
 
   /** Overlay a matching prefix in the highlight color. */

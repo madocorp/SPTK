@@ -21,6 +21,8 @@ Pass further as function arguments.
 - Rendering\GlyphAtlas: glyph atlas for the window, available through GridRenderer. Its texture belongs to the window.
 - Rendering\PixelRenderer: draws tile backgrounds, paddings, separators, images
 
+The full render path, partial updates, dirty cells, and caches are described in [rendering.md](rendering.md).
+
 
 ## Screen level:
 
