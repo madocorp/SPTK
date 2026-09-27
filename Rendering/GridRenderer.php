@@ -3,7 +3,6 @@
 namespace SPTK\Rendering;
 
 use SPTK\Core\Cell;
-use SPTK\Rendering\Glyph\GeometryGlyph;
 use SPTK\Layout\Tile;
 use SPTK\SDLWrapper\SDL;
 
@@ -16,12 +15,15 @@ final class GridRenderer {
   private SDL $sdl;
   private Font $font;
   private PixelRenderer $pixels;
+  private \FFI\CData $glyphRect;
+  private ?int $glyphColor = null;
 
-  public function __construct(\FFI\CData $ffiRenderer) {
+  public function __construct(\FFI\CData $ffiRenderer, PixelRenderer $pixels) {
     $this->sdl = \SPTK\App::sdl();
     $this->font = \SPTK\App::font();
-    $this->pixels = new PixelRenderer($ffiRenderer);
+    $this->pixels = $pixels;
     $this->atlas = new GlyphAtlas($this->sdl, $ffiRenderer, $this->font);
+    $this->glyphRect = $this->sdl->ffi->new('SDL_FRect');
   }
 
   public function setOffset(int $ox, int $oy) {
@@ -116,20 +118,20 @@ final class GridRenderer {
       $this->font->cellWidth() * $cell->width,
       $this->font->cellHeight(),
     );
-    if (GeometryGlyph::draw($cell->glyph, $area, $cell->fg, $this->pixels)) {
-      return;
-    }
     $ffi = $this->sdl->ffi;
     $source = $this->atlas->map($cell->glyph, $cell->width);
     $texture = $this->atlas->texture();
-    $ret = $ffi->SDL_SetTextureColorMod($texture, $cell->fg->r, $cell->fg->g, $cell->fg->b);
-    $this->sdl->checkReturnValue($ret, 'SDL_SetTextureColorMod');
-    $destination = $ffi->new('SDL_FRect');
-    $destination->x = $area->x;
-    $destination->y = $area->y;
-    $destination->w = $source->w;
-    $destination->h = $source->h;
-    $ret = $ffi->SDL_RenderTexture($ffiRenderer, $texture, \FFI::addr($source), \FFI::addr($destination));
+    $rgb = ($cell->fg->r << 16) | ($cell->fg->g << 8) | $cell->fg->b;
+    if ($this->glyphColor !== $rgb) {
+      $ret = $ffi->SDL_SetTextureColorMod($texture, $cell->fg->r, $cell->fg->g, $cell->fg->b);
+      $this->sdl->checkReturnValue($ret, 'SDL_SetTextureColorMod');
+      $this->glyphColor = $rgb;
+    }
+    $this->glyphRect->x = $area->x;
+    $this->glyphRect->y = $area->y;
+    $this->glyphRect->w = $source->w;
+    $this->glyphRect->h = $source->h;
+    $ret = $ffi->SDL_RenderTexture($ffiRenderer, $texture, \FFI::addr($source), \FFI::addr($this->glyphRect));
     $this->sdl->checkReturnValue($ret, 'SDL_RenderTexture');
   }
 

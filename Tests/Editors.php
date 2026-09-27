@@ -183,6 +183,8 @@ $text->handleInput(keyEvent(ord('c'), SDL::MOD_CTRL));
 expectEditor(Clipboard::get(), "one\ntwo", 'Text read-only copy');
 $indicatorInk = new Color(12, 34, 56);
 expectEditor(ScrollIndicator::label(10, 5, '▲'), '2▲', 'up arrow follows page count');
+expectEditor(ScrollIndicator::bottomRight('3▶', '4▼'), '3▶ 4▼', 'shared lower-right indicator order');
+expectEditor(ScrollIndicator::fit('3▶ 4▼', 2, true), '▶▼', 'shared narrow indicator keeps both arrows');
 $grid = new Grid(4, 1);
 (new Input('abcdefghijkl', bg: $indicatorInk))->paint(new GridWriter($grid, new Tile(0, 0, 4, 1)));
 expectInvertedIndicator($grid, 'Input scroll indicator', $indicatorInk);
@@ -208,8 +210,11 @@ expectArrowAt($grid, '▼', 9, 1, 'down arrow at right edge');
 $both = new Text("abcdefghijkl\nmnopqrstuvwx\nzyxwvutsrqpo\nlast", wrap: false);
 $grid = new Grid(5, 3);
 $both->paint(new GridWriter($grid, new Tile(0, 0, 5, 3)));
-expectArrowAt($grid, '▼', 4, 1, 'down arrow shares right edge');
-expectArrowAt($grid, '▶', 4, 2, 'right arrow shares right edge');
+$bottom = '';
+for ($x = 0; $x < 5; $x++) {
+  $bottom .= $grid->cell($x, 2)->glyph;
+}
+expectEditor(str_ends_with($bottom, '▶ ▼'), true, 'Text right and down arrows share bottom row');
 $grid = new Grid(6, 2);
 (new TextEditor("one\ntwo\nthree", bg: $indicatorInk))->paint(new GridWriter($grid, new Tile(0, 0, 6, 2)));
 expectInvertedIndicator($grid, 'TextEditor scroll indicator', $indicatorInk);

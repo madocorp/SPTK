@@ -100,24 +100,15 @@ final class Painter {
     $right = $wrap ? '' : ScrollIndicator::label(max(0, $contentWidth - $scrollX - $width), $width, '▶');
     $this->indicator($writer, $above, 0, true);
     $this->indicator($writer, $left, $height - 1, false);
-    $belowRow = $right === '' ? $height - 1 : $height - 2;
-    if ($belowRow >= 0) {
-      $this->indicator($writer, $below, $belowRow, true);
-    }
-    if ($right !== '') {
-      $this->indicator($writer, $right, $height - 1, true);
-    }
+    $this->indicator($writer, ScrollIndicator::bottomRight($right, $below), $height - 1, true);
   }
 
   /** Draw one compact indicator without crossing the tile boundary. */
   private function indicator(GridWriter $writer, string $label, int $y, bool $right, ?int $x = null): void {
+    $label = ScrollIndicator::fit($label, $writer->width(), $right);
     if ($label === '') {
       return;
     }
-    if (TextMetrics::width($label) > $writer->width()) {
-      $label = preg_replace('/[0-9]/', '', $label);
-    }
-    $label = TextMetrics::slice($label, 0, $writer->width());
     $writer->write($x ?? ($right ? $writer->width() - TextMetrics::width($label) : 0), $y, $label, $this->bg, $this->indicatorFg);
   }
 

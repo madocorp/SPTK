@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Input;
 
-use SPTK\Core\{Color, TextCursor};
+use SPTK\Core\{Color, ScrollIndicator, TextCursor};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
 /** Paints a one-row editor with a block caret and horizontal page indicators. */
@@ -74,9 +74,8 @@ final class Painter {
     if ($hidden <= 0) {
       return '';
     }
-    $pages = intdiv($hidden, max(1, $width));
-    $count = $numbers && $pages > 0 ? (string)$pages : '';
-    return $left ? '◀' . $count : $count . '▶';
+    $arrow = $left ? '◀' : '▶';
+    return $numbers ? ScrollIndicator::label($hidden, $width, $arrow) : $arrow;
   }
 
 }

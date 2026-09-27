@@ -176,13 +176,11 @@ abstract class Choice extends Widget {
 
   /** Draw an edge-aligned scroll mark without covering the choice marker. */
   private function indicator(GridWriter $writer, string $label, int $y): void {
-    if ($label === '' || $writer->width() < 4) {
+    if ($writer->width() < 4) {
       return;
     }
-    if (TextMetrics::width($label) > $writer->width() - 3) {
-      $label = preg_replace('/[0-9]/', '', $label);
-    }
-    if (TextMetrics::width($label) > $writer->width() - 3) {
+    $label = ScrollIndicator::fit($label, $writer->width() - 3, true);
+    if ($label === '') {
       return;
     }
     $writer->write($writer->width() - TextMetrics::width($label), $y, $label, $this->bg, $this->highlight);

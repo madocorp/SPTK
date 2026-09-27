@@ -72,7 +72,7 @@ function expectChoiceError(RadioButton|CheckboxArray|ListView $widget, string $n
 }
 
 $parser = new SPTK\XmlParser\XmlParser();
-expectChoice(count($parser->windows[0]['screens']), 4, 'demo screen count');
+expectChoice(count($parser->windows[0]['screens']), 5, 'demo screen count');
 foreach ($parser->windows[0]['screens'] as $screen) {
   $children = (new ReflectionProperty(LayoutNode::class, 'children'))->getValue($screen->layout);
   expectChoice($children[1] instanceof LayoutSeparator, true, 'selector separates screen content');

@@ -9,10 +9,12 @@ use SPTK\Core\Color;
 final class Font {
 
   private ?\FFI\CData $handle = null;
+  private \FFI\CData $renderColor;
   private int $cellWidth = 1;
   private int $cellHeight = 1;
 
   public function __construct(private TTF $ttf) {
+    $this->renderColor = $ttf->ffi->new('SDL_Color');
   }
 
   public function open(string $name, int $size): void {
@@ -44,12 +46,11 @@ final class Font {
     if ($this->handle === null) {
       throw new \LogicException('Font is not open.');
     }
-    $color = $this->ttf->ffi->new('SDL_Color');
-    $color->r = $fg->r;
-    $color->g = $fg->g;
-    $color->b = $fg->b;
-    $color->a = 255;
-    $surface = $this->ttf->ffi->TTF_RenderText_Blended($this->handle, $text, strlen($text), $color);
+    $this->renderColor->r = $fg->r;
+    $this->renderColor->g = $fg->g;
+    $this->renderColor->b = $fg->b;
+    $this->renderColor->a = 255;
+    $surface = $this->ttf->ffi->TTF_RenderText_Blended($this->handle, $text, strlen($text), $this->renderColor);
     if ($surface === null) {
       throw new \RuntimeException('Cannot rasterize text.');
     }
