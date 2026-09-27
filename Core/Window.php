@@ -66,11 +66,11 @@ final class Window {
     }
     $this->id = (int)$this->sdl->ffi->SDL_GetWindowID($this->window);
     $this->ffiRenderer = $this->sdl->ffi->SDL_CreateRenderer($this->window, null);
-    $this->gridRenderer = new \SPTK\Rendering\GridRenderer($this->ffiRenderer);
-    $this->pixelRenderer = new \SPTK\Rendering\PixelRenderer($this->ffiRenderer);
     if ($this->ffiRenderer === null) {
       throw new \RuntimeException('Cannot create renderer: ' . $sdl->error());
     }
+    $this->pixelRenderer = new \SPTK\Rendering\PixelRenderer($this->ffiRenderer);
+    $this->gridRenderer = new \SPTK\Rendering\GridRenderer($this->ffiRenderer, $this->pixelRenderer);
     $this->sdl->ffi->SDL_StartTextInput($this->window);
     $this->grid = new \SPTK\Rendering\Grid(1, 1);
     $this->resize();
@@ -176,7 +176,8 @@ final class Window {
 
   private function renderScreens(): void {
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
-    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderDrawColor($this->ffiRenderer, 0, 0, 0, 255), 'SDL_SetRenderDrawColor');
+    $this->pixelRenderer->invalidateDrawColor();
+    $this->pixelRenderer->setDrawColor(new Color(0, 0, 0));
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderClear($this->ffiRenderer), 'SDL_RenderClear');
     $this->grid->clear();
     $screen = $this->screens[$this->currentScreen];
@@ -195,6 +196,7 @@ final class Window {
     $this->grid->beginUpdate();
     $leaf->paintUpdate($this->grid);
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
+    $this->pixelRenderer->invalidateDrawColor();
     if ($leaf->instance()->paintsPixels()) {
       $this->grid->dirtyCells();
       $leaf->drawBackground($this->pixelRenderer);
@@ -210,6 +212,7 @@ final class Window {
   /** Redraw the old and new focus tiles with their updated selection colors. */
   private function renderFocusChange(LayoutLeaf $before, LayoutLeaf $after): void {
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
+    $this->pixelRenderer->invalidateDrawColor();
     foreach ([[$before, false], [$after, true]] as [$leaf, $selected]) {
       $leaf->drawBackground($this->pixelRenderer, $selected);
       $leaf->paint($this->grid, $selected);

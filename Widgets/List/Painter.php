@@ -70,13 +70,8 @@ final class Painter {
 
   /** Draw an inverted scroll mark against the right edge. */
   private function indicator(GridWriter $writer, string $label, int $y): void {
-    if ($label === '') {
-      return;
-    }
-    if (TextMetrics::width($label) > $writer->width()) {
-      $label = preg_replace('/[0-9]/', '', $label);
-    }
-    if (TextMetrics::width($label) <= $writer->width()) {
+    $label = ScrollIndicator::fit($label, $writer->width(), true);
+    if ($label !== '') {
       $writer->write($writer->width() - TextMetrics::width($label), $y, $label, $this->bg, $this->highlight);
     }
   }

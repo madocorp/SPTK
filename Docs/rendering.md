@@ -55,6 +55,12 @@ Dirty tracking limits SDL cell drawing to positions a widget wrote. It does not 
 a full tile `paint()` writes and dirties the whole tile. Widgets that support smaller updates choose what to
 write in `paintUpdate()`.
 
+## Scroll indicators
+
+Widgets put horizontal indicators in the bottom corners and vertical indicators on the right edge. When both
+rightward and downward overflow exist, `ScrollIndicator::bottomRight()` puts both labels on the bottom row,
+horizontal first (`▶ ▼`). `ScrollIndicator::fit()` removes counts and spacing as needed in narrow tiles.
+
 ## Widget optimizations
 
 - `Text` caches its wrapped visual rows by tile width. `TextEditor` caches visual rows by width and document
@@ -65,11 +71,17 @@ write in `paintUpdate()`.
   full tile paint. A wide glyph may affect an additional column.
 - `ListView` tracks rows affected by cursor movement or selection. When the viewport stays fixed, its painter
   writes only those rows. Scrolling, filtering, and data changes require a full tile paint.
+- `Table` repaints only the old and new cursor rows when its viewport stays fixed. Scrolling repaints the tile.
 - Pixel widgets use a separate path: `renderLeaf()` clears that tile's pixel background, draws its grid cells,
   paints its pixel content, and restores separator lines. `Image` draws from a cached SDL texture for its
   decoded source rather than uploading it on every frame.
 - `GlyphAtlas` caches rendered white glyph bitmaps in a texture owned by the window renderer. Cell colors are
-  applied when the cached glyph is drawn. The atlas reuses slots when full.
+  applied when the cached glyph is drawn. The atlas reuses slots when full and reuses FFI rectangle objects
+  for glyph lookup and upload. Geometry glyph masks are rasterized into the atlas on first use, then use the
+  same single texture draw as font glyphs instead of filling their pixel spans on every repaint.
+- `PixelRenderer` keeps the current draw color for the shared SDL renderer; `GridRenderer` keeps the atlas
+  texture tint. They set SDL colors only when the RGB value changes. Window invalidates the draw-color cache
+  when switching render targets.
 
 These caches have different lifetimes: visual rows belong to a text widget, image and glyph textures belong
 to an SDL renderer, and the frame texture belongs to a window until resize or close.

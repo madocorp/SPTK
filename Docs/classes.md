@@ -61,6 +61,10 @@ Static or reusable classes.
 - Core\ScrollIndicator: formats textual marks for hidden content beyond a viewport
 - Core\ItemData: validates unique item values and labels
 - Core\ItemViewport: tracks item cursor and vertical scrolling
+- Widgets\Table\TableData: stores inline rows or indexes and caches escaped TSV chunks
+- Widgets\Table\Painter: measures and paints table columns and scroll indicators
+- Widgets\Table\Redraw: tracks rows changed by cursor movement for partial painting
+- Widgets\Table\Selection: tracks rectangular selection and copies escaped TSV
 - Core\RasterImage: stores GD-decoded pixels for SDL texture upload
 - Core\WidgetDefinition: bundles a widget with its event subscriptions
 - Rendering\FontFinder: search for a font based it's name

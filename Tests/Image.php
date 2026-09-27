@@ -8,7 +8,7 @@ spl_autoload_register(['SPTK\\App', 'load']);
 
 use SPTK\Core\{Color, Screen, Window};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile};
-use SPTK\Rendering\{Font, PixelRenderer};
+use SPTK\Rendering\{Font, GlyphAtlas, PixelRenderer};
 use SPTK\SDLWrapper\SDL;
 use SPTK\SDLWrapper\TTF;
 use SPTK\Widgets\Image\Image;
@@ -198,6 +198,12 @@ if ($nativeRenderer === null) {
 }
 try {
   $renderer = new PixelRenderer($nativeRenderer);
+  $renderer->fill(new Tile(0, 0, 12, 12), new Color(255, 0, 0));
+  $renderer->fill(new Tile(12, 0, 12, 12), new Color(255, 0, 0));
+  $renderer->fill(new Tile(24, 0, 12, 12), new Color(0, 255, 0));
+  expectImage(imagePixel($sdl, $nativeRenderer, 6, 6), 0xff0000ff, 'first repeated draw color');
+  expectImage(imagePixel($sdl, $nativeRenderer, 18, 6), 0xff0000ff, 'cached repeated draw color');
+  expectImage(imagePixel($sdl, $nativeRenderer, 30, 6), 0x00ff00ff, 'changed draw color');
   $renderer->fill(new Tile(0, 0, 200, 100), new Color(10, 20, 30));
   $renderer->beginImages();
   $image->paintPixels($renderer, new Tile(0, 0, 200, 100), true);
@@ -224,6 +230,32 @@ try {
   expectImage($ttf->ffi->TTF_Init(), true, 'dummy TTF initialization');
   $font = new Font($ttf);
   $font->open('LiberationMono-Bold', 17);
+  $atlas = new GlyphAtlas($sdl, $nativeRenderer, $font, 2);
+  $first = $atlas->map('A', 1);
+  $firstX = $first->x;
+  $firstY = $first->y;
+  $atlas->map('B', 1);
+  $cached = $atlas->map('A', 1);
+  expectImage([$cached->x, $cached->y], [$firstX, $firstY], 'atlas cache hit keeps glyph slot');
+  $atlas->map('C', 1);
+  $atlas->map('D', 1);
+  $atlas->map('E', 1);
+  $reloaded = $atlas->map('A', 1);
+  expectImage($reloaded->x > $firstX, true, 'atlas slot reused after capacity reset');
+  $cellWidth = $font->cellWidth();
+  $cellHeight = $font->cellHeight();
+  $renderer->fill(new Tile(0, 0, $cellWidth, $cellHeight), new Color(10, 20, 30));
+  $sourceRect = $atlas->map('─', 1);
+  $destinationRect = $sdl->ffi->new('SDL_FRect');
+  $destinationRect->x = 0;
+  $destinationRect->y = 0;
+  $destinationRect->w = $cellWidth;
+  $destinationRect->h = $cellHeight;
+  $sdl->checkReturnValue($sdl->ffi->SDL_SetTextureColorMod($atlas->texture(), 255, 0, 0), 'SDL_SetTextureColorMod');
+  $sdl->checkReturnValue($sdl->ffi->SDL_RenderTexture($nativeRenderer, $atlas->texture(), \FFI::addr($sourceRect), \FFI::addr($destinationRect)), 'SDL_RenderTexture');
+  expectImage(imagePixel($sdl, $nativeRenderer, intdiv($cellWidth, 2), intdiv($cellHeight, 2)), 0xff0000ff, 'geometry glyph comes from tinted atlas');
+  expectImage(imagePixel($sdl, $nativeRenderer, 0, 0), 0x0a141eff, 'geometry atlas keeps transparent pixels');
+  $atlas->close();
   (new ReflectionProperty(SPTK\App::class, 'font'))->setValue($app, $font);
   $definition = $parser->windows[0];
   $definition['screens'] = [$parser->windows[0]['screens'][3]];

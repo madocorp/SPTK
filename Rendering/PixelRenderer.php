@@ -10,26 +10,45 @@ use SPTK\SDLWrapper\SDL;
 final class PixelRenderer {
 
   private SDL $sdl;
+  private \FFI\CData $rect;
+  private \FFI\CData $clipRect;
+  private ?int $drawColor = null;
   private array $images = [];
   private array $usedImages = [];
 
   public function __construct(private \FFI\CData $ffiRenderer) {
     $this->sdl = \SPTK\App::sdl();
+    $this->rect = $this->sdl->ffi->new('SDL_FRect');
+    $this->clipRect = $this->sdl->ffi->new('SDL_Rect');
   }
 
   public function fill(Tile $area, Color $color): void {
     if ($area->width === 0 || $area->height === 0) {
       return;
     }
-    $rect = $this->sdl->ffi->new('SDL_FRect');
-    $rect->x = $area->x;
-    $rect->y = $area->y;
-    $rect->w = $area->width;
-    $rect->h = $area->height;
+    $this->rect->x = $area->x;
+    $this->rect->y = $area->y;
+    $this->rect->w = $area->width;
+    $this->rect->h = $area->height;
+    $this->setDrawColor($color);
+    $ret = $this->sdl->ffi->SDL_RenderFillRect($this->ffiRenderer, \FFI::addr($this->rect));
+    $this->sdl->checkReturnValue($ret, 'SDL_RenderFillRect');
+  }
+
+  /** Set the renderer draw color only when its RGB value changes. */
+  public function setDrawColor(Color $color): void {
+    $rgb = ($color->r << 16) | ($color->g << 8) | $color->b;
+    if ($this->drawColor === $rgb) {
+      return;
+    }
     $ret = $this->sdl->ffi->SDL_SetRenderDrawColor($this->ffiRenderer, $color->r, $color->g, $color->b, 255);
     $this->sdl->checkReturnValue($ret, 'SDL_SetRenderDrawColor');
-    $ret = $this->sdl->ffi->SDL_RenderFillRect($this->ffiRenderer, \FFI::addr($rect));
-    $this->sdl->checkReturnValue($ret, 'SDL_RenderFillRect');
+    $this->drawColor = $rgb;
+  }
+
+  /** Forget the cached color after an external renderer state change. */
+  public function invalidateDrawColor(): void {
+    $this->drawColor = null;
   }
 
   /** Start tracking image textures used by the next frame. */
@@ -54,19 +73,17 @@ final class PixelRenderer {
     }
     $shade = $selected ? 255 : (int)round(255 * 0.45);
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetTextureColorMod($texture, $shade, $shade, $shade), 'SDL_SetTextureColorMod');
-    $rect = $this->sdl->ffi->new('SDL_FRect');
-    $rect->x = $area->x;
-    $rect->y = $area->y;
-    $rect->w = $area->width;
-    $rect->h = $area->height;
-    $clipRect = $this->sdl->ffi->new('SDL_Rect');
-    $clipRect->x = $clip->x;
-    $clipRect->y = $clip->y;
-    $clipRect->w = $clip->width;
-    $clipRect->h = $clip->height;
-    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderClipRect($this->ffiRenderer, \FFI::addr($clipRect)), 'SDL_SetRenderClipRect');
+    $this->rect->x = $area->x;
+    $this->rect->y = $area->y;
+    $this->rect->w = $area->width;
+    $this->rect->h = $area->height;
+    $this->clipRect->x = $clip->x;
+    $this->clipRect->y = $clip->y;
+    $this->clipRect->w = $clip->width;
+    $this->clipRect->h = $clip->height;
+    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderClipRect($this->ffiRenderer, \FFI::addr($this->clipRect)), 'SDL_SetRenderClipRect');
     try {
-      $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderTexture($this->ffiRenderer, $texture, null, \FFI::addr($rect)), 'SDL_RenderTexture');
+      $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderTexture($this->ffiRenderer, $texture, null, \FFI::addr($this->rect)), 'SDL_RenderTexture');
     } finally {
       $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderClipRect($this->ffiRenderer, null), 'SDL_SetRenderClipRect');
     }

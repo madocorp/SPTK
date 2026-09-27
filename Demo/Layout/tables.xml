@@ -1,0 +1,18 @@
+<Screen>
+  <Layout direction="vertical">
+    <Text height="1">Table: Return activates | Arrows move cells | Page Up/Down scroll | 2,048 TSV rows below</Text>
+    <Separator />
+    <Layout direction="horizontal" height="6">
+      <Table width="1*" rowNumbers="true">
+        <Header><Field>Name</Field><Field>Kind</Field><Field>Count</Field></Header>
+        <Row><Field>Customers</Field><Field>Data</Field><Field>1284</Field></Row>
+        <Row><Field>Orders</Field><Field>Data</Field><Field>503</Field></Row>
+        <Row><Field>Archive</Field><Field>History</Field><Field null="true" /></Row>
+      </Table>
+      <Separator />
+      <Table width="1*" file="sample.tsv" />
+    </Layout>
+    <Separator />
+    <Table file="large.tsv" rowNumbers="true" height="1*" />
+  </Layout>
+</Screen>
