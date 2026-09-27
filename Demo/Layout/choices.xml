@@ -1,10 +1,6 @@
 <Screen>
-  <Event type="keyDown" key="f1" action="Controller::showMain" />
-  <Event type="keyDown" key="f2" action="Controller::showEditors" />
-  <Event type="keyDown" key="f4" action="Controller::showLists" />
-  <Event type="keyDown" key="f5" action="Controller::showImages" />
   <Layout direction="vertical">
-    <Text height="1">Choices: F1 main | F2 editors | F4 lists | F5 images | Space toggle</Text>
+    <Text height="1">Choices: Space toggles the selected value</Text>
     <Separator />
     <Layout direction="horizontal" height="1*">
       <RadioButton width="1*">

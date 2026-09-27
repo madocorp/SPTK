@@ -33,6 +33,10 @@ final class Window {
     $this->font = \SPTK\App::font();
     $this->screens = $data['screens'];
     $this->currentScreen = 0; // screen id...
+    foreach ($this->screens as $screen) {
+      $screen->setWindow($this);
+      $screen->setCurrentScreenId($this->screens[0]->id);
+    }
     $this->open($data);
   }
 
@@ -96,11 +100,38 @@ final class Window {
       throw new \OutOfBoundsException("Unknown screen index: {$index}");
     }
     if ($index === $this->currentScreen) {
+      if ($this->screens[$index]->focusScreenSelectorButton()) {
+        $this->renderScreens();
+      }
       return;
     }
     $this->screens[$this->currentScreen]->release();
     $this->currentScreen = $index;
+    foreach ($this->screens as $screen) {
+      $screen->setCurrentScreenId($this->screens[$index]->id);
+    }
     $this->renderScreens();
+  }
+
+  /** Select a screen by its XML identifier. */
+  public function setCurrentScreenId(string $id): void {
+    foreach ($this->screens as $index => $screen) {
+      if ($screen->id === $id) {
+        $this->setCurrentScreen($index);
+        return;
+      }
+    }
+    throw new \OutOfBoundsException("Unknown screen id: {$id}");
+  }
+
+  /** Return a screen by its XML identifier. */
+  public function screen(string $id): ?Screen {
+    foreach ($this->screens as $screen) {
+      if ($screen->id === $id) {
+        return $screen;
+      }
+    }
+    return null;
   }
 
   public function show(): void {

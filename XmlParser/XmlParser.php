@@ -72,25 +72,52 @@ final class XmlParser {
       'height' => $this->attrSize($reader, 'height', 25),
       'state' => $this->attrEnum($reader, 'mode', ['normal', 'minimized', 'maximized', 'fullscreen']),
       'resizable' => $this->attrBoolean($reader, 'resizable', true),
-      'screens' => []
+      'screens' => [],
+      'selector' => null
     ];
     $style = $parentStyle;
     while ($reader->read()) {
       if ($reader->nodeType === XMLReader::ELEMENT) {
         if ($reader->name === 'Style') {
           $style = $this->styleParser->parse($reader, $style);
+        } else if ($reader->name === 'ScreenSelector') {
+          $this->assertAttributes($reader, ['screens']);
+          if ($window['selector'] !== null) {
+            throw new \RuntimeException('Window accepts one ScreenSelector.');
+          }
+          $window['selector'] = $this->attrString($reader, 'screens');
+          if (!$reader->isEmptyElement) {
+            throw new \RuntimeException('ScreenSelector must be empty.');
+          }
         } else if ($reader->name === 'Screen') {
-          $this->assertAttributes($reader, ['file']);
+          $this->assertAttributes($reader, ['file', 'id', 'title']);
           $screenFile = $this->attrString($reader, 'file');
-          if ($screenFile === null) {
+          if ($screenFile === '') {
             throw new \RuntimeException("Screen must have a file attribute!");
           }
-          $window['screens'][] = $this->screenParser->parse($screenFile, $style);
+          $id = $reader->getAttribute('id') ?? pathinfo($screenFile, PATHINFO_FILENAME);
+          if (!preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $id)) {
+            throw new \RuntimeException("Invalid screen id: {$id}");
+          }
+          foreach ($window['screens'] as $screen) {
+            if ($screen->id === $id) {
+              throw new \RuntimeException("Duplicate screen id: {$id}");
+            }
+          }
+          $title = $this->attrString($reader, 'title', $id);
+          if ($title === '' || !mb_check_encoding($title, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $title)) {
+            throw new \RuntimeException("Invalid screen title for {$id}");
+          }
+          $window['screens'][] = $this->screenParser->parse($screenFile, $style, $id, $title);
         } else {
           throw new \RuntimeException("Window must contain Screen elements!");
         }
       }
       if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->name === 'Window') {
+        if ($window['selector'] !== null) {
+          (new ScreenSelector())->install($window['screens'], $window['selector'], $style);
+        }
+        unset($window['selector']);
         $this->windows[] = $window;
         return;
       }

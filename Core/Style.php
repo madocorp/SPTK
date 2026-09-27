@@ -7,11 +7,11 @@ final readonly class Style {
 
   public function __construct(
     public Color $background = new Color(50, 50, 50),
-    public Color $foreground = new Color(255, 255, 255),
+    public Color $foreground = new Color(204, 204, 204),
     public Color $separator = new Color(170, 170, 170),
     public Color $highlight = new Color(0, 255, 255),
     public Color $selected = new Color(255, 255, 0),
-    public Color $cursorBackground = new Color(85, 85, 85),
+    public Color $cursorBackground = new Color(119, 119, 119),
     public Color $cursorForeground = new Color(255, 255, 255)
   ) {
   }

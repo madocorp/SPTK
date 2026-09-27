@@ -18,6 +18,20 @@ final class WidgetSelection {
     return $this->leaves[$this->selectedIndex] ?? null;
   }
 
+  /** Select a known leaf and report whether focus changed. */
+  public function select(LayoutLeaf $leaf): bool {
+    foreach ($this->leaves as $index => $candidate) {
+      if ($candidate === $leaf) {
+        if ($index === $this->selectedIndex) {
+          return false;
+        }
+        $this->selectedIndex = $index;
+        return true;
+      }
+    }
+    throw new \InvalidArgumentException('Selected leaf does not belong to this screen.');
+  }
+
   /** Move focus in the requested direction and report whether the selection changed. */
   public function move(string $direction): bool {
     $current = $this->selectedLeaf();

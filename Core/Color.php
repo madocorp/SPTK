@@ -22,7 +22,7 @@ final readonly class Color {
   }
 
   /** Return a darker version of this color for unselected widgets. */
-  public function darkened(float $factor = 0.45): self {
+  public function darkened(float $factor = 0.75): self {
     return new self((int)round($this->r * $factor), (int)round($this->g * $factor), (int)round($this->b * $factor));
   }
 

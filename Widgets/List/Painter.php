@@ -8,8 +8,8 @@ use SPTK\Rendering\{GridWriter, TextMetrics};
 /** Paints list rows, matched prefixes, and scroll indicators. */
 final class Painter {
 
-  /** Hold the four colors used by the list. */
-  public function __construct(private readonly Color $fg, private readonly Color $bg, private readonly Color $cursorBg, private readonly Color $highlight) {
+  /** Hold the colors used by list rows, matches, and the cursor. */
+  public function __construct(private readonly Color $fg, private readonly Color $bg, private readonly Color $cursorBg, private readonly Color $highlight, private readonly Color $selected) {
   }
 
   /** Paint the visible list viewport. */
@@ -31,7 +31,7 @@ final class Painter {
       $item = $items[$index];
       $selected = $multiple ? $item['selected'] : $scroll + $y === $viewport->position();
       $cursorBg = $active && $scroll + $y === $viewport->position() ? $this->cursorBg : $this->bg;
-      $writer->write(0, $y, $item['label'], $selected ? $this->highlight : $this->fg, $cursorBg);
+      $writer->write(0, $y, $item['label'], $selected ? $this->selected : $this->fg, $cursorBg);
       $this->paintMatch($writer, $item['label'], $query, $y, $cursorBg);
     }
     $this->indicator($writer, ScrollIndicator::label($scroll, $writer->height(), '▲'), 0);
