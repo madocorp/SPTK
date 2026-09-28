@@ -3,6 +3,14 @@
 A screen's `<Layout>` elements form a tree of horizontal and vertical splits. Each widget element occupies one
 tile at a leaf of that tree. Nested layouts split their assigned tile again.
 
+Window creates one readonly `Layout\WindowGeometry` on each resize. Its public fields hold `cellWidth`,
+`cellHeight`, `windowWidth`, `windowHeight`, `offsetX`, and `offsetY`, all measured in pixels. Screen and layout
+elements receive this object through `measureArea(Tile $windowGrid, WindowGeometry $geometry)`.
+Each element keeps its own grid tile; the shared geometry converts it to cell-content pixels, padded
+background bounds, and two-pixel separator rectangles. Interior backgrounds extend by one cell horizontally
+and half a cell vertically, with odd cell heights rounded down above and up below. Backgrounds touching
+the outer grid edges extend to the corresponding window edges.
+
 ## Direction and structure
 
 Every screen file contains one `<Layout>` inside its `<Screen>`. A layout's `direction` controls how its
@@ -52,7 +60,8 @@ The vertical root assigns one row to the header and two rows to the footer; its 
 remaining height. The nested horizontal layout divides its width between the two widgets according to their
 weights.
 
-Navigation uses the resulting tile positions to choose the nearest widget in the arrow-key direction. See
+Navigation uses tile positions to prefer the nearest widget in the same row or column, then falls back to
+the geometrically nearest widget in the arrow-key direction. See
 [`navigation.md`](navigation.md) for focus and activation behavior.
 
 ## Screen selector

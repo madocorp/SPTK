@@ -10,9 +10,9 @@
         <Row><Field>Archive</Field><Field>History</Field><Field null="true" /></Row>
       </Table>
       <Separator />
-      <Table width="1*" file="sample.tsv" />
+      <Table width="1*" file="../Assets/sample.tsv" />
     </Layout>
     <Separator />
-    <Table file="large.tsv" rowNumbers="true" height="1*" />
+    <Table file="../Assets/large.tsv" rowNumbers="true" height="1*" />
   </Layout>
 </Screen>

@@ -2,24 +2,24 @@
 
 namespace SPTK\Widgets\List;
 
-use SPTK\Core\{Color, ItemViewport, ScrollIndicator};
+use SPTK\Core\{Color, ItemViewport, ScrollIndicator, Style};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
 /** Paints list rows, matched prefixes, and scroll indicators. */
 final class Painter {
 
   /** Hold the colors used by list rows, matches, and the cursor. */
-  public function __construct(private readonly Color $fg, private readonly Color $bg, private readonly Color $cursorBg, private readonly Color $highlight, private readonly Color $selected) {
+  public function __construct(private readonly Style $style) {
   }
 
   /** Paint the visible list viewport. */
   public function paint(GridWriter $writer, array $items, array $visible, ItemViewport $viewport, string $query, bool $active, bool $multiple): void {
-    $writer->fill($this->fg, $this->bg);
+    $writer->fill($this->style->foreground, $this->style->background);
     if ($writer->width() < 1 || $writer->height() < 1) {
       return;
     }
     if ($visible === []) {
-      $writer->write(0, 0, $query === '' ? '(empty)' : "(no results for '{$query}')", $this->highlight, $this->bg);
+      $writer->write(0, 0, $query === '' ? '(empty)' : "(no results for '{$query}')", $this->style->highlight, $this->style->background);
       return;
     }
     $scroll = $viewport->scroll();
@@ -34,7 +34,7 @@ final class Painter {
   /** Repaint selected local rows and any scroll marks they overlap. */
   public function paintRows(GridWriter $writer, array $items, array $visible, ItemViewport $viewport, string $query, bool $active, bool $multiple, array $rows): void {
     foreach ($rows as $y) {
-      $writer->fillRow($y, $this->fg, $this->bg);
+      $writer->fillRow($y, $this->style->foreground, $this->style->background);
       $this->paintItem($writer, $items, $visible, $viewport, $query, $active, $multiple, $y);
       if ($y === 0) {
         $this->indicator($writer, ScrollIndicator::label($viewport->scroll(), $writer->height(), '▲'), 0);
@@ -55,8 +55,8 @@ final class Painter {
     }
     $item = $items[$index];
     $selected = $multiple ? $item['selected'] : $position === $viewport->position();
-    $cursorBg = $active && $position === $viewport->position() ? $this->cursorBg : $this->bg;
-    $writer->write(0, $y, $item['label'], $selected ? $this->selected : $this->fg, $cursorBg);
+    $cursorBg = $active && $position === $viewport->position() ? $this->style->cursorBackground : $this->style->background;
+    $writer->write(0, $y, $item['label'], $selected ? $this->style->selected : $this->style->foreground, $cursorBg);
     $this->paintMatch($writer, $item, $query, $y, $cursorBg);
   }
 
@@ -67,14 +67,14 @@ final class Painter {
     if ($query === '' || !str_starts_with(mb_strtolower($label), mb_strtolower($query))) {
       return;
     }
-    $writer->write($offset, $y, mb_substr($label, 0, mb_strlen($query)), $this->highlight, $bg);
+    $writer->write($offset, $y, mb_substr($label, 0, mb_strlen($query)), $this->style->highlight, $bg);
   }
 
   /** Draw an inverted scroll mark against the right edge. */
   private function indicator(GridWriter $writer, string $label, int $y): void {
     $label = ScrollIndicator::fit($label, $writer->width(), true);
     if ($label !== '') {
-      $writer->write($writer->width() - TextMetrics::width($label), $y, $label, $this->bg, $this->highlight);
+      $writer->write($writer->width() - TextMetrics::width($label), $y, $label, $this->style->background, $this->style->highlight);
     }
   }
 

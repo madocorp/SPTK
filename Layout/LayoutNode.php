@@ -2,6 +2,7 @@
 
 namespace SPTK\Layout;
 
+/** Splits a grid tile into child layouts and widgets and measures their separator areas. */
 final class LayoutNode {
 
   private $children = [];
@@ -88,51 +89,26 @@ final class LayoutNode {
     }
   }
 
-  public function measureArea(\SPTK\Layout\Tile $grid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
+  /** Measure child backgrounds and separator areas in the shared window coordinate system. */
+  public function measureArea(Tile $grid, WindowGeometry $geometry): void {
     foreach ($this->children as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
       }
-      if ($child instanceof self) {
-        $child->measureArea($grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
-      } else {
-        $child->measureArea($grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
-      }
+      $child->measureArea($grid, $geometry);
     }
     foreach ($this->children as $index => $child) {
       if ($child instanceof LayoutSeparator) {
-        $this->measureSeparatorArea($index, $grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
+        $this->measureSeparatorArea($index, $grid, $geometry);
       }
     }
   }
 
-  private function measureSeparatorArea(int $index, \SPTK\Layout\Tile $windowGrid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
+  /** Measure one separator after its preceding child within this layout's padded area. */
+  private function measureSeparatorArea(int $index, Tile $windowGrid, WindowGeometry $geometry): void {
     $separator = $this->children[$index];
     $before = $this->children[$index - 1];
-    $beforeGrid = $before->grid();
-    $left = 0;
-    if ($this->grid->x !== 0) {
-      $left = $this->grid->x * $cellWidth + $offsetX - $cellWidth;
-    }
-    $right = $windowWidth;
-    if ($this->grid->x + $this->grid->width < $windowGrid->width) {
-      $right = ($this->grid->x + $this->grid->width) * $cellWidth + $offsetX + $cellWidth;
-    }
-    $top = 0;
-    if ($this->grid->y !== 0) {
-      $top = $this->grid->y * $cellHeight + $offsetY - intdiv($cellHeight, 2);
-    }
-    $bottom = $windowHeight;
-    if ($this->grid->y + $this->grid->height < $windowGrid->height) {
-      $bottom = ($this->grid->y + $this->grid->height) * $cellHeight + $offsetY + intdiv($cellHeight + 1, 2);
-    }
-    if ($this->direction === 'horizontal') {
-      $boundary = ($beforeGrid->x + $beforeGrid->width) * $cellWidth + $offsetX + $cellWidth;
-      $separator->setArea(new Tile($boundary - 1, $top, 2, $bottom - $top));
-    } else {
-      $boundary = ($beforeGrid->y + $beforeGrid->height) * $cellHeight + $offsetY + intdiv($cellHeight + 1, 2);
-      $separator->setArea(new Tile($left, $boundary - 1, $right - $left, 2));
-    }
+    $separator->setArea($geometry->separatorArea($this->grid, $before->grid(), $windowGrid, $this->direction));
   }
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer, ?LayoutLeaf $selected = null): void {

@@ -3,7 +3,7 @@
 namespace SPTK\Core;
 
 use SPTK\SDLWrapper\SDL;
-use SPTK\Layout\LayoutLeaf;
+use SPTK\Layout\{LayoutLeaf, Tile, WindowGeometry};
 
 /** Owns the physical window, native renderer, character grid, and active screen. */
 final class Window {
@@ -25,8 +25,7 @@ final class Window {
   private $rows;
   private $grid;
   private ?\FFI\CData $frameTexture = null;
-  private int $offsetX = 0;
-  private int $offsetY = 0;
+  private WindowGeometry $geometry;
 
   public function __construct(array $data) {
     $this->ffiWidth = \FFI::new('int');
@@ -146,6 +145,7 @@ final class Window {
     $this->sdl->ffi->SDL_SyncWindow($this->window);
   }
 
+  /** Recreate the frame and remeasure every screen with the current window geometry. */
   public function resize() {
     $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
     $this->width = (int)$this->ffiWidth->cdata;
@@ -162,13 +162,19 @@ final class Window {
     $this->rows = max(1, intdiv($this->height, $this->font->cellHeight()) - 1);
     $offsetX = intdiv($this->width - $this->columns * $this->font->cellWidth(), 2);
     $offsetY = intdiv($this->height - $this->rows * $this->font->cellHeight(), 2);
-    $this->offsetX = $offsetX;
-    $this->offsetY = $offsetY;
+    $this->geometry = new WindowGeometry(
+      $this->font->cellWidth(),
+      $this->font->cellHeight(),
+      $this->width,
+      $this->height,
+      $offsetX,
+      $offsetY,
+    );
     $this->grid->resize($this->columns, $this->rows);
-    $grid = new \SPTK\Layout\Tile(0, 0, $this->columns, $this->rows);
+    $grid = new Tile(0, 0, $this->columns, $this->rows);
     foreach ($this->screens as $screen) {
       $screen->measureGrid($grid);
-      $screen->measureArea($grid, $this->font->cellWidth(), $this->font->cellHeight(), $offsetX, $offsetY, $this->width, $this->height);
+      $screen->measureArea($grid, $this->geometry);
     }
     $this->gridRenderer->setOffset($offsetX, $offsetY);
     $this->renderScreens();
@@ -188,7 +194,7 @@ final class Window {
       $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
     }
     $this->pixelRenderer->beginImages();
-    $screen->paintPixels($this->pixelRenderer, $this->font->cellWidth(), $this->font->cellHeight(), $this->offsetX, $this->offsetY);
+    $screen->paintPixels($this->pixelRenderer, $this->geometry);
     $this->pixelRenderer->endImages();
     $this->presentFrame();
   }
@@ -203,7 +209,7 @@ final class Window {
       $this->grid->dirtyCells();
       $leaf->drawBackground($this->pixelRenderer);
       $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
-      $leaf->paintPixels($this->pixelRenderer, $this->font->cellWidth(), $this->font->cellHeight(), $this->offsetX, $this->offsetY, true);
+      $leaf->paintPixels($this->pixelRenderer, $this->geometry, true);
       $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
       $this->presentFrame();
     } else if ($this->gridRenderer->drawDirty($this->ffiRenderer, $this->grid) > 0) {
@@ -220,7 +226,7 @@ final class Window {
       $leaf->paint($this->grid, $selected);
       $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
       if ($leaf->instance()->paintsPixels()) {
-        $leaf->paintPixels($this->pixelRenderer, $this->font->cellWidth(), $this->font->cellHeight(), $this->offsetX, $this->offsetY, $selected);
+        $leaf->paintPixels($this->pixelRenderer, $this->geometry, $selected);
       }
     }
     $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
@@ -254,6 +260,10 @@ final class Window {
       return true;
     }
     if ($event->type === SDL::SDL_EVENT_WINDOW_EXPOSED) {
+      $marker = $event instanceof \FFI\CData ? $event->window->data1 : ($event->window->data1 ?? 0);
+      if ($marker === SDL::CANVAS_REDRAW_REQUEST && !$this->pixelRenderer->canvasRedrawNeeded()) {
+        return false;
+      }
       $this->renderScreens();
       return true;
     }
@@ -269,6 +279,9 @@ final class Window {
       $handled = $screen->handleEvent($event);
       if ($index !== $this->currentScreen) {
         return true;
+      }
+      if (!$handled) {
+        return false;
       }
       if ($handled && $leaf !== null && $leaf === $screen->activeLeaf()) {
         $this->renderLeaf($leaf);

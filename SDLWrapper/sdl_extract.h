@@ -129,6 +129,8 @@ bool SDL_SetWindowTitle(SDL_Window *window, const char *title);
 bool SDL_SetWindowIcon(SDL_Window *window, SDL_Surface *icon);
 int SDL_SetHint(const char *name, const char *value);
 bool SDL_PollEvent(SDL_Event *event);
+bool SDL_PushEvent(SDL_Event *event);
+SDL_Window *SDL_GetRenderWindow(SDL_Renderer *renderer);
 bool SDL_WaitEventTimeout(SDL_Event *event, Sint32 timeoutMS);
 void SDL_DestroyRenderer(SDL_Renderer *renderer);
 void SDL_DestroyWindow(SDL_Window *window);
@@ -148,6 +150,8 @@ bool SDL_RenderLine(SDL_Renderer *renderer, float x1, float y1, float x2, float 
 bool SDL_RenderRect(SDL_Renderer *renderer, const SDL_FRect *rect);
 bool SDL_RenderFillRect(SDL_Renderer *renderer, const SDL_FRect *rect);
 SDL_Keymod SDL_GetModState(void);
+SDL_Keycode SDL_GetKeyFromScancode(int scancode, SDL_Keymod modstate, bool key_event);
+int SDL_GetScancodeFromKey(SDL_Keycode key, SDL_Keymod *modstate);
 bool SDL_StartTextInput(SDL_Window *window);
 bool SDL_SetClipboardText(const char *text);
 bool SDL_SetPrimarySelectionText(const char *text);
@@ -165,6 +169,7 @@ bool SDL_BlitSurface(SDL_Surface *src, const SDL_Rect *srcrect, SDL_Surface *dst
 bool SDL_FillSurfaceRect(SDL_Surface *dst, const SDL_Rect *rect, Uint32 color);
 bool SDL_UpdateTexture(SDL_Texture *texture, const SDL_Rect *rect, const void *pixels, int pitch);
 SDL_Surface *SDL_ConvertSurface(SDL_Surface *surface, SDL_PixelFormat format);
+bool SDL_ConvertPixels(int width, int height, SDL_PixelFormat src_format, const void *src, int src_pitch, SDL_PixelFormat dst_format, void *dst, int dst_pitch);
 bool SDL_SetTextureColorMod(SDL_Texture *texture, Uint8 r, Uint8 g, Uint8 b);
 bool SDL_SetTextureAlphaMod(SDL_Texture *texture, Uint8 alpha);
 

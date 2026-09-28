@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Image;
 
-use SPTK\Core\{Color, RasterImage, Widget};
+use SPTK\Core\{Color, ImageSource, RasterImage, Widget};
 use SPTK\Events\WidgetEventEmitter;
 use SPTK\Events\KeyNormalizer;
 use SPTK\Layout\Tile;
@@ -14,15 +14,18 @@ final class Image extends Widget {
 
   use WidgetEventEmitter;
 
-  private RasterImage $image;
+  private ImageSource $image;
   private readonly bool $initialFill;
+  private readonly float $initialZoom;
+  private readonly int $initialX;
+  private readonly int $initialY;
   private bool $fill;
   private float $zoom;
   private int $x;
   private int $y;
   private ?Tile $viewport = null;
 
-  /** Decode a local source and configure fitting or manual zoom and offsets. */
+  /** Retain a shared lazy source and configure fitting or manual zoom and offsets. */
   public function __construct(string|\GdImage $src, bool $fill = false, float $zoom = 1.0, int $x = 0, int $y = 0, private readonly Color $bg = new Color(0, 0, 0)) {
     if (!is_finite($zoom) || $zoom <= 0) {
       throw new \InvalidArgumentException('Image zoom must be a positive finite number.');
@@ -30,17 +33,20 @@ final class Image extends Widget {
     if ($fill && ($zoom !== 1.0 || $x !== 0 || $y !== 0)) {
       throw new \InvalidArgumentException('Image zoom, x, and y require fill=false.');
     }
-    $this->image = new RasterImage($src);
+    $this->image = ImageSource::from($src);
     $this->initialFill = $fill;
+    $this->initialZoom = $zoom;
+    $this->initialX = $x;
+    $this->initialY = $y;
     $this->fill = $fill;
     $this->zoom = $zoom;
     $this->x = $x;
     $this->y = $y;
   }
 
-  /** Return the decoded source with its dimensions and pixel data. */
+  /** Decode the shared source on demand and return its dimensions and pixel data. */
   public function source(): RasterImage {
-    return $this->image;
+    return $this->image->raster();
   }
 
   /** Prefer the native source width rounded to cells in manual mode. */
@@ -49,7 +55,7 @@ final class Image extends Widget {
       return null;
     }
     $cellWidth = \SPTK\App::fontOrNull()?->cellWidth() ?? 8;
-    return (int)ceil($this->image->width / $cellWidth);
+    return (int)ceil($this->image->dimensions()[0] / $cellWidth);
   }
 
   /** Prefer the native source height rounded to cells in manual mode. */
@@ -58,7 +64,7 @@ final class Image extends Widget {
       return null;
     }
     $cellHeight = \SPTK\App::fontOrNull()?->cellHeight() ?? 16;
-    return (int)ceil($this->image->height / $cellHeight);
+    return (int)ceil($this->image->dimensions()[1] / $cellHeight);
   }
 
   /** Fill the tile underneath transparent source pixels. */
@@ -73,7 +79,10 @@ final class Image extends Widget {
 
   /** Draw the source after text cells have been rendered. */
   public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
-    $renderer->image($this->image, $this->destination($area), $area, $selected);
+    if ($area->width < 1 || $area->height < 1) {
+      return;
+    }
+    $renderer->image($this->source(), $this->destination($area), $area, $selected);
   }
 
   /** Remember the viewport and compute the centered image with manual offsets. */
@@ -83,8 +92,9 @@ final class Image extends Widget {
       return new Tile($area->x, $area->y, 0, 0);
     }
     $scale = $this->fill ? $this->fitScale($area) : $this->zoom;
-    $drawWidth = max(1, (int)round($this->image->width * $scale));
-    $drawHeight = max(1, (int)round($this->image->height * $scale));
+    [$width, $height] = $this->image->dimensions();
+    $drawWidth = max(1, (int)round($width * $scale));
+    $drawHeight = max(1, (int)round($height * $scale));
     $offsetX = 0;
     if ($drawWidth > $area->width) {
       $this->x = $this->clampOffset($this->x, $area->width, $drawWidth);
@@ -108,9 +118,8 @@ final class Image extends Widget {
     if ($event->type !== SDL::SDL_EVENT_KEY_DOWN) {
       return false;
     }
-    $mod = (int)$event->key->mod;
-    $key = KeyNormalizer::normalize((int)$event->key->key, $mod);
-    if (in_array($key, [SDL::KEY_PLUS, SDL::KEY_ASTERISK, SDL::KEY_KP_PLUS, SDL::KEY_KP_MULTIPLY], true) || ($key === SDL::KEY_EQUALS && ($mod & SDL::MOD_SHIFT) !== 0)) {
+    $key = KeyNormalizer::normalizeInput($event);
+    if (in_array($key, [SDL::KEY_PLUS, SDL::KEY_ASTERISK, SDL::KEY_KP_PLUS, SDL::KEY_KP_MULTIPLY], true)) {
       $this->manual();
       $this->zoom *= 1.25;
       return true;
@@ -121,9 +130,10 @@ final class Image extends Widget {
       return true;
     }
     if ($key === SDL::KEY_SPACE) {
-      $this->fill = false;
-      $this->zoom = 1.0;
-      $this->x = $this->y = 0;
+      $this->fill = $this->initialFill;
+      $this->zoom = $this->initialZoom;
+      $this->x = $this->initialX;
+      $this->y = $this->initialY;
       return true;
     }
     if ($key === SDL::KEY_EQUALS || $key === SDL::KEY_KP_EQUALS) {
@@ -144,7 +154,8 @@ final class Image extends Widget {
     if ($area->width < 1 || $area->height < 1) {
       return 1.0;
     }
-    return min(1, $area->width / $this->image->width, $area->height / $this->image->height);
+    [$width, $height] = $this->image->dimensions();
+    return min(1, $area->width / $width, $area->height / $height);
   }
 
   /** Switch from fitting to manual scale without a visible size jump. */
@@ -161,8 +172,9 @@ final class Image extends Widget {
       return;
     }
     $this->manual();
-    $width = max(1, (int)round($this->image->width * $this->zoom));
-    $height = max(1, (int)round($this->image->height * $this->zoom));
+    [$sourceWidth, $sourceHeight] = $this->image->dimensions();
+    $width = max(1, (int)round($sourceWidth * $this->zoom));
+    $height = max(1, (int)round($sourceHeight * $this->zoom));
     if ($key === SDL::KEY_HOME || $key === SDL::KEY_END) {
       if ($width > $this->viewport->width) {
         $this->x = $this->edgeOffset($this->viewport->width, $width, $key === SDL::KEY_HOME);

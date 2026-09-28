@@ -1,0 +1,39 @@
+<Screen>
+  <Layout direction="vertical">
+    <Text height="1">Graphs and Canvas: activate the sprite tile, then Space to move</Text>
+    <Separator />
+    <Layout direction="horizontal" height="2">
+      <ProgressBar width="1*" title="Build assets" value="65" />
+      <Separator />
+      <ProgressBar width="1*" title="Rows fetched" value="42" max="120" display="fraction">
+        <Style><Selected>#80c0ff</Selected></Style>
+      </ProgressBar>
+      <Separator />
+      <ProgressBar width="1*" title="Current phase" value="2" max="4" text="Writing files" />
+    </Layout>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <Graph id="loadGraph" width="1*" title="Server load" xLabel="Time" xUnit="s" yLabel="Load" yUnit="%" yMin="0" yMax="100" grid="true">
+        <Series name="Server A" type="line">
+          <Point x="0" y="25" /><Point x="10" y="60" /><Point x="20" y="45" /><Point x="30" y="80" />
+        </Series>
+        <Series name="Observed" type="point">
+          <Point x="5" y="35" /><Point x="15" y="52" /><Point x="25" y="70" />
+        </Series>
+      </Graph>
+      <Separator />
+      <Graph id="barGraph" width="1*" title="Daily balance" xLabel="Day" yLabel="Balance" grid="true">
+        <Series name="North" type="bar" color="#80c0ff">
+          <Point x="1" y="12" /><Point x="2" y="-4" /><Point x="3" y="18" />
+        </Series>
+        <Series name="South" type="bar" color="#ff80c0">
+          <Point x="1" y="8" /><Point x="2" y="14" /><Point x="3" y="-7" />
+        </Series>
+      </Graph>
+      <Separator />
+      <Canvas id="spriteCanvas" width="1*" painter="Controller::paintCanvas">
+        <Event type="keyDown" key="Space" action="Controller::advanceCanvas" />
+      </Canvas>
+    </Layout>
+  </Layout>
+</Screen>

@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\TextEditor;
 
-use SPTK\Core\{Color, TextEdit, Widget};
+use SPTK\Core\{Color, Style, TextEdit, Widget};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\GridWriter;
 use SPTK\SDLWrapper\SDL;
@@ -26,7 +26,13 @@ final class TextEditor extends Widget {
   private bool $paintedSelection = false;
 
   /** Create a multiline editor with inherited style colors. */
-  public function __construct(string $value = '', private readonly Color $fg = new Color(255, 255, 255), private readonly Color $bg = new Color(0, 0, 0), Color $cursorBg = new Color(85, 85, 85), private readonly Color $indicatorFg = new Color(0, 255, 255), private readonly bool $wrap = false, private readonly int $tabSize = 8, private readonly ?string $label = null) {
+  public function __construct(
+    string $value = '',
+    private readonly Style $style = new Style(background: new Color(0, 0, 0), foreground: new Color(255, 255, 255), cursorBackground: new Color(85, 85, 85)),
+    private readonly bool $wrap = false,
+    private readonly int $tabSize = 8,
+    private readonly ?string $label = null,
+  ) {
     if ($tabSize < 1) {
       throw new \InvalidArgumentException('TextEditor tabSize must be positive.');
     }
@@ -35,7 +41,8 @@ final class TextEditor extends Widget {
     }
     $this->document = new TextEdit(true, $value, $tabSize);
     $this->navigator = new Navigator($wrap, $tabSize);
-    $this->painter = new Painter($fg, $bg, $fg, $cursorBg, $indicatorFg);
+    // Editable text keeps the normal foreground for both selection and the caret.
+    $this->painter = new Painter($style->with(['CursorForeground' => $style->foreground]));
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
   }
@@ -74,8 +81,8 @@ final class TextEditor extends Widget {
   /** Paint text, selection, indicators, and the active block cursor. */
   public function paint(GridWriter $writer): void {
     if ($this->label !== null) {
-      $writer->fill($this->fg, $this->bg);
-      $writer->write(0, 0, $this->label, $this->indicatorFg, $this->bg);
+      $writer->fill($this->style->foreground, $this->style->background);
+      $writer->write(0, 0, $this->label, $this->style->highlight, $this->style->background);
       $writer = $writer->below(min(1, $writer->height()));
     }
     $lines = $this->document->lines();
@@ -114,7 +121,7 @@ final class TextEditor extends Widget {
 
   /** Return the tile background color. */
   public function background(): Color {
-    return $this->bg;
+    return $this->style->background;
   }
 
   /** Apply multiline input and shared editing shortcuts. */

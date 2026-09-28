@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Button;
 
-use SPTK\Core\{Color, Widget, Window};
+use SPTK\Core\{Color, Style, Widget, Window};
 use SPTK\Events\{EventContext, EventDefinition, EventDispatcher, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
@@ -19,9 +19,7 @@ final class Button extends Widget {
     private string $label,
     private ?string $hotkey,
     private ?string $action,
-    private Color $foreground,
-    private Color $backgroundColor,
-    private Color $highlight,
+    private readonly Style $style,
     private ?string $screenId = null,
   ) {
   }
@@ -63,18 +61,18 @@ final class Button extends Widget {
 
   /** Return the normal color for the full pixel background around grid cells. */
   public function background(): Color {
-    return $this->backgroundColor;
+    return $this->style->background;
   }
 
   /** Paint the hotkey before the label using the current button colors. */
   public function paint(GridWriter $writer): void {
-    $foreground = $this->activated ? $this->backgroundColor : $this->foreground;
-    $background = $this->activated ? $this->foreground : $this->backgroundColor;
+    $foreground = $this->activated ? $this->style->background : $this->style->foreground;
+    $background = $this->activated ? $this->style->foreground : $this->style->background;
     $writer->fill($foreground, $background);
     $x = 1;
     if ($this->hotkey !== null) {
       $key = strtoupper($this->hotkey);
-      $writer->write($x, 0, $key, $this->highlight, $background);
+      $writer->write($x, 0, $key, $this->style->highlight, $background);
       $x += TextMetrics::width($key);
       $writer->write($x, 0, ' ', $foreground, $background);
       $x++;

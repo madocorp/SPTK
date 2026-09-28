@@ -41,7 +41,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new TextEditor($value ?? $text, $style->foreground, $style->background, $style->cursorBackground, $style->highlight, $wrap, $tabSize, $label), $events);
+    return new WidgetDefinition(new TextEditor($value ?? $text, $style, $wrap, $tabSize, $label), $events);
   }
 
 }

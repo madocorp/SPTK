@@ -63,6 +63,10 @@ method can be public static, for example `public static function selectAll(Event
 
 ## Raw input events
 
+`KeyNormalizer::normalizeInput()` resolves a keyboard event's symbol through SDL's current layout and modifiers,
+then applies the usual keypad normalization. Image controls use it for symbols such as `=`, `+`, and `*`.
+`KeyNormalizer::normalize()` remains available for normalizing an already-known keycode and modifier mask.
+
 Raw input event types are `keyDown`, `keyUp`, and `textInput`. A `key` attribute is allowed only with `keyDown`
 and `keyUp`. Keys can be letters, digits, `f1` through `f12`, or named keys such as `enter`, `escape`, `left`,
 `home`, and `backspace`. The optional modifiers are `ctrl`, `shift`, and `alt`, joined with `+`, as in

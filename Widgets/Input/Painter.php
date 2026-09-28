@@ -2,19 +2,19 @@
 
 namespace SPTK\Widgets\Input;
 
-use SPTK\Core\{Color, ScrollIndicator, TextCursor};
+use SPTK\Core\{ScrollIndicator, Style, TextCursor};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
 /** Paints a one-row editor with a block caret and horizontal page indicators. */
 final class Painter {
 
   /** Create the input painter with inherited colors. */
-  public function __construct(private readonly Color $fg, private readonly Color $bg, private readonly Color $cursorBg, private readonly Color $indicatorFg) {
+  public function __construct(private readonly Style $style) {
   }
 
   /** Paint text and return the actual horizontal scroll and text viewport width. */
   public function paint(GridWriter $writer, string $text, TextCursor $cursor, int $scroll, bool $active, int $tabSize): array {
-    $writer->fill($this->fg, $this->bg);
+    $writer->fill($this->style->foreground, $this->style->background);
     if ($writer->width() < 1 || $writer->height() < 1) {
       return [$scroll, 1];
     }
@@ -28,10 +28,10 @@ final class Painter {
       }
       $selected = $selection !== null && $index < TextMetrics::length($text)
         && $index >= $selection[1] && $index < $selection[3];
-      $writer->set($x0 + $x, 0, $glyph, $this->fg, $selected ? $this->cursorBg : $this->bg);
+      $writer->set($x0 + $x, 0, $glyph, $this->style->foreground, $selected ? $this->style->cursorBackground : $this->style->background);
     }
-    $writer->write(0, 0, $left, $this->bg, $this->indicatorFg);
-    $writer->write($writer->width() - TextMetrics::length($right), 0, $right, $this->bg, $this->indicatorFg);
+    $writer->write(0, 0, $left, $this->style->background, $this->style->highlight);
+    $writer->write($writer->width() - TextMetrics::length($right), 0, $right, $this->style->background, $this->style->highlight);
     if ($active) {
       $x = $x0 + $caret - $scroll;
       $glyph = TextMetrics::slice($text, $cursor->position()[1], 1);
@@ -42,7 +42,7 @@ final class Painter {
         $glyph = ' ';
       }
       if ($x >= $x0 && $x < $x0 + $width) {
-        $writer->set($x, 0, $glyph, $this->fg, $this->cursorBg);
+        $writer->set($x, 0, $glyph, $this->style->foreground, $this->style->cursorBackground);
       }
     }
     return [$scroll, $width];

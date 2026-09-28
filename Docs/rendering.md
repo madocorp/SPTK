@@ -14,10 +14,16 @@ It clears the frame texture and the grid, then renders the current screen in thi
    darkened by `LayoutLeaf`.
 3. `GridRenderer::drawTile()` draws the backgrounds and glyphs inside each widget tile. Tile bounds leave separator gaps untouched, and black swatches render normally.
 4. `Screen::paintPixels()` draws pixel widgets over the grid. `PixelRenderer` tracks the image textures used in
-   this frame and releases textures no longer used.
+   this frame and releases textures no longer used. Unselected pixel content retains 75% brightness, matching
+   character cells and tile backgrounds.
 5. `Window::presentFrame()` copies the frame texture to the window backbuffer and calls `SDL_RenderPresent()`.
 
 Resizing recreates the frame texture and grid, measures the layout again, and takes this full render path.
+Window also replaces its readonly `Layout\WindowGeometry` on resize and passes the same object to every
+screen's layout measurement. Full renders, active-widget updates, and focus changes use that geometry
+for pixel widgets: `Screen::paintPixels($renderer, $geometry)` forwards it to each leaf, and
+`LayoutLeaf::paintPixels($renderer, $geometry, $selected)` converts the leaf's grid tile into a pixel area.
+Widgets continue to receive `paintPixels($renderer, $area, $selected)` with their concrete pixel rectangle.
 
 ## Input updates
 
@@ -74,7 +80,9 @@ horizontal first (`▶ ▼`). `ScrollIndicator::fit()` removes counts and spacin
 - `Table` repaints only the old and new cursor rows when its viewport stays fixed. Scrolling repaints the tile.
 - Pixel widgets use a separate path: `renderLeaf()` clears that tile's pixel background, draws its grid cells,
   paints its pixel content, and restores separator lines. `Image` draws from a cached SDL texture for its
-  decoded source rather than uploading it on every frame.
+  decoded source rather than uploading it on every frame. File-backed images decode on first display;
+  widgets with the same file share their source pixels and one texture per renderer. Layout normally reads
+  only image header dimensions, so unopened screens avoid pixel decoding.
 - `GlyphAtlas` caches rendered white glyph bitmaps in a texture owned by the window renderer. Cell colors are
   applied when the cached glyph is drawn. The atlas reuses slots when full and reuses FFI rectangle objects
   for glyph lookup and upload. Geometry glyph masks are rasterized into the atlas on first use, then use the
@@ -85,3 +93,42 @@ horizontal first (`▶ ▼`). `ScrollIndicator::fit()` removes counts and spacin
 
 These caches have different lifetimes: visual rows belong to a text widget, image and glyph textures belong
 to an SDL renderer, and the frame texture belongs to a window until resize or close.
+
+## Canvas surfaces and application textures
+
+`CanvasRenderer` owns one `TextureContext` per window. Canvas surfaces are allocated on first display
+and repainted only after invalidation or recreation. Resizing replaces the surface; leaving the screen
+releases unused surfaces. Application sprites and writable layers remain available until explicitly
+destroyed, discarded by PHP, or released during window shutdown. Canvas invalidation queues a window
+expose event to redraw after timer-driven updates as well as keyboard input.
+Queued Canvas exposes carry an internal marker. If input has already repainted all changed Canvas
+surfaces, the window consumes the notification without repainting or presenting again. Native expose
+events continue to redraw the complete frame. Unconsumed input, including the extra text-input event
+from holding Space, does not redraw an unchanged window.
+
+`Texture` drawing and copy operations restore the shared renderer state. Writable textures accumulate
+premultiplied pixels and use SDL's predefined premultiplied blend mode when copied, preserving alpha
+through intermediate layers. Imported image textures use ordinary alpha blending. Nearest filtering
+keeps scaled sprite pixels crisp. Selection shading affects the composed canvas rather than its assets.
+The painter runs inside one `TextureContext::withTarget()` scope, so copies to its surface remain queued
+under the same SDL target. Drawing to another layer creates a nested scope and restores the Canvas
+target afterward. This avoids switching targets and flushing SDL's drawing queue for every sprite.
+See [Canvas](Widgets/Canvas.md) for the app API and Madventure atlas workflow.
+
+Run `php Tests/CanvasPerformance.php` for repeated-key rendering and timer-style invalidation checks,
+plus frame timings with the dummy driver. `SDL_VIDEODRIVER=offscreen php Tests/CanvasPerformance.php 200 90`
+measures a headless renderer at 200 columns by 90 rows. Timings include input handling and presentation;
+no machine-dependent timing limit is asserted.
+
+## GD pixel transfer
+
+`RasterImage` uses `ImagePixels` to transfer pixels without a PHP per-pixel loop when native conversion is available. A native GD copy preserves
+alpha and transparent palette entries while leaving the caller's image settings intact. GD exports an
+uncompressed PNG into memory, libpng's simplified API reads it as RGBA bytes, and `SDL_ConvertPixels` converts
+those bytes to native-endian `SDL_PIXELFORMAT_RGBA8888` words. This requires GD PNG support and
+`libpng16.so.16`; no temporary image files are created. If native dependencies or APIs cannot load, the converter
+remembers that failure and uses PHP's GD pixel getters for all subsequent conversions. Conversion also works before window initialization,
+so caller-owned GD images and standalone widget checks can still create immutable rasters.
+
+Run `php Tests/RasterImage.php` for RGB, alpha, palette, row order, and caller ownership checks.
+Run `php Tests/RasterFallback.php` for missing-library fallback and retry suppression checks.

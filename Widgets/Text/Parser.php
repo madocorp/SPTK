@@ -44,11 +44,7 @@ final class Parser implements WidgetParser {
     $text = preg_replace('/\A(?:[ \t]*\R)+|(?:\R[ \t]*)+\z/u', '', $text);
     return new WidgetDefinition(new Text(
       $text,
-      $style->foreground,
-      $style->background,
-      $style->cursorBackground,
-      $style->cursorForeground,
-      $style->highlight,
+      $style,
       $wrap,
       $tabSize,
       $align,

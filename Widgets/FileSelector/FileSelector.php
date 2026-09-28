@@ -20,7 +20,7 @@ final class FileSelector extends Widget {
 
   /** Build a filesystem-backed list with inherited colors and search settings. */
   public function __construct(string $path = '.', private readonly bool $multiple = false, bool $filterable = true, bool $searchable = true, private readonly Style $style = new Style()) {
-    $this->list = new ListView([], $multiple, $filterable, $searchable, false, $style->foreground, $style->background, $style->cursorBackground, $style->highlight, $style->selected);
+    $this->list = new ListView([], $multiple, $filterable, $searchable, false, $style);
     $this->list->on('change', $this->listChanged(...));
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));

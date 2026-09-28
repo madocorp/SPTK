@@ -6,6 +6,7 @@ use SPTK\Core\Widget;
 use SPTK\Events\{EventContext, EventDispatcher};
 use SPTK\Rendering\{Grid, GridWriter};
 
+/** Holds one widget's grid tile, padded pixel area, and event subscriptions. */
 final class LayoutLeaf {
 
   private $grid;
@@ -43,29 +44,13 @@ final class LayoutLeaf {
   }
 
   /** Paint this widget's optional pixel content in its grid cell rectangle. */
-  public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, bool $selected): void {
-    $area = new Tile($this->grid->x * $cellWidth + $offsetX, $this->grid->y * $cellHeight + $offsetY, $this->grid->width * $cellWidth, $this->grid->height * $cellHeight);
-    $this->instance->paintPixels($renderer, $area, $selected);
+  public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry, bool $selected): void {
+    $this->instance->paintPixels($renderer, $geometry->pixelArea($this->grid), $selected);
   }
 
-  public function measureArea(Tile $windowGrid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
-    $left = 0;
-    if ($this->grid->x !== 0) {
-      $left = $this->grid->x * $cellWidth + $offsetX - $cellWidth;
-    }
-    $top = 0;
-    if ($this->grid->y !== 0) {
-      $top = $this->grid->y * $cellHeight + $offsetY - intdiv($cellHeight, 2);
-    }
-    $right = $windowWidth;
-    if ($this->grid->x + $this->grid->width < $windowGrid->width) {
-      $right = ($this->grid->x + $this->grid->width) * $cellWidth + $offsetX + $cellWidth;
-    }
-    $bottom = $windowHeight;
-    if ($this->grid->y + $this->grid->height < $windowGrid->height) {
-      $bottom = ($this->grid->y + $this->grid->height) * $cellHeight + $offsetY + intdiv($cellHeight + 1, 2);
-    }
-    $this->area = new Tile($left, $top, $right - $left, $bottom - $top);
+  /** Measure this widget's background including padding at interior and window edges. */
+  public function measureArea(Tile $windowGrid, WindowGeometry $geometry): void {
+    $this->area = $geometry->backgroundArea($this->grid, $windowGrid);
   }
 
   /** Draw this widget's background, dimmed when it is not selected. */

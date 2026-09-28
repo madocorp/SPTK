@@ -11,6 +11,7 @@ class SDL {
 
   public const SDL_EVENT_RENDER_TARGETS_RESET = 0x2000;
   public const SDL_EVENT_RENDER_DEVICE_RESET = 0x2001;
+  public const CANVAS_REDRAW_REQUEST = 0x43564e53;
 
   public const SDL_QUIT = 0x100;
   public const SDL_EVENT_WINDOW_EXPOSED = 0x204;
@@ -29,9 +30,11 @@ class SDL {
   public const SDL_EVENT_MOUSE_WHEEL = 0x403;
 
   public const SDL_PIXELFORMAT_RGBA8888 = 0x16462004;
+  public const SDL_PIXELFORMAT_ABGR8888 = 0x16762004;
   public const SDL_TEXTUREACCESS_STATIC = 0;
   public const SDL_TEXTUREACCESS_TARGET = 2;
   public const SDL_BLENDMODE_BLEND = 0x1;
+  public const SDL_BLENDMODE_BLEND_PREMULTIPLIED = 0x10;
   public const SDL_SCALE_MODE_NEAREST = 0;
   public const SDL_SCALE_MODE_LINEAR = 1;
 

@@ -9,15 +9,35 @@ When no `<Style>` sets a color, `Core\Style` supplies these defaults:
 
 | Color | Default | Purpose |
 | --- | --- | --- |
-| `Background` | `#000000` | Widget background |
-| `Foreground` | `#ffffff` | Widget text |
+| `Background` | `#323232` | Widget background |
+| `Foreground` | `#cccccc` | Widget text |
 | `Separator` | `#aaaaaa` | Layout separators |
 | `Highlight` | `#00ffff` | Highlight palette color |
-| `Selected` | `#ffffff` | Selected palette color |
-| `CursorBackground` | `#555555` | Cursor palette background |
+| `Selected` | `#ffff00` | Selected palette color |
+| `CursorBackground` | `#777777` | Cursor palette background |
 | `CursorForeground` | `#ffffff` | Cursor palette foreground |
 
-The demo sets this same palette explicitly in `Demo/Layout/app.xml`.
+The demo sets its own palette explicitly in `Demo/Layout/app.xml`.
+
+## PHP palettes
+
+Text, Input, TextEditor, ListView, RadioButton, CheckboxArray, and Button accept one `Core\Style` instead of
+separate foreground, background, cursor, and highlight arguments. Their parsers pass the inherited style to
+the widget, and the widget passes it to its painter.
+
+```php
+$style = new SPTK\Core\Style(
+  background: new SPTK\Core\Color(24, 28, 36),
+  foreground: new SPTK\Core\Color(230, 235, 245),
+);
+$text = new SPTK\Widgets\Text\Text('Hello', style: $style);
+$input = new SPTK\Widgets\Input\Input('Name', style: $style, label: 'Name');
+```
+
+Replace old named color arguments such as `bg` and `indicatorFg` with `style`, using `background` and
+`highlight` entries respectively. Text, Input, TextEditor, ListView, RadioButton, and CheckboxArray retain
+their previous colors when `style` is omitted. Supplying a style uses that palette's values. Input and
+TextEditor continue to use `foreground` for their caret and selection text; Text uses `cursorForeground`.
 
 ## Inheritance and overrides
 

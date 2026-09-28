@@ -34,7 +34,7 @@ final class ScreenSelector {
   private function installOnScreen(Screen $screen, array $ids, array $byId, Style $style): void {
     $row = new LayoutNode('horizontal', '1*', '1');
     foreach ($ids as $index => $id) {
-      $button = new Button($byId[$id]->title, 'f' . ($index + 1), null, $style->foreground, $style->background, $style->highlight, $id);
+      $button = new Button($byId[$id]->title, 'f' . ($index + 1), null, $style, $id);
       $button->setId('screen_' . $id);
       $row->addLeaf(new LayoutLeaf('Button', '', '', $button));
     }

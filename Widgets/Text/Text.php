@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Clipboard, Color, TextCursor, TextRows, Widget};
+use SPTK\Core\{Clipboard, Color, Style, TextCursor, TextRows, Widget};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -33,11 +33,7 @@ final class Text extends Widget {
   /** Create read-only text with optional row alignment. */
   public function __construct(
     string $text,
-    private readonly Color $fg = new Color(230, 235, 245),
-    private readonly Color $bg = new Color(24, 28, 36),
-    private readonly Color $cursorBg = new Color(85, 85, 85),
-    private readonly Color $cursorFg = new Color(255, 255, 255),
-    private readonly Color $indicatorFg = new Color(0, 255, 255),
+    private readonly Style $style = new Style(background: new Color(24, 28, 36), foreground: new Color(230, 235, 245), cursorBackground: new Color(85, 85, 85)),
     private readonly bool $wrap = true,
     private readonly int $tabSize = 8,
     private readonly string $align = 'left',
@@ -55,7 +51,7 @@ final class Text extends Widget {
     $this->lines = explode("\n", $text);
     $this->cursor = new TextCursor($this->lines, $this->tabSize);
     $this->rows = new TextRows();
-    $this->painter = new Painter($this->fg, $this->bg, $this->cursorFg, $this->cursorBg, $this->indicatorFg);
+    $this->painter = new Painter($style);
     $this->on('activate', $this->activateCursor(...));
     $this->on('deactivate', $this->deactivateCursor(...));
   }
@@ -109,7 +105,7 @@ final class Text extends Widget {
 
   /** Return the background used behind the text tile. */
   public function background(): Color {
-    return $this->bg;
+    return $this->style->background;
   }
 
   /** Move the active cursor through the text grid or scroll by a page. */
