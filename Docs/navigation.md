@@ -5,9 +5,12 @@ starts. The initial `select` notification is sent when the screen first handles 
 
 ## Layout mode
 
-Layout mode is the default. Use the arrow keys to move focus to a nearby widget in that direction. If no
-widget lies in that direction, focus stays where it is. Movement follows tile geometry rather than cycling
-through widgets in XML order. The selected tile is drawn at full brightness; other widget tiles are dimmed.
+Layout mode is the default. Arrow keys prefer the nearest widget in the same row (Left/Right) or column
+(Up/Down). Tiles share a row or column when their ranges overlap on the axis perpendicular to movement.
+Only when no aligned widget remains in that direction does focus move to the geometrically nearest widget,
+using edge-to-edge distance. If no widget lies in that direction, focus stays where it is. Movement follows
+tile geometry rather than cycling through widgets in XML order. The selected tile is drawn at full brightness;
+other widget tiles are dimmed.
 
 Press Return or keypad Enter to activate the selected widget and enter input mode. A Button runs its action
 immediately and stays in layout mode.

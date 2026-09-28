@@ -7,6 +7,21 @@ use SPTK\SDLWrapper\SDL;
 /** Normalizes SDL keycodes so equivalent keyboard keys share one code. */
 final class KeyNormalizer {
 
+  /** Normalize a keyboard event's actual layout symbol and equivalent keypad keys. */
+  public static function normalizeInput(mixed $event): int {
+    $mod = (int)$event->key->mod;
+    $key = self::normalize((int)$event->key->key, $mod);
+    $scancode = (int)($event->key->scancode ?? 0);
+    $sdl = \SPTK\App::sdl();
+    if ($scancode > 0 && $sdl !== null) {
+      $modified = (int)$sdl->ffi->SDL_GetKeyFromScancode($scancode, $mod, false);
+      if ($modified !== 0) {
+        return self::normalize($modified, $mod);
+      }
+    }
+    return $key === SDL::KEY_EQUALS && ($mod & SDL::MOD_SHIFT) !== 0 ? SDL::KEY_PLUS : $key;
+  }
+
   /** Return the SDL modifier bits supported by key chords. */
   public static function normalizeModifiers(int $mod): int {
     $normalized = 0;

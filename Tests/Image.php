@@ -6,7 +6,7 @@ require_once APP_DIR . '/SPTK/App.php';
 
 spl_autoload_register(['SPTK\\App', 'load']);
 
-use SPTK\Core\{Color, Screen, Window};
+use SPTK\Core\{Color, ImageSource, Screen, Window};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile};
 use SPTK\Rendering\{Font, GlyphAtlas, PixelRenderer};
 use SPTK\SDLWrapper\SDL;
@@ -42,12 +42,52 @@ function imagePixel(SDL $sdl, \FFI\CData $renderer, int $x, int $y): int {
 }
 
 /** Create a keyboard event for image controls. */
-function imageKey(int $key, int $mod = 0): object {
-  return (object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => $key, 'mod' => $mod]];
+function imageKey(int $key, int $mod = 0, int $scancode = 0): object {
+  return (object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => $key, 'mod' => $mod, 'scancode' => $scancode]];
 }
 
-$source = APP_DIR . '/../Demo/Assets/sample.png';
+/** Build a key event for a symbol using SDL's current keyboard layout and modifiers. */
+function imageSymbolKey(int $symbol): object {
+  $sdl = SPTK\App::sdl();
+  $mod = $sdl->ffi->new('SDL_Keymod');
+  $scancode = (int)$sdl->ffi->SDL_GetScancodeFromKey($symbol, FFI::addr($mod));
+  if ($scancode === 0) {
+    throw new RuntimeException('Current keyboard layout cannot produce image control symbol.');
+  }
+  $base = (int)$sdl->ffi->SDL_GetKeyFromScancode($scancode, (int)$mod->cdata, true);
+  return imageKey($base, (int)$mod->cdata, $scancode);
+}
+
+/** Build a small transparent fixture independent of the demo's chosen photograph. */
+function imageFixture(): string {
+  $path = tempnam(sys_get_temp_dir(), 'sptk-image-');
+  $canvas = imagecreatetruecolor(96, 64);
+  imagealphablending($canvas, false);
+  imagesavealpha($canvas, true);
+  imagefill($canvas, 0, 0, imagecolorallocatealpha($canvas, 0, 0, 0, 127));
+  imagefilledrectangle($canvas, 16, 12, 80, 52, imagecolorallocatealpha($canvas, 200, 100, 50, 0));
+  imagepng($canvas, $path);
+  imagedestroy($canvas);
+  register_shutdown_function('removeImageFixture', $path);
+  return $path;
+}
+
+/** Remove the temporary fixture created by this test run. */
+function removeImageFixture(string $path): void {
+  unlink($path);
+}
+
+$source = imageFixture();
 $image = new Image($source);
+$shared = ImageSource::from($source);
+$rasterProperty = new ReflectionProperty(ImageSource::class, 'image');
+expectImage($rasterProperty->getValue($shared), null, 'construction leaves pixels unloaded');
+expectImage([$image->preferredWidth(), $image->preferredHeight()], [12, 4], 'header dimensions preserve natural sizing');
+expectImage($rasterProperty->getValue($shared), null, 'layout reads dimensions without decoding');
+$image->destination(new Tile(0, 0, 200, 100));
+expectImage($rasterProperty->getValue($shared), null, 'positioning avoids decoding');
+$alias = new Image(dirname($source) . '/./' . basename($source));
+expectImage($image->source() === $alias->source(), true, 'equivalent paths share one raster');
 expectImage([$image->source()->width, $image->source()->height], [96, 64], 'raster dimensions');
 expectImage($image->source()->src, $source, 'path source');
 $rect = $image->destination(new Tile(0, 0, 200, 100));
@@ -106,6 +146,24 @@ $rect = $fill->destination(new Tile(0, 0, 200, 100));
 expectImage([$rect->x, $rect->y, $rect->width, $rect->height], [52, 18, 96, 64], 'fill keeps smaller image native');
 $rect = $fill->destination(new Tile(0, 0, 48, 32));
 expectImage([$rect->x, $rect->y, $rect->width, $rect->height], [0, 0, 48, 32], 'fill shrinks oversized image');
+$configured = new Image($source, zoom: 2, x: 10, y: -5);
+$configuredViewport = new Tile(0, 0, 48, 32);
+$originalView = $configured->destination($configuredViewport);
+$configured->handleInput(imageKey(SDL::KEY_PLUS));
+$configured->handleInput(imageKey(SDL::KEY_RIGHT));
+$configured->handleInput(imageKey(SDL::KEY_EQUALS));
+$configured->handleInput(imageKey(SDL::KEY_SPACE));
+expectImage($configured->destination($configuredViewport) == $originalView, true, 'Space restores configured zoom and offsets after fitting');
+$configured->handleInput(imageKey(SDL::KEY_MINUS));
+$configured->handleInput(imageKey(SDL::KEY_SPACE));
+expectImage($configured->destination($configuredViewport) == $originalView, true, 'Space repeatedly restores initial settings');
+$fitted = new Image($source, fill: true);
+$fitted->destination($configuredViewport);
+$fitted->handleInput(imageKey(SDL::KEY_PLUS));
+$fitted->handleInput(imageKey(SDL::KEY_RIGHT));
+$fitted->handleInput(imageKey(SDL::KEY_SPACE));
+expectImage($fitted->destination($configuredViewport)->width, 48, 'Space restores initial fill mode');
+expectImage($fitted->destination(new Tile(0, 0, 24, 16))->width, 24, 'restored fill follows viewport resizing');
 $viewer = new Image($source);
 $preferredWidth = $viewer->preferredWidth();
 $viewport = new Tile(0, 0, 48, 32);
@@ -182,6 +240,23 @@ foreach ($leaves as $leaf) {
   }
 }
 expectImage(count($images), 3, 'Image screen widget count');
+$demoSource = (new ReflectionProperty(Image::class, 'image'))->getValue($images[0]);
+expectImage($rasterProperty->getValue($demoSource), null, 'parsing all screens leaves demo pixels unloaded');
+foreach ($images as $demoImage) {
+  expectImage((new ReflectionProperty(Image::class, 'image'))->getValue($demoImage) === $demoSource, true, 'demo widgets share lazy source');
+}
+$missingPath = $source . '-missing';
+$missing = new Image($missingPath);
+try {
+  $missing->source();
+  throw new RuntimeException('Missing lazy image accepted.');
+} catch (RuntimeException $error) {
+  expectImage(str_contains($error->getMessage(), 'Cannot read image:'), true, 'missing file fails on first source access');
+}
+$temporarySource = ImageSource::from($source . '-unused');
+$weak = WeakReference::create($temporarySource);
+unset($temporarySource);
+expectImage($weak->get(), null, 'cache does not retain unused image sources');
 putenv('SDL_VIDEODRIVER=dummy');
 $sdl = new SDL();
 expectImage($sdl->ffi->SDL_Init(SDL::SDL_INIT_VIDEO), true, 'dummy SDL initialization');
@@ -198,6 +273,18 @@ if ($nativeRenderer === null) {
 }
 try {
   $renderer = new PixelRenderer($nativeRenderer);
+  $layoutKeys = new Image($source, zoom: 2);
+  $layoutKeys->destination(new Tile(0, 0, 48, 32));
+  $layoutKeys->handleInput(imageSymbolKey(SDL::KEY_EQUALS));
+  expectImage($layoutKeys->destination(new Tile(0, 0, 48, 32))->width, 48, 'native equals scancode fits');
+  $layoutKeys->handleInput(imageSymbolKey(SDL::KEY_PLUS));
+  expectImage($layoutKeys->destination(new Tile(0, 0, 48, 32))->width, 60, 'native plus symbol zooms in');
+  $layoutKeys->handleInput(imageSymbolKey(SDL::KEY_ASTERISK));
+  expectImage($layoutKeys->destination(new Tile(0, 0, 48, 32))->width, 75, 'shifted number resolves to asterisk zoom');
+  $layoutKeys->handleInput(imageSymbolKey(SDL::KEY_EQUALS));
+  expectImage($layoutKeys->destination(new Tile(0, 0, 48, 32))->width, 48, 'layout symbol takes precedence over base event keycode');
+  $missing->paintPixels($renderer, new Tile(0, 0, 0, 100), true);
+  expectImage($rasterProperty->getValue(ImageSource::from($missingPath)), null, 'empty pixel tile does not decode');
   $renderer->fill(new Tile(0, 0, 12, 12), new Color(255, 0, 0));
   $renderer->fill(new Tile(12, 0, 12, 12), new Color(255, 0, 0));
   $renderer->fill(new Tile(24, 0, 12, 12), new Color(0, 255, 0));
@@ -209,6 +296,9 @@ try {
   $image->paintPixels($renderer, new Tile(0, 0, 200, 100), true);
   $renderer->endImages();
   expectImage(count((new ReflectionProperty(PixelRenderer::class, 'images'))->getValue($renderer)), 1, 'texture cached');
+  $alias->paintPixels($renderer, new Tile(0, 0, 200, 100), false);
+  expectImage(count((new ReflectionProperty(PixelRenderer::class, 'images'))->getValue($renderer)), 1, 'same file shares one SDL texture');
+  $image->paintPixels($renderer, new Tile(0, 0, 200, 100), true);
   expectImage(imagePixel($sdl, $nativeRenderer, 52, 18), 0x0a141eff, 'transparent source reveals background');
   $bright = imagePixel($sdl, $nativeRenderer, 100, 50);
   expectImage($bright !== 0x0a141eff, true, 'image color reaches framebuffer');
@@ -258,9 +348,16 @@ try {
   $atlas->close();
   (new ReflectionProperty(SPTK\App::class, 'font'))->setValue($app, $font);
   $definition = $parser->windows[0];
-  $definition['screens'] = [$parser->windows[0]['screens'][3]];
   $definition['state'] = 'hidden';
+  $initialWindow = new Window($definition);
+  try {
+    expectImage($rasterProperty->getValue($demoSource), null, 'window startup does not decode unopened image screen');
+  } finally {
+    $initialWindow->close();
+  }
+  $definition['screens'] = [$parser->windows[0]['screens'][3]];
   $windowWidget = new Window($definition);
+  expectImage($images[0]->source() === $images[1]->source() && $images[1]->source() === $images[2]->source(), true, 'visible demo screen decodes one shared raster');
   $windowWidget->close();
   $interactiveImage = new Image($source, zoom: 2);
   $layout = new LayoutNode('horizontal', '1*', '1*');
@@ -271,6 +368,18 @@ try {
   $definition['height'] = 8;
   $interactiveWindow = new Window($definition);
   try {
+    $geometryProperty = new ReflectionProperty(Window::class, 'geometry');
+    $initialGeometry = $geometryProperty->getValue($interactiveWindow);
+    $nativeWindow = (new ReflectionProperty(Window::class, 'window'))->getValue($interactiveWindow);
+    $sdl->checkReturnValue($sdl->ffi->SDL_SetWindowSize($nativeWindow, $initialGeometry->windowWidth + 5, $initialGeometry->windowHeight + 7), 'SDL_SetWindowSize');
+    $sdl->checkReturnValue($sdl->ffi->SDL_SyncWindow($nativeWindow), 'SDL_SyncWindow');
+    $interactiveWindow->resize();
+    $resizedGeometry = $geometryProperty->getValue($interactiveWindow);
+    expectImage($resizedGeometry !== $initialGeometry, true, 'resize replaces the window geometry');
+    expectImage([$resizedGeometry->windowWidth, $resizedGeometry->windowHeight], [$initialGeometry->windowWidth + 5, $initialGeometry->windowHeight + 7], 'geometry captures resized window dimensions');
+    $resizedGrid = (new ReflectionProperty(Window::class, 'grid'))->getValue($interactiveWindow);
+    expectImage($resizedGeometry->offsetX, intdiv($resizedGeometry->windowWidth - $resizedGrid->width() * $font->cellWidth(), 2), 'resized geometry centers the grid horizontally');
+    expectImage($resizedGeometry->offsetY, intdiv($resizedGeometry->windowHeight - $resizedGrid->height() * $font->cellHeight(), 2), 'resized geometry centers the grid vertically');
     $interactiveWindow->handleEvent(imageKey(SDL::KEY_RIGHT));
     expectImage($definition['screens'][0]->selectedLeaf()?->instance() instanceof Text, true, 'focus redraw selects second tile');
     $interactiveWindow->handleEvent(imageKey(SDL::KEY_LEFT));
@@ -278,6 +387,10 @@ try {
     $interactiveWindow->handleEvent(imageKey(SDL::KEY_RETURN));
     $interactiveWindow->handleEvent(imageKey(SDL::KEY_RIGHT));
     expectImage((new ReflectionProperty(Image::class, 'x'))->getValue($interactiveImage) < 0, true, 'pixel widget redraw after input');
+    $interactiveWindow->handleEvent(imageSymbolKey(SDL::KEY_EQUALS));
+    expectImage((new ReflectionProperty(Image::class, 'fill'))->getValue($interactiveImage), true, 'window input fits using actual layout equals');
+    $interactiveWindow->handleEvent(imageKey(SDL::KEY_SPACE));
+    expectImage((new ReflectionProperty(Image::class, 'zoom'))->getValue($interactiveImage), 2.0, 'window input restores configured zoom');
   } finally {
     $interactiveWindow->close();
   }

@@ -53,21 +53,14 @@ final class WidgetSelection {
     if ($allCandidates === []) {
       return false;
     }
-    $nearestGap = INF;
+    $alignedCandidates = [];
     foreach ($allCandidates as $candidate) {
-      $nearestGap = min($nearestGap, $this->directionalGap($tile, $candidate['tile'], $direction));
-    }
-    $alignedRow = [];
-    foreach ($allCandidates as $candidate) {
-      if ($this->directionalGap($tile, $candidate['tile'], $direction) !== $nearestGap) {
-        continue;
-      }
       if ($this->overlapsOnCrossAxis($tile, $candidate['tile'], $direction)) {
-        $alignedRow[] = $candidate;
+        $alignedCandidates[] = $candidate;
       }
     }
-    $best = $alignedRow !== []
-      ? $this->nearestRowOrColumn($tile, $alignedRow, $direction, false)
+    $best = $alignedCandidates !== []
+      ? $this->nearestRowOrColumn($tile, $alignedCandidates, $direction, false)
       : $this->nearestRowOrColumn($tile, $allCandidates, $direction, true);
     if ($best === null || $best === $this->selectedIndex) {
       return false;

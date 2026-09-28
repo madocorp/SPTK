@@ -3,6 +3,7 @@
 namespace SPTK\Widgets\Table;
 
 use SPTK\Core\{Cell, Color, ScrollIndicator, Style};
+use SPTK\Layout\Tile;
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
 /** Measures columns and paints a clipped, scrollable table grid. */
@@ -36,15 +37,15 @@ final class Painter {
       return;
     }
     $numberWidth = $rowNumbers ? strlen((string)max(1, $data->count())) + 2 : 0;
-    $writer->fillRow(0, $this->style->background, $this->style->foreground);
-    $this->row($writer, 0, $data->header(), $widths, $columnScroll, -1, $cursorRow, $cursorColumn, $active, $numberWidth, $selection);
+    $this->paintHeader($writer, $data->header(), $widths, $columnScroll, $numberWidth);
     for ($y = 1; $y < $writer->height(); $y++) {
       $index = $rowScroll + $y - 1;
       $row = $data->row($index);
       if ($row === false) {
         break;
       }
-      $this->row($writer, $y, $row, $widths, $columnScroll, $index, $cursorRow, $cursorColumn, $active, $numberWidth, $selection);
+      $cursor = $active && $index === $cursorRow ? $cursorColumn : null;
+      $this->paintRow($writer, $y, $row, $widths, $columnScroll, $index, $cursor, $numberWidth, $selection);
     }
     $this->indicators($writer, $data, $widths, $rowScroll, $columnScroll, $numberWidth);
   }
@@ -62,62 +63,112 @@ final class Painter {
         continue;
       }
       $writer->fillRow($y, $this->style->foreground, $this->style->background);
-      $this->row($writer, $y, $values, $widths, $columnScroll, $index, $cursorRow, $cursorColumn, $active, $numberWidth, $selection);
+      $cursor = $active && $index === $cursorRow ? $cursorColumn : null;
+      $this->paintRow($writer, $y, $values, $widths, $columnScroll, $index, $cursor, $numberWidth, $selection);
     }
     $this->indicators($writer, $data, $widths, $rowScroll, $columnScroll, $numberWidth);
   }
 
-  /** Draw one row with its visible cells and optional row number. */
-  private function row(GridWriter $writer, int $y, array $fields, array $widths, int $columnScroll, int $rowIndex, int $cursorRow, int $cursorColumn, bool $active, int $numberWidth, Selection $selection): void {
-    $header = $rowIndex < 0;
-    $x = -$columnScroll;
+  /** Paint the fixed header with inverted colors and an optional number heading. */
+  private function paintHeader(GridWriter $writer, array $fields, array $widths, int $columnScroll, int $numberWidth): void {
+    $writer->fillRow(0, $this->style->background, $this->style->foreground);
     if ($numberWidth > 0) {
-      $label = $header ? '#' : (string)($rowIndex + 1);
-      $this->cell($writer, 0, $y, $numberWidth, $label, $this->style->background, $this->style->foreground, !$header, true);
-      $x += $numberWidth;
+      $this->paintRowNumber($writer, 0, $numberWidth, '#');
     }
+    $x = $numberWidth - $columnScroll;
     foreach ($widths as $column => $width) {
       if ($x >= $writer->width()) {
         break;
       }
       if ($x + $width > $numberWidth) {
-        $selected = $active && !$header && $rowIndex === $cursorRow && $column === $cursorColumn;
-        $highlighted = $selection->includes($rowIndex, $column);
-        $inverted = $selected || $highlighted;
-        $fg = $header ? $this->style->background : ($inverted ? $this->style->cursorForeground : $this->style->foreground);
-        $bg = $header ? $this->style->foreground : ($inverted ? $this->style->cursorBackground : $this->style->background);
-        $value = $fields[$column] ?? null;
-        [$text, $multiline] = $this->display($value);
-        $this->cell($writer, $x, $y, $width, $text, $fg, $bg, $inverted, false, $numberWidth, !$header, $multiline ? 'V' : '', $value === null);
+        $this->paintHeaderCell($writer, new Tile($x, 0, $width, 1), $fields[$column] ?? null, $numberWidth);
       }
       $x += $width;
     }
   }
 
-  /** Paint one padded cell without allowing its text to enter another column. */
-  private function cell(GridWriter $writer, int $x, int $y, int $width, string $value, Color $fg, Color $bg, bool $fill, bool $right = false, int $clipLeft = 0, bool $bodySeparator = false, string $marker = '', bool $nullValue = false): void {
-    $visibleLeft = max($clipLeft, $x);
-    $visibleRight = min($writer->width(), $x + $width);
-    if ($fill) {
-      $blank = new Cell(' ', $fg, $bg);
-      for ($column = $visibleLeft; $column < $visibleRight; $column++) {
-        $writer->put($column, $y, $blank);
-      }
+  /** Paint a body row with its fixed number column and selected fields. */
+  private function paintRow(GridWriter $writer, int $y, array $fields, array $widths, int $columnScroll, int $rowIndex, ?int $cursorColumn, int $numberWidth, Selection $selection): void {
+    if ($numberWidth > 0) {
+      $this->paintRowNumber($writer, $y, $numberWidth, (string)($rowIndex + 1));
     }
-    $textWidth = max(0, $width - 2);
-    [$text, $suffix] = $this->clip($value, $textWidth, $marker);
-    $position = $right ? $x + max(0, $width - 1 - TextMetrics::width($text . $suffix)) : $x + 1;
-    foreach ([[$text, $nullValue ? $this->style->highlight : $fg], [$suffix, $this->style->highlight]] as [$run, $color]) {
+    $x = $numberWidth - $columnScroll;
+    foreach ($widths as $column => $width) {
+      if ($x >= $writer->width()) {
+        break;
+      }
+      if ($x + $width > $numberWidth) {
+        $selected = $column === $cursorColumn || $selection->includes($rowIndex, $column);
+        $this->paintBodyCell($writer, new Tile($x, $y, $width, 1), $fields[$column] ?? null, $selected, $numberWidth);
+      }
+      $x += $width;
+    }
+  }
+
+  /** Paint an inverted heading without cursor or selection decoration. */
+  private function paintHeaderCell(GridWriter $writer, Tile $area, ?string $value, int $clipLeft): void {
+    $fg = $this->style->background;
+    $bg = $this->style->foreground;
+    $this->paintText($writer, $area, $value, $fg, $bg, $clipLeft);
+    $this->paintSeparator($writer, $area, $fg, $bg, $clipLeft);
+  }
+
+  /** Paint a body field while keeping its separator outside the selection colors. */
+  private function paintBodyCell(GridWriter $writer, Tile $area, ?string $value, bool $selected, int $clipLeft): void {
+    $fg = $selected ? $this->style->cursorForeground : $this->style->foreground;
+    $bg = $selected ? $this->style->cursorBackground : $this->style->background;
+    if ($selected) {
+      $this->fillCell($writer, $area, $fg, $bg, $clipLeft);
+    }
+    $this->paintText($writer, $area, $value, $fg, $bg, $clipLeft);
+    $this->paintSeparator($writer, $area, $this->style->foreground, $this->style->background, $clipLeft);
+  }
+
+  /** Paint a right-aligned row number or number heading in the fixed gutter. */
+  private function paintRowNumber(GridWriter $writer, int $y, int $width, string $label): void {
+    $fg = $this->style->background;
+    $bg = $this->style->foreground;
+    $area = new Tile(0, $y, $width, 1);
+    $this->fillCell($writer, $area, $fg, $bg, 0);
+    [$text, $suffix] = $this->clip($label, max(0, $width - 2), '');
+    $x = max(0, $width - 1 - TextMetrics::width($text . $suffix));
+    $writer->write($x, $y, $text, $fg, $bg);
+    $writer->write($x + TextMetrics::width($text), $y, $suffix, $this->style->highlight, $bg);
+    $this->paintSeparator($writer, $area, $fg, $bg, 0);
+  }
+
+  /** Fill visible cell padding without entering the fixed number column. */
+  private function fillCell(GridWriter $writer, Tile $area, Color $fg, Color $bg, int $clipLeft): void {
+    $blank = new Cell(' ', $fg, $bg);
+    $right = min($writer->width(), $area->x + $area->width);
+    for ($x = max($clipLeft, $area->x); $x < $right; $x++) {
+      $writer->put($x, $area->y, $blank);
+    }
+  }
+
+  /** Paint clipped field text with highlighted null, truncation, and multiline markers. */
+  private function paintText(GridWriter $writer, Tile $area, ?string $value, Color $fg, Color $bg, int $clipLeft): void {
+    [$text, $multiline] = $this->display($value);
+    [$text, $suffix] = $this->clip($text, max(0, $area->width - 2), $multiline ? 'V' : '');
+    $left = max($clipLeft, $area->x);
+    $right = min($writer->width(), $area->x + $area->width);
+    $position = $area->x + 1;
+    foreach ([[$text, $value === null ? $this->style->highlight : $fg], [$suffix, $this->style->highlight]] as [$run, $color]) {
       foreach (TextMetrics::glyphs($run) as $glyph) {
         $glyphWidth = TextMetrics::glyphWidth($glyph);
-        if ($position >= $visibleLeft && $position + $glyphWidth <= $visibleRight) {
-          $writer->put($position, $y, new Cell($glyph, $color, $bg, $glyphWidth));
+        if ($position >= $left && $position + $glyphWidth <= $right) {
+          $writer->put($position, $area->y, new Cell($glyph, $color, $bg, $glyphWidth));
         }
         $position += $glyphWidth;
       }
     }
-    if ($x + $width - 1 >= $visibleLeft && $x + $width - 1 < $visibleRight) {
-      $writer->put($x + $width - 1, $y, new Cell('│', $bodySeparator ? $this->style->foreground : $fg, $bodySeparator ? $this->style->background : $bg));
+  }
+
+  /** Draw a column boundary only when it is visible beyond the fixed gutter. */
+  private function paintSeparator(GridWriter $writer, Tile $area, Color $fg, Color $bg, int $clipLeft): void {
+    $x = $area->x + $area->width - 1;
+    if ($x >= max($clipLeft, $area->x) && $x < $writer->width()) {
+      $writer->put($x, $area->y, new Cell('│', $fg, $bg));
     }
   }
 

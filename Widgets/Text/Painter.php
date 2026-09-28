@@ -2,25 +2,19 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Color, ScrollIndicator, TextCursor};
+use SPTK\Core\{ScrollIndicator, Style, TextCursor};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
 /** Paints shared read-only and editable text rows, selection, cursor, and indicators. */
 final class Painter {
 
   /** Create a painter for one widget's inherited colors. */
-  public function __construct(
-    private readonly Color $fg,
-    private readonly Color $bg,
-    private readonly Color $cursorFg,
-    private readonly Color $cursorBg,
-    private readonly Color $indicatorFg,
-  ) {
+  public function __construct(private readonly Style $style) {
   }
 
   /** Paint visible rows, optional selection and cursor, and scroll indicators. */
   public function paint(GridWriter $writer, array $rows, array $lines, TextCursor $cursor, int $scrollY, int $scrollX, bool $wrap, array $caret, int $tabSize = 8, bool $showSelection = true, string $align = 'left', ?int $contentWidth = null): ?array {
-    $writer->fill($this->fg, $this->bg);
+    $writer->fill($this->style->foreground, $this->style->background);
     for ($y = 0; $y < $writer->height(); $y++) {
       $row = $rows[$scrollY + $y] ?? null;
       if ($row !== null) {
@@ -53,7 +47,7 @@ final class Painter {
       if ($glyph === ' ' && !$selected) {
         continue;
       }
-      $writer->set($x + $offset, $y, $glyph, $selected ? $this->cursorFg : $this->fg, $selected ? $this->cursorBg : $this->bg);
+      $writer->set($x + $offset, $y, $glyph, $selected ? $this->style->cursorForeground : $this->style->foreground, $selected ? $this->style->cursorBackground : $this->style->background);
     }
     $line = $lines[$row['line']];
     $end = $row['start'] + $row['length'];
@@ -61,7 +55,7 @@ final class Painter {
       && $this->within($row['line'], $end, $range)) {
       $x = TextMetrics::width($row['text'], $tabSize) - $rowScrollX + $offset;
       if ($x >= 0 && $x < $writer->width()) {
-        $writer->set($x, $y, '¶', $this->cursorFg, $this->cursorBg);
+        $writer->set($x, $y, '¶', $this->style->cursorForeground, $this->style->cursorBackground);
       }
     }
   }
@@ -109,7 +103,7 @@ final class Painter {
     if ($label === '') {
       return;
     }
-    $writer->write($x ?? ($right ? $writer->width() - TextMetrics::width($label) : 0), $y, $label, $this->bg, $this->indicatorFg);
+    $writer->write($x ?? ($right ? $writer->width() - TextMetrics::width($label) : 0), $y, $label, $this->style->background, $this->style->highlight);
   }
 
   /** Paint the block cursor after indicators so it remains visible at corners. */
@@ -132,7 +126,7 @@ final class Painter {
       $glyph = ' ';
     }
     $base = $writer->cellAt($x, $y);
-    $writer->set($x, $y, $glyph, $this->cursorFg, $this->cursorBg);
+    $writer->set($x, $y, $glyph, $this->style->cursorForeground, $this->style->cursorBackground);
     return [$x, $y, $base];
   }
 

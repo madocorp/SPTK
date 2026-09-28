@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Choice;
 
-use SPTK\Core\{Color, ItemData, ItemViewport, ScrollIndicator, Widget};
+use SPTK\Core\{Color, ItemData, ItemViewport, ScrollIndicator, Style, Widget};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -18,7 +18,7 @@ abstract class Choice extends Widget {
   private bool $active = false;
 
   /** Create a choice group with inherited style colors. */
-  protected function __construct(private readonly bool $multiple, array $items, private readonly Color $fg, private readonly Color $bg, private readonly Color $cursorBg, private readonly Color $highlight) {
+  protected function __construct(private readonly bool $multiple, array $items, private readonly Style $style) {
     $this->viewport = new ItemViewport();
     $this->setItems($items);
     $this->on('activate', $this->activate(...));
@@ -87,7 +87,7 @@ abstract class Choice extends Widget {
 
   /** Return the background used by this choice tile. */
   public function background(): Color {
-    return $this->bg;
+    return $this->style->background;
   }
 
   /** Measure the widest marker and label in grid cells. */
@@ -106,7 +106,7 @@ abstract class Choice extends Widget {
 
   /** Paint markers, clipped labels, and vertical scroll indicators. */
   public function paint(GridWriter $writer): void {
-    $writer->fill($this->fg, $this->bg);
+    $writer->fill($this->style->foreground, $this->style->background);
     if ($writer->width() < 1 || $writer->height() < 1) {
       return;
     }
@@ -120,9 +120,9 @@ abstract class Choice extends Widget {
       }
       $checked = in_array($item['value'], $this->checked, true);
       $marker = $this->multiple ? ($checked ? '[X]' : '[ ]') : ($checked ? '(O)' : '( )');
-      $cursorBg = $this->active && $index === $this->viewport->position() ? $this->cursorBg : $this->bg;
-      $writer->write(0, $y, $marker, $this->fg, $cursorBg);
-      $writer->write(3, $y, ' ' . $item['label'], $this->fg, $this->bg);
+      $cursorBg = $this->active && $index === $this->viewport->position() ? $this->style->cursorBackground : $this->style->background;
+      $writer->write(0, $y, $marker, $this->style->foreground, $cursorBg);
+      $writer->write(3, $y, ' ' . $item['label'], $this->style->foreground, $this->style->background);
     }
     $this->indicator($writer, ScrollIndicator::label($scroll, $writer->height(), '▲'), 0);
     $below = max(0, count($this->items) - $scroll - $writer->height());
@@ -183,7 +183,7 @@ abstract class Choice extends Widget {
     if ($label === '') {
       return;
     }
-    $writer->write($writer->width() - TextMetrics::width($label), $y, $label, $this->bg, $this->highlight);
+    $writer->write($writer->width() - TextMetrics::width($label), $y, $label, $this->style->background, $this->style->highlight);
   }
 
   /** Mark the choice group active after tile activation. */

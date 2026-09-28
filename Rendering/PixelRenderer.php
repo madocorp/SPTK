@@ -15,11 +15,14 @@ final class PixelRenderer {
   private ?int $drawColor = null;
   private array $images = [];
   private array $usedImages = [];
+  private CanvasRenderer $canvases;
 
+  /** Bind pixel and canvas drawing to one window renderer. */
   public function __construct(private \FFI\CData $ffiRenderer) {
     $this->sdl = \SPTK\App::sdl();
     $this->rect = $this->sdl->ffi->new('SDL_FRect');
     $this->clipRect = $this->sdl->ffi->new('SDL_Rect');
+    $this->canvases = new CanvasRenderer($this->ffiRenderer);
   }
 
   public function fill(Tile $area, Color $color): void {
@@ -54,6 +57,21 @@ final class PixelRenderer {
   /** Start tracking image textures used by the next frame. */
   public function beginImages(): void {
     $this->usedImages = [];
+    $this->canvases->begin();
+  }
+
+  /** Paint an application's canvas into its tile. */
+  public function canvas(\SPTK\Widgets\Canvas\Canvas $canvas, Tile $area, bool $selected): void {
+    try {
+      $this->canvases->paint($canvas, $area, $selected);
+    } finally {
+      $this->invalidateDrawColor();
+    }
+  }
+
+  /** Consume a canvas notification and report whether its pixels still need updating. */
+  public function canvasRedrawNeeded(): bool {
+    return $this->canvases->redrawNeeded();
   }
 
   /** Draw a decoded image while clipping all pixels to its widget tile. */
@@ -64,14 +82,8 @@ final class PixelRenderer {
     if ($area->x >= $clip->x + $clip->width || $area->y >= $clip->y + $clip->height || $area->x + $area->width <= $clip->x || $area->y + $area->height <= $clip->y) {
       return;
     }
-    $id = spl_object_id($image);
-    $this->usedImages[$id] = true;
-    $texture = $this->images[$id]['texture'] ?? null;
-    if ($texture === null) {
-      $texture = $this->upload($image);
-      $this->images[$id] = ['image' => $image, 'texture' => $texture];
-    }
-    $shade = $selected ? 255 : (int)round(255 * 0.45);
+    $texture = $this->texture($image);
+    $shade = $selected ? 255 : (int)round(255 * 0.75);
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetTextureColorMod($texture, $shade, $shade, $shade), 'SDL_SetTextureColorMod');
     $this->rect->x = $area->x;
     $this->rect->y = $area->y;
@@ -91,6 +103,7 @@ final class PixelRenderer {
 
   /** Release image textures absent from the completed frame. */
   public function endImages(): void {
+    $this->canvases->end();
     foreach ($this->images as $id => $entry) {
       if (!isset($this->usedImages[$id])) {
         $this->sdl->ffi->SDL_DestroyTexture($entry['texture']);
@@ -101,10 +114,21 @@ final class PixelRenderer {
 
   /** Release cached native textures before their renderer closes. */
   public function close(): void {
+    $this->canvases->close();
     foreach ($this->images as $entry) {
       $this->sdl->ffi->SDL_DestroyTexture($entry['texture']);
     }
     $this->images = [];
+  }
+
+  /** Return a shared native texture belonging to this window's renderer. */
+  private function texture(RasterImage $image): \FFI\CData {
+    $id = spl_object_id($image);
+    $this->usedImages[$id] = true;
+    if (!isset($this->images[$id])) {
+      $this->images[$id] = ['image' => $image, 'texture' => $this->upload($image)];
+    }
+    return $this->images[$id]['texture'];
   }
 
   /** Upload one immutable raster to this window's SDL renderer. */

@@ -6,7 +6,7 @@ require_once APP_DIR . '/SPTK/App.php';
 
 spl_autoload_register(['SPTK\\App', 'load']);
 
-use SPTK\Core\{Clipboard, Color, Screen, ScrollIndicator, TextEdit};
+use SPTK\Core\{Clipboard, Color, Screen, ScrollIndicator, Style, TextEdit};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile};
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\SDLWrapper\SDL;
@@ -91,7 +91,7 @@ foreach ($editorLeaves as $leaf) {
 expectEditor(count($editorWidgets), 2, 'Editors screen widget count');
 expectEditor($editorWidgets[0] instanceof Input, true, 'Input XML parser');
 expectEditor($editorWidgets[1] instanceof TextEditor, true, 'TextEditor XML parser');
-$labeledInput = new Input('value', indicatorFg: new Color(30, 180, 220), label: 'Name');
+$labeledInput = new Input('value', style: new Style(foreground: new Color(255, 255, 255), highlight: new Color(30, 180, 220)), label: 'Name');
 expectEditor($labeledInput->preferredHeight(), 2, 'labeled Input preferred height');
 $grid = new Grid(10, 2);
 $labeledInput->paint(new GridWriter($grid, new Tile(0, 0, 10, 2)));
@@ -102,7 +102,7 @@ expectEditor($grid->cell(0, 1)->fg->r, 255, 'Input value foreground');
 expectEditor($labeledInput->getValue(), 'value', 'Input label outside value');
 $emptyLabel = new Input('value', label: '');
 expectEditor($emptyLabel->preferredHeight(), 2, 'empty label reserves row');
-$labeledEditor = new TextEditor('first', indicatorFg: new Color(30, 180, 220), label: 'Document');
+$labeledEditor = new TextEditor('first', style: new Style(foreground: new Color(255, 255, 255), highlight: new Color(30, 180, 220)), label: 'Document');
 expectEditor($labeledEditor->preferredHeight(), 17, 'labeled TextEditor preferred height');
 $grid = new Grid(10, 2);
 $labeledEditor->paint(new GridWriter($grid, new Tile(0, 0, 10, 2)));
@@ -186,11 +186,11 @@ expectEditor(ScrollIndicator::label(10, 5, '▲'), '2▲', 'up arrow follows pag
 expectEditor(ScrollIndicator::bottomRight('3▶', '4▼'), '3▶ 4▼', 'shared lower-right indicator order');
 expectEditor(ScrollIndicator::fit('3▶ 4▼', 2, true), '▶▼', 'shared narrow indicator keeps both arrows');
 $grid = new Grid(4, 1);
-(new Input('abcdefghijkl', bg: $indicatorInk))->paint(new GridWriter($grid, new Tile(0, 0, 4, 1)));
+(new Input('abcdefghijkl', style: new Style(background: $indicatorInk)))->paint(new GridWriter($grid, new Tile(0, 0, 4, 1)));
 expectInvertedIndicator($grid, 'Input scroll indicator', $indicatorInk);
 expectArrowAt($grid, '▶', 3, 0, 'Input right arrow at right edge');
 $grid = new Grid(4, 1);
-(new Text('abcdefghijkl', bg: $indicatorInk, wrap: false))->paint(new GridWriter($grid, new Tile(0, 0, 4, 1)));
+(new Text('abcdefghijkl', style: new Style(background: $indicatorInk), wrap: false))->paint(new GridWriter($grid, new Tile(0, 0, 4, 1)));
 expectInvertedIndicator($grid, 'Text scroll indicator', $indicatorInk);
 expectArrowAt($grid, '▶', 3, 0, 'Text right arrow at right edge');
 $horizontal = new Text('abcdefghijkl', wrap: false);
@@ -216,7 +216,7 @@ for ($x = 0; $x < 5; $x++) {
 }
 expectEditor(str_ends_with($bottom, '▶ ▼'), true, 'Text right and down arrows share bottom row');
 $grid = new Grid(6, 2);
-(new TextEditor("one\ntwo\nthree", bg: $indicatorInk))->paint(new GridWriter($grid, new Tile(0, 0, 6, 2)));
+(new TextEditor("one\ntwo\nthree", style: new Style(background: $indicatorInk)))->paint(new GridWriter($grid, new Tile(0, 0, 6, 2)));
 expectInvertedIndicator($grid, 'TextEditor scroll indicator', $indicatorInk);
 $grid = new Grid(10, 4);
 $editor->emit('activate');

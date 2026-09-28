@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\List;
 
-use SPTK\Core\{Color, ItemData, ItemViewport, Widget};
+use SPTK\Core\{Color, ItemData, ItemViewport, Style, Widget};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -22,9 +22,16 @@ final class ListView extends Widget {
   private bool $active = false;
 
   /** Create a list and register its activation lifecycle. */
-  public function __construct(array $items = [], private readonly bool $multiple = false, private readonly bool $filterable = true, private readonly bool $searchable = true, private readonly bool $reorderable = false, private readonly Color $fg = new Color(255, 255, 255), private readonly Color $bg = new Color(0, 0, 0), private readonly Color $cursorBg = new Color(85, 85, 85), private readonly Color $highlight = new Color(0, 255, 255), private readonly Color $selected = new Color(255, 255, 0)) {
+  public function __construct(
+    array $items = [],
+    private readonly bool $multiple = false,
+    private readonly bool $filterable = true,
+    private readonly bool $searchable = true,
+    private readonly bool $reorderable = false,
+    private readonly Style $style = new Style(background: new Color(0, 0, 0), foreground: new Color(255, 255, 255), cursorBackground: new Color(85, 85, 85)),
+  ) {
     $this->viewport = new ItemViewport();
-    $this->painter = new Painter($fg, $bg, $cursorBg, $highlight, $selected);
+    $this->painter = new Painter($style);
     $this->redraw = new Redraw();
     $this->setItems($items);
     $this->on('activate', $this->activate(...));
@@ -149,7 +156,7 @@ final class ListView extends Widget {
 
   /** Use the tile background for inactive cells. */
   public function background(): Color {
-    return $this->bg;
+    return $this->style->background;
   }
 
   /** Measure the widest item label. */

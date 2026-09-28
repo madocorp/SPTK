@@ -16,10 +16,12 @@ Never pass these as function arguments because it's accessible globally through 
 Pass further as function arguments.
 
 - Core\Window: represents the window
+- Layout\WindowGeometry: immutable cell size, window size, and grid offsets with pixel-area conversion
 - Rendering\Grid: the common center aligned character grid
 - Rendering\GridRenderer: renders the grid to the window (ffi renderer)
 - Rendering\GlyphAtlas: glyph atlas for the window, available through GridRenderer. Its texture belongs to the window.
 - Rendering\PixelRenderer: draws tile backgrounds, paddings, separators, images
+- Rendering\CanvasRenderer: retains canvas surfaces and owns a window's application texture context
 
 The full render path, partial updates, dirty cells, and caches are described in [rendering.md](rendering.md).
 
@@ -62,25 +64,40 @@ Static or reusable classes.
 - Core\ItemData: validates unique item values and labels
 - Core\ItemViewport: tracks item cursor and vertical scrolling
 - Widgets\Table\TableData: stores inline rows or indexes and caches escaped TSV chunks
-- Widgets\Table\Painter: measures and paints table columns and scroll indicators
+- Widgets\Table\Painter: measures columns and paints headers, row numbers, body cells, and scroll indicators
 - Widgets\Table\Navigator: moves the table cursor to visible row and field edges, then pages the viewport
 - Widgets\Table\Redraw: tracks rows changed by cursor movement for partial painting
 - Widgets\Table\Selection: tracks rectangular selection and copies escaped TSV
+- Widgets\Graph\Data: validates numeric series and graph options atomically
+- Widgets\Graph\Axes: computes linear bounds, ticks, and grouped bar spacing
+- Widgets\Graph\Plot: draws clipped lines, points, and grouped bars into GD images
+- Widgets\Graph\Labels: measures and clips FreeType graph text
+- Widgets\Graph\Raster: composes graph axes, labels, grid, legend, and series
 - Core\RasterImage: stores GD-decoded pixels for SDL texture upload
+- Core\Texture: owns a reusable sprite or writable layer with pixel drawing and region copying
+- Core\TextureContext: creates application textures and releases them before its window closes
+- Rendering\RenderState: restores SDL targets, viewports, clipping, draw color, and blend modes
+- Rendering\ImagePixels: transfers GD pixels in bulk and uses SDL for native pixel format conversion
+- SDLWrapper\PNG: reads in-memory PNG pixels through libpng's public simplified API
+- Core\ImageSource: shares file-backed sources, reads header dimensions, and decodes pixels on demand
 - Core\WidgetDefinition: bundles a widget with its event subscriptions
 - Rendering\FontFinder: search for a font based it's name
 - Rendering\GridWriter: clips the writings to a tile
 - Rendering\TextMetrics: to get glyph attribites
 - Core\Widget: abstract base class for widget behavior and preferred layout sizing
 - Core\WidgetSelection: tracks focus and chooses the next widget from tile geometry
+- Core\AppData: resolves private per-application files and loads or saves JSON [configuration](config.md)
 - Core\Color: rgb color data
 - Core\Style: inherited application colors with defaults and local overrides
 - Core\Cell: a character grid cell; glyph, fg, bg, width
 
+Pass `Core\Style` directly between XML parsers, widgets, and painters that share a palette, rather than
+unpacking it into individual color arguments. Individual drawing operations can still take `Core\Color`.
+
 ## Events
 
 - Events\EventLoop: stores windows and timers and dispatches SDL and timer events
-- Events\KeyNormalizer: canonicalizes SDL key names and modifier masks, including keypad navigation keys
+- Events\KeyNormalizer: canonicalizes key names and modifiers, resolves layout symbols, and normalizes keypad navigation
 - Events\EventDefinition: stores one parsed event subscription
 - Events\EventContext: provides event type, source widget, and native input to actions
 - Events\EventDispatcher: invokes matching static actions and handles input consumption

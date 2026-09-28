@@ -2,6 +2,8 @@
 
 namespace SPTK\Core;
 
+use SPTK\Rendering\ImagePixels;
+
 /** Holds an immutable GD-decoded image as packed SDL RGBA pixels. */
 final class RasterImage {
 
@@ -45,24 +47,14 @@ final class RasterImage {
     }
   }
 
-  /** Copy GD pixels into native-endian packed RGBA words. */
+  /** Convert GD pixels into native-endian packed SDL RGBA words. */
   private function decode(\GdImage $image): void {
     $this->width = imagesx($image);
     $this->height = imagesy($image);
     if ($this->width < 1 || $this->height < 1) {
       throw new \InvalidArgumentException('Image dimensions must be positive.');
     }
-    $pixels = '';
-    for ($y = 0; $y < $this->height; $y++) {
-      $row = [];
-      for ($x = 0; $x < $this->width; $x++) {
-        $color = imagecolorsforindex($image, imagecolorat($image, $x, $y));
-        $alpha = (int)round((127 - $color['alpha']) * 255 / 127);
-        $row[] = ($color['red'] << 24) | ($color['green'] << 16) | ($color['blue'] << 8) | $alpha;
-      }
-      $pixels .= pack('L*', ...$row);
-    }
-    $this->pixels = $pixels;
+    $this->pixels = ImagePixels::fromGD($image);
   }
 
 }

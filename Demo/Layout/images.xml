@@ -1,15 +1,15 @@
 <Screen>
   <Layout direction="vertical">
-    <Text height="1">Images: +/- zoom | Arrows pan | Space resets | = fits</Text>
+    <Text height="1">Images: +/- zoom | Arrows pan | Space restores initial view | = fits</Text>
     <Separator />
     <Layout direction="horizontal" height="1*">
-      <Image src="../Assets/sample.png" width="12" />
+      <Image src="../Assets/test.jpg" width="12" />
       <Separator />
-      <Image src="../Assets/sample.png" width="1*" zoom="8" x="40" y="-20">
+      <Image src="../Assets/test.jpg" width="1*" zoom="8" x="40" y="-20">
         <Style><Background>#204050</Background></Style>
       </Image>
       <Separator />
-      <Image src="../Assets/sample.png" width="8" fill="true" />
+      <Image src="../Assets/test.jpg" width="8" fill="true" />
     </Layout>
   </Layout>
 </Screen>

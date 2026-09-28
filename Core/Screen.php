@@ -3,7 +3,7 @@
 namespace SPTK\Core;
 
 use SPTK\Events\{EventContext, EventDispatcher, KeyNormalizer};
-use SPTK\Layout\{LayoutLeaf, LayoutNode};
+use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile, WindowGeometry};
 use SPTK\Widgets\Button\Button;
 
 /** Owns one screen's layout, widget selection, and screen-level input. */
@@ -225,8 +225,9 @@ final class Screen {
     $this->layout->measureGrid($grid);
   }
 
-  public function measureArea(\SPTK\Layout\Tile $grid, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY, int $windowWidth, int $windowHeight): void {
-    $this->layout->measureArea($grid, $cellWidth, $cellHeight, $offsetX, $offsetY, $windowWidth, $windowHeight);
+  /** Measure padded layout areas using the owning window's geometry. */
+  public function measureArea(Tile $grid, WindowGeometry $geometry): void {
+    $this->layout->measureArea($grid, $geometry);
   }
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer): void {
@@ -242,10 +243,10 @@ final class Screen {
   }
 
   /** Paint each widget's optional pixel content after the character grid. */
-  public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, int $cellWidth, int $cellHeight, int $offsetX, int $offsetY): void {
+  public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry): void {
     $selected = $this->selectedLeaf();
     foreach ($this->leaves as $leaf) {
-      $leaf->paintPixels($renderer, $cellWidth, $cellHeight, $offsetX, $offsetY, $leaf === $selected);
+      $leaf->paintPixels($renderer, $geometry, $leaf === $selected);
     }
   }
 

@@ -18,7 +18,7 @@ final class Parser implements WidgetParser {
   /** Build a radio group from checked Item records. */
   public function parse(\XMLReader $reader, Style $style): WidgetDefinition {
     [$items, $events, $style] = (new ItemParser())->parse($reader, $style, 'checked');
-    return new WidgetDefinition(new RadioButton($items, $style->foreground, $style->background, $style->cursorBackground, $style->highlight), $events);
+    return new WidgetDefinition(new RadioButton($items, $style), $events);
   }
 
 }

@@ -22,7 +22,7 @@ final class Parser implements WidgetParser {
     $searchable = $this->attrBoolean($reader, 'searchable', true);
     $reorderable = $this->attrBoolean($reader, 'reorderable', false);
     [$items, $events, $style] = (new ItemParser())->parse($reader, $style, 'selected');
-    return new WidgetDefinition(new ListView($items, $multiple, $filterable, $searchable, $reorderable, $style->foreground, $style->background, $style->cursorBackground, $style->highlight, $style->selected), $events);
+    return new WidgetDefinition(new ListView($items, $multiple, $filterable, $searchable, $reorderable, $style), $events);
   }
 
 }

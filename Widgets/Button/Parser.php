@@ -43,7 +43,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Button($label, $hotkey, $action, $style->foreground, $style->background, $style->highlight));
+    return new WidgetDefinition(new Button($label, $hotkey, $action, $style));
   }
 
 }

@@ -40,7 +40,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Input($value ?? trim($text), $style->foreground, $style->background, $style->cursorBackground, $style->highlight, $tabSize, $label), $events);
+    return new WidgetDefinition(new Input($value ?? trim($text), $style, $tabSize, $label), $events);
   }
 
 }
