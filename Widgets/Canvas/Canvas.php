@@ -19,7 +19,7 @@ class Canvas extends Widget {
   /** Configure an optional painter and the canvas background. */
   public function __construct(callable|string|null $painter = null, ?Color $background = null) {
     $this->painter = $painter === null || is_string($painter) ? $painter : \Closure::fromCallable($painter);
-    $this->background = $background ?? new Color(50, 50, 50);
+    $this->background = $background ?? new Color(32, 38, 48);
   }
 
   /** Replace the application painter and request a redraw. */

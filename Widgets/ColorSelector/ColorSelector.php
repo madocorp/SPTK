@@ -16,6 +16,11 @@ final class ColorSelector extends Widget {
   private bool $active = false;
   private ?string $hexDraft = null;
 
+  /** Describe the controls available for this widget and its configuration. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Arrow keys choose a color; type six hex digits; Esc finishes.' : 'Return chooses a color.';
+  }
+
   /** Initialize the color and inherited visual style. */
   public function __construct(string $value = '#ff0000', private readonly Style $style = new Style()) {
     $this->palette = new Palette($value);

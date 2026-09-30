@@ -90,7 +90,7 @@ $image = $graph->raster(480, 280);
 expectGraph($graph->raster(500, 280) !== $image, true, 'resize replaces raster');
 $image = $graph->raster(500, 280);
 expectGraph($graph->raster(500, 280, 20) !== $image, true, 'font metrics replace raster');
-expectGraph(graphPixel($graph->raster(1, 1), 0, 0), 0x323232ff, 'tiny graph shows background');
+expectGraph(graphPixel($graph->raster(1, 1), 0, 0), 0x202630ff, 'tiny graph shows background');
 expectGraph(Axes::ranges([], Data::DEFAULTS), ['xMin' => 0.0, 'xMax' => 1.0, 'yMin' => 0.0, 'yMax' => 1.0, 'barSpacing' => 1.0], 'empty automatic axes');
 $constant = Axes::ranges(Data::series([['points' => [[3, 3]]]]), Data::DEFAULTS);
 expectGraph($constant['xMin'] < 3 && $constant['xMax'] > 3, true, 'constant axes receive padding');

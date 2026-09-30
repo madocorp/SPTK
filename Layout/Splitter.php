@@ -29,7 +29,7 @@ final class Splitter {
 
   private static function allocateSizes(array $sizes, int $space): array {
     $parsed = self::parseSizes($sizes);
-    $remaining = $space - $parsed['fixedSize'];
+    $remaining = max(0, $space - $parsed['fixedSize']);
     $allocated = [];
     $weighted = [];
     $used = 0;

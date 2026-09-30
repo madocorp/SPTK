@@ -10,7 +10,7 @@ final class EventParser {
 
   use AttributeParser;
 
-  private const TYPES = ['keyDown', 'keyUp', 'textInput', 'select', 'unselect', 'activate', 'deactivate', 'accept', 'cancel', 'change', 'init', 'close', 'timer'];
+  private const TYPES = ['keyDown', 'keyUp', 'textInput', 'select', 'unselect', 'activate', 'deactivate', 'accept', 'cancel', 'change', 'reorder', 'init', 'close', 'timer'];
 
   /** Parse the current Event element and leave the reader on its closing element. */
   public function parse(\XMLReader $reader): EventDefinition {

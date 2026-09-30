@@ -6,11 +6,12 @@ require_once APP_DIR . '/SPTK/App.php';
 
 spl_autoload_register(['SPTK\\App', 'load']);
 
-use SPTK\Core\{Color, Screen};
+use SPTK\Core\{Color, Screen, Style};
 use SPTK\Events\{EventContext, EventDefinition, KeyboardEvent};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, LayoutSeparator, Tile};
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\SDLWrapper\SDL;
+use SPTK\Widgets\Button\Button;
 use SPTK\Widgets\CheckboxArray\CheckboxArray;
 use SPTK\Widgets\List\ListView;
 use SPTK\Widgets\RadioButton\RadioButton;
@@ -20,6 +21,7 @@ final class ChoiceTestListener {
 
   public static int $changes = 0;
   public static int $xmlChanges = 0;
+  public static int $hotkeys = 0;
 
   /** Count one changed value. */
   public static function change(): void {
@@ -29,6 +31,11 @@ final class ChoiceTestListener {
   /** Count one XML-dispatched change notification. */
   public static function xmlChange(EventContext $event): void {
     self::$xmlChanges++;
+  }
+
+  /** Count a button hotkey action. */
+  public static function hotkey(): void {
+    self::$hotkeys++;
   }
 
 }
@@ -163,8 +170,12 @@ ChoiceTestListener::$changes = 2;
 $grid = new Grid(8, 2);
 $radio->paint(new GridWriter($grid, new Tile(0, 0, 8, 2)));
 expectChoice($grid->cell(7, 0)->glyph, '▲', 'radio scroll arrow right');
-expectChoice([$grid->cell(7, 0)->fg->r, $grid->cell(7, 0)->bg->g], [0, 255], 'radio inverted scroll colors');
+expectChoice([$grid->cell(7, 0)->fg->r, $grid->cell(7, 0)->bg->g], [32, 203], 'radio inverted scroll colors');
+$reorders = 0;
 $list = new ListView(['alpha', 'beta', 'gamma'], reorderable: true);
+$list->on('reorder', function () use (&$reorders): void {
+  $reorders++;
+});
 expectChoice($list->getValue(), 'alpha', 'list initial value');
 $list->on('change', [ChoiceTestListener::class, 'change']);
 $screen = choiceScreen($list, 2);
@@ -188,6 +199,13 @@ $screen->handleEvent(choiceKey(SDL::KEY_DOWN, SDL::MOD_SHIFT));
 expectChoice($list->values(), ['alpha', 'gamma', 'beta'], 'list reorder');
 expectChoice($list->getValue(), 'beta', 'reorder preserves identity');
 expectChoice(ChoiceTestListener::$changes, 4, 'reorder value unchanged');
+expectChoice($reorders, 1, 'reorder emits independent notification');
+$screen->handleEvent(choiceKey(SDL::KEY_DOWN, SDL::MOD_SHIFT));
+expectChoice($reorders, 1, 'boundary reorder emits nothing');
+$list->setFilter('b');
+$screen->handleEvent(choiceKey(SDL::KEY_UP, SDL::MOD_SHIFT));
+expectChoice($reorders, 1, 'filtered reorder emits nothing');
+$list->setFilter('');
 $screen->handleEvent(choiceKey(SDL::KEY_ESCAPE));
 $multi = new ListView([['value' => 'a', 'selected' => true], 'b', 'c'], multiple: true);
 $multi->on('change', [ChoiceTestListener::class, 'change']);
@@ -217,6 +235,36 @@ $search = new ListView(['alpha', 'beta', 'gamma'], filterable: false, searchable
 $search->setFilter('g');
 expectChoice($search->getValue(), 'gamma', 'search-only moves to first match');
 expectChoice($search->values(), ['alpha', 'beta', 'gamma'], 'search-only keeps all rows');
+$typingList = new ListView(['a7', 'beta']);
+$hotkeyLayout = new LayoutNode('horizontal', '1*', '1*');
+$hotkeyLayout->addLeaf(new LayoutLeaf('List', '1*', '', $typingList));
+$hotkeyLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Alpha', 'a', ChoiceTestListener::class . '::hotkey', new Style())));
+$hotkeyLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Seven', '7', ChoiceTestListener::class . '::hotkey', new Style())));
+$hotkeyScreen = new Screen($hotkeyLayout);
+$hotkeyScreen->measureGrid(new Tile(0, 0, 50, 3));
+$hotkeyScreen->handleEvent(choiceKey(SDL::KEY_RETURN));
+expectChoice($hotkeyScreen->handleEvent(choiceKey(ord('a'))), true, 'active list consumes letter keydown');
+expectChoice($typingList->filter(), '', 'letter keydown does not duplicate text input');
+$hotkeyScreen->handleEvent(choiceText('a'));
+expectChoice($hotkeyScreen->handleEvent(choiceKey(ord('7'))), true, 'active list consumes digit keydown');
+$hotkeyScreen->handleEvent(choiceText('7'));
+expectChoice($typingList->filter(), 'a7', 'text input builds list query');
+expectChoice(ChoiceTestListener::$hotkeys, 0, 'typing in list does not press buttons');
+$hotkeyScreen->handleEvent(choiceKey(SDL::KEY_ESCAPE));
+$hotkeyScreen->handleEvent(choiceKey(ord('a')));
+$hotkeyScreen->handleEvent(choiceText('a'));
+$hotkeyScreen->handleEvent(choiceKey(ord('7')));
+$hotkeyScreen->handleEvent(choiceText('7'));
+expectChoice(ChoiceTestListener::$hotkeys, 2, 'hotkeys work again after list release');
+$quietList = new ListView(['alpha'], filterable: false, searchable: false);
+$quietLayout = new LayoutNode('horizontal', '1*', '1*');
+$quietLayout->addLeaf(new LayoutLeaf('List', '1*', '', $quietList));
+$quietLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Alpha', 'a', ChoiceTestListener::class . '::hotkey', new Style())));
+$quietScreen = new Screen($quietLayout);
+$quietScreen->measureGrid(new Tile(0, 0, 30, 3));
+$quietScreen->handleEvent(choiceKey(SDL::KEY_RETURN));
+expectChoice($quietScreen->handleEvent(choiceKey(ord('a'))), true, 'active nonsearchable list owns typing keydown');
+expectChoice(ChoiceTestListener::$hotkeys, 2, 'nonsearchable list also blocks hotkeys');
 $xmlRadio = new RadioButton(['one', 'two']);
 $xmlEvents = [new EventDefinition('change', null, ChoiceTestListener::class . '::xmlChange')];
 $xmlLayout = new LayoutNode('horizontal', '1*', '1*');

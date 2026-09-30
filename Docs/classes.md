@@ -16,6 +16,7 @@ Never pass these as function arguments because it's accessible globally through 
 Pass further as function arguments.
 
 - Core\Window: represents the window
+- Core\WindowPlacement: captures and applies native window modes and pixel sizes
 - Layout\WindowGeometry: immutable cell size, window size, and grid offsets with pixel-area conversion
 - Rendering\Grid: the common center aligned character grid
 - Rendering\GridRenderer: renders the grid to the window (ffi renderer)
@@ -63,6 +64,8 @@ Static or reusable classes.
 - Core\ScrollIndicator: formats textual marks for hidden content beyond a viewport
 - Core\ItemData: validates unique item values and labels
 - Core\ItemViewport: tracks item cursor and vertical scrolling
+- Core\WidgetTitle: validates and paints a fixed title above list and choice item viewports
+- Widgets\List\View: coordinates fixed titles, item viewport sizing, and partial row redraws
 - Widgets\Table\TableData: stores inline rows or indexes and caches escaped TSV chunks
 - Widgets\Table\Painter: measures columns and paints headers, row numbers, body cells, and scroll indicators
 - Widgets\Table\Navigator: moves the table cursor to visible row and field edges, then pages the viewport
@@ -73,6 +76,10 @@ Static or reusable classes.
 - Widgets\Graph\Plot: draws clipped lines, points, and grouped bars into GD images
 - Widgets\Graph\Labels: measures and clips FreeType graph text
 - Widgets\Graph\Raster: composes graph axes, labels, grid, legend, and series
+- Widgets\StyledText\Format: validates rich text styles and resolves pixel and viewport dimensions
+- Widgets\StyledText\Fonts: resolves font faces and measures FreeType baseline metrics
+- Widgets\StyledText\Lines: wraps styled runs into lines sharing a baseline
+- Widgets\StyledText\Raster: paints clipped rich text, padding, backgrounds, and borders
 - Core\RasterImage: stores GD-decoded pixels for SDL texture upload
 - Core\Texture: owns a reusable sprite or writable layer with pixel drawing and region copying
 - Core\TextureContext: creates application textures and releases them before its window closes
@@ -86,6 +93,7 @@ Static or reusable classes.
 - Rendering\TextMetrics: to get glyph attribites
 - Core\Widget: abstract base class for widget behavior and preferred layout sizing
 - Core\WidgetSelection: tracks focus and chooses the next widget from tile geometry
+- Core\FocusNavigation: keeps the current layout scope and restores child focus after exit
 - Core\AppData: resolves private per-application files and loads or saves JSON [configuration](config.md)
 - Core\Color: rgb color data
 - Core\Style: inherited application colors with defaults and local overrides
@@ -101,6 +109,7 @@ unpacking it into individual color arguments. Individual drawing operations can 
 - Events\EventDefinition: stores one parsed event subscription
 - Events\EventContext: provides event type, source widget, and native input to actions
 - Events\EventDispatcher: invokes matching static actions and handles input consumption
+- Events\ScreenInput: dispatches screen input actions and button hotkeys
 - Events\KeyboardEvent: converts SDL keyboard fields to PHP scalars before dispatch
 - Events\WidgetEventEmitter: lets widgets subscribe named handlers to their lifecycle events
 

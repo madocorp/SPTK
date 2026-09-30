@@ -28,6 +28,30 @@ function paintText(Text|TextEditor $widget, int $width, int $height): Grid {
   return $grid;
 }
 
+/** Count notifications after replacing text. */
+function textReplaced(): void {
+  global $replacementCount;
+  $replacementCount++;
+}
+
+$replacementCount = 0;
+$replacement = new Text("old line\nold tail", wrap: false, align: 'right');
+$replacement->on('change', 'textReplaced');
+$replacement->emit('activate');
+paintText($replacement, 5, 1);
+$replacement->handleInput((object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => SDL::KEY_END, 'mod' => 0]]);
+$replacement->setText("Hi\r\nBye");
+$grid = paintText($replacement, 5, 2);
+expectCell($grid, 3, 0, 'H', 'replacement resets horizontal scroll and cached width', 82);
+expectCell($grid, 2, 1, 'B', 'replacement normalizes newlines');
+if ($replacementCount !== 1) {
+  throw new RuntimeException('Text replacement must notify once');
+}
+$wrappedReplacement = new Text('one two three');
+paintText($wrappedReplacement, 4, 3);
+$wrappedReplacement->setText('new');
+expectCell(paintText($wrappedReplacement, 4, 3), 0, 0, 'n', 'replacement clears wrapped row cache');
+
 $center = new Text("a\nabc", align: 'center');
 $sameValue = new Grid(2, 1);
 $sameValue->beginUpdate();
@@ -49,10 +73,10 @@ if (!$updated || count($grid->dirtyCells()) !== 2) {
   throw new RuntimeException('Moving the Text cursor must dirty only two grid cells');
 }
 $center->emit('activate');
-expectCell(paintText($center, 7, 2), 3, 0, 'a', 'centered cursor', 85);
+expectCell(paintText($center, 7, 2), 3, 0, 'a', 'centered cursor', 82);
 $center->handleInput((object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => SDL::KEY_END, 'mod' => 0]]);
 $center->handleInput((object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => SDL::KEY_RIGHT, 'mod' => SDL::MOD_SHIFT]]);
-expectCell(paintText($center, 7, 2), 4, 0, '¶', 'centered selected newline', 85);
+expectCell(paintText($center, 7, 2), 4, 0, '¶', 'centered selected newline', 82);
 $right = new Text("a\nabc", align: 'right');
 $grid = paintText($right, 7, 2);
 expectCell($grid, 6, 0, 'a', 'right aligned short row');

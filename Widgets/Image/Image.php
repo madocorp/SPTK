@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Image;
 
-use SPTK\Core\{Color, ImageSource, RasterImage, Widget};
+use SPTK\Core\{Color, ImageSource, RasterImage, Style, Widget, WidgetTitle};
 use SPTK\Events\WidgetEventEmitter;
 use SPTK\Events\KeyNormalizer;
 use SPTK\Layout\Tile;
@@ -24,15 +24,41 @@ final class Image extends Widget {
   private int $x;
   private int $y;
   private ?Tile $viewport = null;
+  private WidgetTitle $title;
+
+  /** Describe the controls available for this widget and its configuration. */
+  protected function defaultTip(bool $active): string {
+    return !$this->interactive ? 'Image preview; arrow keys move between tiles.' : ($active ? 'Arrows pan; + and - zoom; Space resets; Esc finishes.' : 'Return opens image navigation.');
+  }
 
   /** Retain a shared lazy source and configure fitting or manual zoom and offsets. */
-  public function __construct(string|\GdImage $src, bool $fill = false, float $zoom = 1.0, int $x = 0, int $y = 0, private readonly Color $bg = new Color(0, 0, 0)) {
+  public function __construct(
+    string|\GdImage $src,
+    bool $fill = false,
+    float $zoom = 1.0,
+    int $x = 0,
+    int $y = 0,
+    private readonly Color $bg = new Color(32, 38, 48),
+    private readonly ?string $fit = null,
+    private readonly bool $interactive = true,
+    private readonly bool $padding = true,
+    ?string $title = null,
+    ?Style $style = null,
+  ) {
+    if (!in_array($fit, [null, 'contain', 'cover'], true)) {
+      throw new \InvalidArgumentException('Image fit must be contain or cover.');
+    }
+    if ($fill && $fit !== null) {
+      throw new \InvalidArgumentException('Image fit cannot be combined with fill=true.');
+    }
+    $fill = $fill || $fit !== null;
     if (!is_finite($zoom) || $zoom <= 0) {
       throw new \InvalidArgumentException('Image zoom must be a positive finite number.');
     }
     if ($fill && ($zoom !== 1.0 || $x !== 0 || $y !== 0)) {
-      throw new \InvalidArgumentException('Image zoom, x, and y require fill=false.');
+      throw new \InvalidArgumentException('Image zoom, x, and y require manual sizing.');
     }
+    $this->title = new WidgetTitle($title, ($style ?? new Style())->with(['Background' => $bg]));
     $this->image = ImageSource::from($src);
     $this->initialFill = $fill;
     $this->initialZoom = $zoom;
@@ -44,6 +70,16 @@ final class Image extends Widget {
     $this->y = $y;
   }
 
+  /** Replace the source and restore the initial fitting, zoom, and position. */
+  public function setSource(string|\GdImage $src): void {
+    $this->image = ImageSource::from($src);
+    $this->fill = $this->initialFill;
+    $this->zoom = $this->initialZoom;
+    $this->x = $this->initialX;
+    $this->y = $this->initialY;
+    $this->emit('change');
+  }
+
   /** Decode the shared source on demand and return its dimensions and pixel data. */
   public function source(): RasterImage {
     return $this->image->raster();
@@ -52,10 +88,10 @@ final class Image extends Widget {
   /** Prefer the native source width rounded to cells in manual mode. */
   public function preferredWidth(): ?int {
     if ($this->initialFill) {
-      return null;
+      return $this->title->width() ?: null;
     }
     $cellWidth = \SPTK\App::fontOrNull()?->cellWidth() ?? 8;
-    return (int)ceil($this->image->dimensions()[0] / $cellWidth);
+    return max($this->title->width(), (int)ceil($this->image->dimensions()[0] / $cellWidth));
   }
 
   /** Prefer the native source height rounded to cells in manual mode. */
@@ -64,12 +100,13 @@ final class Image extends Widget {
       return null;
     }
     $cellHeight = \SPTK\App::fontOrNull()?->cellHeight() ?? 16;
-    return (int)ceil($this->image->dimensions()[1] / $cellHeight);
+    return (int)ceil($this->image->dimensions()[1] / $cellHeight) + $this->title->height();
   }
 
   /** Fill the tile underneath transparent source pixels. */
   public function paint(GridWriter $writer): void {
     $writer->fill(new Color(255, 255, 255), $this->bg);
+    $this->title->body($writer);
   }
 
   /** Report that image movement needs its pixel tile redrawn. */
@@ -113,9 +150,30 @@ final class Image extends Widget {
     return $this->bg;
   }
 
+  /** Allow image viewer activation only when interaction is enabled. */
+  public function canActivate(): bool {
+    return $this->interactive;
+  }
+
+  /** Keep pixel content inside the cell area unless padding is disabled. */
+  public function pixelPadding(): bool {
+    return $this->padding;
+  }
+
+  /** Reserve the title's grid row while retaining optional outer image padding. */
+  public function pixelArea(Tile $cellArea, Tile $backgroundArea): Tile {
+    $area = parent::pixelArea($cellArea, $backgroundArea);
+    if ($this->title->height() === 0) {
+      return $area;
+    }
+    $cellHeight = \SPTK\App::fontOrNull()?->cellHeight() ?? 16;
+    $top = max($area->y, min($area->y + $area->height, $cellArea->y + $cellHeight));
+    return new Tile($area->x, $top, $area->width, $area->y + $area->height - $top);
+  }
+
   /** Zoom, pan by half a viewport, jump to edges, or reset the image view. */
   public function handleInput(mixed $event): bool {
-    if ($event->type !== SDL::SDL_EVENT_KEY_DOWN) {
+    if (!$this->interactive || $event->type !== SDL::SDL_EVENT_KEY_DOWN) {
       return false;
     }
     $key = KeyNormalizer::normalizeInput($event);
@@ -149,13 +207,19 @@ final class Image extends Widget {
     return false;
   }
 
-  /** Return the scale that fits an oversized source without enlarging it. */
+  /** Compute uniform scaling for covering, containing, or shrinking the source to fit. */
   private function fitScale(Tile $area): float {
     if ($area->width < 1 || $area->height < 1) {
       return 1.0;
     }
     [$width, $height] = $this->image->dimensions();
-    return min(1, $area->width / $width, $area->height / $height);
+    $scaleX = $area->width / $width;
+    $scaleY = $area->height / $height;
+    return match ($this->fit) {
+      'cover' => max($scaleX, $scaleY),
+      'contain' => min($scaleX, $scaleY),
+      default => min(1, $scaleX, $scaleY),
+    };
   }
 
   /** Switch from fitting to manual scale without a visible size jump. */

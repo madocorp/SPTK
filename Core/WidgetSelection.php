@@ -9,13 +9,18 @@ final class WidgetSelection {
 
   private int $selectedIndex = 0;
 
-  /** Create a selection model for the screen's widget leaves. */
-  public function __construct(private array $leaves) {
+  /** Create a selection model with optional arrow-movement destinations. */
+  public function __construct(private array $leaves, private ?array $movementLeaves = null) {
   }
 
   /** Return the currently selected widget leaf. */
   public function selectedLeaf(): ?LayoutLeaf {
     return $this->leaves[$this->selectedIndex] ?? null;
+  }
+
+  /** Report whether this selection scope contains a leaf. */
+  public function contains(LayoutLeaf $leaf): bool {
+    return in_array($leaf, $this->leaves, true);
   }
 
   /** Select a known leaf and report whether focus changed. */
@@ -41,7 +46,7 @@ final class WidgetSelection {
     $tile = $current->grid();
     $allCandidates = [];
     foreach ($this->leaves as $index => $leaf) {
-      if ($index === $this->selectedIndex) {
+      if ($index === $this->selectedIndex || !in_array($leaf, $this->movementLeaves ?? $this->leaves, true)) {
         continue;
       }
       $next = $leaf->grid();

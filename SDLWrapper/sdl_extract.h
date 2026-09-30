@@ -114,6 +114,7 @@ bool SDL_SetRenderClipRect(SDL_Renderer *renderer, const SDL_Rect *rect);
 bool SDL_SetWindowPosition(SDL_Window *window, int x, int y);
 SDL_Window *SDL_CreateWindow(const char *title, int w, int h, SDL_WindowFlags flags);
 SDL_WindowID SDL_GetWindowID(SDL_Window *window);
+SDL_Window *SDL_GetWindowFromID(SDL_WindowID id);
 bool SDL_MinimizeWindow(SDL_Window *window);
 bool SDL_RestoreWindow(SDL_Window *window);
 bool SDL_ShowWindow(SDL_Window *window);

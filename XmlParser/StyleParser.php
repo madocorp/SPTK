@@ -7,7 +7,7 @@ use SPTK\Core\{Color, Style};
 /** Parses Style elements and applies their color values to inherited styles. */
 final class StyleParser {
 
-  private const COLORS = ['Background', 'Foreground', 'Separator', 'Highlight', 'Selected', 'CursorBackground', 'CursorForeground'];
+  private const COLORS = ['Background', 'Foreground', 'Separator', 'Highlight', 'Selected', 'CursorBackground', 'CursorForeground', 'Error'];
 
   /** Read a Style element and return the inherited style with local overrides. */
   public function parse(\XMLReader $reader, Style $parent): Style {
