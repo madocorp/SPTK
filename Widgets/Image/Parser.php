@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Validate Image attributes together with its layout size. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'src', 'fill', 'zoom', 'x', 'y']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'src', 'fill', 'fit', 'interactive', 'padding', 'zoom', 'x', 'y', 'title']);
   }
 
   /** Build an Image with a source relative to its XML file. */
@@ -22,6 +22,10 @@ final class Parser implements WidgetParser {
       throw new \RuntimeException('Image requires a src path.');
     }
     $fill = $this->attrBoolean($reader, 'fill', false);
+    $fit = $reader->getAttribute('fit');
+    $interactive = $this->attrBoolean($reader, 'interactive', true);
+    $padding = $this->attrBoolean($reader, 'padding', true);
+    $title = $reader->getAttribute('title');
     $zoom = $this->zoom($reader);
     $x = $this->offset($reader, 'x');
     $y = $this->offset($reader, 'y');
@@ -41,7 +45,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Image($path, $fill, $zoom, $x, $y, $style->background), $events);
+    return new WidgetDefinition(new Image($path, $fill, $zoom, $x, $y, $style->background, $fit, $interactive, $padding, $title, $style), $events);
   }
 
   /** Read a positive finite image scale. */

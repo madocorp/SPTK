@@ -7,12 +7,23 @@ final class LayoutNode {
 
   private $children = [];
   private $grid;
+  private ?LayoutLeaf $focus = null;
 
-  public function __construct(private string $direction, private string $width, private string $height) {
+  public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false) {
+    if ($enterChildren && $navigateChildren) {
+      throw new \InvalidArgumentException('enterChildren requires navigateChildren="false".');
+    }
+    if (!$navigateChildren) {
+      $widget = new \SPTK\Widgets\Empty\Placeholder(new \SPTK\Core\Color(0, 0, 0));
+      $widget->setId($id);
+      $widget->setTips($tip ?? ($enterChildren ? 'Return enters this layout; Esc leaves it.' : null));
+      $this->focus = new LayoutLeaf('Layout', $width, $height, $widget);
+    }
   }
 
   public function setGrid($grid) {
     $this->grid = $grid;
+    $this->focus?->setGrid($grid);
   }
 
   public function grid(): Tile {
@@ -43,8 +54,23 @@ final class LayoutNode {
     $this->children[] = $separator;
   }
 
+  /** Replace a child subtree or leaf while retaining the other layout items and their widgets. */
+  public function replaceChild(LayoutNode|LayoutLeaf $current, LayoutNode|LayoutLeaf $replacement): bool {
+    foreach ($this->children as $index => $child) {
+      if ($child === $current) {
+        $this->children[$index] = $replacement;
+        return true;
+      }
+      if ($child instanceof self && $child->replaceChild($current, $replacement)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public function measureGrid(\SPTK\Layout\Tile $grid) {
     $this->grid = $grid;
+    $this->focus?->setGrid($grid);
     $content = [];
     foreach ($this->children as $index => $child) {
       if (!$child instanceof LayoutSeparator) {
@@ -77,6 +103,9 @@ final class LayoutNode {
   }
 
   public function paint(\SPTK\Rendering\Grid $grid, ?LayoutLeaf $selected = null): void {
+    if ($selected === $this->focus) {
+      $selected = null;
+    }
     foreach ($this->children as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
@@ -112,6 +141,9 @@ final class LayoutNode {
   }
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer, ?LayoutLeaf $selected = null): void {
+    if ($selected === $this->focus) {
+      $selected = null;
+    }
     foreach ($this->children as $child) {
       if ($child instanceof self) {
         $child->drawBackgrounds($renderer, $selected);
@@ -121,17 +153,89 @@ final class LayoutNode {
     }
   }
 
-  /** Return widget leaves in their XML definition order. */
-  public function leaves(): array {
+  /** Return rendered leaves or navigation targets, treating grouped layouts as single tiles. */
+  public function leaves(bool $navigationOnly = false): array {
+    if ($navigationOnly && $this->focus !== null) {
+      return [$this->focus];
+    }
     $leaves = [];
     foreach ($this->children as $child) {
       if ($child instanceof self) {
-        array_push($leaves, ...$child->leaves());
+        array_push($leaves, ...$child->leaves($navigationOnly));
       } else if ($child instanceof LayoutLeaf) {
         $leaves[] = $child;
       }
     }
     return $leaves;
+  }
+
+  /** Return the focus targets inside this grouped layout. */
+  public function childNavigationLeaves(): array {
+    $leaves = [];
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        array_push($leaves, ...$child->leaves(true));
+      } else if ($child instanceof LayoutLeaf) {
+        $leaves[] = $child;
+      }
+    }
+    return $leaves;
+  }
+
+  /** Return arrow destinations inside this grouped layout. */
+  public function childMovementLeaves(): array {
+    $leaves = [];
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        array_push($leaves, ...$child->movementLeaves());
+      } else if ($child instanceof LayoutLeaf && $child->navigate()) {
+        $leaves[] = $child;
+      }
+    }
+    return $leaves;
+  }
+
+  /** Find an enterable grouped layout by its focus tile. */
+  public function enterableFor(?LayoutLeaf $focus): ?self {
+    if ($focus !== null && $this->focus === $focus && $this->enterChildren) {
+      return $this;
+    }
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        $found = $child->enterableFor($focus);
+        if ($found !== null) {
+          return $found;
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Return focus tiles eligible as destinations during arrow movement. */
+  public function movementLeaves(): array {
+    if (!$this->navigate) {
+      return [];
+    }
+    if ($this->focus !== null) {
+      return [$this->focus];
+    }
+    return $this->childMovementLeaves();
+  }
+
+  /** Resolve a focused layout to its rendered descendants for pixel selection colors. */
+  public function focusedLeaves(?LayoutLeaf $selected): array {
+    if ($this->focus !== null && $selected === $this->focus) {
+      return $this->leaves();
+    }
+    foreach ($this->children as $child) {
+      if ($child instanceof self) {
+        $leaves = $child->focusedLeaves($selected);
+        if ($leaves !== []) {
+          return $leaves;
+        }
+      }
+    }
+    return [];
   }
 
   public function drawSeparators(\SPTK\Rendering\PixelRenderer $renderer, \SPTK\Core\Color $color): void {

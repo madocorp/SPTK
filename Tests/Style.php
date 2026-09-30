@@ -6,11 +6,13 @@ require_once APP_DIR . '/SPTK/App.php';
 
 spl_autoload_register(['SPTK\\App', 'load']);
 
-use SPTK\Core\{Color, Style, Widget};
-use SPTK\Layout\Tile;
+use SPTK\Core\{Cell, Color, Screen, Style, Widget};
+use SPTK\Layout\{LayoutNode, Tile};
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\Widgets\Button\Button;
 use SPTK\Widgets\CheckboxArray\CheckboxArray;
+use SPTK\Widgets\Canvas\Canvas;
+use SPTK\Widgets\Image\Image;
 use SPTK\Widgets\Input\Input;
 use SPTK\Widgets\List\ListView;
 use SPTK\Widgets\RadioButton\RadioButton;
@@ -69,18 +71,34 @@ $grid = paintStyleWidget($button);
 expectStyleColor($grid->cell(4, 0)->fg, $style->background, 'activated Button label');
 expectStyleColor($grid->cell(4, 0)->bg, $style->foreground, 'activated Button background');
 expectStyleColor($button->background(), $style->background, 'Button tile background');
-foreach ([new Input('A'), new TextEditor('A'), new RadioButton(['A']), new CheckboxArray(['A'])] as $widget) {
-  expectStyleColor($widget->background(), new Color(0, 0, 0), 'default background');
-  expectStyleColor(paintStyleWidget($widget)->cell(0, 0)->fg, new Color(255, 255, 255), 'default foreground');
-  $widget->emit('activate');
-  expectStyleColor(paintStyleWidget($widget)->cell(0, 0)->bg, new Color(85, 85, 85), 'default cursor');
+$defaults = new Style();
+foreach ([
+  'background' => new Color(32, 38, 48),
+  'foreground' => new Color(237, 241, 245),
+  'separator' => new Color(71, 85, 104),
+  'highlight' => new Color(128, 203, 196),
+  'selected' => new Color(255, 209, 128),
+  'cursorBackground' => new Color(82, 101, 121),
+  'cursorForeground' => new Color(255, 255, 255),
+] as $name => $color) {
+  expectStyleColor($defaults->$name, $color, 'default ' . $name);
 }
-$text = new Text('A');
-expectStyleColor($text->background(), new Color(24, 28, 36), 'default Text background');
-expectStyleColor(paintStyleWidget($text)->cell(0, 0)->fg, new Color(230, 235, 245), 'default Text foreground');
+expectStyleColor((new Cell())->fg, $defaults->foreground, 'default grid foreground');
+expectStyleColor((new Cell())->bg, $defaults->background, 'default grid background');
+expectStyleColor((new Canvas())->background(), $defaults->background, 'default canvas background');
+expectStyleColor((new Screen(new LayoutNode('horizontal', '1*', '1*')))->borderColor, $defaults->separator, 'default screen separator');
+$imageSource = imagecreatetruecolor(1, 1);
+expectStyleColor((new Image($imageSource))->background(), $defaults->background, 'default image background');
+imagedestroy($imageSource);
+foreach ([new Text('A'), new Input('A'), new TextEditor('A'), new RadioButton(['A']), new CheckboxArray(['A'])] as $widget) {
+  expectStyleColor($widget->background(), $defaults->background, 'default background');
+  expectStyleColor(paintStyleWidget($widget)->cell(0, 0)->fg, $defaults->foreground, 'default foreground');
+  $widget->emit('activate');
+  expectStyleColor(paintStyleWidget($widget)->cell(0, 0)->bg, $defaults->cursorBackground, 'default cursor');
+}
 $list = new ListView(['A']);
-expectStyleColor($list->background(), new Color(0, 0, 0), 'default List background');
-expectStyleColor(paintStyleWidget($list)->cell(0, 0)->fg, new Color(255, 255, 0), 'default List selected text');
+expectStyleColor($list->background(), $defaults->background, 'default List background');
+expectStyleColor(paintStyleWidget($list)->cell(0, 0)->fg, $defaults->selected, 'default List selected text');
 $xml = [
   'Text' => ['<Text>A</Text>', 0],
   'Input' => ['<Input value="A" />', 0],

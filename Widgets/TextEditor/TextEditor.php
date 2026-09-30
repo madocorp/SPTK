@@ -28,7 +28,7 @@ final class TextEditor extends Widget {
   /** Create a multiline editor with inherited style colors. */
   public function __construct(
     string $value = '',
-    private readonly Style $style = new Style(background: new Color(0, 0, 0), foreground: new Color(255, 255, 255), cursorBackground: new Color(85, 85, 85)),
+    private readonly Style $style = new Style(),
     private readonly bool $wrap = false,
     private readonly int $tabSize = 8,
     private readonly ?string $label = null,
@@ -45,6 +45,11 @@ final class TextEditor extends Widget {
     $this->painter = new Painter($style->with(['CursorForeground' => $style->foreground]));
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
+  }
+
+  /** Explain multiline editing according to the current activation state. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Editing text: Return adds a line; Esc or Ctrl+Return finishes.' : 'Return edits multiline text.';
   }
 
   /** Return the current multiline value, including edits in progress. */
@@ -139,7 +144,12 @@ final class TextEditor extends Widget {
     if ($this->navigator->handle($key, $mod, $this->document->lines(), $this->document->cursor())) {
       return true;
     }
-    return $this->document->handleKey($key, $mod);
+    if ($this->document->handleKey($key, $mod)) {
+      return true;
+    }
+    // SDL sends a keydown before text input; consume letters while the editor owns typing.
+    return ($mod & (SDL::MOD_CTRL | SDL::MOD_ALT)) === 0
+      && (($key >= ord('a') && $key <= ord('z')) || ($key >= ord('A') && $key <= ord('Z')));
   }
 
   /** Keep edits on Escape and reserve plain Return for a newline. */

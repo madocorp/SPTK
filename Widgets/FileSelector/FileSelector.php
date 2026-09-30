@@ -18,6 +18,11 @@ final class FileSelector extends Widget {
   private ?string $error = null;
   private array $directories = [];
 
+  /** Describe the controls available for this widget and its configuration. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Up/Down browses; Return opens a directory or accepts a file; Esc finishes.' : 'Return opens the file browser.';
+  }
+
   /** Build a filesystem-backed list with inherited colors and search settings. */
   public function __construct(string $path = '.', private readonly bool $multiple = false, bool $filterable = true, bool $searchable = true, private readonly Style $style = new Style()) {
     $this->list = new ListView([], $multiple, $filterable, $searchable, false, $style);

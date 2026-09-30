@@ -183,12 +183,11 @@ final class Window {
   private function renderScreens(): void {
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
     $this->pixelRenderer->invalidateDrawColor();
-    $this->pixelRenderer->setDrawColor(new Color(0, 0, 0));
+    $this->pixelRenderer->setDrawColor(new Color(32, 38, 48));
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderClear($this->ffiRenderer), 'SDL_RenderClear');
     $this->grid->clear();
     $screen = $this->screens[$this->currentScreen];
     $screen->drawBackgrounds($this->pixelRenderer);
-    $screen->drawSeparators($this->pixelRenderer);
     $screen->paint($this->grid);
     foreach ($screen->layout->leaves() as $leaf) {
       $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
@@ -196,6 +195,7 @@ final class Window {
     $this->pixelRenderer->beginImages();
     $screen->paintPixels($this->pixelRenderer, $this->geometry);
     $this->pixelRenderer->endImages();
+    $screen->drawSeparators($this->pixelRenderer);
     $this->presentFrame();
   }
 
@@ -277,7 +277,7 @@ final class Window {
       $leaf = $screen->activeLeaf();
       $selected = $screen->selectedLeaf();
       $handled = $screen->handleEvent($event);
-      if ($index !== $this->currentScreen) {
+      if ($this->window === null || $index !== $this->currentScreen) {
         return true;
       }
       if (!$handled) {
@@ -285,7 +285,7 @@ final class Window {
       }
       if ($handled && $leaf !== null && $leaf === $screen->activeLeaf()) {
         $this->renderLeaf($leaf);
-      } else if ($handled && $selected !== null && $screen->selectedLeaf() !== null && $selected !== $screen->selectedLeaf()) {
+      } else if ($handled && $selected !== null && $screen->selectedLeaf() !== null && $selected !== $screen->selectedLeaf() && $screen->statusBar === null && $selected->name() !== 'Layout' && $screen->selectedLeaf()->name() !== 'Layout') {
         $this->renderFocusChange($selected, $screen->selectedLeaf());
       } else {
         $this->renderScreens();

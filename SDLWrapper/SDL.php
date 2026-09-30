@@ -40,6 +40,7 @@ class SDL {
 
   public const SDL_WINDOW_RESIZABLE = 0x20;
   public const SDL_WINDOW_HIDDEN = 0x8;
+  public const SDL_WINDOW_MINIMIZED = 0x40;
   public const SDL_WINDOW_MAXIMIZED = 0x80;
   public const SDL_WINDOW_FULLSCREEN = 0x01;
 

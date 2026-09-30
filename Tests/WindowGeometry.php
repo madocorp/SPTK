@@ -23,6 +23,9 @@ function measuredGeometryArea(LayoutLeaf|LayoutSeparator $element): Tile {
   return (new ReflectionProperty($element, 'area'))->getValue($element);
 }
 
+expectGeometryArea(new Tile(-5, -7, -10, 4), [-5, -7, 0, 4], 'negative width becomes empty while preserving position and height');
+expectGeometryArea(new Tile(3, 9, 6, -2), [3, 9, 6, 0], 'negative height becomes empty while preserving width');
+expectGeometryArea(new Tile(-5, -7, -10, -4), [-5, -7, 0, 0], 'negative dimensions become an empty rectangle globally');
 $grid = new Tile(0, 0, 10, 6);
 $geometry = new WindowGeometry(8, 15, 96, 105, 8, 7);
 $interior = new Tile(3, 2, 2, 2);
@@ -33,11 +36,17 @@ expectGeometryArea($geometry->backgroundArea(new Tile(0, 0, 2, 2), $grid), [0, 0
 expectGeometryArea($geometry->backgroundArea(new Tile(8, 4, 2, 2), $grid), [64, 60, 32, 45], 'bottom and right window edges');
 expectGeometryArea($geometry->pixelArea(new Tile(3, 2, 0, 0)), [32, 37, 0, 0], 'empty content rectangle');
 expectGeometryArea($geometry->backgroundArea(new Tile(3, 2, 0, 0), $grid), [24, 30, 16, 15], 'empty tile retains padding');
+expectGeometryArea($geometry->backgroundArea(new Tile(14, 1, 4, 2), $grid), [96, 15, 0, 45], 'fixed tile beyond right edge has empty background');
+expectGeometryArea($geometry->backgroundArea(new Tile(1, 9, 2, 1), $grid), [8, 105, 32, 0], 'fixed tile below window has empty background');
+expectGeometryArea($geometry->backgroundArea(new Tile(-4, -3, 2, 1), $grid), [0, 0, 0, 0], 'tile above and left of window has empty background');
+expectGeometryArea($geometry->backgroundArea(new Tile(8, 4, 9, 9), $grid), [64, 60, 32, 45], 'partially overflowing tile clips to window');
 $even = new WindowGeometry(8, 14, 96, 98, 8, 7);
 expectGeometryArea($even->backgroundArea($interior, $grid), [24, 28, 32, 42], 'even cell height padding');
 $parent = new Tile(3, 2, 7, 4);
 expectGeometryArea($geometry->separatorArea($parent, new Tile(3, 2, 2, 4), $grid, 'horizontal'), [55, 30, 2, 75], 'vertical separator spans parent padding');
 expectGeometryArea($geometry->separatorArea($parent, new Tile(3, 2, 7, 1), $grid, 'vertical'), [24, 59, 72, 2], 'horizontal separator rounds odd cell height');
+expectGeometryArea($geometry->separatorArea(new Tile(14, 1, 4, 2), new Tile(14, 1, 2, 2), $grid, 'horizontal'), [96, 15, 0, 45], 'separator beyond right edge clips to empty width');
+expectGeometryArea($geometry->separatorArea(new Tile(1, 9, 2, 2), new Tile(1, 9, 2, 1), $grid, 'vertical'), [8, 105, 32, 0], 'separator below window clips to empty height');
 $small = new WindowGeometry(8, 15, 2, 3, -3, -6);
 $oneCell = new Tile(0, 0, 1, 1);
 expectGeometryArea($small->pixelArea($oneCell), [-3, -6, 8, 15], 'small window keeps negative centered offsets');
@@ -71,4 +80,8 @@ expectGeometryArea(measuredGeometryArea($bottom), [34, 47, 66, 62], 'resize upda
 expectGeometryArea(measuredGeometryArea($verticalSeparator), [33, 0, 2, 109], 'resize updates root separator');
 expectGeometryArea(measuredGeometryArea($horizontalSeparator), [34, 46, 66, 2], 'resize updates nested separator');
 expectGeometryArea($geometry->pixelArea($interior), [32, 37, 16, 30], 'previous geometry remains unchanged');
+$narrow = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['8', '1*', '8']);
+expectGeometryArea($narrow[1], [10, 0, 0, 1], 'oversized fixed buttons collapse flexible spacer without negative width');
+$short = \SPTK\Layout\Splitter::vertical(new Tile(0, 0, 1, 3), ['2', '1*', '2']);
+expectGeometryArea($short[1], [0, 3, 1, 0], 'short window collapses flexible height without negative size');
 echo "Window geometry checks passed\n";

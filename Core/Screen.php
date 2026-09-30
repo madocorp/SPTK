@@ -2,55 +2,87 @@
 
 namespace SPTK\Core;
 
-use SPTK\Events\{EventContext, EventDispatcher, KeyNormalizer};
+use SPTK\Events\{KeyNormalizer, ScreenInput};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile, WindowGeometry};
 use SPTK\Widgets\Button\Button;
+use SPTK\Widgets\Input\Input;
+use SPTK\Widgets\StatusBar\StatusBar;
+use SPTK\Widgets\TextEditor\TextEditor;
 
 /** Owns one screen's layout, widget selection, and screen-level input. */
 final class Screen {
 
   private array $leaves;
-  private WidgetSelection $selection;
+  private FocusNavigation $focus;
   private bool $inputMode = false;
   private bool $initialSelectionNotified = false;
   private array $events;
-  private EventDispatcher $eventDispatcher;
-  private array $hotkeys = [];
+  private ScreenInput $screenInput;
   private array $widgetsById = [];
+  public ?StatusBar $statusBar = null;
 
   /** Create a screen and attach screen-level event subscriptions to its leaves. */
-  public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(85, 85, 85), array $events = [], public string $id = '', public string $title = '') {
+  public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(71, 85, 104), array $events = [], public string $id = '', public string $title = '') {
     $this->events = $events;
-    $this->eventDispatcher = new EventDispatcher();
     $this->indexWidgets();
+    $this->refreshStatus();
   }
 
-  /** Replace the root layout after adding a window-level selector. */
+  /** Reindex a changed layout, retaining focus and activation when the selected widget survives. */
   public function setLayout(LayoutNode $layout): void {
+    $selected = $this->focus->rootSelectedLeaf();
+    if ($this->focus->depth() > 0) {
+      $this->release();
+    }
+    $retained = null;
+    foreach ($layout->leaves(true) as $leaf) {
+      if ($leaf->instance() === $selected?->instance()) {
+        $retained = $leaf;
+        break;
+      }
+    }
+    if ($retained === null) {
+      $this->release();
+      $this->initialSelectionNotified = false;
+    }
     $this->layout = $layout;
     $this->indexWidgets();
+    if ($retained !== null) {
+      $this->focus->select($retained);
+    }
+    $this->refreshStatus();
   }
 
   /** Index widget IDs and register button hotkeys at screen scope. */
   private function indexWidgets(): void {
     $this->leaves = $this->layout->leaves();
-    $this->selection = new WidgetSelection($this->leaves);
-    $this->hotkeys = [];
+    $this->focus = new FocusNavigation($this->layout);
+    $this->screenInput = new ScreenInput($this->events);
     $this->widgetsById = [];
-    foreach ($this->leaves as $leaf) {
+    $this->statusBar = null;
+    $indexed = $this->leaves;
+    foreach ($this->layout->leaves(true) as $leaf) {
+      if (!in_array($leaf, $indexed, true)) {
+        $indexed[] = $leaf;
+      }
+    }
+    foreach ($indexed as $leaf) {
       $leaf->setScreenEvents($this->events);
       $widget = $leaf->instance();
+      if ($widget instanceof StatusBar) {
+        if ($this->statusBar !== null) {
+          throw new \RuntimeException('Screen accepts only one StatusBar.');
+        }
+        $this->statusBar = $widget;
+      }
       if ($widget->id() !== null) {
         if (isset($this->widgetsById[$widget->id()])) {
           throw new \RuntimeException("Duplicate widget id: {$widget->id()}");
         }
         $this->widgetsById[$widget->id()] = $widget;
       }
-      if ($widget instanceof Button && $widget->hotkey() !== null) {
-        if (isset($this->hotkeys[$widget->hotkey()])) {
-          throw new \RuntimeException("Duplicate button hotkey: {$widget->hotkey()}");
-        }
-        $this->hotkeys[$widget->hotkey()] = $widget;
+      if ($widget instanceof Button) {
+        $this->screenInput->register($widget);
       }
     }
   }
@@ -102,24 +134,48 @@ final class Screen {
   }
 
   /** Select a known leaf and send focus notifications after initial selection. */
-  private function selectLeaf(LayoutLeaf $leaf): bool {
+  public function selectLeaf(LayoutLeaf $leaf): bool {
+    if (!$this->focus->contains($leaf)) {
+      throw new \InvalidArgumentException('Selected leaf does not belong to this navigation scope.');
+    }
     $previous = $this->selectedLeaf();
-    if (!$this->selection->select($leaf)) {
+    if ($this->inputMode && $previous !== $leaf) {
+      $this->release();
+    }
+    if (!$this->focus->select($leaf)) {
       return false;
     }
     if ($this->initialSelectionNotified) {
       $previous?->dispatchNotification('unselect');
       $leaf->dispatchNotification('select');
     }
+    $this->refreshStatus();
     return true;
   }
 
   /** Route input through the active widget, screen subscriptions, and screen controls. */
   public function handleEvent(mixed $event): bool {
-    $type = $this->inputType($event);
+    if ($this->statusBar?->handleConfirmation($event)) {
+      return true;
+    }
+    $type = $this->screenInput->type($event);
     if ($type === null) {
       return false;
     }
+    $active = $this->activeLeaf()?->instance();
+    $deferred = $type === 'keyDown' && $this->screenInput->deferCharacterHotkey(
+      $event,
+      $active === null || $active instanceof Input || $active instanceof TextEditor
+    );
+    $handled = $this->routeEvent($event, $type);
+    if ($type === 'textInput' || $type === 'keyUp') {
+      $handled = $this->screenInput->finishCharacterHotkey($event) || $handled;
+    }
+    return $handled || $deferred;
+  }
+
+  /** Send one event to the active widget, screen actions, and tile navigation. */
+  private function routeEvent(mixed $event, string $type): bool {
     if (!$this->initialSelectionNotified) {
       $this->selectedLeaf()?->dispatchNotification('select');
       $this->initialSelectionNotified = true;
@@ -129,10 +185,10 @@ final class Screen {
       if ($leaf->handleEvent($event) || $leaf->dispatchInput($type, $event)) {
         return true;
       }
-      if ($this->dispatchInput($type, $leaf->instance(), $event)) {
+      if ($this->screenInput->dispatch($type, $leaf->instance(), $event)) {
         return true;
       }
-    } else if ($this->dispatchInput($type, $leaf?->instance(), $event)) {
+    } else if ($this->screenInput->dispatch($type, $leaf?->instance(), $event)) {
       return true;
     }
     if ($type !== 'keyDown') {
@@ -148,6 +204,12 @@ final class Screen {
       return true;
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
+      if ($this->focus->enter()) {
+        $leaf?->dispatchNotification('unselect');
+        $this->selectedLeaf()?->dispatchNotification('select');
+        $this->refreshStatus();
+        return true;
+      }
       if ($leaf?->instance() instanceof Button) {
         $leaf->dispatchNotification('activate');
         $leaf->instance()->press($event);
@@ -158,6 +220,13 @@ final class Screen {
       }
       $this->inputMode = true;
       $leaf->dispatchNotification('activate');
+      $this->refreshStatus();
+      return true;
+    }
+    if ($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE && $this->focus->leave()) {
+      $leaf?->dispatchNotification('unselect');
+      $this->selectedLeaf()?->dispatchNotification('select');
+      $this->refreshStatus();
       return true;
     }
     $direction = match ($key) {
@@ -177,48 +246,40 @@ final class Screen {
   /** Move focus between tiles while no widget is active. */
   private function moveSelection(string $direction): bool {
     $previous = $this->selectedLeaf();
-    if (!$this->selection->move($direction)) {
+    if (!$this->focus->move($direction)) {
       return false;
     }
     $previous?->dispatchNotification('unselect');
     $this->selectedLeaf()?->dispatchNotification('select');
+    $this->refreshStatus();
     return true;
   }
 
   /** Release the active widget when a screen is hidden or an exit key is pressed. */
   public function release(string $notification = 'accept'): void {
+    $this->screenInput->cancelCharacterHotkey();
     if (!$this->inputMode) {
       return;
     }
     $this->inputMode = false;
     $this->selectedLeaf()?->dispatchNotification($notification);
     $this->selectedLeaf()?->dispatchNotification('deactivate');
+    $this->refreshStatus();
   }
 
-  /** Run matching screen event declarations for keyboard and text input. */
-  private function dispatchInput(string $type, ?\SPTK\Core\Widget $widget, mixed $event): bool {
-    if ($this->eventDispatcher->dispatch($this->events, new EventContext($type, $widget, $event), true)) {
-      return true;
+  /** Focus and activate a widget after an in-place layout swap. */
+  public function activateLeaf(LayoutLeaf $leaf): void {
+    $this->selectLeaf($leaf);
+    if (!$this->inputMode && $leaf->instance()->canActivate()) {
+      $this->inputMode = true;
+      $leaf->dispatchNotification('activate');
+      $this->refreshStatus();
     }
-    if ($type === 'keyDown') {
-      foreach ($this->hotkeys as $key => $button) {
-        if ((new \SPTK\Events\EventDefinition('keyDown', $key, ''))->matches($event)) {
-          $button->press($event);
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
-  /** Map an SDL input event to its XML event type. */
-  private function inputType(mixed $event): ?string {
-    return match ($event->type) {
-      \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN => 'keyDown',
-      \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_UP => 'keyUp',
-      \SPTK\SDLWrapper\SDL::SDL_EVENT_TEXT_INPUT => 'textInput',
-      default => null,
-    };
+  /** Refresh the optional status bar from the current widget and input mode. */
+  private function refreshStatus(): void {
+    $this->statusBar?->showTip($this->selectedLeaf()?->instance()?->tip($this->inputMode) ?? '');
   }
 
   public function measureGrid(\SPTK\Layout\Tile $grid) {
@@ -245,14 +306,20 @@ final class Screen {
   /** Paint each widget's optional pixel content after the character grid. */
   public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry): void {
     $selected = $this->selectedLeaf();
+    $focused = $this->layout->focusedLeaves($selected);
     foreach ($this->leaves as $leaf) {
-      $leaf->paintPixels($renderer, $geometry, $leaf === $selected);
+      $leaf->paintPixels($renderer, $geometry, $leaf === $selected || in_array($leaf, $focused, true));
     }
   }
 
   /** Return the currently selected widget leaf. */
   public function selectedLeaf(): ?\SPTK\Layout\LayoutLeaf {
-    return $this->selection->selectedLeaf();
+    return $this->focus->selectedLeaf();
+  }
+
+  /** Return how many layout containers have been entered. */
+  public function navigationDepth(): int {
+    return $this->focus->depth();
   }
 
 }

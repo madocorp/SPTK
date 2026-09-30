@@ -3,7 +3,7 @@
     <Text height="1">List: Type a prefix | Space toggles choices | Return activates</Text>
     <Separator />
     <Layout direction="horizontal" height="1*">
-      <List width="1*" reorderable="true">
+      <List width="1*" title="Single selection" reorderable="true">
         <Item value="alpha">Alpha</Item>
         <Item value="beta" selected="true">Beta</Item>
         <Item value="gamma">Gamma</Item>
@@ -12,7 +12,7 @@
         <Event type="change" action="Controller::listChanged" />
       </List>
       <Separator />
-      <List width="1*" multiple="true" filterable="true">
+      <List width="1*" title="Multiple selection" multiple="true" filterable="true">
         <Item value="apples" selected="true">Apples</Item>
         <Item value="bananas">Bananas</Item>
         <Item value="cherries">Cherries</Item>
@@ -23,14 +23,14 @@
     </Layout>
     <Separator />
     <Layout direction="horizontal" height="1*">
-      <RadioButton width="1*">
+      <RadioButton width="1*" title="Database">
         <Item value="local" checked="true">Local database</Item>
         <Item value="remote">Remote database</Item>
         <Item value="memory">In-memory database</Item>
         <Event type="change" action="Controller::choiceChanged" />
       </RadioButton>
       <Separator />
-      <CheckboxArray width="1*">
+      <CheckboxArray width="1*" title="Visible objects">
         <Item value="tables" checked="true">Show tables</Item>
         <Item value="views">Show views</Item>
         <Item value="indexes">Show indexes</Item>

@@ -35,5 +35,7 @@
         <Event type="keyDown" key="Space" action="Controller::advanceCanvas" />
       </Canvas>
     </Layout>
+    <Separator />
+    <StyledText id="styledDemo" height="7" fontSize="24" padding="12" borderWidth="2" borderColor="#80cbc4" background="#202630" verticalAlign="center" dimmed="false">StyledText mixes <Run bold="true" color="#ffd180">bold color</Run>, <Run italic="true" fontFamily="serif">italic serif</Run>, and <Run fontFamily="monospace" fontSize="18" color="#80cbc4">code()</Run> in one tile.<Br />It also supports wrapping, padding, borders, and line breaks.</StyledText>
   </Layout>
 </Screen>

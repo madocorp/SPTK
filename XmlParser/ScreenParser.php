@@ -57,7 +57,7 @@ final class ScreenParser {
   /** Parse a layout tree and pass inherited styles to nested layouts and widgets. */
   private function parseLayout(\XMLReader $reader, Style $parentStyle, ?string $parentDirection = null): LayoutNode {
     $direction = $this->attrEnum($reader, 'direction', ['vertical', 'horizontal']);
-    $allowed = ['direction'];
+    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip'];
     if ($parentDirection === 'horizontal') {
       $allowed[] = 'width';
     } else if ($parentDirection === 'vertical') {
@@ -66,7 +66,7 @@ final class ScreenParser {
     $this->assertAttributes($reader, $allowed);
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
-    $layout = new LayoutNode($direction, $width, $height);
+    $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false));
     $style = $parentStyle;
     while ($reader->read()) {
       if ($reader->nodeType === \XMLReader::ELEMENT) {
@@ -98,17 +98,21 @@ final class ScreenParser {
     if (!$parser instanceof WidgetParser) {
       throw new \RuntimeException("Widget parser must implement WidgetParser: {$parserClass}");
     }
-    $allowed = $direction === 'horizontal' ? ['width', 'id'] : ['height', 'id'];
+    $allowed = $direction === 'horizontal' ? ['width', 'navigate', 'id', 'tip', 'activeTip'] : ['height', 'navigate', 'id', 'tip', 'activeTip'];
     $parser->validateAttributes($reader, $allowed);
     $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width', '') : '';
     $height = $direction === 'vertical' ? $this->attrSize($reader, 'height', '') : '';
     $id = $reader->getAttribute('id');
+    $tip = $reader->getAttribute('tip');
+    $activeTip = $reader->getAttribute('activeTip');
+    $navigate = $this->attrBoolean($reader, 'navigate', true);
     if ($id !== null && !preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $id)) {
       throw new \RuntimeException("Invalid widget id: {$id}");
     }
     $definition = $parser->parse($reader, $style);
     $definition->widget->setId($id);
-    $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events));
+    $definition->widget->setTips($tip, $activeTip);
+    $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events, $navigate));
   }
 
   /** Open an XML file and report a clear error if it cannot be read. */

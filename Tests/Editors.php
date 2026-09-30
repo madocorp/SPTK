@@ -10,6 +10,7 @@ use SPTK\Core\{Clipboard, Color, Screen, ScrollIndicator, Style, TextEdit};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile};
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\SDLWrapper\SDL;
+use SPTK\Widgets\Button\Button;
 use SPTK\Widgets\Input\Input;
 use SPTK\Widgets\Text\Text;
 use SPTK\Widgets\TextEditor\TextEditor;
@@ -18,10 +19,19 @@ use SPTK\Widgets\TextEditor\TextEditor;
 final class EditorTestListener {
 
   public static int $accepted = 0;
+  public static int $hotkeys = 0;
+  public static Input|TextEditor|null $observedEditor = null;
+  public static string $valueAtHotkey = '';
 
   /** Count one accepted editor release. */
   public static function accept(): void {
     self::$accepted++;
+  }
+
+  /** Count one button hotkey action. */
+  public static function hotkey(): void {
+    self::$hotkeys++;
+    self::$valueAtHotkey = self::$observedEditor?->getValue() ?? '';
   }
 
 }
@@ -42,7 +52,7 @@ function expectInvertedIndicator(Grid $grid, string $name, Color $ink): void {
         continue;
       }
       expectEditor([$cell->fg->r, $cell->fg->g, $cell->fg->b], [$ink->r, $ink->g, $ink->b], $name . ' foreground');
-      expectEditor([$cell->bg->r, $cell->bg->g, $cell->bg->b], [0, 255, 255], $name . ' background');
+      expectEditor([$cell->bg->r, $cell->bg->g, $cell->bg->b], [128, 203, 196], $name . ' background');
       return;
     }
   }
@@ -57,6 +67,10 @@ function expectArrowAt(Grid $grid, string $glyph, int $x, int $y, string $name):
 /** Create a keyboard event without opening an SDL window. */
 function keyEvent(int $key, int $mod = 0): object {
   return (object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => $key, 'mod' => $mod]];
+}
+
+function keyUpEvent(int $key): object {
+  return (object)['type' => SDL::SDL_EVENT_KEY_UP, 'key' => (object)['key' => $key, 'mod' => 0]];
 }
 
 /** Create an SDL-shaped UTF-8 text event for headless editing checks. */
@@ -151,6 +165,47 @@ expectEditor($editor->getValue(), "\na\nb", 'Return inserts newline');
 $screen->handleEvent(keyEvent(SDL::KEY_RETURN, SDL::MOD_CTRL));
 expectEditor(EditorTestListener::$accepted, 2, 'Ctrl+Return accepts editor');
 expectEditor($editor->editing(), false, 'TextEditor deactivates');
+$typingEditor = new TextEditor();
+$layout = new LayoutNode('vertical', '1*', '1*');
+$layout->addLeaf(new LayoutLeaf('TextEditor', '', '', $typingEditor));
+$layout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Add', 'a', EditorTestListener::class . '::hotkey', new Style())));
+$typingScreen = new Screen($layout);
+$typingScreen->measureGrid(new Tile(0, 0, 20, 4));
+EditorTestListener::$observedEditor = $typingEditor;
+$typingScreen->handleEvent(keyEvent(SDL::KEY_RETURN));
+expectEditor($typingScreen->handleEvent(keyEvent(ord('a'))), true, 'character hotkey keydown is deferred');
+expectEditor(EditorTestListener::$hotkeys, 0, 'character hotkey waits for text input');
+expectEditor($typingEditor->getValue(), '', 'keydown does not insert duplicate text');
+$typingScreen->handleEvent(textEvent('a'));
+expectEditor(EditorTestListener::$hotkeys, 1, 'character hotkey runs after text input');
+expectEditor(EditorTestListener::$valueAtHotkey, 'a', 'hotkey action sees inserted text');
+$typingScreen->handleEvent(keyEvent(ord('a'), SDL::MOD_SHIFT));
+$typingScreen->handleEvent(textEvent('A'));
+expectEditor($typingEditor->getValue(), 'aA', 'text input inserts typed letters');
+expectEditor(EditorTestListener::$hotkeys, 1, 'shifted character does not match plain hotkey');
+$typingScreen->handleEvent(keyEvent(SDL::KEY_ESCAPE));
+$typingScreen->handleEvent(keyEvent(ord('a')));
+expectEditor(EditorTestListener::$hotkeys, 1, 'inactive widget still waits for text input');
+$typingScreen->handleEvent(textEvent('a'));
+expectEditor(EditorTestListener::$hotkeys, 2, 'button hotkey works after editing');
+$typingInput = new Input();
+$inputHotkeyLayout = new LayoutNode('vertical', '1*', '1*');
+$inputHotkeyLayout->addLeaf(new LayoutLeaf('Input', '', '', $typingInput));
+$inputHotkeyLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Build', 'b', EditorTestListener::class . '::hotkey', new Style())));
+$inputHotkeyScreen = new Screen($inputHotkeyLayout);
+$inputHotkeyScreen->measureGrid(new Tile(0, 0, 20, 4));
+EditorTestListener::$observedEditor = $typingInput;
+$inputHotkeyScreen->handleEvent(keyEvent(SDL::KEY_RETURN));
+$inputHotkeyScreen->handleEvent(keyEvent(ord('b')));
+expectEditor(EditorTestListener::$hotkeys, 2, 'input hotkey waits for its character');
+$inputHotkeyScreen->handleEvent(textEvent('b'));
+expectEditor(EditorTestListener::$valueAtHotkey, 'b', 'input hotkey sees the inserted character');
+expectEditor(EditorTestListener::$hotkeys, 3, 'input hotkey runs after text input');
+$inputHotkeyScreen->handleEvent(keyEvent(SDL::KEY_ESCAPE));
+$inputHotkeyScreen->handleEvent(keyEvent(ord('b')));
+expectEditor(EditorTestListener::$hotkeys, 3, 'hotkey still waits when no text input arrives');
+$inputHotkeyScreen->handleEvent(keyUpEvent(ord('b')));
+expectEditor(EditorTestListener::$hotkeys, 4, 'key release runs a hotkey when no text input arrives');
 $document = new TextEdit(true, "a\nb");
 $revision = $document->revision();
 $document->cursor()->setPosition(0, 1);

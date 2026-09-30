@@ -16,6 +16,11 @@ final class DateSelector extends Widget {
   private bool $active = false;
   private ?string $draft = null;
 
+  /** Describe the controls available for this widget and its configuration. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Arrows move by days or weeks; Page Up/Down changes month; Esc finishes.' : 'Return chooses a date.';
+  }
+
   /** Parse a valid four-digit ISO date without timezone-dependent arithmetic. */
   private static function parseDate(string $value): \DateTimeImmutable {
     if (preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/D', $value, $parts) !== 1 || !checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1])) {

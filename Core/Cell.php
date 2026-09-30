@@ -7,8 +7,8 @@ final readonly class Cell {
 
   public function __construct(
     public string $glyph = ' ',
-    public Color $fg = new Color(255, 255, 255),
-    public Color $bg = new Color(0, 0, 0),
+    public Color $fg = new Color(237, 241, 245),
+    public Color $bg = new Color(32, 38, 48),
     public int $width = 1,
   ) {
     if (!in_array($width, [0, 1, 2], true) || ($width === 0 && $glyph !== '')) {

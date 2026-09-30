@@ -15,9 +15,10 @@ final class LayoutLeaf {
   private EventDispatcher $eventDispatcher;
 
   /** Build a leaf and retain its XML event subscriptions. */
-  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = []) {
+  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = [], private bool $navigate = true) {
     $this->eventDispatcher = new EventDispatcher();
     $this->instance->on('change', $this->notifyChange(...));
+    $this->instance->on('reorder', $this->notifyReorder(...));
   }
 
   public function setGrid($grid) {
@@ -31,7 +32,7 @@ final class LayoutLeaf {
   /** Paint this widget and dim its cell colors when it is not selected. */
   public function paint(Grid $grid, bool $selected = true): void {
     $this->instance->paint(new GridWriter($grid, $this->grid));
-    if (!$selected) {
+    if (!$selected && !($this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar)) {
       $grid->darken($this->grid);
     }
   }
@@ -43,9 +44,13 @@ final class LayoutLeaf {
     }
   }
 
-  /** Paint this widget's optional pixel content in its grid cell rectangle. */
+  /** Paint pixel content in the cell rectangle or across the full measured tile without padding. */
   public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry, bool $selected): void {
-    $this->instance->paintPixels($renderer, $geometry->pixelArea($this->grid), $selected);
+    if ($this->area === null) {
+      throw new \LogicException('Leaf area has not been measured.');
+    }
+    $area = $this->instance->pixelArea($geometry->pixelArea($this->grid), $this->area);
+    $this->instance->paintPixels($renderer, $area, $selected);
   }
 
   /** Measure this widget's background including padding at interior and window edges. */
@@ -59,7 +64,7 @@ final class LayoutLeaf {
       throw new \LogicException('Leaf area has not been measured.');
     }
     $color = $this->instance->background();
-    $renderer->fill($this->area, $selected ? $color : $color->darkened());
+    $renderer->fill($this->area, $selected || $this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar ? $color : $color->darkened());
   }
 
   /** Forward raw input events to this widget. */
@@ -83,6 +88,11 @@ final class LayoutLeaf {
     $this->dispatchXmlNotification('change');
   }
 
+  /** Forward a widget-originated order change to XML subscriptions. */
+  private function notifyReorder(): void {
+    $this->dispatchXmlNotification('reorder');
+  }
+
   /** Dispatch XML notifications without recursively emitting into the widget. */
   private function dispatchXmlNotification(string $type): void {
     $context = new EventContext($type, $this->instance);
@@ -102,6 +112,11 @@ final class LayoutLeaf {
   /** Return this leaf's widget instance for event context. */
   public function instance(): Widget {
     return $this->instance;
+  }
+
+  /** Report whether arrow movement may select this leaf as a destination. */
+  public function navigate(): bool {
+    return $this->navigate;
   }
 
   /** Return the explicit or preferred width used by the parent layout. */

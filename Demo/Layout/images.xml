@@ -1,15 +1,15 @@
 <Screen>
   <Layout direction="vertical">
-    <Text height="1">Images: +/- zoom | Arrows pan | Space restores initial view | = fits</Text>
+    <Text height="1">Images: Return activates | +/- zoom | Arrows pan | Space restores | = fits</Text>
     <Separator />
     <Layout direction="horizontal" height="1*">
-      <Image src="../Assets/test.jpg" width="12" />
+      <Image src="../Assets/test.jpg" width="1*" title="Native size — cropped" />
       <Separator />
-      <Image src="../Assets/test.jpg" width="1*" zoom="8" x="40" y="-20">
+      <Image src="../Assets/test.jpg" width="1*" title="Zoom 8× — pan with arrows" zoom="8" x="40" y="-20">
         <Style><Background>#204050</Background></Style>
       </Image>
       <Separator />
-      <Image src="../Assets/test.jpg" width="8" fill="true" />
+      <Image src="../Assets/test.jpg" width="1*" title="Cover — no padding" fit="cover" padding="false" interactive="false" tip="Cover reaches the tile edges, including outer padding; arrows move between tiles." />
     </Layout>
   </Layout>
 </Screen>

@@ -29,3 +29,6 @@ The widget is read-only; it does not insert or delete text.
 Ctrl+A selects all text. Ctrl+C or Ctrl+Insert copies the selection, or the grapheme under the cursor when the selection is empty. Text and TextEditor share visual-row mapping, cursor behavior, and painting.
 Scroll indicators are drawn in the widget background color on the highlight color.
 Vertical arrows sit at the right edge; horizontal arrows sit at the left or right edge according to scroll direction.
+
+`setText(string $text)` replaces the content, resets cursor and scrolling, clears cached
+rows, and emits `change`. It preserves wrapping, alignment, and style.

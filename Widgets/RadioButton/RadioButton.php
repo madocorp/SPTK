@@ -2,15 +2,15 @@
 
 namespace SPTK\Widgets\RadioButton;
 
-use SPTK\Core\{Color, Style};
+use SPTK\Core\Style;
 use SPTK\Widgets\Choice\Choice;
 
 /** Presents one checked item from a scrollable radio group. */
 final class RadioButton extends Choice {
 
   /** Create a single-selection choice group. */
-  public function __construct(array $items = [], Style $style = new Style(background: new Color(0, 0, 0), foreground: new Color(255, 255, 255), cursorBackground: new Color(85, 85, 85))) {
-    parent::__construct(false, $items, $style);
+  public function __construct(array $items = [], Style $style = new Style(), ?string $title = null) {
+    parent::__construct(false, $items, $style, $title);
   }
 
   /** Return the selected value, or null when the group is empty. */

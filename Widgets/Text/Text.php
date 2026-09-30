@@ -30,10 +30,15 @@ final class Text extends Widget {
   private int $paintedScrollX = 0;
   private bool $paintedSelection = false;
 
+  /** Describe the controls available for this widget and its configuration. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Arrow keys scroll and select text; Ctrl+C copies; Esc finishes.' : 'Return reads and scrolls text.';
+  }
+
   /** Create read-only text with optional row alignment. */
   public function __construct(
     string $text,
-    private readonly Style $style = new Style(background: new Color(24, 28, 36), foreground: new Color(230, 235, 245), cursorBackground: new Color(85, 85, 85)),
+    private readonly Style $style = new Style(),
     private readonly bool $wrap = true,
     private readonly int $tabSize = 8,
     private readonly string $align = 'left',
@@ -41,6 +46,15 @@ final class Text extends Widget {
     if (!in_array($align, ['left', 'center', 'right'], true)) {
       throw new \InvalidArgumentException('Text align must be left, center, or right.');
     }
+    $this->setText($text);
+    $this->rows = new TextRows();
+    $this->painter = new Painter($style);
+    $this->on('activate', $this->activateCursor(...));
+    $this->on('deactivate', $this->deactivateCursor(...));
+  }
+
+  /** Replace the text and reset cursor, scrolling, and cached visual rows. */
+  public function setText(string $text): void {
     if (!mb_check_encoding($text, 'UTF-8')) {
       throw new \InvalidArgumentException('Text must be valid UTF-8.');
     }
@@ -50,10 +64,13 @@ final class Text extends Widget {
     }
     $this->lines = explode("\n", $text);
     $this->cursor = new TextCursor($this->lines, $this->tabSize);
-    $this->rows = new TextRows();
-    $this->painter = new Painter($style);
-    $this->on('activate', $this->activateCursor(...));
-    $this->on('deactivate', $this->deactivateCursor(...));
+    $this->scrollX = $this->scrollY = 0;
+    $this->preferredColumn = false;
+    $this->cachedVisualWidth = -1;
+    $this->cachedVisualRows = [];
+    $this->contentWidth = null;
+    $this->paintedCursorCell = null;
+    $this->emit('change');
   }
 
   /** Paint the visible wrapped rows, scroll marks, and active cursor. */

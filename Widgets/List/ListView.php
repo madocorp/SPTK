@@ -3,7 +3,7 @@
 namespace SPTK\Widgets\List;
 
 use SPTK\Core\{Color, ItemData, ItemViewport, Style, Widget};
-use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
+use SPTK\Events\WidgetEventEmitter;
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
 
@@ -11,11 +11,13 @@ use SPTK\SDLWrapper\SDL;
 final class ListView extends Widget {
 
   use WidgetEventEmitter;
+  use InputHandling;
+  use Tips;
 
   private array $items = [];
   private array $visible = [];
   private ItemViewport $viewport;
-  private Painter $painter;
+  private View $view;
   private Redraw $redraw;
   private int $cursorItem = 0;
   private string $query = '';
@@ -28,11 +30,12 @@ final class ListView extends Widget {
     private readonly bool $filterable = true,
     private readonly bool $searchable = true,
     private readonly bool $reorderable = false,
-    private readonly Style $style = new Style(background: new Color(0, 0, 0), foreground: new Color(255, 255, 255), cursorBackground: new Color(85, 85, 85)),
+    private readonly Style $style = new Style(),
+    ?string $title = null,
   ) {
     $this->viewport = new ItemViewport();
-    $this->painter = new Painter($style);
     $this->redraw = new Redraw();
+    $this->view = new View($style, $this->viewport, $this->redraw, $title);
     $this->setItems($items);
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
@@ -161,82 +164,39 @@ final class ListView extends Widget {
 
   /** Measure the widest item label. */
   public function preferredWidth(): ?int {
-    $width = 12;
+    $width = max(12, $this->view->titleWidth());
     foreach ($this->items as $item) {
       $width = max($width, TextMetrics::width($item['label']));
     }
     return $width;
   }
 
-  /** Reserve one row per item or an empty-state row. */
+  /** Reserve item or empty-state rows plus the optional fixed title. */
   public function preferredHeight(): ?int {
-    return max(1, count($this->items));
+    return max(1, count($this->items)) + $this->view->titleHeight();
   }
 
   /** Paint visible rows, search matches, and inverted scroll arrows. */
   public function paint(GridWriter $writer): void {
-    $this->viewport->setHeight($writer->height());
-    $this->painter->paint($writer, $this->items, $this->visible, $this->viewport, $this->query, $this->active, $this->multiple);
-    $this->redraw->painted();
+    $this->view->paint($writer, $this->items, $this->visible, $this->query, $this->active, $this->multiple);
   }
 
   /** Paint only cursor or selection rows while the viewport stays fixed. */
   public function paintUpdate(GridWriter $writer): bool {
-    $rows = $this->redraw->rows();
-    if ($rows === null) {
-      return false;
-    }
-    $this->painter->paintRows($writer, $this->items, $this->visible, $this->viewport, $this->query, $this->active, $this->multiple, $rows);
-    $this->redraw->painted();
-    return true;
+    return $this->view->paintUpdate($writer, $this->items, $this->visible, $this->query, $this->active, $this->multiple);
   }
 
-  /** Handle query typing, movement, selection, and optional item ordering. */
-  public function handleInput(mixed $event): bool {
-    if ($event->type === SDL::SDL_EVENT_TEXT_INPUT) {
-      $text = \FFI::string($event->text->text);
-      if (($this->filterable || $this->searchable) && $text !== ' ' && ($this->query === '' || ItemSearch::matchingIndices($this->items, $this->query) !== [])) {
-        $this->changeValue($this->appendQuery(...), $text);
-      }
-      return true;
-    }
-    if ($event->type !== SDL::SDL_EVENT_KEY_DOWN) {
-      return false;
-    }
-    $mod = (int)$event->key->mod;
-    $key = KeyNormalizer::normalize((int)$event->key->key, $mod);
-    if ($key === SDL::KEY_LEFT || $key === SDL::KEY_RIGHT) {
-      return false;
-    }
-    if ($key === SDL::KEY_BACKSPACE || $key === SDL::KEY_DELETE) {
-      $query = $key === SDL::KEY_DELETE ? '' : mb_substr($this->query, 0, max(0, mb_strlen($this->query) - 1));
-      $this->changeValue($this->setFilter(...), $query);
-      return true;
-    }
-    if ($key === SDL::KEY_SPACE) {
-      if (!$event->key->repeat && $this->multiple && $this->activeValue() !== null) {
-        $this->changeValue($this->toggleCurrent(...));
-      }
-      return true;
-    }
-    if (in_array($key, [SDL::KEY_UP, SDL::KEY_DOWN, SDL::KEY_HOME, SDL::KEY_END, SDL::KEY_PAGEUP, SDL::KEY_PAGEDOWN], true)) {
-      $this->changeValue($this->move(...), $key, $mod);
-      return true;
-    }
-    return false;
-  }
-
-  /** Accept the list value when Escape releases the widget. */
-  public function releaseNotification(int $key, int $modifiers): ?string {
-    return $key === SDL::KEY_ESCAPE ? 'accept' : parent::releaseNotification($key, $modifiers);
-  }
-
-  /** Apply a user operation and notify only when the public value changes. */
+  /** Apply a user operation and notify value and order changes. */
   private function changeValue(callable $operation, mixed ...$arguments): void {
     $before = $this->getValue();
+    $order = $this->reorderable ? $this->values() : null;
     $operation(...$arguments);
+    $reordered = $order !== null && $order !== $this->values();
     if ($before !== $this->getValue()) {
       $this->emit('change');
+    }
+    if ($reordered) {
+      $this->emit('reorder');
     }
   }
 

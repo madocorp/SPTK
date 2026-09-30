@@ -10,6 +10,8 @@ use SPTK\Layout\Tile;
 abstract class Widget {
 
   private ?string $id = null;
+  private ?string $tipOverride = null;
+  private ?string $activeTipOverride = null;
 
   /** Assign the optional XML identifier. */
   public function setId(?string $id): void {
@@ -19,6 +21,27 @@ abstract class Widget {
   /** Return the optional XML identifier. */
   public function id(): ?string {
     return $this->id;
+  }
+
+  /** Override focus and optional active tips with printable XML or application text. */
+  public function setTips(?string $tip, ?string $activeTip = null): void {
+    foreach ([$tip, $activeTip] as $value) {
+      if ($value !== null && (!mb_check_encoding($value, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $value))) {
+        throw new \InvalidArgumentException('Widget tip must be printable single-line UTF-8 text.');
+      }
+    }
+    $this->tipOverride = $tip;
+    $this->activeTipOverride = $activeTip;
+  }
+
+  /** Return the current focus or active tip, applying any explicit override. */
+  public function tip(bool $active = false): string {
+    return ($active ? $this->activeTipOverride : null) ?? $this->tipOverride ?? $this->defaultTip($active);
+  }
+
+  /** Supply a generic keyboard tip when a widget has no specialized behavior. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Escape or Return finishes. Arrow keys act inside this widget.' : ($this->canActivate() ? 'Return activates this widget. Arrow keys move between tiles.' : 'Arrow keys move between tiles.');
   }
 
   /** Subscribe a named handler to an event emitted by this widget. */
@@ -43,6 +66,16 @@ abstract class Widget {
 
   /** Paint optional pixel content over the completed character grid. */
   public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
+  }
+
+  /** Keep pixel content inside the cell area, leaving the surrounding layout padding visible. */
+  public function pixelPadding(): bool {
+    return true;
+  }
+
+  /** Choose the pixel drawing area from the cell tile and its padded background. */
+  public function pixelArea(Tile $cellArea, Tile $backgroundArea): Tile {
+    return $this->pixelPadding() ? $cellArea : $backgroundArea;
   }
 
   /** Report whether the widget draws pixels beyond its character cells. */

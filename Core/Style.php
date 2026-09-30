@@ -6,13 +6,14 @@ namespace SPTK\Core;
 final readonly class Style {
 
   public function __construct(
-    public Color $background = new Color(50, 50, 50),
-    public Color $foreground = new Color(204, 204, 204),
-    public Color $separator = new Color(170, 170, 170),
-    public Color $highlight = new Color(0, 255, 255),
-    public Color $selected = new Color(255, 255, 0),
-    public Color $cursorBackground = new Color(119, 119, 119),
-    public Color $cursorForeground = new Color(255, 255, 255)
+    public Color $background = new Color(32, 38, 48),
+    public Color $foreground = new Color(237, 241, 245),
+    public Color $separator = new Color(71, 85, 104),
+    public Color $highlight = new Color(128, 203, 196),
+    public Color $selected = new Color(255, 209, 128),
+    public Color $cursorBackground = new Color(82, 101, 121),
+    public Color $cursorForeground = new Color(255, 255, 255),
+    public Color $error = new Color(255, 110, 110)
   ) {
   }
 
@@ -25,7 +26,8 @@ final readonly class Style {
       $colors['Highlight'] ?? $this->highlight,
       $colors['Selected'] ?? $this->selected,
       $colors['CursorBackground'] ?? $this->cursorBackground,
-      $colors['CursorForeground'] ?? $this->cursorForeground
+      $colors['CursorForeground'] ?? $this->cursorForeground,
+      $colors['Error'] ?? $this->error
     );
   }
 

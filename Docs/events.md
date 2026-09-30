@@ -96,9 +96,14 @@ The framework emits these notifications:
 - `accept` or `cancel` when a widget leaves input mode; its release rule determines which
 - `deactivate` after either accept or cancel
 - `change` when a choice or list widget changes its value through user input
+- `reorder` when a list changes its row order through user input
 
 Matching widget-level notification actions run before screen-level notification actions. Notification return
 values are ignored. The first selected widget receives its initial `select` notification on the screen's first
 input event.
 
 Only `keyDown` and `keyUp` declarations can specify a key. Other declarations match by event type alone.
+
+In lifecycle actions, `App::eventLoop()->windows()` returns registered windows in
+XML definition order. This lets an app bind its screen widgets during `init` without
+assuming native SDL window IDs.

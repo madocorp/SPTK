@@ -21,7 +21,7 @@ final class Input extends Widget {
   /** Create a single-line editor with inherited style colors. */
   public function __construct(
     string $value = '',
-    private readonly Style $style = new Style(background: new Color(0, 0, 0), foreground: new Color(255, 255, 255), cursorBackground: new Color(85, 85, 85)),
+    private readonly Style $style = new Style(),
     private readonly int $tabSize = 8,
     private readonly ?string $label = null,
   ) {
@@ -35,6 +35,11 @@ final class Input extends Widget {
     $this->painter = new Painter($style);
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
+  }
+
+  /** Explain one-line editing and the input label when available. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Type to edit; Esc or Return finishes.' : 'Return edits' . ($this->label !== null ? ' ' . $this->label : ' this input') . '.';
   }
 
   /** Return the current text, including ongoing edits. */

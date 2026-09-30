@@ -1,6 +1,8 @@
 <Screen>
   <Event type="keyDown" key="a" action="Controller::test" />
   <Layout direction="vertical">
+    <Title height="1">Text — alignment, selection, and scrolling</Title>
+    <Separator />
     <Layout direction="horizontal" height="1*">
       <Text id="intro" width="1*" align="left">Left aligned
 

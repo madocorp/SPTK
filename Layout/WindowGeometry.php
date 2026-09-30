@@ -44,7 +44,7 @@ final readonly class WindowGeometry {
     if ($grid->y + $grid->height < $windowGrid->height) {
       $bottom = ($grid->y + $grid->height) * $this->cellHeight + $this->offsetY + intdiv($this->cellHeight + 1, 2);
     }
-    return new Tile($left, $top, $right - $left, $bottom - $top);
+    return $this->clipArea($left, $top, $right, $bottom);
   }
 
   /** Place a two-pixel separator after a child across its parent's padded area. */
@@ -53,10 +53,19 @@ final readonly class WindowGeometry {
     $cells = $this->pixelArea($before);
     if ($direction === 'horizontal') {
       $boundary = $cells->x + $cells->width + $this->cellWidth;
-      return new Tile($boundary - 1, $area->y, 2, $area->height);
+      return $this->clipArea($boundary - 1, $area->y, $boundary + 1, $area->y + $area->height);
     }
     $boundary = $cells->y + $cells->height + intdiv($this->cellHeight + 1, 2);
-    return new Tile($area->x, $boundary - 1, $area->width, 2);
+    return $this->clipArea($area->x, $boundary - 1, $area->x + $area->width, $boundary + 1);
+  }
+
+  /** Clip layout decoration to the window, including tiles entirely outside its bounds. */
+  private function clipArea(int $left, int $top, int $right, int $bottom): Tile {
+    $left = max(0, min($this->windowWidth, $left));
+    $top = max(0, min($this->windowHeight, $top));
+    $right = max(0, min($this->windowWidth, $right));
+    $bottom = max(0, min($this->windowHeight, $bottom));
+    return new Tile($left, $top, max(0, $right - $left), max(0, $bottom - $top));
   }
 
 }

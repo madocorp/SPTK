@@ -9,13 +9,14 @@ When no `<Style>` sets a color, `Core\Style` supplies these defaults:
 
 | Color | Default | Purpose |
 | --- | --- | --- |
-| `Background` | `#323232` | Widget background |
-| `Foreground` | `#cccccc` | Widget text |
-| `Separator` | `#aaaaaa` | Layout separators |
-| `Highlight` | `#00ffff` | Highlight palette color |
-| `Selected` | `#ffff00` | Selected palette color |
-| `CursorBackground` | `#777777` | Cursor palette background |
+| `Background` | `#202630` | Widget background |
+| `Foreground` | `#edf1f5` | Widget text |
+| `Separator` | `#475568` | Layout separators |
+| `Highlight` | `#80cbc4` | Highlight palette color |
+| `Selected` | `#ffd180` | Selected palette color |
+| `CursorBackground` | `#526579` | Cursor palette background |
 | `CursorForeground` | `#ffffff` | Cursor palette foreground |
+| `Error` | `#ff6e6e` | Status bar error text |
 
 The demo sets its own palette explicitly in `Demo/Layout/app.xml`.
 
@@ -35,8 +36,7 @@ $input = new SPTK\Widgets\Input\Input('Name', style: $style, label: 'Name');
 ```
 
 Replace old named color arguments such as `bg` and `indicatorFg` with `style`, using `background` and
-`highlight` entries respectively. Text, Input, TextEditor, ListView, RadioButton, and CheckboxArray retain
-their previous colors when `style` is omitted. Supplying a style uses that palette's values. Input and
+`highlight` entries respectively. Omitting `style` uses the shared default palette. Input and
 TextEditor continue to use `foreground` for their caret and selection text; Text uses `cursorForeground`.
 
 ## Inheritance and overrides

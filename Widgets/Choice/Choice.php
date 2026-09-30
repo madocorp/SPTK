@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Choice;
 
-use SPTK\Core\{Color, ItemData, ItemViewport, ScrollIndicator, Style, Widget};
+use SPTK\Core\{Color, ItemData, ItemViewport, ScrollIndicator, Style, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -15,10 +15,17 @@ abstract class Choice extends Widget {
   private array $items = [];
   protected array $checked = [];
   private ItemViewport $viewport;
+  private WidgetTitle $title;
   private bool $active = false;
 
+  /** Describe the controls available for this widget and its configuration. */
+  protected function defaultTip(bool $active): string {
+    return $active ? 'Up/Down chooses; Space ' . ($this->multiple ? 'toggles' : 'selects') . ' an item; Esc finishes.' : 'Return opens choices.';
+  }
+
   /** Create a choice group with inherited style colors. */
-  protected function __construct(private readonly bool $multiple, array $items, private readonly Style $style) {
+  protected function __construct(private readonly bool $multiple, array $items, private readonly Style $style, ?string $title = null) {
+    $this->title = new WidgetTitle($title, $style);
     $this->viewport = new ItemViewport();
     $this->setItems($items);
     $this->on('activate', $this->activate(...));
@@ -92,25 +99,26 @@ abstract class Choice extends Widget {
 
   /** Measure the widest marker and label in grid cells. */
   public function preferredWidth(): ?int {
-    $width = 4;
+    $width = max(4, $this->title->width());
     foreach ($this->items as $item) {
       $width = max($width, 4 + TextMetrics::width($item['label']));
     }
     return $width;
   }
 
-  /** Reserve one row per item, including one row for an empty group. */
+  /** Reserve item or empty-state rows plus the optional fixed title. */
   public function preferredHeight(): ?int {
-    return max(1, count($this->items));
+    return max(1, count($this->items)) + $this->title->height();
   }
 
   /** Paint markers, clipped labels, and vertical scroll indicators. */
   public function paint(GridWriter $writer): void {
     $writer->fill($this->style->foreground, $this->style->background);
+    $writer = $this->title->body($writer);
+    $this->viewport->setHeight($writer->height());
     if ($writer->width() < 1 || $writer->height() < 1) {
       return;
     }
-    $this->viewport->setHeight($writer->height());
     $scroll = $this->viewport->scroll();
     for ($y = 0; $y < $writer->height(); $y++) {
       $index = $scroll + $y;

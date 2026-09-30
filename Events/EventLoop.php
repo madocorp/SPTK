@@ -23,6 +23,11 @@ final class EventLoop {
     $this->windows[$windowId] = $window;
   }
 
+  /** Return registered windows in their application definition order. */
+  public function windows(): array {
+    return array_values($this->windows);
+  }
+
   /** Return a registered window for a screen-switching action. */
   public function window(int $id): ?Window {
     return $this->windows[$id] ?? null;

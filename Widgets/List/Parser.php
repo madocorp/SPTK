@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Validate List attributes alongside layout dimensions. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'multiple', 'filterable', 'searchable', 'reorderable']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'multiple', 'filterable', 'searchable', 'reorderable', 'title']);
   }
 
   /** Build a ListView from selected Item records. */
@@ -21,8 +21,9 @@ final class Parser implements WidgetParser {
     $filterable = $this->attrBoolean($reader, 'filterable', true);
     $searchable = $this->attrBoolean($reader, 'searchable', true);
     $reorderable = $this->attrBoolean($reader, 'reorderable', false);
+    $title = $reader->getAttribute('title');
     [$items, $events, $style] = (new ItemParser())->parse($reader, $style, 'selected');
-    return new WidgetDefinition(new ListView($items, $multiple, $filterable, $searchable, $reorderable, $style), $events);
+    return new WidgetDefinition(new ListView($items, $multiple, $filterable, $searchable, $reorderable, $style, $title), $events);
   }
 
 }

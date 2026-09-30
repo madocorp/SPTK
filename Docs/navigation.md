@@ -12,6 +12,18 @@ using edge-to-edge distance. If no widget lies in that direction, focus stays wh
 tile geometry rather than cycling through widgets in XML order. The selected tile is drawn at full brightness;
 other widget tiles are dimmed.
 
+Widgets and layouts with `navigate="false"` are skipped as arrow-key destinations. This does not
+change rendering, initial selection, or explicit selection. A layout with `navigate="false"`
+also omits its children from arrow movement. `navigateChildren="false"` instead makes a layout
+one focus stop, so the two attributes can be used independently.
+
+An `enterChildren="true"` group opens with Return. Arrows stay within its children until Escape
+returns to the group tile; the last selected child is restored on reentry. If a child widget is
+active, its first Escape releases that widget and the next Escape leaves the group. A selected
+group is rendered uniformly; inside it, the selected child is highlighted normally.
+Applications can call `Screen::selectLeaf()` to select a known focus tile directly; a target in
+an ancestor scope closes deeper scopes first.
+
 Press Return or keypad Enter to activate the selected widget and enter input mode. A Button runs its action
 immediately and stays in layout mode.
 

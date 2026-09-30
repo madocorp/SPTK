@@ -24,9 +24,23 @@ final class Button extends Widget {
   ) {
   }
 
+  /** Identify the action run by Return on this button. */
+  protected function defaultTip(bool $active): string {
+    return 'Return: ' . $this->label . ($this->hotkey !== null ? ' (' . strtoupper($this->hotkey) . ')' : '') . '.';
+  }
+
   /** Bind the owning window for screen selection. */
   public function setWindow(Window $window): void {
     $this->window = $window;
+  }
+
+  /** Replace the displayed label and notify change subscribers. */
+  public function setLabel(string $label): void {
+    if ($label === '' || !mb_check_encoding($label, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $label)) {
+      throw new \InvalidArgumentException('Button requires a printable one-line label.');
+    }
+    $this->label = $label;
+    $this->emit('change');
   }
 
   /** Return the normalized hotkey for screen-level registration. */
