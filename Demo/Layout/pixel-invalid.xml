@@ -1,0 +1,5 @@
+<Screen>
+  <Layout pixel="true" boxPadding="4px">
+    <Empty />
+  </Layout>
+</Screen>

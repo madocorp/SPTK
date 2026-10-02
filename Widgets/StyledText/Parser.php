@@ -47,7 +47,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new StyledText($runs, $options, $style, $dimmed), $events);
+    return new WidgetDefinition(new StyledText($runs, $options, $style, $dimmed), $events, $style);
   }
 
   /** Parse one inline style override containing only text. */

@@ -148,16 +148,20 @@ final class Window {
   /** Recreate the frame and remeasure every screen with the current window geometry. */
   public function resize() {
     $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
-    $this->width = (int)$this->ffiWidth->cdata;
-    $this->height = (int)$this->ffiHeight->cdata;
-    if ($this->frameTexture !== null) {
-      $this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, null);
-      $this->sdl->ffi->SDL_DestroyTexture($this->frameTexture);
+    $width = (int)$this->ffiWidth->cdata;
+    $height = (int)$this->ffiHeight->cdata;
+    if ($this->frameTexture === null || $width !== $this->width || $height !== $this->height) {
+      if ($this->frameTexture !== null) {
+        $this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, null);
+        $this->sdl->ffi->SDL_DestroyTexture($this->frameTexture);
+      }
+      $this->frameTexture = $this->sdl->ffi->SDL_CreateTexture($this->ffiRenderer, SDL::SDL_PIXELFORMAT_RGBA8888, SDL::SDL_TEXTUREACCESS_TARGET, max(1, $width), max(1, $height));
+      if ($this->frameTexture === null) {
+        throw new \RuntimeException('Cannot create window render target: ' . $this->sdl->error());
+      }
     }
-    $this->frameTexture = $this->sdl->ffi->SDL_CreateTexture($this->ffiRenderer, SDL::SDL_PIXELFORMAT_RGBA8888, SDL::SDL_TEXTUREACCESS_TARGET, max(1, $this->width), max(1, $this->height));
-    if ($this->frameTexture === null) {
-      throw new \RuntimeException('Cannot create window render target: ' . $this->sdl->error());
-    }
+    $this->width = $width;
+    $this->height = $height;
     $this->columns = max(1, intdiv($this->width, $this->font->cellWidth()) - 2);
     $this->rows = max(1, intdiv($this->height, $this->font->cellHeight()) - 1);
     $offsetX = intdiv($this->width - $this->columns * $this->font->cellWidth(), 2);
@@ -190,7 +194,9 @@ final class Window {
     $screen->drawBackgrounds($this->pixelRenderer);
     $screen->paint($this->grid);
     foreach ($screen->layout->leaves() as $leaf) {
-      $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+      if (!$leaf->isPixel()) {
+        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+      }
     }
     $this->pixelRenderer->beginImages();
     $screen->paintPixels($this->pixelRenderer, $this->geometry);
@@ -208,7 +214,9 @@ final class Window {
     if ($leaf->instance()->paintsPixels()) {
       $this->grid->dirtyCells();
       $leaf->drawBackground($this->pixelRenderer);
-      $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+      if (!$leaf->isPixel()) {
+        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+      }
       $leaf->paintPixels($this->pixelRenderer, $this->geometry, true);
       $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
       $this->presentFrame();
@@ -219,12 +227,19 @@ final class Window {
 
   /** Redraw the old and new focus tiles with their updated selection colors. */
   private function renderFocusChange(LayoutLeaf $before, LayoutLeaf $after): void {
+    $renderedLeaves = $this->screens[$this->currentScreen]->layout->leaves();
+    if (!in_array($before, $renderedLeaves, true) || !in_array($after, $renderedLeaves, true)) {
+      $this->renderScreens();
+      return;
+    }
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
     $this->pixelRenderer->invalidateDrawColor();
     foreach ([[$before, false], [$after, true]] as [$leaf, $selected]) {
       $leaf->drawBackground($this->pixelRenderer, $selected);
       $leaf->paint($this->grid, $selected);
-      $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+      if (!$leaf->isPixel()) {
+        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+      }
       if ($leaf->instance()->paintsPixels()) {
         $leaf->paintPixels($this->pixelRenderer, $this->geometry, $selected);
       }

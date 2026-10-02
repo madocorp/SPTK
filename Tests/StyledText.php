@@ -41,7 +41,7 @@ expectStyled($text->raster(240, 90) === $image, true, 'cached raster');
 $text->setContent('Hello', $text->options());
 expectStyled($text->raster(240, 90) === $image, true, 'unchanged setter retains raster');
 $oldRuns = $text->runs();
-foreach ([['fontSize' => -1], ['fontSize' => 'wrong'], ['fontSize' => []], ['fontStyle' => 'wrong'], ['fontFamily' => []], ['padding' => ['wrong' => 2]], ['textAlign' => 'diagonal'], ['color' => 'bad'], ['other' => true]] as $invalid) {
+foreach ([['fontSize' => -1], ['fontSize' => 'wrong'], ['fontSize' => []], ['fontStyle' => 'wrong'], ['fontFamily' => []], ['margin' => ['wrong' => 2]], ['padding' => ['wrong' => 2]], ['textAlign' => 'diagonal'], ['color' => 'bad'], ['other' => true]] as $invalid) {
   try {
     $text->setContent('Changed', $invalid);
     throw new RuntimeException('Invalid style accepted.');
@@ -53,6 +53,8 @@ $long = new StyledText('One two three four five six seven eight nine ten', ['fon
 expectStyled($long->contentHeight(100) > $long->contentHeight(500), true, 'word wrapping grows height');
 $unwrapped = new StyledText('One two three four five six seven eight nine ten', ['fontSize' => 26, 'wrap' => false]);
 expectStyled($unwrapped->contentHeight(100), $unwrapped->contentHeight(500), 'unwrapped text stays on one line');
+$glyphHeights = array_map(fn(string $word): int => (new StyledText($word, ['fontSize' => 30]))->contentHeight(500), ['aaa', 'aba', 'aga', 'abg']);
+expectStyled($glyphHeights, array_fill(0, 4, $glyphHeights[0]), 'one line has stable height across ascenders and descenders');
 $breaks = new StyledText([['text' => 'one'], ['type' => 'br'], ['text' => 'two\nthree']]);
 expectStyled($breaks->contentHeight(400) > $text->contentHeight(400), true, 'explicit break increases height');
 $styles = array_replace(Format::DEFAULTS, ['fontSize' => 20]);
@@ -76,6 +78,12 @@ $decorated = new StyledText('Text', ['background' => '#123456', 'borderColor' =>
 $decoratedImage = $decorated->raster(180, 80);
 expectStyled(styledPixel($decoratedImage, 0, 0), 0xff0000ff, 'opaque border');
 expectStyled(styledPixel($decoratedImage, 5, 5), 0x123456ff, 'padded background');
+$margined = new StyledText('Text', ['background' => '#123456', 'borderColor' => '#ff0000', 'borderWidth' => 3, 'padding' => 10, 'margin' => ['top' => 6, 'right' => 8, 'bottom' => 6, 'left' => 8]]);
+$marginedImage = $margined->raster(180, 80);
+expectStyled(styledPixel($marginedImage, 0, 0) & 255, 0, 'margin leaves the tile background visible');
+expectStyled(styledPixel($marginedImage, 8, 6), 0xff0000ff, 'border begins inside the margin');
+expectStyled(styledPixel($marginedImage, 12, 10), 0x123456ff, 'padding remains inside the bordered box');
+expectStyled($margined->contentHeight(180) - $decorated->contentHeight(180), 12, 'margin contributes to natural height');
 $inline = new StyledText([['text' => 'A', 'background' => '#00ff00', 'color' => '#ff0000']]);
 expectStyled(styledPixel($inline->raster(100, 60), 0, 0), 0x00ff00ff, 'inline run background');
 expectStyled(Format::color('#abc'), [170, 187, 204, 0], 'short RGB');

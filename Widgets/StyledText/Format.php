@@ -9,7 +9,7 @@ final class Format {
     'color' => '#ffffff', 'background' => 'transparent', 'fontFamily' => 'sans-serif',
     'fontSize' => 24, 'fontWeight' => 'normal', 'fontStyle' => 'normal',
     'textAlign' => 'left', 'verticalAlign' => 'top', 'lineGap' => 4,
-    'padding' => 0, 'borderWidth' => 0, 'borderColor' => '#ffffff',
+    'margin' => 0, 'padding' => 0, 'borderWidth' => 0, 'borderColor' => '#ffffff',
     'bold' => false, 'italic' => false, 'wrap' => true,
   ];
 
@@ -44,9 +44,9 @@ final class Format {
             throw new \InvalidArgumentException('Font families must be nonempty strings.');
           }
         }
-      } else if (in_array($name, ['fontSize', 'lineGap', 'padding', 'borderWidth'], true)) {
-        if (is_array($value) && (!in_array($name, ['padding', 'borderWidth'], true) || array_diff(array_keys($value), ['top', 'right', 'bottom', 'left']) !== [])) {
-          throw new \InvalidArgumentException('Only padding and borderWidth accept named edges.');
+      } else if (in_array($name, ['fontSize', 'lineGap', 'margin', 'padding', 'borderWidth'], true)) {
+        if (is_array($value) && (!in_array($name, ['margin', 'padding', 'borderWidth'], true) || array_diff(array_keys($value), ['top', 'right', 'bottom', 'left']) !== [])) {
+          throw new \InvalidArgumentException('Only margin, padding, and borderWidth accept named edges.');
         }
         foreach (is_array($value) ? $value : [$value] as $dimension) {
           self::dimension($dimension, 100, 100);

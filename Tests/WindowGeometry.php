@@ -84,4 +84,16 @@ $narrow = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['8', '1*', '
 expectGeometryArea($narrow[1], [10, 0, 0, 1], 'oversized fixed buttons collapse flexible spacer without negative width');
 $short = \SPTK\Layout\Splitter::vertical(new Tile(0, 0, 1, 3), ['2', '1*', '2']);
 expectGeometryArea($short[1], [0, 3, 1, 0], 'short window collapses flexible height without negative size');
+$fitted = new LayoutNode('vertical', '1*', 'auto');
+$fitted->addLeaf(new LayoutLeaf('Empty', '1*', '2', new Placeholder(new Color(0, 0, 0))));
+$fitted->addLeaf(new LayoutLeaf('Empty', '1*', '0*', new Placeholder(new Color(0, 0, 0))));
+$fitted->addLeaf(new LayoutLeaf('Empty', '1*', '1', new Placeholder(new Color(0, 0, 0))));
+if ($fitted->naturalHeight(1) !== 4) {
+  throw new RuntimeException('Zero-minimum filler must not increase natural height.');
+}
+$fitted->measureGrid(new Tile(0, 0, 1, 4));
+expectGeometryArea($fitted->leaves()[1]->grid(), [0, 2, 1, 0], 'filler collapses to zero at natural height');
+$fitted->measureGrid(new Tile(0, 0, 1, 7));
+expectGeometryArea($fitted->leaves()[1]->grid(), [0, 2, 1, 3], 'filler receives remaining rows');
+expectGeometryArea($fitted->leaves()[2]->grid(), [0, 6, 1, 1], 'bottom margin stays fixed after filler');
 echo "Window geometry checks passed\n";

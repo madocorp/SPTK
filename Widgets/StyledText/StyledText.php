@@ -16,6 +16,7 @@ class StyledText extends Widget {
   private array $options = [];
   private ?RasterImage $image = null;
   private array $imageKey = [];
+  private bool $externalBoxModel = false;
 
   /** Set initial rich text, pixel typography, inherited background, and optional focus dimming. */
   public function __construct(string|array $runs = '', array $options = [], private Style $style = new Style(), private bool $dimmed = true) {
@@ -44,10 +45,28 @@ class StyledText extends Widget {
     return $this->options;
   }
 
+  /** Let a pixel layout own the outer margin, border, and padding. */
+  public function setExternalBoxModel(bool $enabled): void {
+    if ($this->externalBoxModel !== $enabled) {
+      $this->externalBoxModel = $enabled;
+      $this->image = null;
+    }
+  }
+
+  protected function externalBoxModel(): bool {
+    return $this->externalBoxModel;
+  }
+
   /** Resolve the widget's text and typography relative to its allocated pixel tile. */
   protected function content(int $width, int $height): array {
     $color = sprintf('#%02x%02x%02x', $this->style->foreground->r, $this->style->foreground->g, $this->style->foreground->b);
-    return [$this->runs, array_replace(Format::DEFAULTS, ['color' => $color], $this->options), $width, $height];
+    $style = array_replace(Format::DEFAULTS, ['color' => $color], $this->options);
+    if ($this->externalBoxModel) {
+      $style['margin'] = 0;
+      $style['padding'] = 0;
+      $style['borderWidth'] = 0;
+    }
+    return [$this->runs, $style, $width, $height];
   }
 
   /** Measure the text's natural pixel height at a given width. */

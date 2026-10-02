@@ -5,9 +5,7 @@ namespace SPTK\Core;
 use SPTK\Events\{KeyNormalizer, ScreenInput};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile, WindowGeometry};
 use SPTK\Widgets\Button\Button;
-use SPTK\Widgets\Input\Input;
 use SPTK\Widgets\StatusBar\StatusBar;
-use SPTK\Widgets\TextEditor\TextEditor;
 
 /** Owns one screen's layout, widget selection, and screen-level input. */
 final class Screen {
@@ -162,14 +160,16 @@ final class Screen {
     if ($type === null) {
       return false;
     }
-    $active = $this->activeLeaf()?->instance();
     $deferred = $type === 'keyDown' && $this->screenInput->deferCharacterHotkey(
-      $event,
-      $active === null || $active instanceof Input || $active instanceof TextEditor
+      $event, !$this->inputMode
     );
     $handled = $this->routeEvent($event, $type);
     if ($type === 'textInput' || $type === 'keyUp') {
-      $handled = $this->screenInput->finishCharacterHotkey($event) || $handled;
+      if ($this->inputMode) {
+        $this->screenInput->cancelCharacterHotkey();
+      } else {
+        $handled = $this->screenInput->finishCharacterHotkey($event) || $handled;
+      }
     }
     return $handled || $deferred;
   }
@@ -185,7 +185,7 @@ final class Screen {
       if ($leaf->handleEvent($event) || $leaf->dispatchInput($type, $event)) {
         return true;
       }
-      if ($this->screenInput->dispatch($type, $leaf->instance(), $event)) {
+      if ($this->screenInput->dispatch($type, $leaf->instance(), $event, false)) {
         return true;
       }
     } else if ($this->screenInput->dispatch($type, $leaf?->instance(), $event)) {
@@ -288,7 +288,7 @@ final class Screen {
 
   /** Measure padded layout areas using the owning window's geometry. */
   public function measureArea(Tile $grid, WindowGeometry $geometry): void {
-    $this->layout->measureArea($grid, $geometry);
+    $this->layout->measureArea($grid, $geometry, true);
   }
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer): void {

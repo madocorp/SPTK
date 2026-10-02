@@ -35,7 +35,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Canvas($painter, $style->background), $events);
+    return new WidgetDefinition(new Canvas($painter, $style->background), $events, $style);
   }
 
 }

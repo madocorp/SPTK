@@ -32,7 +32,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Placeholder($style->background), $events);
+    return new WidgetDefinition(new Placeholder($style->background), $events, $style);
   }
 
 }

@@ -2,7 +2,7 @@
 
 `StyledText` renders read-only proportional text inside one native layout tile. It supports
 mixed font sizes, families, bold/italic faces, colors, inline backgrounds, wrapping, explicit
-line breaks, alignment, padding, and borders. PHP GD with FreeType is required.
+line breaks, alignment, margins, padding, and borders. PHP GD with FreeType is required.
 
 ```xml
 <StyledText height="1*" fontSize="28" textAlign="center" verticalAlign="center">
@@ -28,6 +28,7 @@ The widget also accepts the usual inherited `<Style>` and `<Event>` elements.
 | `verticalAlign` | `top` | `top`, `center`, or `bottom`. |
 | `wrap` | `true` | Wrap at words and split oversized words at grapheme boundaries. |
 | `lineGap` | `4` | Pixels between lines, including viewport-unit support. |
+| `margin` | `0` | Transparent space outside the box background and border. |
 | `padding` | `0` | Pixel inset around text. |
 | `borderWidth` | `0` | Pixel border thickness. |
 | `borderColor` | `#ffffff` | Border color. |
@@ -36,7 +37,12 @@ The widget also accepts the usual inherited `<Style>` and `<Event>` elements.
 Colors accept `#RGB`, `#RRGGBB`, `#RRGGBBAA`, or `transparent`. Viewport units resolve
 against this widget's pixel tile. Runs share a baseline even when font sizes differ.
 Explicit newlines and code indentation survive wrapping; tabs expand to four spaces.
-Ink, backgrounds, and borders clip to the tile. StyledText never enters input mode.
+Margins stay inside the allocated tile; ink, backgrounds, and borders clip to the tile.
+These widget options remain available in cell layouts. In an opt-in pixel layout, the
+layout item owns margin, border, and padding through its `<Style>` elements, and the
+widget options are ignored so the inset is measured only once. See
+[`layout.md`](../layout.md#opt-in-pixel-layouts).
+StyledText never enters input mode.
 
 The PHP API accepts a string or an array of runs:
 
@@ -52,13 +58,13 @@ $text->setContent('Replacement', ['fontSize' => 24]);
 
 `runs()` and `options()` expose normalized data. `setContent()` replaces both atomically
 and emits `change` only when content differs. Invalid formatting leaves the old content
-intact. PHP `padding` and `borderWidth` can also use named `top`, `right`, `bottom`, and
+intact. PHP `margin`, `padding`, and `borderWidth` can also use named `top`, `right`, `bottom`, and
 `left` edges; `fontFamily` can be an ordered array of fallback families.
 `contentHeight($width, $referenceHeight = 600)` measures pixel height.
 `raster($width, $height)` caches the immutable raster until text, style, or dimensions change.
 
 Apps can subclass StyledText and override `content()` to resolve semantic styles against
 an enclosing layout's measured grid. MaDemonstrator uses this for slide-relative font sizes
-in both its presentation and editor preview; all positioning remains in SPTK tile layouts.
+in both its presentation and editor preview; their slide subtree uses pixel tiles.
 
 Run `php Tests/StyledText.php` for typography, wrapping, clipping, XML, color, and cache checks.

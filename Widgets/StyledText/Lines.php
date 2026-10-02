@@ -64,8 +64,9 @@ final class Lines {
   private function append(string $text, array $style, array $face, array $metrics): void {
     $this->line['segments'][] = ['text' => $text, 'style' => $style, 'face' => $face, 'width' => $metrics[0]];
     $this->line['width'] += $metrics[0];
-    $this->line['ascent'] = max($this->line['ascent'], $metrics[1]);
-    $this->line['descent'] = max($this->line['descent'], $metrics[2]);
+    [$ascent, $descent] = $this->fonts->lineMetrics($face);
+    $this->line['ascent'] = max($this->line['ascent'], $ascent);
+    $this->line['descent'] = max($this->line['descent'], $descent);
   }
 
   /** Flush a line while preserving explicit empty lines. */
@@ -76,8 +77,8 @@ final class Lines {
 
   /** Initialize line metrics including descenders even for an empty line. */
   private function emptyLine(array $face): array {
-    [, $ascent, $descent] = $this->fonts->measure('Ag', $face);
-    return ['segments' => [], 'width' => 0, 'ascent' => $ascent + 1, 'descent' => $descent + 2];
+    [$ascent, $descent] = $this->fonts->lineMetrics($face);
+    return ['segments' => [], 'width' => 0, 'ascent' => $ascent, 'descent' => $descent];
   }
 
 }

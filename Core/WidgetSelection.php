@@ -43,13 +43,13 @@ final class WidgetSelection {
     if ($current === null) {
       return false;
     }
-    $tile = $current->grid();
+    $tile = $current->navigationArea();
     $allCandidates = [];
     foreach ($this->leaves as $index => $leaf) {
       if ($index === $this->selectedIndex || !in_array($leaf, $this->movementLeaves ?? $this->leaves, true)) {
         continue;
       }
-      $next = $leaf->grid();
+      $next = $leaf->navigationArea();
       if (!$this->isInDirection($tile, $next, $direction)) {
         continue;
       }

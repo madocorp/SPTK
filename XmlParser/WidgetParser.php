@@ -10,7 +10,7 @@ interface WidgetParser {
   /** Validate attributes declared on the widget element. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void;
 
-  /** Parse a widget and its nested event declarations. */
+  /** Parse a widget and its nested events; pixel widgets return their effective Style in the definition. */
   public function parse(\XMLReader $reader, Style $style): WidgetDefinition;
 
 }

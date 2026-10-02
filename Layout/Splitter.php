@@ -5,15 +5,16 @@ namespace SPTK\Layout;
 /** Splits a grid horizontally or vertically to smaller tiles */
 final class Splitter {
 
-  private static function parseSizes(array $sizes): array {
+  /** Resolve fixed cell sizes, including percentages of the parent tile. */
+  private static function parseSizes(array $sizes, int $space): array {
     $fixedSize = count($sizes) - 1;
     $sumWeight = 0;
     $parsedSizes = [];
     foreach ($sizes as $size) {
       if (strpos($size, '*') === false) {
-        $value = (int)$size;
+        $value = str_ends_with($size, '%') ? (int)round($space * (float)$size / 100) : (int)$size;
         $parsedSizes[] = ['fixed' => true, 'value' => $value];
-        $fixedSize += (int)$value;
+        $fixedSize += $value;
       } else {
         $value = max(1, (int)str_replace('*', '', $size));
         $parsedSizes[] = ['fixed' => false, 'value' => $value];
@@ -27,8 +28,9 @@ final class Splitter {
     ];
   }
 
-  private static function allocateSizes(array $sizes, int $space): array {
-    $parsed = self::parseSizes($sizes);
+  /** Distribute cells left after fixed sizes and gaps to weighted children. */
+  private static function allocateSizes(array $sizes, int $space, int $referenceSpace): array {
+    $parsed = self::parseSizes($sizes, $referenceSpace);
     $remaining = max(0, $space - $parsed['fixedSize']);
     $allocated = [];
     $weighted = [];
@@ -55,7 +57,7 @@ final class Splitter {
 
   public static function horizontal(Tile $grid, array $sizes): array {
     $columns = $grid->width;
-    $allocated = self::allocateSizes($sizes, $columns - (count($sizes) - 1));
+    $allocated = self::allocateSizes($sizes, $columns - (count($sizes) - 1), $columns);
     $result = [];
     $x = 0;
     foreach ($allocated as $width) {
@@ -68,12 +70,18 @@ final class Splitter {
 
   public static function vertical(Tile $grid, array $sizes): array {
     $rows = $grid->height;
-    $allocated = self::allocateSizes($sizes, $rows);
+    $collapsedGaps = 0;
+    foreach ($sizes as $index => $size) {
+      if ($index > 0 && $size === '0*') {
+        $collapsedGaps++;
+      }
+    }
+    $allocated = self::allocateSizes($sizes, $rows + $collapsedGaps, $rows);
     $result = [];
     $y = 0;
-    foreach ($allocated as $height) {
+    foreach ($allocated as $index => $height) {
       $result[] = new Tile($grid->x, $grid->y + $y, $grid->width, $height);
-      $y += $height + 1;
+      $y += $height + (($sizes[$index + 1] ?? null) === '0*' ? 0 : 1);
     }
     return $result;
   }

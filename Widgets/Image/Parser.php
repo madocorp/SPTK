@@ -45,7 +45,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Image($path, $fill, $zoom, $x, $y, $style->background, $fit, $interactive, $padding, $title, $style), $events);
+    return new WidgetDefinition(new Image($path, $fill, $zoom, $x, $y, $style->background, $fit, $interactive, $padding, $title, $style), $events, $style);
   }
 
   /** Read a positive finite image scale. */

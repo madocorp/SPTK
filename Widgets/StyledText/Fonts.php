@@ -8,7 +8,8 @@ use SPTK\Rendering\FontFinder;
 final class Fonts {
 
   private static array $paths = [];
-  private array $metrics = [];
+  private static array $metrics = [];
+  private static array $lineMetrics = [];
 
   /** Resolve a face and convert CSS pixel font sizes to FreeType points. */
   public function face(array $style, int $width, int $height): array {
@@ -26,15 +27,28 @@ final class Fonts {
   /** Measure the ink extents and advance of a string, retaining repeated measurements. */
   public function measure(string $text, array $face): array {
     $key = implode(':', $face) . ':' . $text;
-    if (isset($this->metrics[$key])) {
-      return $this->metrics[$key];
+    if (isset(self::$metrics[$key])) {
+      return self::$metrics[$key];
     }
     $bounds = imagettfbbox($face[1], 0, $face[0], $text === '' ? ' ' : $text);
     $left = min($bounds[0], $bounds[2], $bounds[4], $bounds[6]);
     $right = max($bounds[0], $bounds[2], $bounds[4], $bounds[6]);
     $top = min($bounds[1], $bounds[3], $bounds[5], $bounds[7]);
     $bottom = max($bounds[1], $bounds[3], $bounds[5], $bounds[7]);
-    return $this->metrics[$key] = [max(0, $right - min(0, $left)), max(0, -$top), max(0, $bottom)];
+    if (count(self::$metrics) >= 8192) {
+      self::$metrics = [];
+    }
+    return self::$metrics[$key] = [max(0, $right - min(0, $left)), max(0, -$top), max(0, $bottom)];
+  }
+
+  /** Return a face's stable ascent and descent, independent of the current text. */
+  public function lineMetrics(array $face): array {
+    $key = implode(':', $face);
+    if (!isset(self::$lineMetrics[$key])) {
+      [, $ascent, $descent] = $this->measure('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÉÍÓÚgjpqy', $face);
+      self::$lineMetrics[$key] = [$ascent + 1, $descent + 2];
+    }
+    return self::$lineMetrics[$key];
   }
 
 }
