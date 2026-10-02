@@ -64,6 +64,63 @@ the remaining space. For example, `1*` and `2*` divide the remaining space in a 
 omitted on a widget, its `Widget` base class can provide a preferred fixed size for that axis; otherwise it
 defaults to `1*`. An explicit size always takes precedence. Give a nested layout its size on the axis
 of its parent, just like a widget; omitted nested-layout sizes default to `1*`.
+Percentage sizes resolve to whole cells from the parent tile's width or height when the layout is measured.
+For example, `width="5%"` reserves 5% of the parent's columns; `height="5%"` reserves 5% of its rows.
+Weighted children share the remaining cells after fixed sizes and layout gaps.
+In a vertical layout, a StyledText child may use `height="auto"`. Its text, border, padding,
+and margin are measured at the available width and rounded up to whole cells. A vertical
+nested layout may also use `height="auto"` to sum the natural heights of its children.
+Weighted children contribute their numeric weight as a minimum when a parent measures
+its natural height. A horizontal nested layout uses the tallest child's natural height.
+
+## Opt-in pixel layouts
+
+Set `pixel="true"` on a `<Layout>` to measure that subtree in pixels. Its parent still assigns it an ordinary
+grid tile; the pixel layout takes the cell rectangle of that tile as its viewport. Nested nodes and widget
+leaves then receive exact, nonoverlapping pixel rectangles. Pixel splits have no automatic gaps or separators.
+Use an `Empty` child for an intentional gap, or place margin on an item. Cell layouts keep their existing
+sizing, padding, and separator behavior.
+
+Each pixel layout node and widget leaf has the same outer box, in this order: **margin, border, padding,
+inner area**. Margin is painted with the parent's background. Border uses `BorderColor`; padding uses the
+item's background. A nested layout splits only its inner area, and a pixel widget draws only there. The
+widget does not need to implement its own margin, border, or padding. Adjacent margins add; they do not
+collapse. An item's box is always contained in its assigned rectangle, even when the window is very small.
+
+Set `Margin`, `BorderWidth`, and `Padding` inside `<Style>`, along with `Background` and `BorderColor`.
+Edge sizes accept one to four values in top/right/bottom/left order, for example
+`<Padding>8px 12px</Padding>`. Sizes may be bare pixels, `px`, `vw`, `vh`, or `%`. Viewport units refer to the
+pixel subtree's root rectangle; percentages on width/height refer to the parent inner size, and percentages
+on box edges refer to viewport width. Colors inherit into children; margin, border width, and padding
+belong to the current item and reset to zero for its children. A `<Style>` at the start of a pixel
+`<Layout>` styles that node and supplies inherited colors to its children. A later `<Style>` styles
+subsequent children. A `<Style>` inside a pixel widget styles that leaf. Existing `Separator` styles
+continue to color grid separators.
+
+Pixel `width` and `height` support fixed pixel sizes, percentages, weights such as `2*`, and intrinsic `auto`
+sizing. `0*` has zero intrinsic height but receives remaining space when its parent allocates pixels.
+Auto-sized text is measured at its assigned inner width. A widget using `width="auto"` must provide
+`preferredPixelWidth()`; a widget in a pixel subtree must paint pixels or be an `Empty` placeholder.
+Unsupported grid-only widgets raise an error instead of silently disappearing. `StyledText` keeps its
+legacy box options in cell layouts; pixel layouts use the layout-owned box and ignore those widget options.
+
+```xml
+<Layout pixel="true" direction="vertical">
+  <Style>
+    <Background>#202830</Background>
+    <Padding>3vh 4vw</Padding>
+  </Style>
+  <StyledText height="auto">
+    <Style>
+      <Margin>1vh 0</Margin>
+      <BorderWidth>0 0 2px</BorderWidth>
+      <Padding>0.5vh 1vw</Padding>
+    </Style>
+    A title
+  </StyledText>
+  <Empty height="1*" />
+</Layout>
+```
 
 ## Example
 

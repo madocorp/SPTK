@@ -12,7 +12,7 @@ trait InputHandling {
   public function handleInput(mixed $event): bool {
     if ($event->type === SDL::SDL_EVENT_TEXT_INPUT) {
       $text = \FFI::string($event->text->text);
-      if (($this->filterable || $this->searchable) && $text !== ' ' && ($this->query === '' || ItemSearch::matchingIndices($this->items, $this->query) !== [])) {
+      if (($this->filterable || $this->searchable) && ($text !== ' ' || !$this->multiple) && ($this->query === '' || ItemSearch::matchingIndices($this->items, $this->query) !== [])) {
         $this->changeValue($this->appendQuery(...), $text);
       }
       return true;

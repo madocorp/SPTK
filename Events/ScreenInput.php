@@ -67,14 +67,14 @@ final class ScreenInput {
   }
 
   /** Dispatch matching screen events and button hotkeys. */
-  public function dispatch(string $type, ?Widget $widget, mixed $event): bool {
+  public function dispatch(string $type, ?Widget $widget, mixed $event, bool $allowHotkeys = true): bool {
     if ($this->dispatcher->dispatch($this->events, new EventContext($type, $widget, $event), true)) {
       if ($type === 'keyDown') {
         $this->pendingCharacterHotkey = null;
       }
       return true;
     }
-    if ($type === 'keyDown') {
+    if ($allowHotkeys && $type === 'keyDown') {
       foreach ($this->hotkeys as $key => $button) {
         if ((new EventDefinition('keyDown', $key, ''))->matches($event)) {
           if ($this->pendingCharacterHotkey !== null && $this->pendingCharacterHotkey[0] === $button) {

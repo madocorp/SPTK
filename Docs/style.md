@@ -12,6 +12,10 @@ When no `<Style>` sets a color, `Core\Style` supplies these defaults:
 | `Background` | `#202630` | Widget background |
 | `Foreground` | `#edf1f5` | Widget text |
 | `Separator` | `#475568` | Layout separators |
+| `BorderColor` | `#475568` | Pixel layout borders |
+| `BorderWidth` | `0` | Default pixel layout border width; accepts one to four sizes |
+| `Margin` | `0` | Space outside a pixel item's border |
+| `Padding` | `0` | Space between a pixel item's border and inner area |
 | `Highlight` | `#80cbc4` | Highlight palette color |
 | `Selected` | `#ffd180` | Selected palette color |
 | `CursorBackground` | `#526579` | Cursor palette background |
@@ -80,11 +84,14 @@ A local layout or widget can override a subset without resetting the other color
 </Layout>
 ```
 
-Color attributes such as `fg`, `bg`, and `borderColor` are not supported. Set colors with child elements inside
-`<Style>` instead.
+Widget color attributes such as `fg` and `bg` are not supported. Set colors and pixel box edges with child
+elements inside `<Style>`. Colors inherit; `Margin`, `BorderWidth`, and `Padding` apply to one layout item
+and reset for its children.
 
 ## Palette entries
 
-`Background`, `Foreground`, and `Separator` currently drive widget backgrounds, text, and layout separators.
+`Background`, `Foreground`, and `Separator` drive widget backgrounds, text, and grid separators.
+`BorderColor` colors pixel layout borders. `BorderWidth`, `Margin`, and `Padding` size the current pixel
+layout item; they do not change cell tile geometry.
 `Highlight`, `Selected`, `CursorBackground`, and `CursorForeground` are shared palette entries for selection and
 cursor styling; current widgets may not use each entry yet. Widget selection currently dims unselected cells.

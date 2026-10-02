@@ -3,7 +3,7 @@
 namespace SPTK\XmlParser;
 
 use SPTK\Core\{Screen, Style};
-use SPTK\Layout\{LayoutLeaf, LayoutNode, LayoutSeparator};
+use SPTK\Layout\{LayoutLeaf, LayoutNode, LayoutSeparator, PixelBox};
 
 /** Loads screen XML files and builds their layouts, widgets, and event subscriptions. */
 final class ScreenParser {
@@ -55,9 +55,10 @@ final class ScreenParser {
   }
 
   /** Parse a layout tree and pass inherited styles to nested layouts and widgets. */
-  private function parseLayout(\XMLReader $reader, Style $parentStyle, ?string $parentDirection = null): LayoutNode {
+  private function parseLayout(\XMLReader $reader, Style $parentStyle, ?string $parentDirection = null, bool $parentPixel = false): LayoutNode {
     $direction = $this->attrEnum($reader, 'direction', ['vertical', 'horizontal']);
-    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip'];
+    $pixel = $parentPixel || $this->attrBoolean($reader, 'pixel', false);
+    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip', 'pixel'];
     if ($parentDirection === 'horizontal') {
       $allowed[] = 'width';
     } else if ($parentDirection === 'vertical') {
@@ -66,19 +67,33 @@ final class ScreenParser {
     $this->assertAttributes($reader, $allowed);
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
-    $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false));
-    $style = $parentStyle;
+    $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false), !$parentPixel && $pixel, $pixel ? $this->pixelBox($parentStyle) : null, $pixel && !$parentPixel ? $parentStyle->background : null);
+    $nodeStyle = $parentStyle;
+    $style = $pixel ? $parentStyle->forChild() : $parentStyle;
+    $hasItems = false;
     while ($reader->read()) {
       if ($reader->nodeType === \XMLReader::ELEMENT) {
         if ($reader->name === 'Style') {
-          $style = $this->styleParser->parse($reader, $style);
+          if ($pixel && !$hasItems) {
+            $nodeStyle = $this->styleParser->parse($reader, $nodeStyle);
+            $layout->setPixelBox($this->pixelBox($nodeStyle));
+            $style = $nodeStyle->forChild();
+          } else {
+            $style = $this->styleParser->parse($reader, $style);
+          }
         } else if ($reader->name === 'Layout') {
-          $layout->addNode($this->parseLayout($reader, $style, $direction));
+          $hasItems = true;
+          $layout->addNode($this->parseLayout($reader, $style, $direction, $pixel));
         } else if ($reader->name === 'Separator') {
+          if ($pixel) {
+            throw new \RuntimeException('Pixel layouts use box borders, not Separator elements.');
+          }
           $this->assertAttributes($reader, []);
+          $hasItems = true;
           $layout->addSeparator(new LayoutSeparator());
         } else {
-          $this->addWidget($reader, $layout, $direction, $style);
+          $hasItems = true;
+          $this->addWidget($reader, $layout, $direction, $style, $pixel);
         }
       } else if ($reader->nodeType === \XMLReader::END_ELEMENT && $reader->name === 'Layout') {
         break;
@@ -87,8 +102,19 @@ final class ScreenParser {
     return $layout;
   }
 
+  /** Map one effective Style to a layout-owned pixel box. */
+  private function pixelBox(Style $style): PixelBox {
+    return new PixelBox(
+      $style->margin,
+      $style->borderWidth,
+      $style->padding,
+      $style->background,
+      $style->borderColor,
+    );
+  }
+
   /** Parse one widget element and add its definition to the current layout. */
-  private function addWidget(\XMLReader $reader, LayoutNode $layout, string $direction, Style $style): void {
+  private function addWidget(\XMLReader $reader, LayoutNode $layout, string $direction, Style $style, bool $pixel): void {
     $parserClass = 'SPTK\\Widgets\\' . $reader->name . '\\Parser';
     if (!class_exists($parserClass)) {
       throw new \RuntimeException("Unknown widget: {$reader->name}");
@@ -112,7 +138,10 @@ final class ScreenParser {
     $definition = $parser->parse($reader, $style);
     $definition->widget->setId($id);
     $definition->widget->setTips($tip, $activeTip);
-    $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events, $navigate));
+    if ($pixel && $definition->widget instanceof \SPTK\Widgets\StyledText\StyledText) {
+      $definition->widget->setExternalBoxModel(true);
+    }
+    $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events, $navigate, $pixel ? $this->pixelBox($definition->style ?? $style) : null));
   }
 
   /** Open an XML file and report a clear error if it cannot be read. */

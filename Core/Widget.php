@@ -107,4 +107,16 @@ abstract class Widget {
     return null;
   }
 
+  /** Return an exact pixel width when a pixel layout asks for intrinsic sizing. */
+  public function preferredPixelWidth(): ?int {
+    $width = $this->preferredWidth();
+    return $width === null ? null : $width * (\SPTK\App::fontOrNull()?->cellWidth() ?? 8);
+  }
+
+  /** Return an exact pixel height when a pixel layout asks for intrinsic sizing. */
+  public function preferredPixelHeight(int $width): ?int {
+    $height = $this->preferredHeight();
+    return $height === null ? null : $height * (\SPTK\App::fontOrNull()?->cellHeight() ?? 16);
+  }
+
 }
