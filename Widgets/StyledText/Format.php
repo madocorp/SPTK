@@ -9,7 +9,6 @@ final class Format {
     'color' => '#ffffff', 'background' => 'transparent', 'fontFamily' => 'sans-serif',
     'fontSize' => 24, 'fontWeight' => 'normal', 'fontStyle' => 'normal',
     'textAlign' => 'left', 'verticalAlign' => 'top', 'lineGap' => 4,
-    'margin' => 0, 'padding' => 0, 'borderWidth' => 0, 'borderColor' => '#ffffff',
     'bold' => false, 'italic' => false, 'wrap' => true,
   ];
 
@@ -19,7 +18,7 @@ final class Format {
       if (!array_key_exists($name, self::DEFAULTS)) {
         throw new \InvalidArgumentException('Unknown styled text property: ' . $name);
       }
-      if (in_array($name, ['color', 'background', 'borderColor'], true)) {
+      if (in_array($name, ['color', 'background'], true)) {
         if (!is_string($value)) {
           throw new \InvalidArgumentException($name . ' must be a hexadecimal color string.');
         }
@@ -44,13 +43,8 @@ final class Format {
             throw new \InvalidArgumentException('Font families must be nonempty strings.');
           }
         }
-      } else if (in_array($name, ['fontSize', 'lineGap', 'margin', 'padding', 'borderWidth'], true)) {
-        if (is_array($value) && (!in_array($name, ['margin', 'padding', 'borderWidth'], true) || array_diff(array_keys($value), ['top', 'right', 'bottom', 'left']) !== [])) {
-          throw new \InvalidArgumentException('Only margin, padding, and borderWidth accept named edges.');
-        }
-        foreach (is_array($value) ? $value : [$value] as $dimension) {
-          self::dimension($dimension, 100, 100);
-        }
+      } else if (in_array($name, ['fontSize', 'lineGap'], true)) {
+        self::dimension($value, 100, 100);
       }
     }
     return $style;
@@ -98,19 +92,10 @@ final class Format {
     return (int)round($number);
   }
 
-  /** Expand a scalar or named edge widths to top, right, bottom, and left pixels. */
-  public static function edges(mixed $value, int $width, int $height): array {
-    $edges = [];
-    foreach (['top', 'right', 'bottom', 'left'] as $edge) {
-      $edges[$edge] = self::dimension(is_array($value) ? ($value[$edge] ?? 0) : $value, $width, $height);
-    }
-    return $edges;
-  }
-
-  /** Decode short or full hexadecimal RGB/RGBA colors for GD. */
+  /** Decode short or full hexadecimal colors as SDL RGBA channels. */
   public static function color(string $value): array {
     if ($value === 'transparent') {
-      return [0, 0, 0, 127];
+      return [0, 0, 0, 0];
     }
     if (preg_match('/^#([0-9a-f]{3})$/iD', $value, $match)) {
       $value = '#' . $match[1][0] . $match[1][0] . $match[1][1] . $match[1][1] . $match[1][2] . $match[1][2];
@@ -119,7 +104,7 @@ final class Format {
       throw new \InvalidArgumentException('Invalid styled text color: ' . $value);
     }
     $rgb = hexdec($match[1]);
-    return [($rgb >> 16) & 255, ($rgb >> 8) & 255, $rgb & 255, isset($match[2]) ? (int)round((255 - hexdec($match[2])) * 127 / 255) : 0];
+    return [($rgb >> 16) & 255, ($rgb >> 8) & 255, $rgb & 255, isset($match[2]) ? hexdec($match[2]) : 255];
   }
 
 }

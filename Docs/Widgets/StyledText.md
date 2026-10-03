@@ -2,7 +2,8 @@
 
 `StyledText` renders read-only proportional text inside one native layout tile. It supports
 mixed font sizes, families, bold/italic faces, colors, inline backgrounds, wrapping, explicit
-line breaks, alignment, margins, padding, and borders. PHP GD with FreeType is required.
+line breaks, and alignment. SDL_ttf measures and renders the text; layout styles own margins,
+padding, and borders.
 
 ```xml
 <StyledText height="1*" fontSize="28" textAlign="center" verticalAlign="center">
@@ -28,19 +29,13 @@ The widget also accepts the usual inherited `<Style>` and `<Event>` elements.
 | `verticalAlign` | `top` | `top`, `center`, or `bottom`. |
 | `wrap` | `true` | Wrap at words and split oversized words at grapheme boundaries. |
 | `lineGap` | `4` | Pixels between lines, including viewport-unit support. |
-| `margin` | `0` | Transparent space outside the box background and border. |
-| `padding` | `0` | Pixel inset around text. |
-| `borderWidth` | `0` | Pixel border thickness. |
-| `borderColor` | `#ffffff` | Border color. |
 | `dimmed` | `true` | Apply the normal pixel-widget shading when its tile is unselected. |
 
 Colors accept `#RGB`, `#RRGGBB`, `#RRGGBBAA`, or `transparent`. Viewport units resolve
 against this widget's pixel tile. Runs share a baseline even when font sizes differ.
 Explicit newlines and code indentation survive wrapping; tabs expand to four spaces.
-Margins stay inside the allocated tile; ink, backgrounds, and borders clip to the tile.
-These widget options remain available in cell layouts. In an opt-in pixel layout, the
-layout item owns margin, border, and padding through its `<Style>` elements, and the
-widget options are ignored so the inset is measured only once. See
+Ink and inline backgrounds clip to the tile. In an opt-in pixel layout, the
+layout item owns margin, border, and padding through its `<Style>` elements. See
 [`layout.md`](../layout.md#opt-in-pixel-layouts).
 StyledText never enters input mode.
 
@@ -58,8 +53,8 @@ $text->setContent('Replacement', ['fontSize' => 24]);
 
 `runs()` and `options()` expose normalized data. `setContent()` replaces both atomically
 and emits `change` only when content differs. Invalid formatting leaves the old content
-intact. PHP `margin`, `padding`, and `borderWidth` can also use named `top`, `right`, `bottom`, and
-`left` edges; `fontFamily` can be an ordered array of fallback families.
+intact. `fontFamily` can be an ordered array of fallback families. Pixel layout
+boxes support named `top`, `right`, `bottom`, and `left` edges.
 `contentHeight($width, $referenceHeight = 600)` measures pixel height.
 `raster($width, $height)` caches the immutable raster until text, style, or dimensions change.
 

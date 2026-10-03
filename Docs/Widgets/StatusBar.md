@@ -4,7 +4,7 @@ Each widget page describes that widget's XML attributes and behavior.
 
 - [StatusBar](StatusBar.md): shows the selected widget’s tip and temporary notifications
 - [Text](Text.md): displays read-only text with wrapping, scrolling, and cursor navigation
-- [StyledText](StyledText.md): renders proportional rich text with inline fonts, colors, wrapping, and borders
+- [StyledText](StyledText.md): renders proportional rich text with inline fonts, colors, and wrapping
 - [Input](Input.md): edits a single line with selection and undo history
 - [TextEditor](TextEditor.md): edits multiline text with wrapping and scrolling
 - [RadioButton](RadioButton.md): selects one value from a group

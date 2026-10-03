@@ -34,6 +34,17 @@ function styledInk(RasterImage $image): array {
   return [$left, $right];
 }
 
+/** Count painted pixels to detect glyph ink lost at a raster edge. */
+function styledInkCount(RasterImage $image): int {
+  $count = 0;
+  for ($y = 0; $y < $image->height; $y++) {
+    for ($x = 0; $x < $image->width; $x++) {
+      $count += (styledPixel($image, $x, $y) & 255) > 0;
+    }
+  }
+  return $count;
+}
+
 $text = new StyledText('Hello', ['fontFamily' => 'sans-serif', 'fontSize' => 30]);
 $image = $text->raster(240, 90);
 expectStyled([$image->width, $image->height], [240, 90], 'exact tile dimensions');
@@ -41,7 +52,7 @@ expectStyled($text->raster(240, 90) === $image, true, 'cached raster');
 $text->setContent('Hello', $text->options());
 expectStyled($text->raster(240, 90) === $image, true, 'unchanged setter retains raster');
 $oldRuns = $text->runs();
-foreach ([['fontSize' => -1], ['fontSize' => 'wrong'], ['fontSize' => []], ['fontStyle' => 'wrong'], ['fontFamily' => []], ['margin' => ['wrong' => 2]], ['padding' => ['wrong' => 2]], ['textAlign' => 'diagonal'], ['color' => 'bad'], ['other' => true]] as $invalid) {
+foreach ([['fontSize' => -1], ['fontSize' => 'wrong'], ['fontSize' => []], ['fontStyle' => 'wrong'], ['fontFamily' => []], ['margin' => 2], ['padding' => 2], ['borderWidth' => 1], ['borderColor' => '#ff0000'], ['textAlign' => 'diagonal'], ['color' => 'bad'], ['other' => true]] as $invalid) {
   try {
     $text->setContent('Changed', $invalid);
     throw new RuntimeException('Invalid style accepted.');
@@ -74,20 +85,17 @@ $left = styledInk((new StyledText('Hi', ['fontSize' => 20]))->raster(200, 50));
 $center = styledInk((new StyledText('Hi', ['fontSize' => 20, 'textAlign' => 'center']))->raster(200, 50));
 $right = styledInk((new StyledText('Hi', ['fontSize' => 20, 'textAlign' => 'right']))->raster(200, 50));
 expectStyled($left[0] < $center[0] && $center[0] < $right[0], true, 'alignment moves rendered ink');
-$decorated = new StyledText('Text', ['background' => '#123456', 'borderColor' => '#ff0000', 'borderWidth' => 3, 'padding' => 10]);
-$decoratedImage = $decorated->raster(180, 80);
-expectStyled(styledPixel($decoratedImage, 0, 0), 0xff0000ff, 'opaque border');
-expectStyled(styledPixel($decoratedImage, 5, 5), 0x123456ff, 'padded background');
-$margined = new StyledText('Text', ['background' => '#123456', 'borderColor' => '#ff0000', 'borderWidth' => 3, 'padding' => 10, 'margin' => ['top' => 6, 'right' => 8, 'bottom' => 6, 'left' => 8]]);
-$marginedImage = $margined->raster(180, 80);
-expectStyled(styledPixel($marginedImage, 0, 0) & 255, 0, 'margin leaves the tile background visible');
-expectStyled(styledPixel($marginedImage, 8, 6), 0xff0000ff, 'border begins inside the margin');
-expectStyled(styledPixel($marginedImage, 12, 10), 0x123456ff, 'padding remains inside the bordered box');
-expectStyled($margined->contentHeight(180) - $decorated->contentHeight(180), 12, 'margin contributes to natural height');
+$scriptStyle = ['fontFamily' => 'TeX Gyre Chorus', 'fontSize' => 64, 'fontWeight' => 'bold'];
+$scriptLeft = (new StyledText('Arcana', $scriptStyle))->raster(500, 100);
+$scriptRight = (new StyledText('Arcana', [...$scriptStyle, 'textAlign' => 'right']))->raster(500, 100);
+expectStyled(styledInkCount($scriptRight), styledInkCount($scriptLeft), 'right alignment retains script glyph ink');
+expectStyled(styledInk($scriptRight)[1], 499, 'right alignment places script ink at the right edge');
+$background = new StyledText('Text', ['background' => '#123456']);
+expectStyled(styledPixel($background->raster(180, 80), 0, 0), 0x123456ff, 'widget background fills the raster');
 $inline = new StyledText([['text' => 'A', 'background' => '#00ff00', 'color' => '#ff0000']]);
 expectStyled(styledPixel($inline->raster(100, 60), 0, 0), 0x00ff00ff, 'inline run background');
-expectStyled(Format::color('#abc'), [170, 187, 204, 0], 'short RGB');
-expectStyled(Format::color('transparent'), [0, 0, 0, 127], 'transparent color');
+expectStyled(Format::color('#abc'), [170, 187, 204, 255], 'short RGB');
+expectStyled(Format::color('transparent'), [0, 0, 0, 0], 'transparent color');
 expectStyled($text->raster(1, 1)->width, 1, 'tiny tile clips safely');
 $reader = new XMLReader();
 $reader->XML('<StyledText fontSize="24" textAlign="center">First <Run bold="true" color="#ff0000">bold</Run><Br/>next<Style><Background>#112233</Background></Style></StyledText>');

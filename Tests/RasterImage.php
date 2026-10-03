@@ -42,6 +42,9 @@ function rasterPNG(GdImage $image): string {
   }
 }
 
+$packed = new RasterImage(2, 1, "\xff\x00\x00\xff\x00\xff\x00\xff");
+expectRaster([$packed->width, $packed->height, $packed->pixels, $packed->src], [2, 1, "\xff\x00\x00\xff\x00\xff\x00\xff", null], 'packed SDL pixels are retained');
+
 $image = imagecreatetruecolor(128, 3);
 imagealphablending($image, false);
 for ($y = 0; $y < 3; $y++) {

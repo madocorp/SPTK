@@ -67,8 +67,8 @@ of its parent, just like a widget; omitted nested-layout sizes default to `1*`.
 Percentage sizes resolve to whole cells from the parent tile's width or height when the layout is measured.
 For example, `width="5%"` reserves 5% of the parent's columns; `height="5%"` reserves 5% of its rows.
 Weighted children share the remaining cells after fixed sizes and layout gaps.
-In a vertical layout, a StyledText child may use `height="auto"`. Its text, border, padding,
-and margin are measured at the available width and rounded up to whole cells. A vertical
+In a vertical layout, a StyledText child may use `height="auto"`. Its text is
+measured at the available width and rounded up to whole cells. A vertical
 nested layout may also use `height="auto"` to sum the natural heights of its children.
 Weighted children contribute their numeric weight as a minimum when a parent measures
 its natural height. A horizontal nested layout uses the tallest child's natural height.
@@ -101,8 +101,8 @@ Pixel `width` and `height` support fixed pixel sizes, percentages, weights such 
 sizing. `0*` has zero intrinsic height but receives remaining space when its parent allocates pixels.
 Auto-sized text is measured at its assigned inner width. A widget using `width="auto"` must provide
 `preferredPixelWidth()`; a widget in a pixel subtree must paint pixels or be an `Empty` placeholder.
-Unsupported grid-only widgets raise an error instead of silently disappearing. `StyledText` keeps its
-legacy box options in cell layouts; pixel layouts use the layout-owned box and ignore those widget options.
+Unsupported grid-only widgets raise an error instead of silently disappearing. `StyledText`
+uses layout-owned boxes for margin, border, and padding in pixel layouts.
 
 ```xml
 <Layout pixel="true" direction="vertical">

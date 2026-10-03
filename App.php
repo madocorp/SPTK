@@ -29,7 +29,7 @@ final class App {
   }
 
   public static function ttf() {
-    return self::$instance->ttf;
+    return self::$instance?->ttf;
   }
 
   public static function font() {
@@ -93,6 +93,7 @@ final class App {
 
   private function close() {
     $this->eventLoop?->closeWindows();
+    Widgets\StyledText\Fonts::release();
     if ($this->font !== null) {
       $this->font->close();
     }
