@@ -77,10 +77,10 @@ Static or reusable classes.
 - Widgets\Graph\Labels: measures and clips FreeType graph text
 - Widgets\Graph\Raster: composes graph axes, labels, grid, legend, and series
 - Widgets\StyledText\Format: validates rich text styles and resolves pixel and viewport dimensions
-- Widgets\StyledText\Fonts: resolves font faces and measures FreeType baseline metrics
+- Widgets\StyledText\Fonts: reuses SDL_ttf font handles for rich-text measurement and rendering
 - Widgets\StyledText\Lines: wraps styled runs into lines sharing a baseline
-- Widgets\StyledText\Raster: paints clipped rich text, padding, backgrounds, and borders
-- Core\RasterImage: stores GD-decoded pixels for SDL texture upload
+- Widgets\StyledText\Raster: composes clipped SDL_ttf text runs and inline backgrounds
+- Core\RasterImage: stores decoded images or packed RGBA pixels for SDL texture upload
 - Core\Texture: owns a reusable sprite or writable layer with pixel drawing and region copying
 - Core\TextureContext: creates application textures and releases them before its window closes
 - Rendering\RenderState: restores SDL targets, viewports, clipping, draw color, and blend modes

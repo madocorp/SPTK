@@ -33,9 +33,6 @@ final class LayoutLeaf {
     $this->grid = $grid;
     $this->pixelTile = null;
     $this->navigationPixelTile = null;
-    if ($this->instance instanceof \SPTK\Widgets\StyledText\StyledText) {
-      $this->instance->setExternalBoxModel(false);
-    }
   }
 
   public function grid(): Tile {
@@ -70,9 +67,6 @@ final class LayoutLeaf {
       throw new \LogicException('Pixel layouts require a pixel-painting widget or an Empty placeholder.');
     }
     $this->pixelTile = $tile;
-    if ($this->instance instanceof \SPTK\Widgets\StyledText\StyledText) {
-      $this->instance->setExternalBoxModel(true);
-    }
     $this->pixelParentBackground = $parentBackground;
     $this->pixelBackground = $this->box?->background ?? $this->instance->background();
     [$this->pixelBorder, $this->pixelBackgroundArea, $this->pixelContent] = ($this->box ?? new PixelBox())->areas($tile, $viewportWidth, $viewportHeight);
@@ -213,9 +207,6 @@ final class LayoutLeaf {
 
   /** Measure text and layout-owned edges directly in pixels. */
   public function naturalPixelHeight(int $width, int $viewportWidth, int $viewportHeight): int {
-    if ($this->instance instanceof \SPTK\Widgets\StyledText\StyledText) {
-      $this->instance->setExternalBoxModel(true);
-    }
     $box = $this->box ?? new PixelBox();
     $margin = PixelBox::edges($box->margin, $viewportWidth, $viewportHeight);
     $border = PixelBox::edges($box->borderWidth, $viewportWidth, $viewportHeight);

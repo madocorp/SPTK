@@ -138,9 +138,6 @@ final class ScreenParser {
     $definition = $parser->parse($reader, $style);
     $definition->widget->setId($id);
     $definition->widget->setTips($tip, $activeTip);
-    if ($pixel && $definition->widget instanceof \SPTK\Widgets\StyledText\StyledText) {
-      $definition->widget->setExternalBoxModel(true);
-    }
     $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events, $navigate, $pixel ? $this->pixelBox($definition->style ?? $style) : null));
   }
 

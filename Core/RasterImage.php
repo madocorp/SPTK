@@ -12,8 +12,18 @@ final class RasterImage {
   public readonly string $pixels;
   public readonly ?string $src;
 
-  /** Decode a path or copy a caller-owned GD image. */
-  public function __construct(string|\GdImage $source) {
+  /** Decode a path, copy a GD image, or retain packed RGBA pixels. */
+  public function __construct(string|\GdImage|int $source, ?int $height = null, ?string $pixels = null) {
+    if (is_int($source)) {
+      if ($source < 1 || $height === null || $height < 1 || $pixels === null || strlen($pixels) !== $source * $height * 4) {
+        throw new \InvalidArgumentException('Packed raster dimensions or byte count are invalid.');
+      }
+      $this->width = $source;
+      $this->height = $height;
+      $this->pixels = $pixels;
+      $this->src = null;
+      return;
+    }
     $this->src = is_string($source) ? $source : null;
     if ($source instanceof \GdImage) {
       $this->decode($source);
