@@ -2,35 +2,32 @@
 
 namespace SPTK\Core;
 
-/**
- * Provides toolkit clipboard access with a deterministic in-memory fallback.
- */
-class Clipboard {
+/** Shares clipboard text with SDL and keeps a headless in-memory value for tests. */
+final class Clipboard {
 
-  protected static mixed $provider = null;
-  protected static string $text = '';
+  private static string $text = '';
 
-  public static function setProvider(?object $provider): void {
-    self::$provider = $provider;
-  }
-
+  /** Store text locally and in the system clipboard when SDL is available. */
   public static function set(string $text): void {
     self::$text = $text;
-    if (self::$provider !== null && method_exists(self::$provider, 'set')) {
-      self::$provider->set($text);
-    }
-    if (self::$provider !== null && method_exists(self::$provider, 'setPrimary')) {
-      self::$provider->setPrimary($text);
+    $sdl = \SPTK\App::sdl();
+    if ($sdl !== null) {
+      $sdl->checkReturnValue($sdl->ffi->SDL_SetClipboardText($text), 'SDL_SetClipboardText');
     }
   }
 
+  /** Read the system clipboard or the local headless value. */
   public static function get(): string {
-    if (self::$provider !== null && method_exists(self::$provider, 'get')) {
-      $text = self::$provider->get();
-      if (is_string($text)) {
-        self::$text = $text;
-      }
+    $sdl = \SPTK\App::sdl();
+    if ($sdl === null) {
+      return self::$text;
     }
+    $pointer = $sdl->ffi->SDL_GetClipboardText();
+    if ($pointer === null || \FFI::isNull($pointer)) {
+      return self::$text;
+    }
+    self::$text = \FFI::string($pointer);
+    $sdl->ffi->SDL_free($pointer);
     return self::$text;
   }
 

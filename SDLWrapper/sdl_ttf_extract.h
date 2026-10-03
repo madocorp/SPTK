@@ -28,6 +28,7 @@ int TTF_GetFontAscent(const TTF_Font *font);
 int TTF_GetFontDescent(const TTF_Font *font);
 int TTF_GetFontHeight(const TTF_Font *font);
 int TTF_GetFontLineSkip(const TTF_Font *font);
+bool TTF_GetStringSize(TTF_Font *font, const char *text, size_t length, int *w, int *h);
 bool TTF_GetGlyphMetrics(TTF_Font *font, Uint32 ch, int *minx, int *maxx, int *miny, int *maxy, int *advance);
 void TTF_CloseFont(TTF_Font *font);
 SDL_Surface *TTF_RenderText_Blended(TTF_Font *font, const char *text, size_t length, SDL_Color fg);
@@ -37,3 +38,5 @@ void SDL_DestroySurface(SDL_Surface *surface);
 void TTF_Quit(void);
 void TTF_SetFontHinting(TTF_Font *font, int hinting);
 SDL_Surface *TTF_RenderGlyph_Blended(TTF_Font *font, Uint32 ch, SDL_Color fg);
+
+bool TTF_FontHasGlyph(TTF_Font *font, Uint32 ch);

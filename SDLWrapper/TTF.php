@@ -12,12 +12,15 @@ class TTF {
 
   public \FFI $ffi;
 
-  public function __construct(?string $basePath = null) {
-    $basePath ??= dirname(__DIR__) . '/SDLWrapper';
+  public function __construct() {
     $this->ffi = \FFI::cdef(
-      file_get_contents($basePath . '/sdl_ttf_extract.h'),
-      $basePath . '/libSDL3_ttf.so.0.2.3'
+      file_get_contents(APP_DIR . '/SPTK/SDLWrapper/sdl_ttf_extract.h'),
+      APP_DIR . '/SPTK/SDLWrapper/libSDL3_ttf.so.0.2.3'
     );
+  }
+
+  public function close() {
+    $this->ffi->TTF_Quit();
   }
 
 }

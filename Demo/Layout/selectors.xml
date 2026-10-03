@@ -1,0 +1,19 @@
+<Screen>
+  <Layout direction="vertical">
+    <Text height="1">Selectors: Return to edit; browse colors, dates, and files</Text>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <ColorSelector width="64" id="demoColor" value="#ff0000">
+        <Event type="change" action="Controller::colorChanged" />
+      </ColorSelector>
+      <Separator />
+      <DateSelector width="28" id="demoDate">
+        <Event type="change" action="Controller::dateChanged" />
+      </DateSelector>
+    </Layout>
+    <Separator />
+    <FileSelector height="1*" id="demoFiles" path="..">
+      <Event type="accept" action="Controller::fileAccepted" />
+    </FileSelector>
+  </Layout>
+</Screen>

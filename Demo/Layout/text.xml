@@ -1,0 +1,132 @@
+<Screen>
+  <Event type="keyDown" key="a" action="Controller::test" />
+  <Layout direction="vertical">
+    <Title height="1">Text — alignment, selection, and scrolling</Title>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <Text id="intro" width="1*" align="left">Left aligned
+
+Each row starts at the left edge. This paragraph wraps to show how alignment works across several rows.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+        <Event type="keyDown" key="a" action="Controller::testTop" />
+      </Text>
+      <Separator />
+      <Text width="1*" align="center">Center aligned
+
+Each row sits in the middle. This paragraph wraps to show how alignment works across several rows.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.</Text>
+      <Separator />
+      <Text width="1*" align="right">Right aligned
+
+Each row ends at the right edge. This paragraph wraps to show how alignment works across several rows.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere, lacus quis luctus tincidunt, sapien nisl fermentum sem, vitae feugiat nibh arcu sed massa. Donec interdum mi sed arcu pretium, quis facilisis est blandit. Suspendisse potenti. Curabitur ut nibh nec velit placerat ultricies. Morbi viverra, erat ac semper cursus, justo massa feugiat sem, ac vulputate est velit in magna.
+
+Praesent commodo dui at dolor luctus, non posuere ligula ullamcorper. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed aliquet augue at urna posuere, vitae posuere leo sollicitudin. Nulla facilisi. Vivamus tincidunt, metus sit amet pellentesque gravida, eros velit commodo libero, ac vulputate neque ex vel enim.
+
+Aliquam erat volutpat. Proin lacinia lectus eget nunc gravida, sed tincidunt velit ullamcorper. Aenean dictum nisl ut mauris finibus, at iaculis risus tempor. In hac habitasse platea dictumst. Maecenas ullamcorper purus vel lacus porttitor, vitae ornare eros bibendum. Fusce tempor risus non ligula pulvinar, eget congue sem finibus.
+
+Etiam id magna quis justo blandit porttitor. Nam eleifend urna sed tortor aliquet, non cursus velit sagittis. Cras vulputate libero vel turpis fermentum, vel accumsan nulla consequat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus volutpat augue sed nibh tincidunt, quis ultrices sapien aliquet.
+
+Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque tristique tortor non lectus fringilla, vitae tristique erat faucibus. Sed ultrices turpis ut risus pellentesque, a pulvinar odio eleifend. Integer egestas ligula et massa imperdiet, sed facilisis felis bibendum. Nunc vitae augue in turpis convallis suscipit.
+
+Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.</Text>
+    </Layout>
+    <Separator />
+    <Text height="1">Text: Left | Center | Right | Return activates | Shift selects</Text>
+  </Layout>
+</Screen>
