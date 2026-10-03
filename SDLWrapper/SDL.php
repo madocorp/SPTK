@@ -9,25 +9,38 @@ class SDL {
 
   public const SDL_INIT_VIDEO = 0x20;
 
+  public const SDL_EVENT_RENDER_TARGETS_RESET = 0x2000;
+  public const SDL_EVENT_RENDER_DEVICE_RESET = 0x2001;
+  public const CANVAS_REDRAW_REQUEST = 0x43564e53;
+
   public const SDL_QUIT = 0x100;
   public const SDL_EVENT_WINDOW_EXPOSED = 0x204;
   public const SDL_EVENT_WINDOW_RESIZED = 0x206;
   public const SDL_EVENT_WINDOW_MAXIMIZED = 0x20a;
   public const SDL_EVENT_WINDOW_RESTORED = 0x20b;
+  public const SDL_EVENT_WINDOW_FOCUS_LOST = 0x20f;
   public const SDL_EVENT_WINDOW_CLOSE_REQUESTED = 0x210;
 
   public const SDL_EVENT_KEY_DOWN = 0x300;
   public const SDL_EVENT_KEY_UP = 0x301;
   public const SDL_EVENT_TEXT_INPUT = 0x303;
+  public const SDL_EVENT_MOUSE_MOTION = 0x400;
+  public const SDL_EVENT_MOUSE_BUTTON_DOWN = 0x401;
+  public const SDL_EVENT_MOUSE_BUTTON_UP = 0x402;
+  public const SDL_EVENT_MOUSE_WHEEL = 0x403;
 
   public const SDL_PIXELFORMAT_RGBA8888 = 0x16462004;
+  public const SDL_PIXELFORMAT_ABGR8888 = 0x16762004;
   public const SDL_TEXTUREACCESS_STATIC = 0;
   public const SDL_TEXTUREACCESS_TARGET = 2;
   public const SDL_BLENDMODE_BLEND = 0x1;
+  public const SDL_BLENDMODE_BLEND_PREMULTIPLIED = 0x10;
   public const SDL_SCALE_MODE_NEAREST = 0;
+  public const SDL_SCALE_MODE_LINEAR = 1;
 
   public const SDL_WINDOW_RESIZABLE = 0x20;
   public const SDL_WINDOW_HIDDEN = 0x8;
+  public const SDL_WINDOW_MINIMIZED = 0x40;
   public const SDL_WINDOW_MAXIMIZED = 0x80;
   public const SDL_WINDOW_FULLSCREEN = 0x01;
 
@@ -36,6 +49,11 @@ class SDL {
   public const KEY_BACKSPACE = 8;
   public const KEY_TAB = 9;
   public const KEY_SPACE = 32;
+  public const KEY_ASTERISK = 42;
+  public const KEY_PLUS = 43;
+  public const KEY_MINUS = 45;
+  public const KEY_SLASH = 47;
+  public const KEY_EQUALS = 61;
   public const KEY_DELETE = 127;
   public const KEY_SCANCODE_MASK = 1 << 30;
   public const KEY_INSERT = self::KEY_SCANCODE_MASK | 73;
@@ -59,6 +77,21 @@ class SDL {
   public const KEY_F10 = self::KEY_SCANCODE_MASK | 67;
   public const KEY_F11 = self::KEY_SCANCODE_MASK | 68;
   public const KEY_F12 = self::KEY_SCANCODE_MASK | 69;
+  public const KEY_LSHIFT = self::KEY_SCANCODE_MASK | 225;
+  public const KEY_RSHIFT = self::KEY_SCANCODE_MASK | 229;
+  public const KEY_KP_ENTER = self::KEY_SCANCODE_MASK | 88;
+  public const KEY_KP_DIVIDE = self::KEY_SCANCODE_MASK | 84;
+  public const KEY_KP_MULTIPLY = self::KEY_SCANCODE_MASK | 85;
+  public const KEY_KP_MINUS = self::KEY_SCANCODE_MASK | 86;
+  public const KEY_KP_PLUS = self::KEY_SCANCODE_MASK | 87;
+  public const KEY_KP_EQUALS = self::KEY_SCANCODE_MASK | 103;
+  public const KEY_KP_0 = self::KEY_SCANCODE_MASK | 98;
+  public const KEY_KP_2 = self::KEY_SCANCODE_MASK | 90;
+  public const KEY_KP_4 = self::KEY_SCANCODE_MASK | 92;
+  public const KEY_KP_6 = self::KEY_SCANCODE_MASK | 94;
+  public const KEY_KP_8 = self::KEY_SCANCODE_MASK | 96;
+  public const KEY_KP_PERIOD = self::KEY_SCANCODE_MASK | 99;
+  public const MOD_NUM = 0x1000;
   public const KEY_KP_1 = self::KEY_SCANCODE_MASK | 89;
   public const KEY_KP_3 = self::KEY_SCANCODE_MASK | 91;
   public const KEY_KP_7 = self::KEY_SCANCODE_MASK | 95;
@@ -70,11 +103,10 @@ class SDL {
 
   public \FFI $ffi;
 
-  public function __construct(?string $basePath = null) {
-    $basePath ??= dirname(__DIR__) . '/SDLWrapper';
+  public function __construct() {
     $this->ffi = \FFI::cdef(
-      file_get_contents($basePath . '/sdl_extract.h'),
-      $basePath . '/libSDL3.so.0.2.21'
+      file_get_contents(APP_DIR . '/SPTK/SDLWrapper/sdl_extract.h'),
+      APP_DIR . '/SPTK/SDLWrapper/libSDL3.so.0.2.21'
     );
   }
 
@@ -87,6 +119,17 @@ class SDL {
       return $error;
     }
     return \FFI::string($error);
+  }
+
+  /** Throw when an SDL call fails, including its operation and current SDL error. */
+  public function checkReturnValue(bool $success, string $operation): void {
+    if (!$success) {
+      throw new \RuntimeException($operation . ' failed: ' . $this->error());
+    }
+  }
+
+  public function close() {
+    $this->ffi->SDL_Quit();
   }
 
 }

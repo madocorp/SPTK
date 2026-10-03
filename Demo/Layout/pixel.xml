@@ -1,0 +1,23 @@
+<Screen>
+  <Style>
+    <BorderColor>#112233</BorderColor>
+    <BorderWidth>2px 3px</BorderWidth>
+  </Style>
+  <Layout direction="horizontal">
+    <Layout pixel="true" width="1*">
+      <Style>
+        <Background>#202830</Background>
+        <Margin>4px</Margin>
+        <Padding>3px</Padding>
+      </Style>
+      <StyledText height="auto">
+        <Style>
+          <Margin>1px</Margin>
+          <Padding>2px</Padding>
+        </Style>
+        Pixel text
+      </StyledText>
+      <Empty height="1*" />
+    </Layout>
+  </Layout>
+</Screen>

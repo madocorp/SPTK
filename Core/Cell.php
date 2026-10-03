@@ -2,33 +2,18 @@
 
 namespace SPTK\Core;
 
-/**
- * Represents one character-grid cell with glyph, colors, and style flags.
- */
-class Cell {
-
-  public string $glyph;
-  public Color $fg;
-  public Color $bg;
-  public array $flags;
+/** A glyph and its colors; width 0 is the second cell of a width-2 glyph. */
+final readonly class Cell {
 
   public function __construct(
-    string $glyph = ' ',
-    string|int|Color|null $fg = null,
-    string|int|Color|null $bg = null,
-    array $flags = []
+    public string $glyph = ' ',
+    public Color $fg = new Color(237, 241, 245),
+    public Color $bg = new Color(32, 38, 48),
+    public int $width = 1,
   ) {
-    if ($glyph === '') {
-      $glyph = ' ';
+    if (!in_array($width, [0, 1, 2], true) || ($width === 0 && $glyph !== '')) {
+      throw new \InvalidArgumentException('Cell width must be 0, 1, or 2; continuations have no glyph.');
     }
-    $this->glyph = mb_substr($glyph, 0, 1);
-    $this->fg = Color::from($fg ?? '#ffffff');
-    $this->bg = Color::from($bg ?? '#000000');
-    $this->flags = $flags;
-  }
-
-  public function copy(): self {
-    return new self($this->glyph, $this->fg, $this->bg, $this->flags);
   }
 
 }

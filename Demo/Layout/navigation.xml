@@ -1,0 +1,14 @@
+<Screen>
+  <Layout direction="horizontal">
+    <Empty id="first" width="4" navigate="false" />
+    <Empty id="middle" width="4" navigate="false" />
+    <Layout direction="vertical" width="4" navigateChildren="false" enterChildren="true" navigate="false" id="group">
+      <Empty id="inside" />
+    </Layout>
+    <Layout direction="vertical" width="4" navigate="false">
+      <Empty id="nested" />
+    </Layout>
+    <Button id="quick" width="4" navigate="false" label="Quick" hotkey="b" action="NavigationAction::press" />
+    <Empty id="last" width="4" />
+  </Layout>
+</Screen>
