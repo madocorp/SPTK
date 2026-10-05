@@ -19,4 +19,13 @@ final readonly class Tile {
     $this->height = max(0, $height);
   }
 
+  /** Return the visible overlap of two rectangles without moving either source. */
+  public function intersect(self $other): self {
+    $left = max($this->x, $other->x);
+    $top = max($this->y, $other->y);
+    $right = min($this->x + $this->width, $other->x + $other->width);
+    $bottom = min($this->y + $this->height, $other->y + $other->height);
+    return new self($left, $top, $right - $left, $bottom - $top);
+  }
+
 }

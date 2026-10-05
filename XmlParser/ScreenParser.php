@@ -51,14 +51,14 @@ final class ScreenParser {
     if ($layout === null) {
       throw new \RuntimeException("Screen must contain a Layout!");
     }
-    return new Screen($layout, $style->separator, $events, $id, $title);
+    return new Screen($layout, $style->separator, $events, $id, $title, $style->background);
   }
 
   /** Parse a layout tree and pass inherited styles to nested layouts and widgets. */
   private function parseLayout(\XMLReader $reader, Style $parentStyle, ?string $parentDirection = null, bool $parentPixel = false): LayoutNode {
     $direction = $this->attrEnum($reader, 'direction', ['vertical', 'horizontal']);
     $pixel = $parentPixel || $this->attrBoolean($reader, 'pixel', false);
-    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip', 'pixel'];
+    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip', 'pixel', 'overflow'];
     if ($parentDirection === 'horizontal') {
       $allowed[] = 'width';
     } else if ($parentDirection === 'vertical') {
@@ -68,6 +68,7 @@ final class ScreenParser {
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
     $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false), !$parentPixel && $pixel, $pixel ? $this->pixelBox($parentStyle) : null, $pixel && !$parentPixel ? $parentStyle->background : null);
+    $layout->setOverflow($this->attrBoolean($reader, 'overflow', false));
     $nodeStyle = $parentStyle;
     $style = $pixel ? $parentStyle->forChild() : $parentStyle;
     $hasItems = false;

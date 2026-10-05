@@ -1,6 +1,6 @@
 # Image
 
-`<Image>` displays a local image decoded by PHP GD. It supports PNG, JPEG, GIF, BMP, WebP, AVIF, and other formats available in the installed GD build. Animated formats show the frame GD decodes; they do not animate.
+`<Image>` displays a local image. PNG files decode directly through libpng; JPEG, GIF, BMP, WebP, AVIF, and other formats available in the installed GD build decode through PHP GD. Animated formats show the frame GD decodes; they do not animate.
 
 ```xml
 <Image src="../Assets/photo.png" width="1*" zoom="1.5" x="20" y="-10" />
@@ -10,13 +10,13 @@
 </Image>
 ```
 
-Relative `src` paths are resolved against the XML screen file; absolute paths are accepted. Files are decoded lazily on first display or explicit `source()` access. Missing, unreadable, corrupt, or unsupported files raise an error with the path when first needed. `Image` requires PHP GD. Nested `<Event>` and `<Style>` elements work as for other widgets. It remains a selectable tile. By default it follows the usual Return and Escape activation rules;
+Relative `src` paths are resolved against the XML screen file; absolute paths are accepted. Files are decoded lazily on first display or explicit `source()` access. Missing, unreadable, corrupt, or unsupported files raise an error with the path when first needed. PNG files require `libpng16.so.16`; other formats require PHP GD. Nested `<Event>` and `<Style>` elements work as for other widgets. It remains a selectable tile. By default it follows the usual Return and Escape activation rules;
 `interactive="false"` prevents activation and disables all zoom and pan controls. Arrow keys continue
 to navigate between tiles.
 
 The optional `title` attribute reserves one grid row above the image, painted in the inherited `Highlight` color. Without a title there is no reserved row. Fitting and pan controls use only the image area below the title, including when `padding="false"`. An empty title still reserves the row. The PHP constructor accepts `title` and an optional inherited `style` after `padding`.
 
-Fast pixel conversion uses GD's PNG support and the `libpng16.so.16` runtime library. GD exports an uncompressed PNG snapshot in memory; libpng reads its pixels and SDL converts their channel ordering. If the optional native libraries or APIs cannot load, conversion automatically falls back to GD's PHP pixel getters. The unavailable fast path is remembered so subsequent images do not retry loading it. Both paths preserve transparency and palette colors, and leave the original GD image and its save settings intact.
+PNG files go directly from libpng's RGBA decoder through SDL's pixel-format conversion. Other image formats are decoded by GD, exported as an uncompressed PNG in memory, and then converted through libpng and SDL. If that native conversion cannot load, GD inputs fall back to PHP pixel getters. The unavailable fast path is remembered so subsequent GD inputs do not retry it. Both GD paths preserve transparency and palette colors, and leave caller-owned GD images and their save settings intact.
 
 The image is centered in its tile at native pixel size by default. `fill="true"` shrinks an oversized image until the whole image fits inside the tile while keeping its aspect ratio; a smaller image stays at native size. With `fill="false"`, positive `zoom` scales the image from native size (`1` is unchanged), and signed integer `x` and `y` move it in pixels from the centered position. An axis on which the image fits stays centered, so its offset is ignored. On an oversized axis, the offset is limited so the image always covers that side of the tile, including after zooming or resizing the tile. The image is clipped to its tile. `zoom`, `x`, and `y` cannot be combined with `fill="true"`. Transparent pixels reveal the widget background color, and unselected tiles are dimmed. The layout's `width` or `height` attribute controls the tile size according to the parent layout direction.
 

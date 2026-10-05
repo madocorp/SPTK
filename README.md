@@ -6,9 +6,10 @@ with XML layouts and can use the widgets in `Widgets/`.
 
 ## Requirements
 
-- PHP CLI 8.2 or newer with FFI, XMLReader, mbstring, GD, and PCNTL enabled.
+- PHP CLI 8.2 or newer with FFI, XMLReader, mbstring, and PCNTL enabled.
+  GD is needed for graphs and non-PNG images.
 - Compatible SDL3 and SDL3_ttf shared libraries. SDL3_ttf also needs FreeType
-  and HarfBuzz. The optional fast image path uses `libpng16.so.16`.
+  and HarfBuzz. PNG images require `libpng16.so.16`.
 - A graphical desktop session for interactive applications.
 
 Check the PHP extensions with:

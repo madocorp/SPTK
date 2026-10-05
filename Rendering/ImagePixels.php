@@ -4,12 +4,18 @@ namespace SPTK\Rendering;
 
 use SPTK\SDLWrapper\{PNG, SDL};
 
-/** Converts GD pixels through SDL when available, with a portable PHP fallback. */
+/** Converts PNG and GD pixels into SDL's packed RGBA format. */
 final class ImagePixels {
 
   private static ?PNG $png = null;
   private static ?SDL $standaloneSDL = null;
   private static bool $nativeUnavailable = false;
+
+  /** Decode a PNG file directly with libpng, then convert its channel order for SDL. */
+  public static function fromPNG(string $data): array {
+    [$width, $height, $source] = (self::$png ??= new PNG())->decode($data);
+    return [$width, $height, self::convert($source, $width, $height)];
+  }
 
   /** Preserve alpha and palette colors while producing native-endian SDL RGBA words. */
   public static function fromGD(\GdImage $image): string {
@@ -20,9 +26,14 @@ final class ImagePixels {
     $height = imagesy($image);
     $data = self::export($image, $width, $height);
     $source = (self::$png ??= new PNG())->pixels($data, $width, $height);
+    return self::convert($source, $width, $height);
+  }
+
+  /** Reorder libpng's RGBA bytes into the pixel format used by SDL textures. */
+  private static function convert(\FFI\CData $source, int $width, int $height): string {
     $sdl = \SPTK\App::sdl() ?? (self::$standaloneSDL ??= new SDL());
     $size = $width * $height * 4;
-    $pixels = \FFI::new('char[' . $size . ']');
+    $pixels = $sdl->ffi->new('char[' . $size . ']');
     $format = pack('L', 1) === "\x01\x00\x00\x00" ? SDL::SDL_PIXELFORMAT_ABGR8888 : SDL::SDL_PIXELFORMAT_RGBA8888;
     $success = $sdl->ffi->SDL_ConvertPixels($width, $height, $format, $source, $width * 4, SDL::SDL_PIXELFORMAT_RGBA8888, $pixels, $width * 4);
     $sdl->checkReturnValue($success, 'SDL_ConvertPixels');

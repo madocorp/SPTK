@@ -67,6 +67,11 @@ of its parent, just like a widget; omitted nested-layout sizes default to `1*`.
 Percentage sizes resolve to whole cells from the parent tile's width or height when the layout is measured.
 For example, `width="5%"` reserves 5% of the parent's columns; `height="5%"` reserves 5% of its rows.
 Weighted children share the remaining cells after fixed sizes and layout gaps.
+Set `overflow="true"` on a vertical grid layout to keep fixed and auto child heights when their total
+exceeds its tile. `setScrollOffset()` moves the full child tiles through that layout's viewport;
+`maxScrollOffset()` reports the measured limit. The first and last visible tiles may be partial.
+Grid painting and tile backgrounds are clipped to the viewport, so adjacent prompt or status tiles
+stay untouched. Overflow viewports currently support grid-only widgets.
 In a vertical layout, a StyledText child may use `height="auto"`. Its text is
 measured at the available width and rounded up to whole cells. A vertical
 nested layout may also use `height="auto"` to sum the natural heights of its children.
