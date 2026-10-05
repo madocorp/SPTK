@@ -145,6 +145,15 @@ final class Window {
     $this->sdl->ffi->SDL_SyncWindow($this->window);
   }
 
+  /** Remeasure a changed screen layout and redraw the retained window frame. */
+  public function refreshLayout(): void {
+    $grid = new Tile(0, 0, $this->columns, $this->rows);
+    $screen = $this->screens[$this->currentScreen];
+    $screen->measureGrid($grid);
+    $screen->measureArea($grid, $this->geometry);
+    $this->renderScreens();
+  }
+
   /** Recreate the frame and remeasure every screen with the current window geometry. */
   public function resize() {
     $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
@@ -187,15 +196,15 @@ final class Window {
   private function renderScreens(): void {
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
     $this->pixelRenderer->invalidateDrawColor();
-    $this->pixelRenderer->setDrawColor(new Color(32, 38, 48));
+    $screen = $this->screens[$this->currentScreen];
+    $this->pixelRenderer->setDrawColor($screen->background);
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderClear($this->ffiRenderer), 'SDL_RenderClear');
     $this->grid->clear();
-    $screen = $this->screens[$this->currentScreen];
     $screen->drawBackgrounds($this->pixelRenderer);
     $screen->paint($this->grid);
     foreach ($screen->layout->leaves() as $leaf) {
       if (!$leaf->isPixel()) {
-        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
       }
     }
     $this->pixelRenderer->beginImages();
@@ -215,7 +224,7 @@ final class Window {
       $this->grid->dirtyCells();
       $leaf->drawBackground($this->pixelRenderer);
       if (!$leaf->isPixel()) {
-        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
       }
       $leaf->paintPixels($this->pixelRenderer, $this->geometry, true);
       $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
@@ -238,7 +247,7 @@ final class Window {
       $leaf->drawBackground($this->pixelRenderer, $selected);
       $leaf->paint($this->grid, $selected);
       if (!$leaf->isPixel()) {
-        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->grid());
+        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
       }
       if ($leaf->instance()->paintsPixels()) {
         $leaf->paintPixels($this->pixelRenderer, $this->geometry, $selected);

@@ -54,6 +54,22 @@ for ($y = 0; $y < 3; $y++) {
 }
 $before = rasterPNG($image);
 $expected = referenceRaster($image);
+$pngImage = imagecreatetruecolor(128, 3);
+imagealphablending($pngImage, false);
+imagesavealpha($pngImage, true);
+imagecopy($pngImage, $image, 0, 0, 0, 0, 128, 3);
+$path = tempnam(sys_get_temp_dir(), 'sptk-png-');
+try {
+  file_put_contents($path, rasterPNG($pngImage));
+  $fromFile = new RasterImage($path);
+  expectRaster([$fromFile->width, $fromFile->height, $fromFile->pixels, $fromFile->src], [128, 3, referenceRaster($pngImage), $path], 'PNG file decodes directly with dimensions and alpha');
+} finally {
+  unlink($path);
+  imagedestroy($pngImage);
+}
+$jpegPath = APP_DIR . '/SPTK/Demo/Assets/test.jpg';
+$jpeg = new RasterImage($jpegPath);
+expectRaster([$jpeg->width, $jpeg->height, strlen($jpeg->pixels), $jpeg->src], [1024, 768, 1024 * 768 * 4, $jpegPath], 'JPEG file retains the GD decode path');
 $raster = new RasterImage($image);
 expectRaster($raster->pixels, $expected, 'all GD alpha levels and RGB channels match');
 expectRaster(rasterPNG($image), $before, 'caller pixels and PNG save flags remain unchanged');

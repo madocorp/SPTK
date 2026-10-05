@@ -35,6 +35,7 @@ Classes that belongs strictly to a screen
 - Layout\LayoutNode: holds the layout structure, tree of vertical and horizontal subdivisions plus leafs
 - Layout\LayoutLeaf: container for the widgets
 - Layout\LayoutSeparator: marks a split boundary for screen-level separator drawing
+- Layout\LayoutOverflow: clamps vertical scroll offsets and shifts full child tiles through a viewport
 
 
 ## XML parsing
@@ -84,7 +85,7 @@ Static or reusable classes.
 - Core\Texture: owns a reusable sprite or writable layer with pixel drawing and region copying
 - Core\TextureContext: creates application textures and releases them before its window closes
 - Rendering\RenderState: restores SDL targets, viewports, clipping, draw color, and blend modes
-- Rendering\ImagePixels: transfers GD pixels in bulk and uses SDL for native pixel format conversion
+- Rendering\ImagePixels: converts PNG and GD pixels to SDL's native pixel format
 - SDLWrapper\PNG: reads in-memory PNG pixels through libpng's public simplified API
 - Core\ImageSource: shares file-backed sources, reads header dimensions, and decodes pixels on demand
 - Core\WidgetDefinition: bundles a widget with its event subscriptions

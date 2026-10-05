@@ -17,20 +17,20 @@ final class Input extends Widget {
   private bool $active = false;
   private int $scroll = 0;
   private int $viewport = 1;
+  private ?string $label = null;
+  private $inputInterceptor = null;
 
   /** Create a single-line editor with inherited style colors. */
   public function __construct(
     string $value = '',
     private readonly Style $style = new Style(),
     private readonly int $tabSize = 8,
-    private readonly ?string $label = null,
+    ?string $label = null,
   ) {
     if ($tabSize < 1) {
       throw new \InvalidArgumentException('Input tabSize must be positive.');
     }
-    if ($label !== null && (!mb_check_encoding($label, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $label))) {
-      throw new \InvalidArgumentException('Input label must be printable single-line UTF-8 text.');
-    }
+    $this->setLabel($label);
     $this->document = new TextEdit(false, $value, $tabSize);
     $this->painter = new Painter($style);
     $this->on('activate', $this->activate(...));
@@ -58,9 +58,31 @@ final class Input extends Widget {
     $this->scroll = 0;
   }
 
+  /** Change the fixed label without resetting the edited input text. */
+  public function setLabel(?string $label): void {
+    if ($label !== null && (!mb_check_encoding($label, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $label))) {
+      throw new \InvalidArgumentException('Input label must be printable single-line UTF-8 text.');
+    }
+    if ($this->label !== $label) {
+      $this->label = $label;
+      $this->emit('change');
+    }
+  }
+
   /** Return the zero-based grapheme index of the caret. */
   public function cursorPosition(): int {
     return $this->document->cursor()->position()[1];
+  }
+
+  /** Let an owner handle shortcuts before this editor changes its text. */
+  public function setInputInterceptor(?callable $interceptor): void {
+    $this->inputInterceptor = $interceptor;
+  }
+
+  /** Replace the graphemes just before the caret while preserving the suffix and undo history. */
+  public function replaceBeforeCursor(int $count, string $replacement): void {
+    $cursor = $this->cursorPosition();
+    $this->document->replace($replacement, false, [0, max(0, $cursor - $count), 0, $cursor]);
   }
 
   /** Report whether the widget is activated. */
@@ -90,6 +112,9 @@ final class Input extends Widget {
 
   /** Apply text input, editing keys, and horizontal viewport paging. */
   public function handleInput(mixed $event): bool {
+    if ($this->inputInterceptor !== null && ($this->inputInterceptor)($event)) {
+      return true;
+    }
     if ($event->type === SDL::SDL_EVENT_TEXT_INPUT) {
       $this->document->replace(\FFI::string($event->text->text), true);
       return true;

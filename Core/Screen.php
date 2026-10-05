@@ -20,7 +20,7 @@ final class Screen {
   public ?StatusBar $statusBar = null;
 
   /** Create a screen and attach screen-level event subscriptions to its leaves. */
-  public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(71, 85, 104), array $events = [], public string $id = '', public string $title = '') {
+  public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(71, 85, 104), array $events = [], public string $id = '', public string $title = '', public Color $background = new Color(32, 38, 48)) {
     $this->events = $events;
     $this->indexWidgets();
     $this->refreshStatus();

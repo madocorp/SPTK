@@ -8,7 +8,7 @@ use SPTK\Layout\Tile;
 /** Gives a widget local coordinates and clips complete glyphs to its tile. */
 final class GridWriter {
 
-  public function __construct(private Grid $grid, private Tile $tile) {
+  public function __construct(private Grid $grid, private Tile $tile, private ?Tile $clip = null) {
   }
 
   public function width(): int {
@@ -32,7 +32,16 @@ final class GridWriter {
     if ($rows < 0 || $rows > $this->tile->height) {
       throw new \InvalidArgumentException('Top margin must fit inside the tile.');
     }
-    return new self($this->grid, new Tile($this->tile->x, $this->tile->y + $rows, $this->tile->width, $this->tile->height - $rows));
+    return new self($this->grid, new Tile($this->tile->x, $this->tile->y + $rows, $this->tile->width, $this->tile->height - $rows), $this->clip);
+  }
+
+  /** Return a writer clipped to a rectangle within this writer. */
+  public function region(int $x, int $y, int $width, int $height): self {
+    if ($x < 0 || $y < 0 || $width < 0 || $height < 0
+      || $x + $width > $this->tile->width || $y + $height > $this->tile->height) {
+      throw new \InvalidArgumentException('Region must fit inside the tile.');
+    }
+    return new self($this->grid, new Tile($this->tile->x + $x, $this->tile->y + $y, $width, $height), $this->clip);
   }
 
   public function set(int $x, int $y, string $glyph, ?Color $fg = null, ?Color $bg = null): void {
@@ -48,11 +57,12 @@ final class GridWriter {
       throw new \InvalidArgumentException('Continuations are managed by Grid.');
     }
     $width = $cell->width;
-    $left = max(0, $this->tile->x);
-    $right = min($this->grid->width(), $this->tile->x + $this->tile->width);
+    $visible = $this->clip === null ? $this->tile : $this->tile->intersect($this->clip);
+    $left = max(0, $visible->x);
+    $right = min($this->grid->width(), $visible->x + $visible->width);
     $x += $this->tile->x;
     $y += $this->tile->y;
-    if ($y < $this->tile->y || $y >= $this->tile->y + $this->tile->height) {
+    if ($y < $visible->y || $y >= $visible->y + $visible->height || $y < 0 || $y >= $this->grid->height()) {
       return;
     }
     if ($x >= $left && $x + $width <= $right) {

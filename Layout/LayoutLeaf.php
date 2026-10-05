@@ -17,13 +17,14 @@ final class LayoutLeaf {
   private ?Tile $pixelBackgroundArea = null;
   private ?Tile $pixelContent = null;
   private ?Tile $navigationPixelTile = null;
+  private ?Tile $viewport = null;
   private ?Color $pixelParentBackground = null;
   private ?Color $pixelBackground = null;
   private array $screenEvents = [];
   private EventDispatcher $eventDispatcher;
 
-  /** Build a leaf and retain its XML event subscriptions. */
-  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = [], private bool $navigate = true, private ?PixelBox $box = null) {
+  /** Build a leaf with optional grid padding paint and its event subscriptions. */
+  public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = [], private bool $navigate = true, private ?PixelBox $box = null, private bool $paintBackground = true) {
     $this->eventDispatcher = new EventDispatcher();
     $this->instance->on('change', $this->notifyChange(...));
     $this->instance->on('reorder', $this->notifyReorder(...));
@@ -37,6 +38,16 @@ final class LayoutLeaf {
 
   public function grid(): Tile {
     return $this->grid;
+  }
+
+  /** Limit an overflowing grid widget to its ancestor's visible viewport. */
+  public function setViewport(?Tile $viewport): void {
+    $this->viewport = $viewport;
+  }
+
+  /** Return the grid cells that may be drawn inside an overflow viewport. */
+  public function visibleGrid(): Tile {
+    return $this->viewport === null ? $this->grid : $this->grid->intersect($this->viewport);
   }
 
   /** Use exact pixel geometry for navigation when this leaf belongs to a pixel layout. */
@@ -77,9 +88,13 @@ final class LayoutLeaf {
     if ($this->pixelTile !== null) {
       return;
     }
-    $this->instance->paint(new GridWriter($grid, $this->grid));
+    $visible = $this->visibleGrid();
+    if ($visible->width === 0 || $visible->height === 0) {
+      return;
+    }
+    $this->instance->paint(new GridWriter($grid, $this->grid, $this->viewport));
     if (!$selected && !($this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar)) {
-      $grid->darken($this->grid);
+      $grid->darken($this->visibleGrid());
     }
   }
 
@@ -88,13 +103,20 @@ final class LayoutLeaf {
     if ($this->pixelTile !== null) {
       return;
     }
-    if (!$this->instance->paintUpdate(new GridWriter($grid, $this->grid))) {
+    $visible = $this->visibleGrid();
+    if ($visible->width === 0 || $visible->height === 0) {
+      return;
+    }
+    if (!$this->instance->paintUpdate(new GridWriter($grid, $this->grid, $this->viewport))) {
       $this->paint($grid);
     }
   }
 
   /** Paint pixel content in the cell rectangle or across the full measured tile without padding. */
   public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry, bool $selected): void {
+    if ($this->viewport !== null && $this->instance->paintsPixels()) {
+      throw new \LogicException('Overflow viewports currently require grid-only widgets.');
+    }
     if ($this->pixelContent !== null) {
       $this->instance->paintPixels($renderer, $this->pixelContent, $selected);
       return;
@@ -112,6 +134,9 @@ final class LayoutLeaf {
       return;
     }
     $this->area = $geometry->backgroundArea($this->grid, $windowGrid);
+    if ($this->viewport !== null) {
+      $this->area = $this->area->intersect($geometry->pixelArea($this->viewport));
+    }
   }
 
   /** Draw this widget's background, dimmed when it is not selected. */
@@ -125,11 +150,15 @@ final class LayoutLeaf {
       $renderer->fill($this->pixelBackgroundArea, $background);
       return;
     }
+    if (!$this->paintBackground) {
+      return;
+    }
     if ($this->area === null) {
       throw new \LogicException('Leaf area has not been measured.');
     }
     $color = $this->instance->background();
-    $renderer->fill($this->area, $selected || $this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar ? $color : $color->darkened());
+    $keepColor = $selected || $this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar || !$this->instance->dimBackgroundWhenUnselected();
+    $renderer->fill($this->area, $keepColor ? $color : $color->darkened());
   }
 
   /** Forward raw input events to this widget. */

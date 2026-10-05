@@ -114,6 +114,10 @@ expectEditor([$grid->cell(0, 0)->fg->r, $grid->cell(0, 0)->fg->g, $grid->cell(0,
 expectEditor($grid->cell(0, 1)->glyph, 'v', 'Input value below label');
 expectEditor($grid->cell(0, 1)->fg->r, 255, 'Input value foreground');
 expectEditor($labeledInput->getValue(), 'value', 'Input label outside value');
+$labeledInput->setLabel('/tmp');
+$labeledInput->paint(new GridWriter($grid, new Tile(0, 0, 10, 2)));
+expectEditor($grid->cell(0, 0)->glyph, '/', 'Input label updates');
+expectEditor($labeledInput->getValue(), 'value', 'Input label update preserves value');
 $emptyLabel = new Input('value', label: '');
 expectEditor($emptyLabel->preferredHeight(), 2, 'empty label reserves row');
 $labeledEditor = new TextEditor('first', style: new Style(foreground: new Color(255, 255, 255), highlight: new Color(30, 180, 220)), label: 'Document');
@@ -236,6 +240,19 @@ foreach ([1, 2, 3, 4, 8] as $width) {
   $tabInput->paint(new GridWriter($grid, new Tile(0, 0, $width, 1)));
 }
 expectEditor($tabInput->text(), "a\tb", 'tabs remain in Input value');
+$completionInput = new Input('he world');
+$completionInput->handleInput(keyEvent(SDL::KEY_RIGHT));
+$completionInput->handleInput(keyEvent(SDL::KEY_RIGHT));
+$completionInput->replaceBeforeCursor(2, 'help');
+expectEditor([$completionInput->text(), $completionInput->cursorPosition()], ['help world', 4], 'completion replaces only text before the caret');
+$completionInput->handleInput(keyEvent(ord('z'), SDL::MOD_CTRL));
+expectEditor($completionInput->text(), 'he world', 'completion replacement remains undoable');
+$completionInput->setInputInterceptor(static fn(object $event): bool => $event->type === SDL::SDL_EVENT_KEY_DOWN && $event->key->key === SDL::KEY_TAB);
+$completionInput->handleInput(keyEvent(SDL::KEY_TAB));
+expectEditor($completionInput->text(), 'he world', 'owner can consume Tab before Input inserts it');
+$completionInput->setInputInterceptor(null);
+$completionInput->handleInput(keyEvent(SDL::KEY_TAB));
+expectEditor(str_contains($completionInput->text(), "\t"), true, 'Input restores default Tab after removing interceptor');
 $marked = new TextEditor("a\nb");
 $marked->emit('activate');
 $marked->handleInput(keyEvent(SDL::KEY_END));

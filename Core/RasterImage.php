@@ -4,7 +4,7 @@ namespace SPTK\Core;
 
 use SPTK\Rendering\ImagePixels;
 
-/** Holds an immutable GD-decoded image as packed SDL RGBA pixels. */
+/** Holds an immutable image as packed SDL RGBA pixels. */
 final class RasterImage {
 
   public readonly int $width;
@@ -29,13 +29,21 @@ final class RasterImage {
       $this->decode($source);
       return;
     }
-    if (!extension_loaded('gd')) {
-      throw new \RuntimeException('Image requires PHP GD.');
-    }
     if (!is_file($source) || !is_readable($source)) {
       throw new \RuntimeException("Cannot read image: {$source}");
     }
     $data = file_get_contents($source);
+    if ($data !== false && str_starts_with($data, "\x89PNG\r\n\x1a\n")) {
+      try {
+        [$this->width, $this->height, $this->pixels] = ImagePixels::fromPNG($data);
+      } catch (\RuntimeException|\FFI\Exception $error) {
+        throw new \RuntimeException("Cannot decode PNG image: {$source}", 0, $error);
+      }
+      return;
+    }
+    if (!extension_loaded('gd')) {
+      throw new \RuntimeException('Non-PNG images require PHP GD.');
+    }
     $image = $data === false ? false : @imagecreatefromstring($data);
     if ($image === false) {
       foreach (['imagecreatefromxbm', 'imagecreatefromxpm', 'imagecreatefromtga', 'imagecreatefromgd', 'imagecreatefromgd2'] as $loader) {

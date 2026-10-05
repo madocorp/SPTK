@@ -9,6 +9,7 @@ spl_autoload_register(['SPTK\\App', 'load']);
 use SPTK\Core\{Color, Screen};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, LayoutSeparator, Tile, WindowGeometry};
 use SPTK\Widgets\Empty\Placeholder;
+use SPTK\Widgets\Text\Text;
 
 /** Check a measured rectangle against explicit pixel coordinates. */
 function expectGeometryArea(Tile $area, array $expected, string $name): void {
@@ -96,4 +97,30 @@ expectGeometryArea($fitted->leaves()[1]->grid(), [0, 2, 1, 0], 'filler collapses
 $fitted->measureGrid(new Tile(0, 0, 1, 7));
 expectGeometryArea($fitted->leaves()[1]->grid(), [0, 2, 1, 3], 'filler receives remaining rows');
 expectGeometryArea($fitted->leaves()[2]->grid(), [0, 6, 1, 1], 'bottom margin stays fixed after filler');
+$overflowRoot = new LayoutNode('vertical', '1*', '1*');
+$overflowStack = new LayoutNode('vertical', '1*', '4');
+$overflowStack->setOverflow(true);
+$terminal = new LayoutLeaf('Text', '1*', '6', new Text("A\nB\nC\nD\nE\nF", wrap: false));
+$prompt = new LayoutLeaf('Text', '1*', '1', new Text('P', wrap: false));
+$overflowStack->addLeaf($terminal);
+$overflowRoot->addNode($overflowStack);
+$overflowRoot->addLeaf($prompt);
+$overflowStack->setScrollOffset(1);
+$overflowRoot->measureGrid(new Tile(0, 0, 4, 6));
+expectGeometryArea($terminal->grid(), [0, -1, 4, 6], 'overflow keeps the full terminal tile');
+expectGeometryArea($terminal->visibleGrid(), [0, 0, 4, 4], 'overflow clips terminal to its viewport');
+if ($overflowStack->maxScrollOffset() !== 2) {
+  throw new RuntimeException('Overflow stack must report the two hidden rows.');
+}
+$overflowGrid = new \SPTK\Rendering\Grid(4, 6);
+$overflowRoot->paint($overflowGrid);
+if ($overflowGrid->cell(0, 0)->glyph !== 'B' || $overflowGrid->cell(0, 3)->glyph !== 'E' || $overflowGrid->cell(0, 5)->glyph !== 'P') {
+  throw new RuntimeException('Partially visible terminal rows must not overwrite the prompt.');
+}
+$overflowStack->setScrollOffset(PHP_INT_MAX);
+$overflowStack->measureGrid(new Tile(0, 0, 4, 4));
+$overflowStack->measureGrid(new Tile(0, 0, 4, 3));
+if ($overflowStack->scrollOffset() !== 3) {
+  throw new RuntimeException('Bottom-aligned overflow must follow viewport resizing.');
+}
 echo "Window geometry checks passed\n";

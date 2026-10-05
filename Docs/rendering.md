@@ -120,15 +120,14 @@ plus frame timings with the dummy driver. `SDL_VIDEODRIVER=offscreen php Tests/C
 measures a headless renderer at 200 columns by 90 rows. Timings include input handling and presentation;
 no machine-dependent timing limit is asserted.
 
-## GD pixel transfer
+## Image pixel transfer
 
-`RasterImage` uses `ImagePixels` to transfer pixels without a PHP per-pixel loop when native conversion is available. A native GD copy preserves
-alpha and transparent palette entries while leaving the caller's image settings intact. GD exports an
-uncompressed PNG into memory, libpng's simplified API reads it as RGBA bytes, and `SDL_ConvertPixels` converts
-those bytes to native-endian `SDL_PIXELFORMAT_RGBA8888` words. This requires GD PNG support and
-`libpng16.so.16`; no temporary image files are created. If native dependencies or APIs cannot load, the converter
-remembers that failure and uses PHP's GD pixel getters for all subsequent conversions. Conversion also works before window initialization,
-so caller-owned GD images and standalone widget checks can still create immutable rasters.
+PNG files are decoded directly with libpng's simplified API. `SDL_ConvertPixels` converts the RGBA bytes to
+native-endian `SDL_PIXELFORMAT_RGBA8888` words. This route requires `libpng16.so.16`, but does not require GD.
+Other file formats and caller-owned GD images still use GD. GD exports an uncompressed PNG into memory for
+the same libpng and SDL conversion, preserving alpha and transparent palette entries without changing the
+caller image. If native conversion cannot load, GD inputs fall back to PHP pixel getters. That failure is
+remembered so later GD inputs do not retry it. No temporary image files are created.
 
 Run `php Tests/RasterImage.php` for RGB, alpha, palette, row order, and caller ownership checks.
 Run `php Tests/RasterFallback.php` for missing-library fallback and retry suppression checks.

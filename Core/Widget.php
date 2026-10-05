@@ -56,6 +56,11 @@ abstract class Widget {
   /** Return the color used to fill the widget's tile. */
   abstract public function background(): Color;
 
+  /** Allow grid widgets to retain their padding color when not selected. */
+  public function dimBackgroundWhenUnselected(): bool {
+    return true;
+  }
+
   /** Paint the widget into its allocated tile. */
   abstract public function paint(GridWriter $writer): void;
 

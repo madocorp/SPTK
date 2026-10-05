@@ -16,6 +16,8 @@ final class LayoutNode {
   private ?Color $pixelParentBackground = null;
   private ?Color $pixelBackground = null;
   private ?LayoutLeaf $focus = null;
+  private ?LayoutOverflow $overflow = null;
+  private ?Tile $viewport = null;
 
   public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false, private bool $pixelMode = false, private ?PixelBox $box = null, private ?Color $outerBackground = null) {
     if ($enterChildren && $navigateChildren) {
@@ -44,6 +46,29 @@ final class LayoutNode {
 
   public function pixelTile(): ?Tile {
     return $this->pixelTile;
+  }
+
+  /** Enable vertical overflow so fixed-height children retain their full tiles. */
+  public function setOverflow(bool $overflow): void {
+    if ($overflow && ($this->direction !== 'vertical' || $this->pixelMode)) {
+      throw new \InvalidArgumentException('Overflow requires a vertical grid layout.');
+    }
+    $this->overflow = $overflow ? new LayoutOverflow() : null;
+  }
+
+  /** Set the requested row offset, clamped on the next measurement. */
+  public function setScrollOffset(int $rows): void {
+    $this->overflow?->setOffset($rows);
+  }
+
+  /** Return the last measured maximum row offset. */
+  public function maxScrollOffset(): int {
+    return $this->overflow?->maximum() ?? 0;
+  }
+
+  /** Return the row offset used by the latest measurement. */
+  public function scrollOffset(): int {
+    return $this->overflow?->offset() ?? 0;
   }
 
   /** Apply a local Style to this pixel node's own box. */
@@ -127,10 +152,14 @@ final class LayoutNode {
     return false;
   }
 
-  public function measureGrid(\SPTK\Layout\Tile $grid) {
+  public function measureGrid(\SPTK\Layout\Tile $grid, ?Tile $viewport = null) {
     $this->grid = $grid;
     $this->pixelTile = null;
     $this->focus?->setGrid($grid);
+    if ($this->overflow !== null) {
+      $viewport = $this->overflow->viewport($grid, $viewport);
+    }
+    $this->viewport = $viewport;
     if ($this->pixelMode) {
       foreach ($this->children as $child) {
         if ($child instanceof self) {
@@ -162,12 +191,17 @@ final class LayoutNode {
         $heights[] = $size === 'auto' ? (string)$child->naturalHeight($grid->width) : $size;
       }
       $grids = Splitter::vertical($grid, $heights);
+      if ($this->overflow !== null) {
+        $grids = $this->overflow->shift($grid, $grids);
+      }
     }
     $gridIndex = 0;
     foreach ($content as $child) {
       $child->setGrid($grids[$gridIndex]);
       if ($child instanceof self) {
-        $child->measureGrid($grids[$gridIndex]);
+        $child->measureGrid($grids[$gridIndex], $viewport);
+      } else {
+        $child->setViewport($viewport);
       }
       $gridIndex++;
     }
@@ -323,7 +357,8 @@ final class LayoutNode {
   private function measureSeparatorArea(int $index, Tile $windowGrid, WindowGeometry $geometry): void {
     $separator = $this->children[$index];
     $before = $this->children[$index - 1];
-    $separator->setArea($geometry->separatorArea($this->grid, $before->grid(), $windowGrid, $this->direction));
+    $area = $geometry->separatorArea($this->grid, $before->grid(), $windowGrid, $this->direction);
+    $separator->setArea($this->viewport === null ? $area : $area->intersect($geometry->pixelArea($this->viewport)));
   }
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer, ?LayoutLeaf $selected = null): void {
