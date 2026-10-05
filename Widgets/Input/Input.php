@@ -53,8 +53,11 @@ final class Input extends Widget {
   }
 
   /** Replace the value and reset editing history and scroll. */
-  public function setValue(string $value): void {
+  public function setValue(string $value, bool $cursorAtEnd = false): void {
     $this->document->setValue($value);
+    if ($cursorAtEnd) {
+      $this->document->cursor()->setPosition(0, TextMetrics::length($this->document->text()));
+    }
     $this->scroll = 0;
   }
 

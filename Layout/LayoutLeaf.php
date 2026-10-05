@@ -114,7 +114,7 @@ final class LayoutLeaf {
 
   /** Paint pixel content in the cell rectangle or across the full measured tile without padding. */
   public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry, bool $selected): void {
-    if ($this->viewport !== null && $this->instance->paintsPixels()) {
+    if ($this->viewport !== null && $this->instance->paintsPixels() && !$this->instance->clipsPixelViewport()) {
       throw new \LogicException('Overflow viewports currently require grid-only widgets.');
     }
     if ($this->pixelContent !== null) {
@@ -125,7 +125,8 @@ final class LayoutLeaf {
       throw new \LogicException('Leaf area has not been measured.');
     }
     $area = $this->instance->pixelArea($geometry->pixelArea($this->grid), $this->area);
-    $this->instance->paintPixels($renderer, $area, $selected);
+    $clip = $this->viewport === null ? $area : $geometry->pixelArea($this->visibleGrid())->intersect($area);
+    $this->instance->paintClippedPixels($renderer, $area, $clip, $selected);
   }
 
   /** Measure this widget's background including padding at interior and window edges. */

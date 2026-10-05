@@ -210,6 +210,11 @@ final class Window {
     $this->pixelRenderer->beginImages();
     $screen->paintPixels($this->pixelRenderer, $this->geometry);
     $this->pixelRenderer->endImages();
+    foreach ($screen->layout->leaves() as $leaf) {
+      if (!$leaf->isPixel() && $leaf->instance()->pixelBehindText()) {
+        $this->gridRenderer->drawGlyphs($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
+      }
+    }
     $screen->drawSeparators($this->pixelRenderer);
     $this->presentFrame();
   }
@@ -227,6 +232,9 @@ final class Window {
         $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
       }
       $leaf->paintPixels($this->pixelRenderer, $this->geometry, true);
+      if (!$leaf->isPixel() && $leaf->instance()->pixelBehindText()) {
+        $this->gridRenderer->drawGlyphs($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
+      }
       $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
       $this->presentFrame();
     } else if ($this->gridRenderer->drawDirty($this->ffiRenderer, $this->grid) > 0) {
@@ -251,6 +259,9 @@ final class Window {
       }
       if ($leaf->instance()->paintsPixels()) {
         $leaf->paintPixels($this->pixelRenderer, $this->geometry, $selected);
+        if (!$leaf->isPixel() && $leaf->instance()->pixelBehindText()) {
+          $this->gridRenderer->drawGlyphs($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
+        }
       }
     }
     $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
