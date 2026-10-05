@@ -15,15 +15,21 @@ It clears the frame texture and the grid, then renders the current screen in thi
 3. `GridRenderer::drawTile()` draws the backgrounds and glyphs inside each widget tile. Tile bounds leave separator gaps untouched, and black swatches render normally.
 4. `Screen::paintPixels()` draws pixel widgets over the grid. `PixelRenderer` tracks the image textures used in
    this frame and releases textures no longer used. Unselected pixel content retains 75% brightness, matching
-   character cells and tile backgrounds.
-5. `Window::presentFrame()` copies the frame texture to the window backbuffer and calls `SDL_RenderPresent()`.
+   character cells and tile backgrounds. Widgets can opt into overflow clipping and receive their visible pixel
+   rectangle through `paintClippedPixels()`.
+5. For widgets whose pixels belong behind text, `GridRenderer::drawGlyphs()` restores glyphs without repainting
+   their cell backgrounds. Terminal inline images use this path.
+6. `Window::presentFrame()` copies the frame texture to the window backbuffer and calls `SDL_RenderPresent()`.
 
 Resizing recreates the frame texture and grid, measures the layout again, and takes this full render path.
 Window also replaces its readonly `Layout\WindowGeometry` on resize and passes the same object to every
 screen's layout measurement. Full renders, active-widget updates, and focus changes use that geometry
 for pixel widgets: `Screen::paintPixels($renderer, $geometry)` forwards it to each leaf, and
 `LayoutLeaf::paintPixels($renderer, $geometry, $selected)` converts the leaf's grid tile into a pixel area.
-Widgets continue to receive `paintPixels($renderer, $area, $selected)` with their concrete pixel rectangle.
+Existing widgets receive `paintPixels($renderer, $area, $selected)` with their concrete pixel rectangle.
+`paintClippedPixels($renderer, $area, $clip, $selected)` delegates to that method by default. A widget that
+can clip its own pixels inside an overflow viewport overrides the clipped method and reports support through
+`clipsPixelViewport()`.
 
 ## Input updates
 

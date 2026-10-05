@@ -73,6 +73,21 @@ abstract class Widget {
   public function paintPixels(PixelRenderer $renderer, Tile $area, bool $selected): void {
   }
 
+  /** Paint through an explicit clip, preserving older pixel widgets by default. */
+  public function paintClippedPixels(PixelRenderer $renderer, Tile $area, Tile $clip, bool $selected): void {
+    $this->paintPixels($renderer, $area, $selected);
+  }
+
+  /** Keep pixel content inside an overflow viewport when the widget supports clipping. */
+  public function clipsPixelViewport(): bool {
+    return false;
+  }
+
+  /** Draw text glyphs again above this widget's pixel content. */
+  public function pixelBehindText(): bool {
+    return false;
+  }
+
   /** Keep pixel content inside the cell area, leaving the surrounding layout padding visible. */
   public function pixelPadding(): bool {
     return true;

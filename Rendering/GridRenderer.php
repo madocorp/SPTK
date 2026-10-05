@@ -67,16 +67,23 @@ final class GridRenderer {
           }
         }
       }
-      for ($y = max(0, $tile->y); $y < $bottom; $y++) {
-        for ($x = max(0, $tile->x); $x < $right; $x++) {
-          $cell = $grid->cell($x, $y);
-          if ($cell->width !== 0 && $cell->glyph !== ' ') {
-            $this->drawGlyph($ffiRenderer, $cell, $x, $y);
-          }
-        }
-      }
+      $this->drawGlyphs($ffiRenderer, $grid, $tile);
     } finally {
       $this->sdl->ffi->SDL_SetRenderClipRect($ffiRenderer, null);
+    }
+  }
+
+  /** Draw glyphs over pixel content without repainting their cell backgrounds. */
+  public function drawGlyphs(\FFI\CData $ffiRenderer, Grid $grid, Tile $tile): void {
+    $right = min($grid->width(), $tile->x + $tile->width);
+    $bottom = min($grid->height(), $tile->y + $tile->height);
+    for ($y = max(0, $tile->y); $y < $bottom; $y++) {
+      for ($x = max(0, $tile->x); $x < $right; $x++) {
+        $cell = $grid->cell($x, $y);
+        if ($cell->width !== 0 && $cell->glyph !== ' ') {
+          $this->drawGlyph($ffiRenderer, $cell, $x, $y);
+        }
+      }
     }
   }
 

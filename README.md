@@ -52,7 +52,12 @@ ln -s "$HOME/.local/share/SPTK" /path/to/application/SPTK
 ```
 
 Use an absolute target when the application and SPTK live in different
-directories. Each application defines `APP_DIR` as its own directory.
+directories. Each application defines `APP_DIR` as its own directory. To load
+application classes, define `APP_NAMESPACE` as the root namespace before
+requiring `SPTK/App.php`. For example, `define('APP_NAMESPACE', 'MYAPP')` maps
+`MYAPP\Screen\Main` to `APP_DIR/Screen/Main.php`. Requiring `SPTK/App.php`
+registers one loader for SPTK and the optional application namespace; no
+separate `spl_autoload_register()` call is needed.
 
 ## Demo and tests
 

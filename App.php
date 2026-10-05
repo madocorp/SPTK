@@ -13,12 +13,15 @@ final class App {
   private $initialized = false;
 
   public static function load(string $class): void {
-    $prefix = 'SPTK\\';
-    if (!str_starts_with($class, $prefix)) {
+    if (str_starts_with($class, 'SPTK\\')) {
+      $relativeClass = substr($class, strlen('SPTK\\'));
+      $path = APP_DIR . '/SPTK/' . str_replace('\\', '/', $relativeClass) . '.php';
+    } else if (defined('APP_NAMESPACE') && str_starts_with($class, rtrim(APP_NAMESPACE, '\\') . '\\')) {
+      $relativeClass = substr($class, strlen(rtrim(APP_NAMESPACE, '\\')) + 1);
+      $path = APP_DIR . '/' . str_replace('\\', '/', $relativeClass) . '.php';
+    } else {
       return;
     }
-    $relativeClass = substr($class, strlen($prefix));
-    $path = APP_DIR . '/SPTK/' . str_replace('\\', '/', $relativeClass) . '.php';
     if (is_file($path)) {
       require_once $path;
     }
@@ -49,7 +52,6 @@ final class App {
     $failed = false;
     try {
       self::$instance = $this;
-      spl_autoload_register([self::class, 'load']);
       $this->init();
       $this->initialized = true;
       $this->dispatchLifecycleEvent('init');
@@ -130,3 +132,5 @@ final class App {
   }
 
 }
+
+spl_autoload_register([App::class, 'load']);
