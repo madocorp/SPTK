@@ -6,12 +6,12 @@ namespace SPTK\Core;
 final readonly class Style {
 
   public function __construct(
-    public Color $background = new Color(32, 38, 48),
+    public Color $background = new Color(0, 0, 170),
     public Color $foreground = new Color(237, 241, 245),
     public Color $separator = new Color(71, 85, 104),
     public Color $highlight = new Color(128, 203, 196),
     public Color $selected = new Color(255, 209, 128),
-    public Color $cursorBackground = new Color(82, 101, 121),
+    public Color $cursorBackground = new Color(0, 0, 85),
     public Color $cursorForeground = new Color(255, 255, 255),
     public Color $error = new Color(255, 110, 110),
     public Color $borderColor = new Color(71, 85, 104),

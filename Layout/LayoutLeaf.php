@@ -93,7 +93,7 @@ final class LayoutLeaf {
       return;
     }
     $this->instance->paint(new GridWriter($grid, $this->grid, $this->viewport));
-    if (!$selected && !($this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar)) {
+    if (!$selected) {
       $grid->darken($this->visibleGrid());
     }
   }
@@ -143,7 +143,7 @@ final class LayoutLeaf {
   /** Draw this widget's background, dimmed when it is not selected. */
   public function drawBackground(\SPTK\Rendering\PixelRenderer $renderer, bool $selected = true): void {
     if ($this->pixelTile !== null) {
-      $background = $selected || $this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar ? $this->pixelBackground : $this->pixelBackground->darkened();
+      $background = $selected ? $this->pixelBackground : $this->pixelBackground->darkened();
       $parentBackground = $selected ? $this->pixelParentBackground : $this->pixelParentBackground->darkened();
       $borderColor = $this->box?->borderColor ?? new Color(71, 85, 104);
       $renderer->fill($this->pixelTile, $parentBackground);
@@ -158,7 +158,7 @@ final class LayoutLeaf {
       throw new \LogicException('Leaf area has not been measured.');
     }
     $color = $this->instance->background();
-    $keepColor = $selected || $this->instance instanceof \SPTK\Widgets\StatusBar\StatusBar || !$this->instance->dimBackgroundWhenUnselected();
+    $keepColor = $selected || !$this->instance->dimBackgroundWhenUnselected();
     $renderer->fill($this->area, $keepColor ? $color : $color->darkened());
   }
 

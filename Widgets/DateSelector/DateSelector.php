@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\DateSelector;
 
-use SPTK\Core\{Color, Style, Widget};
+use SPTK\Core\{Color, Style, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\GridWriter;
 use SPTK\SDLWrapper\SDL;
@@ -15,6 +15,7 @@ final class DateSelector extends Widget {
   private \DateTimeImmutable $date;
   private bool $active = false;
   private ?string $draft = null;
+  private WidgetTitle $title;
 
   /** Describe the controls available for this widget and its configuration. */
   protected function defaultTip(bool $active): string {
@@ -30,7 +31,8 @@ final class DateSelector extends Widget {
   }
 
   /** Initialize the selected date, defaulting to today. */
-  public function __construct(?string $value = null, private readonly Style $style = new Style()) {
+  public function __construct(?string $value = null, private readonly Style $style = new Style(), ?string $title = null) {
+    $this->title = new WidgetTitle($title, $style);
     $this->setValue($value ?? date('Y-m-d'));
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
@@ -63,12 +65,12 @@ final class DateSelector extends Widget {
 
   /** Suggest enough width for seven four-column weekday slots. */
   public function preferredWidth(): ?int {
-    return 28;
+    return max(28, $this->title->width());
   }
 
   /** Reserve a heading, weekday row, six weeks, and a date field. */
   public function preferredHeight(): ?int {
-    return 9;
+    return 9 + $this->title->height();
   }
 
   /** Return the inherited tile background. */
@@ -79,6 +81,7 @@ final class DateSelector extends Widget {
   /** Paint a Monday-first calendar and the editable date field. */
   public function paint(GridWriter $writer): void {
     $writer->fill($this->style->foreground, $this->style->background);
+    $writer = $this->title->body($writer);
     $width = min(28, $writer->width());
     $heading = $this->date->format('F Y');
     $writer->write(max(0, intdiv($width - strlen($heading), 2)), 0, $heading, $this->style->foreground, $this->style->background);

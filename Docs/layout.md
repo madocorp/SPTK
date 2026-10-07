@@ -169,8 +169,10 @@ Every widget may have an `id` attribute unique within its screen. In code,
 
 Applications can build `LayoutNode` and `LayoutLeaf` objects directly for generated content.
 `LayoutNode::replaceChild($current, $replacement)` replaces a nested leaf or layout by identity
-and returns whether it was found. Call `Screen::setLayout($screen->layout)` to reindex a changed
-tree; focus and input mode stay with the selected widget if that instance survives. A removed
+and returns whether it was found. `LayoutNode::findNode($id)` finds a layout declared with an XML
+`id`, allowing an XML-defined subtree to be hidden and restored. Call
+`Screen::setLayout($screen->layout)` to reindex a changed tree; focus and input mode stay with the
+selected widget if that instance survives. A removed
 active widget is released. Call `setWindow($window)` if newly added buttons need window binding,
 then `$window->resize()` to measure and render the changed tree. MaDemonstrator uses this to
 replace its slide preview while retaining the Markdown editor's buffer, cursor, and history.
@@ -181,9 +183,10 @@ Window modes and pixel sizes can also be changed at runtime with `Core\WindowPla
 
 Add one `<StatusBar height="1" />` to any screen to display the currently selected widget's
 one-line tip automatically. It updates when focus or activation changes. The status bar uses the app's
-regular text font. Widgets supply default tips based on their behavior and attributes. Any widget may
-override its tip with `tip="..."` and optionally use `activeTip="..."` while activated. If only `tip`
-is given, it applies in both states. An empty tip deliberately clears the bar. A layout with
+regular text font and dims like other tiles when it is not selected. Widgets supply default tips based
+on their behavior and attributes. Any widget may override its tip with `tip="..."` and optionally use
+`activeTip="..."` while activated. If only `tip` is given, it applies in both states. An empty tip
+deliberately clears the bar. A layout with
 `navigateChildren="false"` may also have `tip`, which belongs to its one focus tile. Applications
 may call `StatusBar::notice($message)`, `warning($message)`, or `error($message)` for
 color-coded updates. `notify($message)` remains an alias for `notice()`. The selected

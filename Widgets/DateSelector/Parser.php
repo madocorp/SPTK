@@ -12,12 +12,13 @@ final class Parser implements WidgetParser {
 
   /** Accept an ISO date and parent layout attributes. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'value']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'title']);
   }
 
   /** Build a calendar from its optional date and nested declarations. */
   public function parse(\XMLReader $reader, Style $style): WidgetDefinition {
     $value = $reader->getAttribute('value');
+    $title = $reader->getAttribute('title');
     $events = [];
     if (!$reader->isEmptyElement) {
       while ($reader->read()) {
@@ -32,7 +33,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new DateSelector($value, $style), $events);
+    return new WidgetDefinition(new DateSelector($value, $style, $title), $events);
   }
 
 }

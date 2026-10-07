@@ -7,6 +7,8 @@ use SPTK\Core\Color;
 /** Splits a grid tile into child layouts and widgets and measures their separator areas. */
 final class LayoutNode {
 
+  use LayoutNodeLookup;
+
   private $children = [];
   private $grid;
   private ?Tile $pixelTile = null;
@@ -19,7 +21,7 @@ final class LayoutNode {
   private ?LayoutOverflow $overflow = null;
   private ?Tile $viewport = null;
 
-  public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false, private bool $pixelMode = false, private ?PixelBox $box = null, private ?Color $outerBackground = null) {
+  public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, private ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false, private bool $pixelMode = false, private ?PixelBox $box = null, private ?Color $outerBackground = null) {
     if ($enterChildren && $navigateChildren) {
       throw new \InvalidArgumentException('enterChildren requires navigateChildren="false".');
     }
