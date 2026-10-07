@@ -1,13 +1,4 @@
 <App font="LiberationMono-Bold" fontSize="17">
-  <Style>
-    <Background>#323232</Background>
-    <Foreground>#cccccc</Foreground>
-    <Separator>#aaaaaa</Separator>
-    <Highlight>#00ffff</Highlight>
-    <Selected>#ffff00</Selected>
-    <CursorBackground>#777777</CursorBackground>
-    <CursorForeground>#ffffff</CursorForeground>
-  </Style>
   <Event type="init" action="Controller::init" />
   <Event type="timer" period="2000" action="Controller::test" />
   <Window title="SPTK mad4" width="100" height="30" mode="maximized">
