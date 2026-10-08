@@ -132,6 +132,17 @@ expectEditor($labeledEditor->getValue(), 'first', 'TextEditor label outside valu
 $grid = new Grid(10, 1);
 $labeledEditor->paint(new GridWriter($grid, new Tile(0, 0, 10, 1)));
 expectEditor($grid->cell(0, 0)->glyph, 'D', 'label in one-row tile');
+$titledEditor = new TextEditor('query', title: 'Filter');
+expectEditor($titledEditor->preferredHeight(), 17, 'titled TextEditor preferred height');
+$grid = new Grid(12, 2);
+$titledEditor->paint(new GridWriter($grid, new Tile(0, 0, 12, 2)));
+expectEditor($grid->cell(0, 0)->glyph, 'F', 'TextEditor title row');
+expectEditor($grid->cell(0, 1)->glyph, 'q', 'TextEditor text below title');
+$titledEditor->setTitle('Saved');
+$titledEditor->paint(new GridWriter($grid, new Tile(0, 0, 12, 2)));
+expectEditor($grid->cell(0, 0)->glyph, 'S', 'TextEditor title updates');
+expectEditor($titledEditor->getValue(), 'query', 'Updating title preserves editor text');
+expectEditor((new TextEditor('query', label: 'JQL', title: 'Saved'))->preferredHeight(), 18, 'title and label reserve separate rows');
 $movingEditor = new TextEditor('abcd', label: 'Document');
 $movingEditor->emit('activate');
 $grid = new Grid(10, 3);

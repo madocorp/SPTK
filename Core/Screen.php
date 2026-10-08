@@ -5,6 +5,7 @@ namespace SPTK\Core;
 use SPTK\Events\{KeyNormalizer, ScreenInput};
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile, WindowGeometry};
 use SPTK\Widgets\Button\Button;
+use SPTK\Widgets\List\ListView;
 use SPTK\Widgets\StatusBar\StatusBar;
 
 /** Owns one screen's layout, widget selection, and screen-level input. */
@@ -161,11 +162,11 @@ final class Screen {
       return false;
     }
     $deferred = $type === 'keyDown' && $this->screenInput->deferCharacterHotkey(
-      $event, !$this->inputMode
+      $event, !$this->inputMode || $this->activeListAllowsHotkeys()
     );
     $handled = $this->routeEvent($event, $type);
     if ($type === 'textInput' || $type === 'keyUp') {
-      if ($this->inputMode) {
+      if ($this->inputMode && !$this->activeListAllowsHotkeys()) {
         $this->screenInput->cancelCharacterHotkey();
       } else {
         $handled = $this->screenInput->finishCharacterHotkey($event) || $handled;
@@ -185,7 +186,8 @@ final class Screen {
       if ($leaf->handleEvent($event) || $leaf->dispatchInput($type, $event)) {
         return true;
       }
-      if ($this->screenInput->dispatch($type, $leaf->instance(), $event, false)) {
+      $allowHotkeys = $this->activeListAllowsHotkeys();
+      if ($this->screenInput->dispatch($type, $leaf->instance(), $event, $allowHotkeys)) {
         return true;
       }
     } else if ($this->screenInput->dispatch($type, $leaf?->instance(), $event)) {
@@ -243,6 +245,12 @@ final class Screen {
     return false;
   }
 
+  /** Let screen hotkeys use a list that has no text search. */
+  private function activeListAllowsHotkeys(): bool {
+    $widget = $this->activeLeaf()?->instance();
+    return $widget instanceof ListView && !$widget->acceptsTextInput();
+  }
+
   /** Move focus between tiles while no widget is active. */
   private function moveSelection(string $direction): bool {
     $previous = $this->selectedLeaf();
@@ -262,9 +270,9 @@ final class Screen {
       return;
     }
     $this->inputMode = false;
+    $this->refreshStatus();
     $this->selectedLeaf()?->dispatchNotification($notification);
     $this->selectedLeaf()?->dispatchNotification('deactivate');
-    $this->refreshStatus();
   }
 
   /** Focus and activate a widget after an in-place layout swap. */

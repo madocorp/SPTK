@@ -118,6 +118,11 @@ final class ListView extends Widget {
     return $this->active;
   }
 
+  /** Tell screen input whether typing belongs to this list. */
+  public function acceptsTextInput(): bool {
+    return $this->filterable || $this->searchable;
+  }
+
   /** Return the zero-based item index under the cursor. */
   public function cursorPosition(): int {
     return $this->visible[$this->viewport->position()] ?? $this->cursorItem;
