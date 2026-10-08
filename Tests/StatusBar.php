@@ -88,4 +88,11 @@ try {
 } catch (InvalidArgumentException $error) {
   expectStatus($list->tip(true), 'Active tip.', 'invalid tip leaves existing overrides intact');
 }
+$editor->on('deactivate', function () use ($bar): void { $bar->error('Invalid JQL'); });
+$screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
+$screen->handleEvent(statusKey(SDL::KEY_LEFT));
+$screen->handleEvent(statusKey(SDL::KEY_RETURN));
+$screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
+expectStatus($bar->text(), 'Invalid JQL', 'deactivation error remains visible after release');
+expectStatus($bar->kind(), 'error', 'deactivation error keeps its error color');
 echo "Status bar checks passed\n";

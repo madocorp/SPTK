@@ -274,8 +274,11 @@ $quietLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Alpha', 'a', 
 $quietScreen = new Screen($quietLayout);
 $quietScreen->measureGrid(new Tile(0, 0, 30, 3));
 $quietScreen->handleEvent(choiceKey(SDL::KEY_RETURN));
-expectChoice($quietScreen->handleEvent(choiceKey(ord('a'))), true, 'active nonsearchable list owns typing keydown');
-expectChoice(ChoiceTestListener::$hotkeys, 2, 'nonsearchable list also blocks hotkeys');
+expectChoice($quietScreen->handleEvent(choiceKey(ord('a'))), true, 'active nonsearchable list passes letter keydown to hotkeys');
+expectChoice(ChoiceTestListener::$hotkeys, 2, 'nonsearchable list defers printable hotkeys');
+$quietScreen->handleEvent(choiceText('a'));
+expectChoice(ChoiceTestListener::$hotkeys, 3, 'nonsearchable list allows hotkeys');
+expectChoice($quietList->filter(), '', 'nonsearchable list ignores text input');
 $xmlRadio = new RadioButton(['one', 'two']);
 $xmlEvents = [new EventDefinition('change', null, ChoiceTestListener::class . '::xmlChange')];
 $xmlLayout = new LayoutNode('horizontal', '1*', '1*');

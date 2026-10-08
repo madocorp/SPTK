@@ -12,13 +12,14 @@ final class Parser implements WidgetParser {
 
   /** Validate TextEditor attributes together with its layout size. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'textWrap', 'tabSize', 'label']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'textWrap', 'tabSize', 'label', 'title']);
   }
 
   /** Build a TextEditor from preserved text or its higher-priority value attribute. */
   public function parse(\XMLReader $reader, Style $style): WidgetDefinition {
     $value = $reader->getAttribute('value');
     $label = $reader->getAttribute('label');
+    $title = $reader->getAttribute('title');
     $wrap = $this->attrBoolean($reader, 'textWrap', false);
     $tabSize = $this->attrInteger($reader, 'tabSize', 8);
     if ($tabSize < 1) {
@@ -41,7 +42,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new TextEditor($value ?? $text, $style, $wrap, $tabSize, $label), $events);
+    return new WidgetDefinition(new TextEditor($value ?? $text, $style, $wrap, $tabSize, $label, $title), $events);
   }
 
 }

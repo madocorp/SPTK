@@ -41,7 +41,7 @@ trait InputHandling {
       return true;
     }
     // SDL sends keydown before text input; keep printable keys inside the active list.
-    return ($mod & (SDL::MOD_CTRL | SDL::MOD_ALT)) === 0
+    return $this->acceptsTextInput() && ($mod & (SDL::MOD_CTRL | SDL::MOD_ALT)) === 0
       && $key >= 32 && $key <= 126;
   }
 

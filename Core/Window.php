@@ -116,7 +116,7 @@ final class Window {
     foreach ($this->screens as $screen) {
       $screen->setCurrentScreenId($this->screens[$index]->id);
     }
-    $this->renderScreens();
+    $this->refreshLayout();
   }
 
   /** Select a screen by its XML identifier. */

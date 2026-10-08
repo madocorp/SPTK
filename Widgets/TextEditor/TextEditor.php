@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\TextEditor;
 
-use SPTK\Core\{Color, Style, TextEdit, Widget};
+use SPTK\Core\{Color, Style, TextEdit, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\GridWriter;
 use SPTK\SDLWrapper\SDL;
@@ -16,6 +16,7 @@ final class TextEditor extends Widget {
   private TextEdit $document;
   private Navigator $navigator;
   private Painter $painter;
+  private WidgetTitle $title;
   private bool $active = false;
   private ?array $paintedCursorCell = null;
   private int $paintedScrollY = 0;
@@ -32,6 +33,7 @@ final class TextEditor extends Widget {
     private readonly bool $wrap = false,
     private readonly int $tabSize = 8,
     private readonly ?string $label = null,
+    ?string $title = null,
   ) {
     if ($tabSize < 1) {
       throw new \InvalidArgumentException('TextEditor tabSize must be positive.');
@@ -40,6 +42,7 @@ final class TextEditor extends Widget {
       throw new \InvalidArgumentException('TextEditor label must be printable single-line UTF-8 text.');
     }
     $this->document = new TextEdit(true, $value, $tabSize);
+    $this->title = new WidgetTitle($title, $style);
     $this->navigator = new Navigator($wrap, $tabSize);
     // Editable text keeps the normal foreground for both selection and the caret.
     $this->painter = new Painter($style->with(['CursorForeground' => $style->foreground]));
@@ -68,6 +71,13 @@ final class TextEditor extends Widget {
     $this->navigator->reset();
   }
 
+  /** Change the optional heading above the editor. */
+  public function setTitle(?string $title): void {
+    $this->title = new WidgetTitle($title, $this->style);
+    $this->paintedCursorCell = null;
+    $this->emit('change');
+  }
+
   /** Return the zero-based document row and grapheme index. */
   public function cursorPosition(): array {
     return $this->document->cursor()->position();
@@ -78,13 +88,14 @@ final class TextEditor extends Widget {
     return $this->active;
   }
 
-  /** Reserve sixteen editor rows and one more when a label is present. */
+  /** Reserve sixteen editor rows plus optional title and label rows. */
   public function preferredHeight(): ?int {
-    return $this->label === null ? 16 : 17;
+    return 16 + $this->title->height() + ($this->label === null ? 0 : 1);
   }
 
   /** Paint text, selection, indicators, and the active block cursor. */
   public function paint(GridWriter $writer): void {
+    $writer = $this->title->body($writer);
     if ($this->label !== null) {
       $writer->fill($this->style->foreground, $this->style->background);
       $writer->write(0, 0, $this->label, $this->style->highlight, $this->style->background);
@@ -104,6 +115,7 @@ final class TextEditor extends Widget {
 
   /** Repaint only the old and new caret cells when the document and viewport are fixed. */
   public function paintUpdate(GridWriter $writer): bool {
+    $writer = $this->title->body($writer, false);
     if ($this->label !== null) {
       $writer = $writer->below(min(1, $writer->height()));
     }
