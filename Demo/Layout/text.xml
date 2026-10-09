@@ -1,7 +1,13 @@
 <Screen>
   <Event type="keyDown" key="a" action="Controller::test" />
+  <Event type="keyDown" key="1" action="Controller::statusInfo" />
+  <Event type="keyDown" key="2" action="Controller::statusWarning" />
+  <Event type="keyDown" key="3" action="Controller::statusError" />
+  <Event type="keyDown" key="4" action="Controller::statusConfirm" />
+  <Event type="keyDown" key="5" action="Controller::statusContinuous" />
+  <Event type="keyDown" key="6" action="Controller::statusBackground" />
   <Layout direction="vertical">
-    <Title height="1">Text — alignment, selection, and scrolling</Title>
+    <Title height="1">Text — 1 Info | 2 Warning | 3 Error | 4 Confirm | 5 Continuous | 6 Brief | H Help</Title>
     <Separator />
     <Layout direction="horizontal" height="1*">
       <Text id="intro" width="1*" align="left">Left aligned
@@ -127,6 +133,6 @@ Donec pulvinar urna sit amet arcu tristique, in posuere lorem feugiat. Quisque t
 Curabitur sodales augue nec eros viverra, quis porttitor tortor pulvinar. Mauris convallis risus sed nibh aliquet, vitae tincidunt dui porta. Ut interdum diam at ipsum facilisis, vel maximus lectus venenatis. Aenean mattis nunc nec leo egestas, at interdum mauris porta. Vivamus posuere nibh a risus imperdiet, eu lacinia massa iaculis.</Text>
     </Layout>
     <Separator />
-    <Text height="1">Text: Left | Center | Right | Return activates | Shift selects</Text>
+    <StatusBar id="status" height="1" />
   </Layout>
 </Screen>

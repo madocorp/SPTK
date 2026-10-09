@@ -8,6 +8,7 @@ use SPTK\Core\Color;
 final class LayoutNode {
 
   use LayoutNodeLookup;
+  use LayoutNodeSeparators;
 
   private $children = [];
   private $grid;
@@ -105,13 +106,13 @@ final class LayoutNode {
       return max($heights);
     }
     $height = 0;
-    $count = 0;
+    $hasVisibleChild = false;
     foreach ($this->children as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
       }
       $size = $child->height();
-      if ($count > 0 && $size !== '0*') {
+      if ($hasVisibleChild && $size !== '0*' && $size !== '0') {
         $height++;
       }
       if ($size === 'auto') {
@@ -123,7 +124,9 @@ final class LayoutNode {
       } else {
         throw new \LogicException('Intrinsic layout height requires fixed, weighted, or auto child heights.');
       }
-      $count++;
+      if ($size !== '0*' && $size !== '0') {
+        $hasVisibleChild = true;
+      }
     }
     return $height;
   }
@@ -360,7 +363,7 @@ final class LayoutNode {
     $separator = $this->children[$index];
     $before = $this->children[$index - 1];
     $area = $geometry->separatorArea($this->grid, $before->grid(), $windowGrid, $this->direction);
-    $separator->setArea($this->viewport === null ? $area : $area->intersect($geometry->pixelArea($this->viewport)));
+    $separator->setArea($this->viewport === null ? $area : $area->intersect($geometry->backgroundArea($this->viewport, $windowGrid)));
   }
 
   public function drawBackgrounds(\SPTK\Rendering\PixelRenderer $renderer, ?LayoutLeaf $selected = null): void {
@@ -468,19 +471,6 @@ final class LayoutNode {
       }
     }
     return [];
-  }
-
-  public function drawSeparators(\SPTK\Rendering\PixelRenderer $renderer, \SPTK\Core\Color $color): void {
-    if ($this->pixelTile !== null) {
-      return;
-    }
-    foreach ($this->children as $child) {
-      if ($child instanceof self) {
-        $child->drawSeparators($renderer, $color);
-      } else if ($child instanceof LayoutSeparator) {
-        $child->draw($renderer, $color);
-      }
-    }
   }
 
   public function debug(int $level = 0) {

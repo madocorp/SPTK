@@ -18,13 +18,14 @@ final class Screen {
   private array $events;
   private ScreenInput $screenInput;
   private array $widgetsById = [];
+  private ?LayoutLeaf $statusLeaf = null;
+  private bool $statusOverlay = false;
   public ?StatusBar $statusBar = null;
 
   /** Create a screen and attach screen-level event subscriptions to its leaves. */
   public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(71, 85, 104), array $events = [], public string $id = '', public string $title = '', public Color $background = new Color(32, 38, 48)) {
     $this->events = $events;
     $this->indexWidgets();
-    $this->refreshStatus();
   }
 
   /** Reindex a changed layout, retaining focus and activation when the selected widget survives. */
@@ -49,7 +50,6 @@ final class Screen {
     if ($retained !== null) {
       $this->focus->select($retained);
     }
-    $this->refreshStatus();
   }
 
   /** Index widget IDs and register button hotkeys at screen scope. */
@@ -59,6 +59,7 @@ final class Screen {
     $this->screenInput = new ScreenInput($this->events);
     $this->widgetsById = [];
     $this->statusBar = null;
+    $this->statusLeaf = null;
     $indexed = $this->leaves;
     foreach ($this->layout->leaves(true) as $leaf) {
       if (!in_array($leaf, $indexed, true)) {
@@ -73,6 +74,8 @@ final class Screen {
           throw new \RuntimeException('Screen accepts only one StatusBar.');
         }
         $this->statusBar = $widget;
+        $this->statusLeaf = $leaf;
+        $widget->setFocusHandlers($this->showStatus(...), $this->hideStatus(...));
       }
       if ($widget->id() !== null) {
         if (isset($this->widgetsById[$widget->id()])) {
@@ -84,6 +87,9 @@ final class Screen {
         $this->screenInput->register($widget);
       }
     }
+    if ($this->statusLeaf === null) {
+      $this->statusOverlay = false;
+    }
   }
 
   /** Find a widget by its XML identifier. */
@@ -93,11 +99,19 @@ final class Screen {
 
   /** Return the leaf receiving input while a widget is activated. */
   public function activeLeaf(): ?LayoutLeaf {
-    return $this->inputMode ? $this->selectedLeaf() : null;
+    return $this->statusOverlay ? $this->statusLeaf : ($this->inputMode ? $this->selectedLeaf() : null);
   }
 
   /** Bind all buttons to their owning window. */
   public function setWindow(Window $window): void {
+    $this->statusBar?->setScheduler(function(int $delayMs, callable $callback) use ($window): void {
+      \SPTK\App::eventLoop()->after($delayMs, function() use ($callback, $window): void {
+        $callback();
+        if (\SPTK\App::eventLoop()->window($window->id()) === $window) {
+          $window->refreshLayout();
+        }
+      });
+    });
     foreach ($this->leaves as $leaf) {
       if ($leaf->instance() instanceof Button) {
         $leaf->instance()->setWindow($window);
@@ -148,13 +162,29 @@ final class Screen {
       $previous?->dispatchNotification('unselect');
       $leaf->dispatchNotification('select');
     }
-    $this->refreshStatus();
     return true;
   }
 
   /** Route input through the active widget, screen subscriptions, and screen controls. */
   public function handleEvent(mixed $event): bool {
-    if ($this->statusBar?->handleConfirmation($event)) {
+    if ($this->statusBar?->handleBlockingInput($event)) {
+      return true;
+    }
+    if ($this->statusOverlay) {
+      if ($event->type === \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN) {
+        $key = KeyNormalizer::normalize((int)$event->key->key, (int)$event->key->mod);
+        if ($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE || $key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
+          $this->statusBar?->acknowledge();
+          $this->hideStatus();
+        }
+      }
+      return true;
+    }
+    if ($this->statusBar !== null && $event->type === \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN
+      && ((int)$event->key->mod & (\SPTK\SDLWrapper\SDL::MOD_CTRL | \SPTK\SDLWrapper\SDL::MOD_ALT)) === 0
+      && KeyNormalizer::keyName((int)$event->key->key, (int)$event->key->mod) === 'h') {
+      $this->screenInput->cancelCharacterHotkey();
+      $this->statusBar->hint($this->selectedLeaf()?->instance()?->tip($this->inputMode) ?? '');
       return true;
     }
     $type = $this->screenInput->type($event);
@@ -209,7 +239,6 @@ final class Screen {
       if ($this->focus->enter()) {
         $leaf?->dispatchNotification('unselect');
         $this->selectedLeaf()?->dispatchNotification('select');
-        $this->refreshStatus();
         return true;
       }
       if ($leaf?->instance() instanceof Button) {
@@ -222,13 +251,11 @@ final class Screen {
       }
       $this->inputMode = true;
       $leaf->dispatchNotification('activate');
-      $this->refreshStatus();
       return true;
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE && $this->focus->leave()) {
       $leaf?->dispatchNotification('unselect');
       $this->selectedLeaf()?->dispatchNotification('select');
-      $this->refreshStatus();
       return true;
     }
     $direction = match ($key) {
@@ -259,20 +286,23 @@ final class Screen {
     }
     $previous?->dispatchNotification('unselect');
     $this->selectedLeaf()?->dispatchNotification('select');
-    $this->refreshStatus();
     return true;
   }
 
   /** Release the active widget when a screen is hidden or an exit key is pressed. */
   public function release(string $notification = 'accept'): void {
     $this->screenInput->cancelCharacterHotkey();
+    if ($this->statusOverlay) {
+      $this->statusBar?->clear();
+      $this->hideStatus();
+    }
     if (!$this->inputMode) {
       return;
     }
+    $leaf = $this->focus->selectedLeaf();
     $this->inputMode = false;
-    $this->refreshStatus();
-    $this->selectedLeaf()?->dispatchNotification($notification);
-    $this->selectedLeaf()?->dispatchNotification('deactivate');
+    $leaf?->dispatchNotification($notification);
+    $leaf?->dispatchNotification('deactivate');
   }
 
   /** Focus and activate a widget after an in-place layout swap. */
@@ -281,13 +311,17 @@ final class Screen {
     if (!$this->inputMode && $leaf->instance()->canActivate()) {
       $this->inputMode = true;
       $leaf->dispatchNotification('activate');
-      $this->refreshStatus();
     }
   }
 
-  /** Refresh the optional status bar from the current widget and input mode. */
-  private function refreshStatus(): void {
-    $this->statusBar?->showTip($this->selectedLeaf()?->instance()?->tip($this->inputMode) ?? '');
+  /** Show a message while retaining the selected tile and its input state underneath. */
+  private function showStatus(): void {
+    $this->screenInput->cancelCharacterHotkey();
+    $this->statusOverlay = $this->statusLeaf !== null;
+  }
+
+  private function hideStatus(): void {
+    $this->statusOverlay = false;
   }
 
   public function measureGrid(\SPTK\Layout\Tile $grid) {
@@ -322,7 +356,7 @@ final class Screen {
 
   /** Return the currently selected widget leaf. */
   public function selectedLeaf(): ?\SPTK\Layout\LayoutLeaf {
-    return $this->focus->selectedLeaf();
+    return $this->statusOverlay ? $this->statusLeaf : $this->focus->selectedLeaf();
   }
 
   /** Return how many layout containers have been entered. */

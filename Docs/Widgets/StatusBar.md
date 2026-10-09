@@ -1,22 +1,33 @@
-# Widgets
+# StatusBar
 
-Each widget page describes that widget's XML attributes and behavior.
+Add `<StatusBar height="1" />` to a screen. It starts empty and does not change when
+tile focus moves. Press H to show the selected tile's `tip` or its SPTK default help.
+The bar takes focus while help is shown; Return or Esc dismisses it and restores the
+previous tile, including its active input mode. The bar dims when another tile is
+selected. Arrow navigation skips it by default; set `navigate="true"` to include it.
 
-- [StatusBar](StatusBar.md): shows the selected widget’s tip and temporary notifications
-- [Text](Text.md): displays read-only text with wrapping, scrolling, and cursor navigation
-- [StyledText](StyledText.md): renders proportional rich text with inline fonts, colors, and wrapping
-- [Input](Input.md): edits a single line with selection and undo history
-- [TextEditor](TextEditor.md): edits multiline text with wrapping and scrolling
-- [RadioButton](RadioButton.md): selects one value from a group
-- [CheckboxArray](CheckboxArray.md): toggles independent values in a group
-- [List](List.md): browses, filters, selects, and optionally reorders items
-- [Table](Table.md): browses rows and columns from XML or TSV data
-- [Graph](Graph.md): plots numeric lines, points, and grouped bars as a cached image
-- [ProgressBar](ProgressBar.md): shows determinate progress with a title and a percent, fraction, or text label
-- [ColorSelector](ColorSelector.md): selects an RGB color from swatches or six-digit hex input
-- [DateSelector](DateSelector.md): selects a date from a Monday-first calendar or eight-digit input
-- [FileSelector](FileSelector.md): browses directories and selects file paths
-- [Image](Image.md): draws a local image with aspect-preserving scaling
-- [Canvas](Canvas.md): composes reusable sprites and writable textures through an app painter
-- [Empty](Empty.md): reserves a tile without drawing content
-- [Button](Button.md): runs an action on Return or an optional screen-level hotkey
+Color and input behavior are independent. Each style method accepts a behavior as
+its second argument: `modal` (the default), `continuous`, or `background`.
+Background messages also accept a lifetime in milliseconds as the third argument
+(default: 3000). The `display($text, $style, $behavior, $durationMs, $lock)` method
+offers the same choices without a style-specific method.
+
+| Style method | Appearance |
+| --- | --- |
+| `hint($text)` or `notice($text)` | Normal colors |
+| `info($text)` | Highlight background |
+| `warning($text)` | Selected background |
+| `error($text)` | Red background |
+
+| Behavior | Input behavior |
+| --- | --- |
+| `modal` | Selects the bar; Return or Esc acknowledges, then restores previous focus |
+| `continuous` | Stays visible without taking focus; returns after other messages |
+| `background` | Does not take focus; disappears after its lifetime, restoring any continuous message |
+| `confirmation` | Y or Return accepts; N or Esc declines; other input is drained |
+
+Use `confirm($text, $yes, $no, $legacyCancel = null, $style = 'warning')` for a
+confirmation. The optional fourth callback keeps the old separate Esc cancel action.
+For a synchronous job, `info($text, 'modal', lock: true)` drains all input until
+the application replaces or clears it. `clear()` also removes a continuous message.
+`kind()` reports the color style and `behavior()` reports the input behavior.

@@ -91,6 +91,8 @@ and reset for its children.
 ## Palette entries
 
 `Background`, `Foreground`, and `Separator` drive widget backgrounds, text, and grid separators.
+For grid layouts, a local `Separator` color applies to separators in that layout and is inherited by nested
+layouts unless they override it.
 `BorderColor` colors pixel layout borders. `BorderWidth`, `Margin`, and `Padding` size the current pixel
 layout item; they do not change cell tile geometry.
 `Highlight`, `Selected`, `CursorBackground`, and `CursorForeground` are shared palette entries for selection and

@@ -33,6 +33,9 @@ Children can be widgets, nested `<Layout>` elements, or `<Separator>` elements. 
 two layout items; it cannot be first or last, and two separators cannot be adjacent. Separators are visual
 boundaries and do not take a size attribute. See the [widget documentation](Widgets/Widgets.md) for widget-specific
 attributes and behavior.
+The containing layout's inherited `Separator` style colors its separators. A nested layout can override that
+color without changing the separators in its parent layout. Parent separators draw over child separators where
+their two-pixel lines meet.
 
 ## Navigation
 
@@ -70,8 +73,9 @@ Weighted children share the remaining cells after fixed sizes and layout gaps.
 Set `overflow="true"` on a vertical grid layout to keep fixed and auto child heights when their total
 exceeds its tile. `setScrollOffset()` moves the full child tiles through that layout's viewport;
 `maxScrollOffset()` reports the measured limit. The first and last visible tiles may be partial.
-Grid painting and tile backgrounds are clipped to the viewport, so adjacent prompt or status tiles
-stay untouched. Overflow viewports currently support grid-only widgets.
+Grid painting is clipped to the viewport's cells. Tile backgrounds and separators are clipped to
+its padded bounds so decoration reaches the tile edge without painting over adjacent prompt or
+status content. Overflow viewports currently support grid-only widgets.
 In a vertical layout, a StyledText child may use `height="auto"`. Its text is
 measured at the available width and rounded up to whole cells. A vertical
 nested layout may also use `height="auto"` to sum the natural heights of its children.
@@ -181,15 +185,22 @@ Window modes and pixel sizes can also be changed at runtime with `Core\WindowPla
 ['mode' => 'normal', 'width' => 1280, 'height' => 720])`. Supported modes are `normal`, `maximized`, and
 `fullscreen`. `capture($window)` returns the current mode and size for later restoration.
 
-Add one `<StatusBar height="1" />` to any screen to display the currently selected widget's
-one-line tip automatically. It updates when focus or activation changes. The status bar uses the app's
-regular text font and dims like other tiles when it is not selected. Widgets supply default tips based
-on their behavior and attributes. Any widget may override its tip with `tip="..."` and optionally use
-`activeTip="..."` while activated. If only `tip` is given, it applies in both states. An empty tip
-deliberately clears the bar. A layout with
-`navigateChildren="false"` may also have `tip`, which belongs to its one focus tile. Applications
-may call `StatusBar::notice($message)`, `warning($message)`, or `error($message)` for
-color-coded updates. `notify($message)` remains an alias for `notice()`. The selected
-widget's tip returns at the next focus or activation change. `confirm($message, $yes,
-$no, $cancel)` shows a warning and handles Y, N, and Esc before widget input. The
-screen keeps its current focus while the confirmation is pending.
+Add one `<StatusBar height="1" />` to a screen for explicit help and application messages.
+It starts empty; changing tiles does not replace a message. Press H to show the selected
+tile's help. The bar takes focus until Return or Esc, then restores the tile and its input
+mode. It dims while another tile is selected. Arrow navigation skips it by default;
+set `navigate="true"` on the StatusBar to include it.
+Widgets supply default help based on their behavior. Use `tip="..."` and optional
+`activeTip="..."` to override it. A layout with `navigateChildren="false"` may also have
+`tip` on its one focus tile.
+
+Applications choose a style with `hint()`, `notice()`, `info()`, `warning()`, or
+`error()`. Each is modal by default: the bar takes focus until Return or Esc.
+Pass `continuous` as the second argument for ongoing guidance that remains visible
+in normal navigation and returns after another message. Pass `background` for a
+message that leaves focus alone and disappears after the third argument's lifetime
+in milliseconds (3000 by default). `display()` accepts style and behavior separately.
+`confirm($message, $yes, $no)` uses confirmation behavior: Y or Return accepts,
+N or Esc declines, and other input is drained. `info($message, 'modal', lock: true)`
+holds input during synchronous work until the application replaces or clears it.
+Existing four-callback confirmations keep their separate Esc cancel action.

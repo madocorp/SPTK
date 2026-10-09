@@ -2,7 +2,7 @@
 
 Each widget page describes that widget's XML attributes and behavior.
 
-- [StatusBar](StatusBar.md): shows the selected widget’s tip and temporary notifications
+- [StatusBar](StatusBar.md): shows help on H, progress, alerts, and confirmations
 - [Text](Text.md): displays read-only text with wrapping, scrolling, and cursor navigation
 - [Title](Title.md): displays a one-line heading in the inherited highlight color
 - [StyledText](StyledText.md): renders proportional rich text with inline fonts, colors, and wrapping

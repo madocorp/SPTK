@@ -41,6 +41,22 @@ expectGeometryArea($geometry->backgroundArea(new Tile(14, 1, 4, 2), $grid), [96,
 expectGeometryArea($geometry->backgroundArea(new Tile(1, 9, 2, 1), $grid), [8, 105, 32, 0], 'fixed tile below window has empty background');
 expectGeometryArea($geometry->backgroundArea(new Tile(-4, -3, 2, 1), $grid), [0, 0, 0, 0], 'tile above and left of window has empty background');
 expectGeometryArea($geometry->backgroundArea(new Tile(8, 4, 9, 9), $grid), [64, 60, 32, 45], 'partially overflowing tile clips to window');
+$clippedLeaf = new LayoutLeaf('Empty', '1*', '1*', new Placeholder(new Color(0, 0, 0)));
+$clippedLeaf->setGrid(new Tile(3, 1, 2, 3));
+$clippedLeaf->setViewport(new Tile(3, 2, 2, 2));
+$clippedLeaf->measureArea($grid, $geometry);
+expectGeometryArea(measuredGeometryArea($clippedLeaf), [24, 30, 32, 45], 'overflow clips vertical background while preserving tile padding');
+$overflowSeparators = new LayoutNode('vertical', '1*', '1*');
+$overflowSeparators->setOverflow(true);
+$overflowBefore = new LayoutLeaf('Empty', '1*', '2', new Placeholder(new Color(0, 0, 0)));
+$overflowAfter = new LayoutLeaf('Empty', '1*', '2', new Placeholder(new Color(0, 0, 0)));
+$overflowLine = new LayoutSeparator();
+$overflowSeparators->addLeaf($overflowBefore);
+$overflowSeparators->addSeparator($overflowLine);
+$overflowSeparators->addLeaf($overflowAfter);
+$overflowSeparators->measureGrid(new Tile(3, 2, 2, 5));
+$overflowSeparators->measureArea($grid, $geometry);
+expectGeometryArea(measuredGeometryArea($overflowLine), [24, 74, 32, 2], 'overflow separators retain the column padding width');
 $even = new WindowGeometry(8, 14, 96, 98, 8, 7);
 expectGeometryArea($even->backgroundArea($interior, $grid), [24, 28, 32, 42], 'even cell height padding');
 $parent = new Tile(3, 2, 7, 4);
@@ -85,6 +101,44 @@ $narrow = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['8', '1*', '
 expectGeometryArea($narrow[1], [10, 0, 0, 1], 'oversized fixed buttons collapse flexible spacer without negative width');
 $short = \SPTK\Layout\Splitter::vertical(new Tile(0, 0, 1, 3), ['2', '1*', '2']);
 expectGeometryArea($short[1], [0, 3, 1, 0], 'short window collapses flexible height without negative size');
+$hiddenRow = \SPTK\Layout\Splitter::vertical(new Tile(0, 0, 1, 10), ['2', '0', '1*']);
+expectGeometryArea($hiddenRow[1], [0, 2, 1, 0], 'hidden row starts directly after the preceding row');
+expectGeometryArea($hiddenRow[2], [0, 3, 1, 7], 'hidden row does not reserve an extra gap');
+$hiddenColumn = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['2', '0', '1*']);
+expectGeometryArea($hiddenColumn[1], [2, 0, 0, 1], 'hidden column starts directly after the preceding column');
+expectGeometryArea($hiddenColumn[2], [4, 0, 6, 1], 'hidden column does not reserve an extra gap');
+$leadingHiddenRow = \SPTK\Layout\Splitter::vertical(new Tile(0, 0, 1, 10), ['0', '1*']);
+expectGeometryArea($leadingHiddenRow[1], [0, 0, 1, 10], 'leading hidden row has no gap');
+$leadingHiddenColumn = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['0', '1*']);
+expectGeometryArea($leadingHiddenColumn[1], [0, 0, 10, 1], 'leading hidden column has no gap');
+$trailingHiddenRow = \SPTK\Layout\Splitter::vertical(new Tile(0, 0, 1, 10), ['1*', '0']);
+expectGeometryArea($trailingHiddenRow[0], [0, 0, 1, 10], 'trailing hidden row has no gap');
+$trailingHiddenColumn = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['1*', '0']);
+expectGeometryArea($trailingHiddenColumn[0], [0, 0, 10, 1], 'trailing hidden column has no gap');
+$autoHidden = new LayoutNode('vertical', '1*', 'auto');
+$autoHidden->addLeaf(new LayoutLeaf('Empty', '1*', '2', new Placeholder(new Color(0, 0, 0))));
+$autoHidden->addLeaf(new LayoutLeaf('Empty', '1*', '0', new Placeholder(new Color(0, 0, 0))));
+$autoHidden->addLeaf(new LayoutLeaf('Empty', '1*', '1', new Placeholder(new Color(0, 0, 0))));
+if ($autoHidden->naturalHeight(1) !== 4) {
+  throw new RuntimeException('Zero-height tile must not add to an auto-sized layout.');
+}
+$autoLeadingHidden = new LayoutNode('vertical', '1*', 'auto');
+$autoLeadingHidden->addLeaf(new LayoutLeaf('Empty', '1*', '0', new Placeholder(new Color(0, 0, 0))));
+$autoLeadingHidden->addLeaf(new LayoutLeaf('Empty', '1*', '1', new Placeholder(new Color(0, 0, 0))));
+if ($autoLeadingHidden->naturalHeight(1) !== 1) {
+  throw new RuntimeException('Leading zero-height tile must not add a gap to an auto-sized layout.');
+}
+$hiddenBackgroundLayout = new LayoutNode('vertical', '1*', '1*');
+$visibleTop = new LayoutLeaf('Empty', '1*', '1', new Placeholder(new Color(0, 0, 0)));
+$hiddenMiddle = new LayoutLeaf('Empty', '1*', '0', new Placeholder(new Color(0, 0, 0)));
+$visibleBottom = new LayoutLeaf('Empty', '1*', '1*', new Placeholder(new Color(0, 0, 0)));
+$hiddenBackgroundLayout->addLeaf($visibleTop);
+$hiddenBackgroundLayout->addLeaf($hiddenMiddle);
+$hiddenBackgroundLayout->addLeaf($visibleBottom);
+$hiddenBackgroundScreen = new Screen($hiddenBackgroundLayout);
+$hiddenBackgroundScreen->measureGrid($grid);
+$hiddenBackgroundScreen->measureArea($grid, $geometry);
+expectGeometryArea(measuredGeometryArea($hiddenMiddle), [0, 0, 0, 0], 'hidden tile paints no background over adjacent padding');
 $fitted = new LayoutNode('vertical', '1*', 'auto');
 $fitted->addLeaf(new LayoutLeaf('Empty', '1*', '2', new Placeholder(new Color(0, 0, 0))));
 $fitted->addLeaf(new LayoutLeaf('Empty', '1*', '0*', new Placeholder(new Color(0, 0, 0))));

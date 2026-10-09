@@ -93,7 +93,7 @@ final class LayoutLeaf {
       return;
     }
     $this->instance->paint(new GridWriter($grid, $this->grid, $this->viewport));
-    if (!$selected) {
+    if (!$selected && $this->instance->dimContentWhenUnselected()) {
       $grid->darken($this->visibleGrid());
     }
   }
@@ -134,9 +134,13 @@ final class LayoutLeaf {
     if ($this->pixelTile !== null) {
       return;
     }
+    if ($this->grid->width === 0 || $this->grid->height === 0) {
+      $this->area = new Tile(0, 0, 0, 0);
+      return;
+    }
     $this->area = $geometry->backgroundArea($this->grid, $windowGrid);
     if ($this->viewport !== null) {
-      $this->area = $this->area->intersect($geometry->pixelArea($this->viewport));
+      $this->area = $this->area->intersect($geometry->backgroundArea($this->viewport, $windowGrid));
     }
   }
 
