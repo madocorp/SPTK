@@ -61,6 +61,11 @@ abstract class Widget {
     return true;
   }
 
+  /** Keep persistent messages bright even while another tile has keyboard focus. */
+  public function dimContentWhenUnselected(): bool {
+    return true;
+  }
+
   /** Paint the widget into its allocated tile. */
   abstract public function paint(GridWriter $writer): void;
 

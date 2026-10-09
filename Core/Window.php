@@ -140,6 +140,11 @@ final class Window {
     return null;
   }
 
+  /** Return the screen currently receiving input. */
+  public function currentScreenId(): string {
+    return $this->screens[$this->currentScreen]->id;
+  }
+
   public function show(): void {
     $this->sdl->ffi->SDL_ShowWindow($this->window);
     $this->sdl->ffi->SDL_SyncWindow($this->window);

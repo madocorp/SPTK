@@ -70,6 +70,57 @@ class Controller {
     return true;
   }
 
+  /** Demonstrate a highlighted modal information message. */
+  public static function statusInfo(): bool {
+    self::textStatus()->info('Information is modal. Press Return or Esc to continue.');
+    return true;
+  }
+
+  /** Demonstrate a selected-color modal warning. */
+  public static function statusWarning(): bool {
+    self::textStatus()->warning('Warning is modal too. Press Return or Esc.');
+    return true;
+  }
+
+  /** Demonstrate a red modal error. */
+  public static function statusError(): bool {
+    self::textStatus()->error('Error stays visible until Return or Esc.');
+    return true;
+  }
+
+  /** Demonstrate a yes/no decision that drains other input. */
+  public static function statusConfirm(): bool {
+    self::textStatus()->confirm('Continue with the demo?', self::confirmYes(...), self::confirmNo(...));
+    return true;
+  }
+
+  /** Keep a normal-color message beneath temporary messages. */
+  public static function statusContinuous(): bool {
+    self::textStatus()->notice('Continuous message returns after other messages.', 'continuous');
+    return true;
+  }
+
+  /** Show information briefly without taking tile focus. */
+  public static function statusBackground(): bool {
+    self::textStatus()->info('Background message disappears after three seconds.', 'background', 3000);
+    return true;
+  }
+
+  /** Report the accepted confirmation choice for a short time. */
+  private static function confirmYes(): void {
+    self::textStatus()->notice('You chose Yes.', 'background', 2500);
+  }
+
+  /** Report the declined confirmation choice for a short time. */
+  private static function confirmNo(): void {
+    self::textStatus()->notice('You chose No.', 'background', 2500);
+  }
+
+  /** Return the Text screen's demonstration status bar. */
+  private static function textStatus(): \SPTK\Widgets\StatusBar\StatusBar {
+    return \SPTK\App::eventLoop()->windows()[0]->screen('text')->statusBar;
+  }
+
   /** Print a message when the demo starts. */
   public static function init(): bool {
     echo "init callback\n";

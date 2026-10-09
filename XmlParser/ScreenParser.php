@@ -82,6 +82,9 @@ final class ScreenParser {
           } else {
             $style = $this->styleParser->parse($reader, $style);
           }
+          if (!$pixel) {
+            $layout->setSeparatorColor($style->separator);
+          }
         } else if ($reader->name === 'Layout') {
           $hasItems = true;
           $layout->addNode($this->parseLayout($reader, $style, $direction, $pixel));
@@ -132,7 +135,7 @@ final class ScreenParser {
     $id = $reader->getAttribute('id');
     $tip = $reader->getAttribute('tip');
     $activeTip = $reader->getAttribute('activeTip');
-    $navigate = $this->attrBoolean($reader, 'navigate', true);
+    $navigate = $this->attrBoolean($reader, 'navigate', $widgetName !== 'StatusBar');
     if ($id !== null && !preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $id)) {
       throw new \RuntimeException("Invalid widget id: {$id}");
     }

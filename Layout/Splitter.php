@@ -5,6 +5,22 @@ namespace SPTK\Layout;
 /** Splits a grid horizontally or vertically to smaller tiles */
 final class Splitter {
 
+  /** A zero-sized tile consumes neither its own leading gap nor a leading gap before visible content. */
+  private static function collapsedGapBefore(array $sizes, int $index): bool {
+    if ($index === 0) {
+      return false;
+    }
+    if (in_array($sizes[$index], ['0', '0*'], true)) {
+      return true;
+    }
+    for ($previous = 0; $previous < $index; $previous++) {
+      if ($sizes[$previous] !== '0') {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** Resolve fixed cell sizes, including percentages of the parent tile. */
   private static function parseSizes(array $sizes, int $space): array {
     $fixedSize = count($sizes) - 1;
@@ -57,12 +73,18 @@ final class Splitter {
 
   public static function horizontal(Tile $grid, array $sizes): array {
     $columns = $grid->width;
-    $allocated = self::allocateSizes($sizes, $columns - (count($sizes) - 1), $columns);
+    $collapsedGaps = 0;
+    foreach ($sizes as $index => $size) {
+      if (self::collapsedGapBefore($sizes, $index)) {
+        $collapsedGaps++;
+      }
+    }
+    $allocated = self::allocateSizes($sizes, $columns - (count($sizes) - 1) + 2 * $collapsedGaps, $columns);
     $result = [];
     $x = 0;
-    foreach ($allocated as $width) {
+    foreach ($allocated as $index => $width) {
       $result[] = new Tile($grid->x + $x, $grid->y, $width, $grid->height);
-      $x += $width + 2;
+      $x += $width + (isset($sizes[$index + 1]) && self::collapsedGapBefore($sizes, $index + 1) ? 0 : 2);
     }
     return $result;
 
@@ -72,7 +94,7 @@ final class Splitter {
     $rows = $grid->height;
     $collapsedGaps = 0;
     foreach ($sizes as $index => $size) {
-      if ($index > 0 && $size === '0*') {
+      if (self::collapsedGapBefore($sizes, $index)) {
         $collapsedGaps++;
       }
     }
@@ -81,7 +103,7 @@ final class Splitter {
     $y = 0;
     foreach ($allocated as $index => $height) {
       $result[] = new Tile($grid->x, $grid->y + $y, $grid->width, $height);
-      $y += $height + (($sizes[$index + 1] ?? null) === '0*' ? 0 : 1);
+      $y += $height + (isset($sizes[$index + 1]) && self::collapsedGapBefore($sizes, $index + 1) ? 0 : 1);
     }
     return $result;
   }

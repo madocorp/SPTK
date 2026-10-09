@@ -47,6 +47,20 @@ final class EventLoop {
     return $id;
   }
 
+  /** Run a callback once after the given number of milliseconds. */
+  public function after(int $delayMs, callable $callback): int {
+    if ($delayMs < 1) {
+      throw new \InvalidArgumentException('Timer delay must be positive.');
+    }
+    $id = $this->nextTimerId++;
+    $this->timers[$id] = [
+      'callback' => $callback,
+      'period' => $delayMs,
+      'deadline' => hrtime(true) + $delayMs * 1000000,
+    ];
+    return $id;
+  }
+
   /** Change a timer period and restart its countdown. */
   public function setTimerPeriod(int|string $timerId, int $period): void {
     if ($period < 1) {
@@ -76,7 +90,7 @@ final class EventLoop {
     }
     $timerIds = [];
     foreach ($this->timers as $id => $timer) {
-      if ($timer['action'] === $timerId) {
+      if (($timer['action'] ?? null) === $timerId) {
         $timerIds[] = $id;
       }
     }
@@ -138,6 +152,11 @@ final class EventLoop {
         continue;
       }
       $timer = $this->timers[$timerId];
+      if (isset($timer['callback'])) {
+        unset($this->timers[$timerId]);
+        $timer['callback']();
+        continue;
+      }
       $periodNs = $timer['period'] * 1000000;
       $elapsedPeriods = intdiv($now - $timer['deadline'], $periodNs) + 1;
       $this->timers[$timerId]['deadline'] += $elapsedPeriods * $periodNs;
