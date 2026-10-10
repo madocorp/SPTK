@@ -7,6 +7,7 @@ use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile, WindowGeometry};
 use SPTK\Widgets\Button\Button;
 use SPTK\Widgets\List\ListView;
 use SPTK\Widgets\StatusBar\StatusBar;
+use SPTK\SDLWrapper\SDL;
 
 /** Owns one screen's layout, widget selection, and screen-level input. */
 final class Screen {
@@ -182,7 +183,7 @@ final class Screen {
     }
     if ($this->statusBar !== null && $event->type === \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN
       && ((int)$event->key->mod & (\SPTK\SDLWrapper\SDL::MOD_CTRL | \SPTK\SDLWrapper\SDL::MOD_ALT)) === 0
-      && KeyNormalizer::keyName((int)$event->key->key, (int)$event->key->mod) === 'h') {
+      && ((int)$event->key->key === ord('?') || ((int)$event->key->key === SDL::KEY_SLASH && ((int)$event->key->mod & SDL::MOD_SHIFT) !== 0))) {
       $this->screenInput->cancelCharacterHotkey();
       $this->statusBar->hint($this->selectedLeaf()?->instance()?->tip($this->inputMode) ?? '');
       return true;

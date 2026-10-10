@@ -69,7 +69,7 @@ php Demo/demo.php
 
 On the Text screen, keys 1–6 demonstrate modal information, warning, error,
 confirmation, continuous guidance, and a timed background message in the
-StatusBar. Press H for the selected tile's hint.
+StatusBar. Press ? for the selected tile's hint.
 
 Individual tests can be run without the demo window, for example:
 

@@ -253,6 +253,6 @@ final class StatusBar extends Widget {
   }
 
   protected function defaultTip(bool $active): string {
-    return 'Press H on a tile for help.';
+    return 'Press ? on a tile for help.';
   }
 }

@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Table;
 
-use SPTK\Core\{Color, Style, Widget};
+use SPTK\Core\{Color, Style, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\GridWriter;
 use SPTK\SDLWrapper\SDL;
@@ -16,6 +16,7 @@ final class Table extends Widget {
   private Painter $painter;
   private Selection $selection;
   private Redraw $redraw;
+  private WidgetTitle $title;
   private array $specifiedWidths = [];
   private array $rawWidths = [];
   private array $widths = [];
@@ -26,13 +27,15 @@ final class Table extends Widget {
   private int $viewportWidth = 1;
   private int $viewportHeight = 1;
   private bool $active = false;
+  private bool $rowCursor = false;
 
   /** Create a table from header and row records. */
-  public function __construct(array $header = [], array $rows = [], array $widths = [], private Style $style = new Style(), private bool $rowNumbers = false) {
+  public function __construct(array $header = [], array $rows = [], array $widths = [], private Style $style = new Style(), private bool $rowNumbers = false, ?string $title = null) {
     $this->data = new TableData();
     $this->painter = new Painter($style);
     $this->selection = new Selection();
     $this->redraw = new Redraw();
+    $this->title = new WidgetTitle($title, $style);
     $this->setRows($header, $rows, $widths);
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
@@ -82,6 +85,28 @@ final class Table extends Widget {
     return $this->cursorColumn;
   }
 
+  /** Select whole rows and keep horizontal keys out of cell navigation. */
+  public function setRowCursor(bool $rowCursor = true): static {
+    if ($this->rowCursor === $rowCursor) {
+      return $this;
+    }
+    $this->rowCursor = $rowCursor;
+    $this->setCursor($this->cursorRow, 0);
+    return $this;
+  }
+
+  /** Report whether the cursor selects complete rows. */
+  public function rowCursor(): bool {
+    return $this->rowCursor;
+  }
+
+  /** Change the optional heading above the fixed table header. */
+  public function setTitle(?string $title): void {
+    $this->title = new WidgetTitle($title, $this->style);
+    $this->redraw->full();
+    $this->emit('change');
+  }
+
   /** Return the field beneath the cursor, or false when the table is empty. */
   public function activeCellValue(): string|false|null {
     $row = $this->data->row($this->cursorRow);
@@ -96,8 +121,11 @@ final class Table extends Widget {
   /** Set the active cell without emitting a user change event. */
   public function setCursor(int $row, int $column = 0): void {
     $this->cursorRow = max(0, min(max(0, $this->data->count() - 1), $row));
-    $this->cursorColumn = max(0, min(max(0, $this->data->columns() - 1), $column));
+    $this->cursorColumn = $this->rowCursor ? 0 : max(0, min(max(0, $this->data->columns() - 1), $column));
     $this->selection->reset($this->cursorRow, $this->cursorColumn);
+    if ($this->rowCursor) {
+      $this->selection->move($this->cursorRow, max(0, $this->data->columns() - 1), true);
+    }
     $this->syncScroll();
     $this->redraw->full();
   }
@@ -130,26 +158,28 @@ final class Table extends Widget {
 
   /** Suggest the width of the complete table. */
   public function preferredWidth(): ?int {
-    return array_sum($this->rawWidths) + ($this->rowNumbers ? strlen((string)max(1, $this->rowCount())) + 2 : 0);
+    return max($this->title->width(), array_sum($this->rawWidths) + ($this->rowNumbers ? strlen((string)max(1, $this->rowCount())) + 2 : 0));
   }
 
   /** Suggest one header row plus all data rows. */
   public function preferredHeight(): ?int {
-    return $this->rowCount() + 1;
+    return $this->title->height() + $this->rowCount() + 1;
   }
 
   /** Paint the currently visible part of the table. */
   public function paint(GridWriter $writer): void {
+    $writer = $this->title->body($writer);
     $this->viewportWidth = max(1, $writer->width());
     $this->viewportHeight = max(1, $writer->height());
     $this->fitWidths();
     $this->syncScroll();
-    $this->painter->paint($writer, $this->data, $this->widths, $this->rowScroll, $this->columnScroll, $this->cursorRow, $this->cursorColumn, $this->active, $this->rowNumbers, $this->selection);
+    $this->painter->paint($writer, $this->data, $this->widths, $this->rowScroll, $this->columnScroll, $this->cursorRow, $this->cursorColumn, $this->active, $this->rowNumbers, $this->rowCursor, $this->selection);
     $this->redraw->painted();
   }
 
   /** Paint changed cursor rows when the table viewport has not moved. */
   public function paintUpdate(GridWriter $writer): bool {
+    $writer = $this->title->body($writer, false);
     $rows = $this->redraw->rows();
     if ($rows === null || $writer->width() !== $this->viewportWidth || $writer->height() !== $this->viewportHeight) {
       return false;
@@ -157,7 +187,7 @@ final class Table extends Widget {
     if ($rows === []) {
       return true;
     }
-    $this->painter->paintRows($writer, $this->data, $this->widths, $this->rowScroll, $this->columnScroll, $this->cursorRow, $this->cursorColumn, $this->active, $this->rowNumbers, $this->selection, $rows);
+    $this->painter->paintRows($writer, $this->data, $this->widths, $this->rowScroll, $this->columnScroll, $this->cursorRow, $this->cursorColumn, $this->active, $this->rowNumbers, $this->rowCursor, $this->selection, $rows);
     $this->redraw->painted();
     return true;
   }
@@ -182,7 +212,12 @@ final class Table extends Widget {
     $beforeSelection = $this->selection->bounds();
     $extend = ($modifiers & SDL::MOD_SHIFT) !== 0;
     $control = ($modifiers & SDL::MOD_CTRL) !== 0;
-    if ($control && $key === SDL::KEY_PAGEUP) {
+    if ($this->rowCursor && ($key === SDL::KEY_LEFT || $key === SDL::KEY_RIGHT)) {
+      return false;
+    }
+    if ($this->rowCursor && ($key === SDL::KEY_HOME || $key === SDL::KEY_END)) {
+      $this->moveCursor($key === SDL::KEY_HOME ? 0 : $this->rowCount() - 1, 0, $extend);
+    } else if ($control && $key === SDL::KEY_PAGEUP) {
       $this->moveCursor(0, 0, $extend);
     } else if ($control && $key === SDL::KEY_PAGEDOWN) {
       $this->moveCursor($this->rowCount() - 1, $this->data->columns() - 1, $extend);
@@ -257,14 +292,24 @@ final class Table extends Widget {
     $this->rowScroll = 0;
     $this->columnScroll = 0;
     $this->selection->reset();
+    if ($this->rowCursor) {
+      $this->selection->move(0, max(0, $this->data->columns() - 1), true);
+    }
     $this->redraw->full();
   }
 
   /** Move the cursor and either extend or replace the selected rectangle. */
   private function moveCursor(int $row, int $column, bool $extend): void {
     $this->cursorRow = max(0, min(max(0, $this->data->count() - 1), $row));
-    $this->cursorColumn = max(0, min(max(0, $this->data->columns() - 1), $column));
-    $this->selection->move($this->cursorRow, $this->cursorColumn, $extend);
+    $this->cursorColumn = $this->rowCursor ? 0 : max(0, min(max(0, $this->data->columns() - 1), $column));
+    if ($this->rowCursor) {
+      if (!$extend) {
+        $this->selection->reset($this->cursorRow, 0);
+      }
+      $this->selection->move($this->cursorRow, max(0, $this->data->columns() - 1), true);
+    } else {
+      $this->selection->move($this->cursorRow, $this->cursorColumn, $extend);
+    }
     $this->syncScroll();
   }
 

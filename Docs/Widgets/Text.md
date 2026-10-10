@@ -10,11 +10,13 @@ elements. Layout sizing attributes such as `width` and `height` are documented i
 | `wrap` | `true` | Wrap long lines at word boundaries. When `false`, each source line stays on one row and can scroll horizontally. |
 | `tabSize` | `8` | Positive number of display cells between tab stops. |
 | `align` | `left` | Align each visible row `left`, `center`, or `right` within the tile. Rows wider than the tile still scroll horizontally. |
+| `title` | none | Reserve a fixed title row above the scrollable text. |
 
 ```xml
 <Text height="1*">A paragraph that wraps to fit its tile.</Text>
 <Text height="1*" wrap="false">A line that can scroll horizontally.</Text>
 <Text height="1*" align="center">Centered text, including wrapped rows.</Text>
+<Text title="About" height="1*">Text with a fixed title.</Text>
 ```
 
 ## Input behavior

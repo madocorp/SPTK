@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Validate Text attributes together with size attributes inherited from the layout. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'wrap', 'tabSize', 'align']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'wrap', 'tabSize', 'align', 'title']);
   }
 
   /** Parse text content and event declarations from a Text element. */
@@ -21,6 +21,7 @@ final class Parser implements WidgetParser {
     $wrap = $this->attrBoolean($reader, 'wrap', true);
     $tabSize = $this->attrInteger($reader, 'tabSize', 8);
     $align = $reader->getAttribute('align') ?? 'left';
+    $title = $reader->getAttribute('title');
     if ($tabSize < 1) {
       throw new \RuntimeException('Text tabSize must be positive.');
     }
@@ -48,6 +49,7 @@ final class Parser implements WidgetParser {
       $wrap,
       $tabSize,
       $align,
+      $title,
     ), $events);
   }
 

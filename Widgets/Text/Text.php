@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Clipboard, Color, Style, TextCursor, TextRows, Widget};
+use SPTK\Core\{Clipboard, Color, Style, TextCursor, TextRows, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -29,23 +29,26 @@ final class Text extends Widget {
   private int $paintedScrollY = 0;
   private int $paintedScrollX = 0;
   private bool $paintedSelection = false;
+  private WidgetTitle $title;
 
   /** Describe the controls available for this widget and its configuration. */
   protected function defaultTip(bool $active): string {
     return $active ? 'Arrow keys scroll and select text; Ctrl+C copies; Esc finishes.' : 'Return reads and scrolls text.';
   }
 
-  /** Create read-only text with optional row alignment. */
+  /** Create read-only text with optional row alignment and a fixed title. */
   public function __construct(
     string $text,
     private readonly Style $style = new Style(),
     private readonly bool $wrap = true,
     private readonly int $tabSize = 8,
     private readonly string $align = 'left',
+    ?string $title = null,
   ) {
     if (!in_array($align, ['left', 'center', 'right'], true)) {
       throw new \InvalidArgumentException('Text align must be left, center, or right.');
     }
+    $this->title = new WidgetTitle($title, $style);
     $this->setText($text);
     $this->rows = new TextRows();
     $this->painter = new Painter($style);
@@ -75,6 +78,7 @@ final class Text extends Widget {
 
   /** Paint the visible wrapped rows, scroll marks, and active cursor. */
   public function paint(GridWriter $writer): void {
+    $writer = $this->title->body($writer);
     if ($writer->width() < 1 || $writer->height() < 1) {
       $this->paintedCursorCell = null;
       return;
@@ -88,6 +92,7 @@ final class Text extends Widget {
 
   /** Move only the old and new cursor cells when the text viewport stays fixed. */
   public function paintUpdate(GridWriter $writer): bool {
+    $writer = $this->title->body($writer, false);
     if (!$this->active || $this->paintedCursorCell === null || $this->paintedSelection || $this->cursor->hasSelection()
       || $writer->width() !== $this->viewportWidth || $writer->height() !== $this->viewportHeight) {
       return false;
