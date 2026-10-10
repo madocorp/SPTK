@@ -10,15 +10,16 @@ final class Parser implements WidgetParser {
 
   use AttributeParser;
 
-  /** Accept a file source and optional row number display. */
+  /** Accept a file source and optional row display settings. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'file', 'rowNumbers']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'file', 'rowNumbers', 'rowCursor', 'title']);
   }
 
   /** Build a table from XML records or an escaped TSV file. */
   public function parse(\XMLReader $reader, Style $style): WidgetDefinition {
     $file = $reader->getAttribute('file');
     $rowNumbers = $this->attrBoolean($reader, 'rowNumbers', false);
+    $title = $reader->getAttribute('title');
     $header = [];
     $rows = [];
     $widths = [];
@@ -52,7 +53,8 @@ final class Parser implements WidgetParser {
     if ($widths !== [] && count($widths) !== count($header)) {
       throw new \RuntimeException('Specify widths for all Header fields or none.');
     }
-    $table = new Table($header, $rows, $widths, $style, $rowNumbers);
+    $table = new Table($header, $rows, $widths, $style, $rowNumbers, $title);
+    $table->setRowCursor($this->attrBoolean($reader, 'rowCursor', false));
     if ($file !== null) {
       if (trim($file) === '') {
         throw new \RuntimeException('Table file cannot be empty.');

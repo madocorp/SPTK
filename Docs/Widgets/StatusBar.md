@@ -1,7 +1,7 @@
 # StatusBar
 
 Add `<StatusBar height="1" />` to a screen. It starts empty and does not change when
-tile focus moves. Press H to show the selected tile's `tip` or its SPTK default help.
+tile focus moves. Press ? to show the selected tile's `tip` or its SPTK default help.
 The bar takes focus while help is shown; Return or Esc dismisses it and restores the
 previous tile, including its active input mode. The bar dims when another tile is
 selected. Arrow navigation skips it by default; set `navigate="true"` to include it.

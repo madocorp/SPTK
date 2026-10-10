@@ -31,7 +31,7 @@ final class Painter {
   }
 
   /** Paint the header, visible rows, cursor, and scroll indicators. */
-  public function paint(GridWriter $writer, TableData $data, array $widths, int $rowScroll, int $columnScroll, int $cursorRow, int $cursorColumn, bool $active, bool $rowNumbers, Selection $selection): void {
+  public function paint(GridWriter $writer, TableData $data, array $widths, int $rowScroll, int $columnScroll, int $cursorRow, int $cursorColumn, bool $active, bool $rowNumbers, bool $rowCursor, Selection $selection): void {
     $writer->fill($this->style->foreground, $this->style->background);
     if ($writer->width() < 1 || $writer->height() < 1) {
       return;
@@ -45,13 +45,13 @@ final class Painter {
         break;
       }
       $cursor = $active && $index === $cursorRow ? $cursorColumn : null;
-      $this->paintRow($writer, $y, $row, $widths, $columnScroll, $index, $cursor, $numberWidth, $selection);
+      $this->paintRow($writer, $y, $row, $widths, $columnScroll, $index, $cursor, $numberWidth, $rowCursor && $active && $index === $cursorRow, !$rowCursor || $active, $selection);
     }
     $this->indicators($writer, $data, $widths, $rowScroll, $columnScroll, $numberWidth);
   }
 
   /** Repaint only rows touched by a cursor move in the current viewport. */
-  public function paintRows(GridWriter $writer, TableData $data, array $widths, int $rowScroll, int $columnScroll, int $cursorRow, int $cursorColumn, bool $active, bool $rowNumbers, Selection $selection, array $rows): void {
+  public function paintRows(GridWriter $writer, TableData $data, array $widths, int $rowScroll, int $columnScroll, int $cursorRow, int $cursorColumn, bool $active, bool $rowNumbers, bool $rowCursor, Selection $selection, array $rows): void {
     $numberWidth = $rowNumbers ? strlen((string)max(1, $data->count())) + 2 : 0;
     foreach ($rows as $index) {
       $y = $index - $rowScroll + 1;
@@ -64,7 +64,7 @@ final class Painter {
       }
       $writer->fillRow($y, $this->style->foreground, $this->style->background);
       $cursor = $active && $index === $cursorRow ? $cursorColumn : null;
-      $this->paintRow($writer, $y, $values, $widths, $columnScroll, $index, $cursor, $numberWidth, $selection);
+      $this->paintRow($writer, $y, $values, $widths, $columnScroll, $index, $cursor, $numberWidth, $rowCursor && $active && $index === $cursorRow, !$rowCursor || $active, $selection);
     }
     $this->indicators($writer, $data, $widths, $rowScroll, $columnScroll, $numberWidth);
   }
@@ -88,7 +88,10 @@ final class Painter {
   }
 
   /** Paint a body row with its fixed number column and selected fields. */
-  private function paintRow(GridWriter $writer, int $y, array $fields, array $widths, int $columnScroll, int $rowIndex, ?int $cursorColumn, int $numberWidth, Selection $selection): void {
+  private function paintRow(GridWriter $writer, int $y, array $fields, array $widths, int $columnScroll, int $rowIndex, ?int $cursorColumn, int $numberWidth, bool $rowCursorSelected, bool $selectionVisible, Selection $selection): void {
+    if ($rowCursorSelected && $writer->width() > $numberWidth) {
+      $this->fillCell($writer, new Tile($numberWidth, $y, $writer->width() - $numberWidth, 1), $this->style->cursorForeground, $this->style->cursorBackground, $numberWidth);
+    }
     if ($numberWidth > 0) {
       $this->paintRowNumber($writer, $y, $numberWidth, (string)($rowIndex + 1));
     }
@@ -98,8 +101,8 @@ final class Painter {
         break;
       }
       if ($x + $width > $numberWidth) {
-        $selected = $column === $cursorColumn || $selection->includes($rowIndex, $column);
-        $this->paintBodyCell($writer, new Tile($x, $y, $width, 1), $fields[$column] ?? null, $selected, $numberWidth);
+        $selected = $rowCursorSelected || $column === $cursorColumn || ($selectionVisible && $selection->includes($rowIndex, $column));
+        $this->paintBodyCell($writer, new Tile($x, $y, $width, 1), $fields[$column] ?? null, $selected, $numberWidth, $rowCursorSelected);
       }
       $x += $width;
     }
@@ -114,14 +117,14 @@ final class Painter {
   }
 
   /** Paint a body field while keeping its separator outside the selection colors. */
-  private function paintBodyCell(GridWriter $writer, Tile $area, ?string $value, bool $selected, int $clipLeft): void {
+  private function paintBodyCell(GridWriter $writer, Tile $area, ?string $value, bool $selected, int $clipLeft, bool $rowCursorSelected): void {
     $fg = $selected ? $this->style->cursorForeground : $this->style->foreground;
     $bg = $selected ? $this->style->cursorBackground : $this->style->background;
     if ($selected) {
       $this->fillCell($writer, $area, $fg, $bg, $clipLeft);
     }
     $this->paintText($writer, $area, $value, $fg, $bg, $clipLeft);
-    $this->paintSeparator($writer, $area, $this->style->foreground, $this->style->background, $clipLeft);
+    $this->paintSeparator($writer, $area, $rowCursorSelected ? $fg : $this->style->foreground, $rowCursorSelected ? $bg : $this->style->background, $clipLeft);
   }
 
   /** Paint a right-aligned row number or number heading in the fixed gutter. */

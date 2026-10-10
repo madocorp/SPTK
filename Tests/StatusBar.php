@@ -19,8 +19,8 @@ function expectStatus(mixed $actual, mixed $expected, string $name): void {
   }
 }
 
-function statusKey(int $key): object {
-  return (object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => $key, 'mod' => 0, 'repeat' => false]];
+function statusKey(int $key, int $mod = 0): object {
+  return (object)['type' => SDL::SDL_EVENT_KEY_DOWN, 'key' => (object)['key' => $key, 'mod' => $mod, 'repeat' => false]];
 }
 
 $style = new Style();
@@ -45,8 +45,10 @@ expectStatus([$bar->text(), $bar->kind()], ['', 'empty'], 'status starts empty')
 expectStatus($statusLeaf->navigate(), false, 'default status navigation is disabled');
 
 $screen->handleEvent(statusKey(ord('h')));
-expectStatus($bar->text(), 'Custom editor focus.', 'H shows selected tile help');
-expectStatus($bar->kind(), 'hint', 'H shows a hint status');
+expectStatus($bar->text(), '', 'H no longer opens toolkit help');
+$screen->handleEvent(statusKey(ord('?')));
+expectStatus($bar->text(), 'Custom editor focus.', '? shows selected tile help');
+expectStatus($bar->kind(), 'hint', '? shows a hint status');
 expectStatus($screen->selectedLeaf(), $statusLeaf, 'help activates the status tile');
 $screen->handleEvent(statusKey(SDL::KEY_RIGHT));
 expectStatus($screen->selectedLeaf(), $statusLeaf, 'help drains unrelated navigation');
@@ -54,15 +56,15 @@ $screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
 expectStatus($screen->selectedLeaf(), $editorLeaf, 'Escape restores the previous tile');
 expectStatus([$bar->text(), $bar->kind()], ['', 'empty'], 'closing help clears status');
 $screen->handleEvent(statusKey(SDL::KEY_RIGHT));
-$screen->handleEvent(statusKey(ord('h')));
-expectStatus(str_contains($bar->text(), 'Return opens list'), true, 'H shows the toolkit default help when no override exists');
+$screen->handleEvent(statusKey(SDL::KEY_SLASH, SDL::MOD_SHIFT));
+expectStatus(str_contains($bar->text(), 'Return opens list'), true, 'Shift+/ shows the toolkit default help when no override exists');
 $screen->handleEvent(statusKey(SDL::KEY_RETURN));
 expectStatus($screen->selectedLeaf(), $listLeaf, 'Return restores the list tile');
 $screen->handleEvent(statusKey(SDL::KEY_LEFT));
 
 $screen->handleEvent(statusKey(SDL::KEY_RETURN));
 expectStatus($screen->activeLeaf(), $editorLeaf, 'editor is active before help');
-$screen->handleEvent(statusKey(ord('h')));
+$screen->handleEvent(statusKey(ord('?')));
 expectStatus($bar->text(), 'Custom editor active.', 'active tile help uses its active tip');
 $screen->handleEvent(statusKey(SDL::KEY_RETURN));
 expectStatus($screen->activeLeaf(), $editorLeaf, 'Return resumes the active editor');

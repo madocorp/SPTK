@@ -186,7 +186,7 @@ Window modes and pixel sizes can also be changed at runtime with `Core\WindowPla
 `fullscreen`. `capture($window)` returns the current mode and size for later restoration.
 
 Add one `<StatusBar height="1" />` to a screen for explicit help and application messages.
-It starts empty; changing tiles does not replace a message. Press H to show the selected
+It starts empty; changing tiles does not replace a message. Press ? to show the selected
 tile's help. The bar takes focus until Return or Esc, then restores the tile and its input
 mode. It dims while another tile is selected. Arrow navigation skips it by default;
 set `navigate="true"` on the StatusBar to include it.
