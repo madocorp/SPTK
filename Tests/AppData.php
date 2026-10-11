@@ -26,16 +26,25 @@ try {
   expectAppData(AppData::file('/config.json', $appName), $directory . '/config.json', 'file path joins directory');
   if (PHP_OS_FAMILY !== 'Windows') {
     expectAppData(fileperms($directory) & 0777, 0700, 'new data directory has private permissions');
+    chmod($directory, 0755);
+    expectAppData(AppData::path($appName), $directory, 'existing data directory is reused privately');
+    clearstatcache(true, $directory);
+    expectAppData(fileperms($directory) & 0777, 0700, 'existing data directory is made private');
   }
   expectAppData(AppData::loadJson('missing.json', $appName), [], 'missing config uses empty defaults');
   $config = ['theme' => 'dark', 'label' => 'Árvíztűrő', 'path' => '/tmp/example', 'nested' => ['enabled' => true]];
   expectAppData(AppData::saveJson('config.json', $config, $appName), true, 'save configuration');
   if (PHP_OS_FAMILY !== 'Windows') {
+    clearstatcache(true, $directory . '/config.json');
     expectAppData(fileperms($directory . '/config.json') & 0777, 0600, 'new configuration file has private permissions');
+    chmod($directory . '/config.json', 0644);
+    expectAppData(AppData::loadJson('config.json', $appName), $config, 'load existing configuration');
+    clearstatcache(true, $directory . '/config.json');
+    expectAppData(fileperms($directory . '/config.json') & 0777, 0600, 'loading makes existing configuration private');
     chmod($directory . '/config.json', 0644);
     expectAppData(AppData::saveJson('config.json', $config, $appName), true, 'save existing configuration');
     clearstatcache(true, $directory . '/config.json');
-    expectAppData(fileperms($directory . '/config.json') & 0777, 0600, 'existing configuration file is made private');
+    expectAppData(fileperms($directory . '/config.json') & 0777, 0600, 'saving makes existing configuration private');
   }
   expectAppData(AppData::loadJson('config.json', $appName), $config, 'configuration round trip');
   $json = file_get_contents($directory . '/config.json');

@@ -11,6 +11,9 @@ final class AppData {
     if (!is_dir($path) && !mkdir($path, 0700, true) && !is_dir($path)) {
       throw new \RuntimeException("Could not create app data directory: {$path}");
     }
+    if (!self::restrict($path, 0700)) {
+      throw new \RuntimeException("Could not make app data directory private: {$path}");
+    }
     return $path;
   }
 
@@ -24,6 +27,9 @@ final class AppData {
     $file = self::file($name, $appName);
     if (!file_exists($file)) {
       return [];
+    }
+    if (!self::restrict($file, 0600)) {
+      throw new \RuntimeException("Could not make app data file private: {$file}");
     }
     $json = file_get_contents($file);
     if ($json === false) {
@@ -40,11 +46,21 @@ final class AppData {
       return false;
     }
     $file = self::file($name, $appName);
-    if (PHP_OS_FAMILY !== 'Windows' && is_file($file) && !chmod($file, 0600)) {
+    if (is_file($file) && !self::restrict($file, 0600)) {
       return false;
     }
     return file_put_contents($file, $json . "\n", LOCK_EX) !== false
-      && (PHP_OS_FAMILY === 'Windows' || chmod($file, 0600));
+      && self::restrict($file, 0600);
+  }
+
+  /** Remove group and other access from existing Unix files and directories. */
+  private static function restrict(string $path, int $permissions): bool {
+    if (PHP_OS_FAMILY === 'Windows') {
+      return true;
+    }
+    clearstatcache(true, $path);
+    $mode = fileperms($path);
+    return ($mode !== false && ($mode & 0077) === 0) || chmod($path, $permissions);
   }
 
   /** Resolve the user's home directory using the platform environment. */
