@@ -33,13 +33,18 @@ final class AppData {
     return is_array($data) ? $data : [];
   }
 
-  /** Save readable JSON with an exclusive write lock and report whether writing succeeded. */
+  /** Save readable JSON with private file permissions and an exclusive write lock. */
   public static function saveJson(string $name, array $data, ?string $appName = null): bool {
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     if ($json === false) {
       return false;
     }
-    return file_put_contents(self::file($name, $appName), $json . "\n", LOCK_EX) !== false;
+    $file = self::file($name, $appName);
+    if (PHP_OS_FAMILY !== 'Windows' && is_file($file) && !chmod($file, 0600)) {
+      return false;
+    }
+    return file_put_contents($file, $json . "\n", LOCK_EX) !== false
+      && (PHP_OS_FAMILY === 'Windows' || chmod($file, 0600));
   }
 
   /** Resolve the user's home directory using the platform environment. */
