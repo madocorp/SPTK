@@ -30,6 +30,13 @@ try {
   expectAppData(AppData::loadJson('missing.json', $appName), [], 'missing config uses empty defaults');
   $config = ['theme' => 'dark', 'label' => 'Árvíztűrő', 'path' => '/tmp/example', 'nested' => ['enabled' => true]];
   expectAppData(AppData::saveJson('config.json', $config, $appName), true, 'save configuration');
+  if (PHP_OS_FAMILY !== 'Windows') {
+    expectAppData(fileperms($directory . '/config.json') & 0777, 0600, 'new configuration file has private permissions');
+    chmod($directory . '/config.json', 0644);
+    expectAppData(AppData::saveJson('config.json', $config, $appName), true, 'save existing configuration');
+    clearstatcache(true, $directory . '/config.json');
+    expectAppData(fileperms($directory . '/config.json') & 0777, 0600, 'existing configuration file is made private');
+  }
   expectAppData(AppData::loadJson('config.json', $appName), $config, 'configuration round trip');
   $json = file_get_contents($directory . '/config.json');
   expectAppData(str_contains($json, 'Árvíztűrő'), true, 'Unicode stays readable');

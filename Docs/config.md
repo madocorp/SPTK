@@ -24,8 +24,9 @@ if (!AppData::saveJson('config.json', $config)) {
 - `loadJson(string $name, ?string $appName = null)` returns an associative array. Missing, unreadable,
   malformed, or scalar JSON returns `[]`.
 - `saveJson(string $name, array $data, ?string $appName = null)` writes pretty-printed UTF-8 JSON with
-  unescaped Unicode and slashes, a trailing newline, and an exclusive write lock. It returns `false` if
-  encoding or writing fails. Directory creation failures throw `RuntimeException`.
+  unescaped Unicode and slashes, a trailing newline, and an exclusive write lock. On Unix, saved files
+  use mode `0600`, including existing files. It returns `false` if encoding, writing, or setting file
+  permissions fails. Directory creation failures throw `RuntimeException`.
 
 For example, `AppData::loadJson('config.json', 'my-app')` reads `~/.my-app/config.json`.
 File names should be application-controlled relative paths; nested directories are not created automatically.
