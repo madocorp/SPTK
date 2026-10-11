@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Validate Input attributes together with its layout size. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'tabSize', 'label']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'tabSize', 'label', 'password']);
   }
 
   /** Build an Input widget from XML text or its higher-priority value attribute. */
@@ -20,6 +20,7 @@ final class Parser implements WidgetParser {
     $value = $reader->getAttribute('value');
     $label = $reader->getAttribute('label');
     $tabSize = $this->attrInteger($reader, 'tabSize', 8);
+    $password = $this->attrBoolean($reader, 'password');
     if ($tabSize < 1) {
       throw new \RuntimeException('Input tabSize must be positive.');
     }
@@ -40,7 +41,7 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Input($value ?? trim($text), $style, $tabSize, $label), $events);
+    return new WidgetDefinition(new Input($value ?? trim($text), $style, $tabSize, $label, $password), $events);
   }
 
 }

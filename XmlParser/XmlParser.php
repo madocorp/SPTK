@@ -65,13 +65,14 @@ final class XmlParser {
   }
 
   private function parseWindow($reader, Style $parentStyle): void {
-    $this->assertAttributes($reader, ['title', 'width', 'height', 'mode', 'resizable']);
+    $this->assertAttributes($reader, ['title', 'width', 'height', 'mode', 'resizable', 'icon']);
     $window = [
       'title' => $this->attrString($reader, 'title', 'SPTK window'),
       'width' => $this->attrSize($reader, 'width', 80),
       'height' => $this->attrSize($reader, 'height', 25),
       'state' => $this->attrEnum($reader, 'mode', ['normal', 'minimized', 'maximized', 'fullscreen']),
       'resizable' => $this->attrBoolean($reader, 'resizable', true),
+      'icon' => $this->attrString($reader, 'icon', ''),
       'screens' => [],
       'selector' => null
     ];

@@ -34,3 +34,5 @@ Vertical arrows sit at the right edge; horizontal arrows sit at the left or righ
 
 `setText(string $text)` replaces the content, resets cursor and scrolling, clears cached
 rows, and emits `change`. It preserves wrapping, alignment, and style.
+`text()` returns the displayed document, and `cursorPosition()` returns its source line and grapheme index.
+`setHighlighter()` applies optional syntax colors while the widget remains read-only.

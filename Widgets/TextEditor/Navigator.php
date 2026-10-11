@@ -93,7 +93,7 @@ final class Navigator {
   /** Build visual rows from the current document lines. */
   private function rows(array $lines): array {
     if ($this->cachedRevision !== $this->revision || $this->cachedVisualWidth !== $this->width) {
-      $this->cachedVisualRows = $this->layout->build($lines, $this->width, $this->wrap ? 'character' : 'none', $this->tabSize, true);
+      $this->cachedVisualRows = $this->layout->build($lines, $this->width, $this->wrap ? 'word-preserve' : 'none', $this->tabSize, true);
       $this->contentWidth = 0;
       if (!$this->wrap) {
         foreach ($lines as $line) {

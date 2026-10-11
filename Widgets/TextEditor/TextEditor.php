@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\TextEditor;
 
-use SPTK\Core\{Color, Style, TextEdit, Widget, WidgetTitle};
+use SPTK\Core\{Color, Style, SyntaxHighlighter, TextEdit, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\GridWriter;
 use SPTK\SDLWrapper\SDL;
@@ -74,6 +74,13 @@ final class TextEditor extends Widget {
   /** Change the optional heading above the editor. */
   public function setTitle(?string $title): void {
     $this->title = new WidgetTitle($title, $this->style);
+    $this->paintedCursorCell = null;
+    $this->emit('change');
+  }
+
+  /** Color document tokens without changing its editable text. */
+  public function setHighlighter(?SyntaxHighlighter $highlighter): void {
+    $this->painter->setHighlighter($highlighter);
     $this->paintedCursorCell = null;
     $this->emit('change');
   }

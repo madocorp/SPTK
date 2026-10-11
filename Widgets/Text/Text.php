@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{Clipboard, Color, Style, TextCursor, TextRows, Widget, WidgetTitle};
+use SPTK\Core\{Clipboard, Color, Style, SyntaxHighlighter, TextCursor, TextRows, Widget, WidgetTitle};
 use SPTK\Events\{KeyNormalizer, WidgetEventEmitter};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 use SPTK\SDLWrapper\SDL;
@@ -72,6 +72,23 @@ final class Text extends Widget {
     $this->cachedVisualWidth = -1;
     $this->cachedVisualRows = [];
     $this->contentWidth = null;
+    $this->paintedCursorCell = null;
+    $this->emit('change');
+  }
+
+  /** Return the displayed document text. */
+  public function text(): string {
+    return implode("\n", $this->lines);
+  }
+
+  /** Return the source line and grapheme under the read-only cursor. */
+  public function cursorPosition(): array {
+    return $this->cursor->position();
+  }
+
+  /** Color document tokens without making the text editable. */
+  public function setHighlighter(?SyntaxHighlighter $highlighter): void {
+    $this->painter->setHighlighter($highlighter);
     $this->paintedCursorCell = null;
     $this->emit('change');
   }

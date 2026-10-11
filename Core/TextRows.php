@@ -7,12 +7,13 @@ use SPTK\Rendering\TextMetrics;
 /** Maps logical text lines to clipped visual rows and cursor coordinates. */
 final class TextRows {
 
-  /** Build visual rows using no wrapping, word wrapping, or character wrapping. */
+  /** Build visual rows using no, display-word, editable-word, or character wrapping. */
   public function build(array $lines, int $width, string $wrap, int $tabSize = 8, bool $caretRow = false): array {
     $rows = [];
     foreach ($lines as $lineNumber => $line) {
       $segments = match ($wrap) {
         'word' => $this->wordWrap($line, max(1, $width), $tabSize),
+        'word-preserve' => $this->editableWordWrap($line, max(1, $width), $tabSize, $caretRow),
         'character' => $this->characterWrap($line, max(1, $width), $tabSize, $caretRow),
         default => [['start' => 0, 'length' => TextMetrics::length($line), 'text' => $line]],
       };
@@ -20,6 +21,44 @@ final class TextRows {
         $segment['line'] = $lineNumber;
         $rows[] = $segment;
       }
+    }
+    return $rows;
+  }
+
+  /** Wrap before whole words while retaining every source grapheme for editing. */
+  private function editableWordWrap(string $line, int $width, int $tabSize, bool $caretRow): array {
+    $glyphs = TextMetrics::glyphs($line);
+    $count = count($glyphs);
+    $rows = [];
+    $start = 0;
+    $used = 0;
+    for ($index = 0; $index < $count; $index++) {
+      $glyph = $glyphs[$index];
+      $space = preg_match('/^\s$/u', $glyph) === 1;
+      if (!$space && ($index === 0 || preg_match('/^\s$/u', $glyphs[$index - 1]) === 1) && $used > 0) {
+        $end = $index;
+        while ($end < $count && preg_match('/^\s$/u', $glyphs[$end]) !== 1) {
+          $end++;
+        }
+        $word = implode('', array_slice($glyphs, $index, $end - $index));
+        if ($used + TextMetrics::width($word, $tabSize) > $width) {
+          $rows[] = ['start' => $start, 'length' => $index - $start, 'text' => TextMetrics::slice($line, $start, $index - $start)];
+          $start = $index;
+          $used = 0;
+        }
+      }
+      $glyphWidth = TextMetrics::glyphWidthAt($glyph, $used, $tabSize);
+      if ($used > 0 && $used + $glyphWidth > $width) {
+        $rows[] = ['start' => $start, 'length' => $index - $start, 'text' => TextMetrics::slice($line, $start, $index - $start)];
+        $start = $index;
+        $used = 0;
+        $glyphWidth = TextMetrics::glyphWidthAt($glyph, 0, $tabSize);
+      }
+      $used += min($width, $glyphWidth);
+    }
+    $rows[] = ['start' => $start, 'length' => $count - $start, 'text' => TextMetrics::slice($line, $start)];
+    if ($caretRow && $used >= $width && $count > 0) {
+      $rows[] = ['start' => $count, 'length' => 0, 'text' => ''];
     }
     return $rows;
   }

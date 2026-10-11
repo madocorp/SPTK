@@ -136,6 +136,9 @@ final class DateSelector extends Widget {
     }
     $modifiers = (int)$event->key->mod;
     $key = KeyNormalizer::normalize((int)$event->key->key, $modifiers);
+    if ($key === SDL::KEY_DELETE && ($modifiers & SDL::MOD_CTRL) !== 0) {
+      return false;
+    }
     if ($key === SDL::KEY_BACKSPACE || $key === SDL::KEY_DELETE) {
       $this->draft = $key === SDL::KEY_DELETE ? '' : substr($this->draft ?? $this->date->format('Ymd'), 0, -1);
       return true;

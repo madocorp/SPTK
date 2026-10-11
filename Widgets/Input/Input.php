@@ -26,6 +26,7 @@ final class Input extends Widget {
     private readonly Style $style = new Style(),
     private readonly int $tabSize = 8,
     ?string $label = null,
+    private readonly bool $password = false,
   ) {
     if ($tabSize < 1) {
       throw new \InvalidArgumentException('Input tabSize must be positive.');
@@ -105,7 +106,8 @@ final class Input extends Widget {
       $writer->write(0, 0, $this->label, $this->style->highlight, $this->style->background);
       $writer = $writer->below(min(1, $writer->height()));
     }
-    [$this->scroll, $this->viewport] = $this->painter->paint($writer, $this->text(), $this->document->cursor(), $this->scroll, $this->active, $this->tabSize);
+    $display = $this->password ? str_repeat('•', TextMetrics::length($this->text())) : $this->text();
+    [$this->scroll, $this->viewport] = $this->painter->paint($writer, $display, $this->document->cursor(), $this->scroll, $this->active, $this->tabSize);
   }
 
   /** Return the tile background color. */
@@ -141,7 +143,7 @@ final class Input extends Widget {
 
   /** Move to the viewport edge, paging when the caret is already there. */
   private function pageHorizontal(bool $right, bool $select): void {
-    $text = $this->text();
+    $text = $this->password ? str_repeat('•', TextMetrics::length($this->text())) : $this->text();
     $caret = TextMetrics::column($text, $this->cursorPosition(), $this->tabSize);
     $edge = $right ? $this->scroll + $this->viewport - 1 : $this->scroll;
     if ($caret === $edge) {
