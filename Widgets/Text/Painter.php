@@ -2,18 +2,40 @@
 
 namespace SPTK\Widgets\Text;
 
-use SPTK\Core\{ScrollIndicator, Style, TextCursor};
+use SPTK\Core\{Color, ScrollIndicator, Style, SyntaxHighlighter, TextCursor};
 use SPTK\Rendering\{GridWriter, TextMetrics};
 
 /** Paints shared read-only and editable text rows, selection, cursor, and indicators. */
 final class Painter {
 
+  private ?SyntaxHighlighter $highlighter = null;
+  private array $tokenLines = [];
+  private array $colors = [];
+  private array $fillStyles = [];
+
   /** Create a painter for one widget's inherited colors. */
   public function __construct(private readonly Style $style) {
   }
 
+  /** Install optional syntax colors for the shared text renderer. */
+  public function setHighlighter(?SyntaxHighlighter $highlighter): void {
+    $this->highlighter = $highlighter;
+    $this->colors = [];
+    $this->fillStyles = [];
+    foreach ($highlighter?->styleColors() ?? [] as $name => $colors) {
+      $this->colors[$name] = [
+        isset($colors['fg']) ? Color::from($colors['fg']) : $this->style->foreground,
+        isset($colors['bg']) ? Color::from($colors['bg']) : $this->style->background,
+      ];
+      if ($colors['fillRow'] ?? false) {
+        $this->fillStyles[$name] = true;
+      }
+    }
+  }
+
   /** Paint visible rows, optional selection and cursor, and scroll indicators. */
   public function paint(GridWriter $writer, array $rows, array $lines, TextCursor $cursor, int $scrollY, int $scrollX, bool $wrap, array $caret, int $tabSize = 8, bool $showSelection = true, string $align = 'left', ?int $contentWidth = null): ?array {
+    $this->tokenLines = $this->highlighter?->highlight($lines) ?? [];
     $writer->fill($this->style->foreground, $this->style->background);
     for ($y = 0; $y < $writer->height(); $y++) {
       $row = $rows[$scrollY + $y] ?? null;
@@ -35,6 +57,14 @@ final class Painter {
 
   /** Draw a visual row and tint its selected source graphemes. */
   private function paintRow(GridWriter $writer, array $row, array $lines, TextCursor $cursor, int $y, int $scrollX, int $tabSize, bool $showSelection, string $align): void {
+    $first = $this->tokenLines[$row['line']][0] ?? null;
+    $style = $first['style'] ?? 'plain';
+    if ($first !== null && ($first['start'] ?? -1) === 0
+      && ($first['length'] ?? -1) === TextMetrics::length($lines[$row['line']])
+      && isset($this->fillStyles[$style])) {
+      [$fg, $bg] = $this->colors[$style];
+      $writer->fillRow($y, $fg, $bg);
+    }
     $range = $cursor->hasSelection() && $showSelection ? $cursor->selectionRange() : null;
     $offset = $this->rowOffset($row, $writer->width(), $tabSize, $align);
     $rowScrollX = $align !== 'left' && TextMetrics::width($row['text'], $tabSize) <= $writer->width() ? 0 : $scrollX;
@@ -44,10 +74,11 @@ final class Painter {
       }
       $column = $row['start'] + $index;
       $selected = $range !== null && $index < $row['length'] && $this->within($row['line'], $column, $range);
-      if ($glyph === ' ' && !$selected) {
+      [$fg, $bg] = $this->tokenColors($row['line'], $column);
+      if ($glyph === ' ' && !$selected && $bg == $this->style->background) {
         continue;
       }
-      $writer->set($x + $offset, $y, $glyph, $selected ? $this->style->cursorForeground : $this->style->foreground, $selected ? $this->style->cursorBackground : $this->style->background);
+      $writer->set($x + $offset, $y, $glyph, $selected ? $this->style->cursorForeground : $fg, $selected ? $this->style->cursorBackground : $bg);
     }
     $line = $lines[$row['line']];
     $end = $row['start'] + $row['length'];
@@ -58,6 +89,27 @@ final class Painter {
         $writer->set($x, $y, '¶', $this->style->cursorForeground, $this->style->cursorBackground);
       }
     }
+  }
+
+  /** Resolve a document grapheme to its first matching highlighted range. */
+  private function tokenColors(int $line, int $column): array {
+    $tokens = $this->tokenLines[$line] ?? [];
+    $first = 0;
+    $last = count($tokens) - 1;
+    while ($first <= $last) {
+      $middle = intdiv($first + $last, 2);
+      $token = $tokens[$middle];
+      $start = (int)($token['start'] ?? 0);
+      $end = $start + (int)($token['length'] ?? 0);
+      if ($column < $start) {
+        $last = $middle - 1;
+      } else if ($column >= $end) {
+        $first = $middle + 1;
+      } else {
+        return $this->colors[$token['style'] ?? 'plain'] ?? [$this->style->foreground, $this->style->background];
+      }
+    }
+    return [$this->style->foreground, $this->style->background];
   }
 
   /** Find the blank columns before a row that fits within the tile. */

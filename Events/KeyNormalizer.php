@@ -19,7 +19,14 @@ final class KeyNormalizer {
         return self::normalize($modified, $mod);
       }
     }
-    return $key === SDL::KEY_EQUALS && ($mod & SDL::MOD_SHIFT) !== 0 ? SDL::KEY_PLUS : $key;
+    if (($mod & SDL::MOD_SHIFT) !== 0) {
+      return match ($key) {
+        SDL::KEY_EQUALS => SDL::KEY_PLUS,
+        SDL::KEY_SLASH => ord('?'),
+        default => $key,
+      };
+    }
+    return $key;
   }
 
   /** Return the SDL modifier bits supported by key chords. */

@@ -63,6 +63,9 @@ final class Window {
     if ($this->window === null) {
       throw new \RuntimeException('Cannot create window: ' . $sdl->error());
     }
+    if (($data['icon'] ?? '') !== '') {
+      $this->setIcon($data['icon']);
+    }
     $this->id = (int)$this->sdl->ffi->SDL_GetWindowID($this->window);
     $this->ffiRenderer = $this->sdl->ffi->SDL_CreateRenderer($this->window, null);
     if ($this->ffiRenderer === null) {
@@ -98,6 +101,11 @@ final class Window {
 
   public function id(): int {
     return $this->id;
+  }
+
+  /** Set the native window icon from a PNG path relative to Layout or an absolute path. */
+  public function setIcon(string $path): void {
+    WindowIcon::apply($this->sdl, $this->window, $path);
   }
 
   /** Select a screen by its zero-based XML definition index. */

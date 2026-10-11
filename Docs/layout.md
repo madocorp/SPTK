@@ -1,5 +1,10 @@
 # Layout
 
+Set `icon="../Assets/icon.png"` on a `<Window>` in `Layout/app.xml` to use a
+PNG as its native window icon. Relative paths start at the `Layout` directory.
+Windows created in PHP can pass the same `icon` option, including an absolute
+path. If omitted, SDL uses its default icon.
+
 A screen's `<Layout>` elements form a tree of horizontal and vertical splits. Each widget element occupies one
 tile at a leaf of that tree. Nested layouts split their assigned tile again.
 

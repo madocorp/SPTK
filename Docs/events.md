@@ -64,7 +64,8 @@ method can be public static, for example `public static function selectAll(Event
 ## Raw input events
 
 `KeyNormalizer::normalizeInput()` resolves a keyboard event's symbol through SDL's current layout and modifiers,
-then applies the usual keypad normalization. Image controls use it for symbols such as `=`, `+`, and `*`.
+then applies the usual keypad normalization. Image controls use it for symbols such as `=`, `+`, and `*`,
+and screen help uses it for `?`. Without a scancode, Shift+Slash uses `?` as the fallback symbol.
 `KeyNormalizer::normalize()` remains available for normalizing an already-known keycode and modifier mask.
 
 Raw input event types are `keyDown`, `keyUp`, and `textInput`. A `key` attribute is allowed only with `keyDown`

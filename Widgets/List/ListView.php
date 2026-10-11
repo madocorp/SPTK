@@ -128,6 +128,18 @@ final class ListView extends Widget {
     return $this->visible[$this->viewport->position()] ?? $this->cursorItem;
   }
 
+  /** Move the cursor to a visible value without changing its selected state. */
+  public function setCursorValue(string $value): void {
+    $index = array_search($value, $this->values(), true);
+    $position = $index === false ? false : array_search($index, $this->visible, true);
+    if ($position === false) {
+      throw new \InvalidArgumentException('Unknown or hidden list value.');
+    }
+    $this->cursorItem = $index;
+    $this->viewport->setPosition($position);
+    $this->redraw->full();
+  }
+
   /** Return the current prefix query. */
   public function filter(): string {
     return $this->query;

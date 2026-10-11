@@ -13,9 +13,11 @@
 | `value` | text content | Initial value. |
 | `label` | absent | Printable single-line text in a separate top row. It is not part of the value or caret navigation. Even an empty label reserves the row. |
 | `tabSize` | `8` | Positive number of display cells between tab stops. |
+| `password` | `false` | Mask each grapheme with `•` while retaining the original value for editing and `getValue()`. |
 
 The label uses the widget's highlight and background colors and is clipped to the tile width. The editable line starts on the next row. A tile only one row high shows the label while retaining the editable value.
 Horizontal scroll arrows appear at the left and right edges according to the hidden content.
+Password mode also masks the caret character and measures scrolling from the masked display.
 
 Return activates Input. Return or Escape releases it, keeps edits, and emits `accept`. Arrow keys move within the line while active; Shift extends the inclusive selection. Home/End reach line edges, and Ctrl+Home/End reach visible edges then page horizontally. Ctrl+Left/Right reach line edges. Tab inserts a literal tab. Hidden text is marked with horizontal page indicators drawn in the background color on the highlight color.
 

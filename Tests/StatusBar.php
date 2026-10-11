@@ -6,6 +6,7 @@ spl_autoload_register(['SPTK\App', 'load']);
 
 use SPTK\Core\{Screen, Style};
 use SPTK\Events\EventLoop;
+use SPTK\Events\KeyNormalizer;
 use SPTK\Layout\{LayoutLeaf, LayoutNode, Tile};
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\SDLWrapper\SDL;
@@ -56,6 +57,7 @@ $screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
 expectStatus($screen->selectedLeaf(), $editorLeaf, 'Escape restores the previous tile');
 expectStatus([$bar->text(), $bar->kind()], ['', 'empty'], 'closing help clears status');
 $screen->handleEvent(statusKey(SDL::KEY_RIGHT));
+expectStatus(KeyNormalizer::normalizeInput(statusKey(SDL::KEY_SLASH, SDL::MOD_SHIFT)), ord('?'), 'Shift+/ normalizes to question mark without a scancode');
 $screen->handleEvent(statusKey(SDL::KEY_SLASH, SDL::MOD_SHIFT));
 expectStatus(str_contains($bar->text(), 'Return opens list'), true, 'Shift+/ shows the toolkit default help when no override exists');
 $screen->handleEvent(statusKey(SDL::KEY_RETURN));
