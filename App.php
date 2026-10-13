@@ -48,6 +48,15 @@ final class App {
     return self::$instance->eventLoop;
   }
 
+  /** Notify app actions after a live window's pixel size changes. */
+  public static function windowResized(Core\Window $window): void {
+    if (!self::$instance?->initialized) {
+      return;
+    }
+    $dispatcher = new Events\EventDispatcher();
+    $dispatcher->dispatch(self::$instance->events, new Events\EventContext('resize', null, $window), false);
+  }
+
   public function __construct() {
     $failed = false;
     try {

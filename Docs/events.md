@@ -36,6 +36,12 @@ The `init` action runs after SDL, fonts, windows, and screens have been initiali
 loop starts. The `close` action runs after the event loop ends and before SDL resources are released. Both receive
 an `EventContext` whose `type` is `init` or `close`; `widget` and `input` are `null`.
 
+An app-level `<Event type="resize" action="Controller::resized" />` runs after a live
+window updates its pixel dimensions and before its layouts are measured again. The
+event's `input` is the resized `Core\Window`, whose `pixelWidth()` returns its native
+width. An app may replace a screen layout in this action; the normal resize pass then
+measures and paints that layout. Initial window creation does not emit `resize`.
+
 Timer declarations also go directly inside `<App>`. Their callbacks run on the event loop thread and receive a
 timer `EventContext` with `widget` and `input` set to `null`:
 

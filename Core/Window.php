@@ -153,6 +153,11 @@ final class Window {
     return $this->screens[$this->currentScreen]->id;
   }
 
+  /** Return the current native window width in pixels. */
+  public function pixelWidth(): int {
+    return $this->width;
+  }
+
   public function show(): void {
     $this->sdl->ffi->SDL_ShowWindow($this->window);
     $this->sdl->ffi->SDL_SyncWindow($this->window);
@@ -197,6 +202,7 @@ final class Window {
       $offsetY,
     );
     $this->grid->resize($this->columns, $this->rows);
+    \SPTK\App::windowResized($this);
     $grid = new Tile(0, 0, $this->columns, $this->rows);
     foreach ($this->screens as $screen) {
       $screen->measureGrid($grid);

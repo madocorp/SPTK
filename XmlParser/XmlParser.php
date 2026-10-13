@@ -51,8 +51,8 @@ final class XmlParser {
           $style = $this->styleParser->parse($reader, $style);
         } else if ($reader->name === 'Event') {
           $event = (new EventParser())->parse($reader);
-          if (!in_array($event->type, ['init', 'close', 'timer'], true)) {
-            throw new RuntimeException('App-level events must use init, close, or timer type.');
+          if (!in_array($event->type, ['init', 'close', 'resize', 'timer'], true)) {
+            throw new RuntimeException('App-level events must use init, close, resize, or timer type.');
           }
           $this->events[] = $event;
         } else if ($reader->name === 'Window') {
