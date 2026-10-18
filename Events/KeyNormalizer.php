@@ -41,6 +41,9 @@ final class KeyNormalizer {
     if (($mod & SDL::MOD_ALT) !== 0) {
       $normalized |= SDL::MOD_ALT;
     }
+    if (($mod & SDL::MOD_MODE) !== 0) {
+      $normalized |= SDL::MOD_MODE;
+    }
     return $normalized;
   }
 
@@ -133,7 +136,8 @@ final class KeyNormalizer {
       default => $name,
     };
     $namedKeys = ['enter', 'escape', 'backspace', 'tab', 'space', 'delete', 'up', 'down', 'left', 'right', 'home', 'end', 'pageup', 'pagedown', 'insert'];
-    if (in_array($name, $namedKeys, true) || preg_match('/^(?:[a-z0-9]|f(?:[1-9]|1[0-2]))$/', $name)) {
+    if (in_array($name, ['|', '*', '/', '\\'], true) || in_array($name, $namedKeys, true)
+      || preg_match('/^(?:[a-z0-9]|f(?:[1-9]|1[0-2]))$/', $name)) {
       return $name;
     }
     return null;

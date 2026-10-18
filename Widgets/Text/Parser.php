@@ -3,7 +3,7 @@
 namespace SPTK\Widgets\Text;
 
 use SPTK\Core\{Style, WidgetDefinition};
-use SPTK\XmlParser\{AttributeParser, EventParser, StyleParser, WidgetParser};
+use SPTK\XmlParser\{AttributeParser, EventParser, HighlighterParser, StyleParser, WidgetParser};
 
 /** Reads the Text widget's XML */
 final class Parser implements WidgetParser {
@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Validate Text attributes together with size attributes inherited from the layout. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'wrap', 'tabSize', 'align', 'title']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'wrap', 'tabSize', 'align', 'title', 'highlighter']);
   }
 
   /** Parse text content and event declarations from a Text element. */
@@ -22,6 +22,7 @@ final class Parser implements WidgetParser {
     $tabSize = $this->attrInteger($reader, 'tabSize', 8);
     $align = $reader->getAttribute('align') ?? 'left';
     $title = $reader->getAttribute('title');
+    $highlighter = HighlighterParser::parse($reader->getAttribute('highlighter'));
     if ($tabSize < 1) {
       throw new \RuntimeException('Text tabSize must be positive.');
     }
@@ -43,14 +44,18 @@ final class Parser implements WidgetParser {
       }
     }
     $text = preg_replace('/\A(?:[ \t]*\R)+|(?:\R[ \t]*)+\z/u', '', $text);
-    return new WidgetDefinition(new Text(
+    $widget = new Text(
       $text,
       $style,
       $wrap,
       $tabSize,
       $align,
       $title,
-    ), $events);
+    );
+    if ($highlighter !== null) {
+      $widget->setHighlighter($highlighter);
+    }
+    return new WidgetDefinition($widget, $events);
   }
 
 }

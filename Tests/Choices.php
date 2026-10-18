@@ -3,6 +3,8 @@
 define('APP_DIR', __DIR__);
 
 require_once APP_DIR . '/SPTK/App.php';
+// Demo deck summaries call the demo controller while every demo screen is painted.
+require_once APP_DIR . '/SPTK/Demo/Controller.php';
 
 spl_autoload_register(['SPTK\\App', 'load']);
 
@@ -79,7 +81,7 @@ function expectChoiceError(RadioButton|CheckboxArray|ListView $widget, string $n
 }
 
 $parser = new SPTK\XmlParser\XmlParser();
-expectChoice(count($parser->windows[0]['screens']), 7, 'demo screen count');
+expectChoice(count($parser->windows[0]['screens']), 9, 'demo screen count');
 foreach ($parser->windows[0]['screens'] as $screen) {
   $children = (new ReflectionProperty(LayoutNode::class, 'children'))->getValue($screen->layout);
   expectChoice($children[1] instanceof LayoutSeparator, true, 'selector separates screen content');

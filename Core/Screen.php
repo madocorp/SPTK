@@ -21,11 +21,14 @@ final class Screen {
   private array $widgetsById = [];
   private ?LayoutLeaf $statusLeaf = null;
   private bool $statusOverlay = false;
+  private bool $layoutChanged = false;
+  private ScreenOverwrite $overwrite;
   public ?StatusBar $statusBar = null;
 
   /** Create a screen and attach screen-level event subscriptions to its leaves. */
   public function __construct(public LayoutNode $layout, public Color $borderColor = new Color(71, 85, 104), array $events = [], public string $id = '', public string $title = '', public Color $background = new Color(32, 38, 48)) {
     $this->events = $events;
+    $this->overwrite = new ScreenOverwrite($this);
     $this->indexWidgets();
   }
 
@@ -67,8 +70,20 @@ final class Screen {
         $indexed[] = $leaf;
       }
     }
-    foreach ($indexed as $leaf) {
+    foreach ($this->layout->allLeaves() as $leaf) {
       $leaf->setScreenEvents($this->events);
+      $widget = $leaf->instance();
+      if ($widget->id() !== null) {
+        if (isset($this->widgetsById[$widget->id()])) {
+          throw new \RuntimeException("Duplicate widget id: {$widget->id()}");
+        }
+        $this->widgetsById[$widget->id()] = $widget;
+      }
+      if ($widget instanceof Button) {
+        $widget->setOverwriteHandler($this->pressOverwrite(...));
+      }
+    }
+    foreach ($indexed as $leaf) {
       $widget = $leaf->instance();
       if ($widget instanceof StatusBar) {
         if ($this->statusBar !== null) {
@@ -77,12 +92,6 @@ final class Screen {
         $this->statusBar = $widget;
         $this->statusLeaf = $leaf;
         $widget->setFocusHandlers($this->showStatus(...), $this->hideStatus(...));
-      }
-      if ($widget->id() !== null) {
-        if (isset($this->widgetsById[$widget->id()])) {
-          throw new \RuntimeException("Duplicate widget id: {$widget->id()}");
-        }
-        $this->widgetsById[$widget->id()] = $widget;
       }
       if ($widget instanceof Button) {
         $this->screenInput->register($widget);
@@ -159,11 +168,74 @@ final class Screen {
     if (!$this->focus->select($leaf)) {
       return false;
     }
+    $this->openDeckAround($leaf);
     if ($this->initialSelectionNotified) {
       $previous?->dispatchNotification('unselect');
       $leaf->dispatchNotification('select');
     }
     return true;
+  }
+
+  /** Open a deck tile by layout or widget id; the caller refreshes the window layout. */
+  public function openDeckTile(string $id): bool {
+    return $this->layout->openDeckTile($id);
+  }
+
+  /** Show a hidden overwrite element in place of its target; without focus the selection stays. */
+  public function show(string $id, bool $focus = true): bool {
+    $shown = $this->overwrite->show($id, $focus);
+    $this->layoutChanged = $this->layoutChanged || $shown;
+    return $shown;
+  }
+
+  /** Put back the target of a shown overwrite element and focus the leaf selected before. */
+  public function restore(string $id): bool {
+    $restored = $this->overwrite->restore($id);
+    $this->layoutChanged = $this->layoutChanged || $restored;
+    return $restored;
+  }
+
+  /** Run a button's `opens` or `restores` attribute. */
+  private function pressOverwrite(Button $button, string $kind, string $target): void {
+    if ($kind === 'opens') {
+      $this->show(substr($target, 1));
+    } else if ($target !== 'parent') {
+      $this->restore(substr($target, 1));
+    } else {
+      foreach ($this->layout->allLeaves() as $leaf) {
+        if ($leaf->instance() === $button && $this->overwrite->restoreAround($leaf)) {
+          $this->layoutChanged = true;
+        }
+      }
+    }
+  }
+
+  /** Report once that a deck or widget changed size, so the window must measure again. */
+  public function takeLayoutChange(): bool {
+    $changed = $this->layoutChanged;
+    $this->layoutChanged = false;
+    foreach ($this->layout->allLeaves() as $leaf) {
+      if ($leaf->takePreferredSizeChange()) {
+        $changed = true;
+      }
+    }
+    return $changed;
+  }
+
+  /** Open the closed deck tiles around a newly selected leaf. */
+  private function openDeckAround(LayoutLeaf $leaf): void {
+    if ($this->layout->openDeckFor($leaf)) {
+      $this->layoutChanged = true;
+    }
+  }
+
+  /** Open the deck tile around the selection, then send its select notification. */
+  private function notifySelect(): void {
+    $leaf = $this->selectedLeaf();
+    if ($leaf !== null) {
+      $this->openDeckAround($leaf);
+      $leaf->dispatchNotification('select');
+    }
   }
 
   /** Route input through the active widget, screen subscriptions, and screen controls. */
@@ -209,7 +281,7 @@ final class Screen {
   /** Send one event to the active widget, screen actions, and tile navigation. */
   private function routeEvent(mixed $event, string $type): bool {
     if (!$this->initialSelectionNotified) {
-      $this->selectedLeaf()?->dispatchNotification('select');
+      $this->notifySelect();
       $this->initialSelectionNotified = true;
     }
     $leaf = $this->selectedLeaf();
@@ -239,7 +311,7 @@ final class Screen {
     if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
       if ($this->focus->enter()) {
         $leaf?->dispatchNotification('unselect');
-        $this->selectedLeaf()?->dispatchNotification('select');
+        $this->notifySelect();
         return true;
       }
       if ($leaf?->instance() instanceof Button) {
@@ -256,7 +328,7 @@ final class Screen {
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE && $this->focus->leave()) {
       $leaf?->dispatchNotification('unselect');
-      $this->selectedLeaf()?->dispatchNotification('select');
+      $this->notifySelect();
       return true;
     }
     $direction = match ($key) {
@@ -286,7 +358,7 @@ final class Screen {
       return false;
     }
     $previous?->dispatchNotification('unselect');
-    $this->selectedLeaf()?->dispatchNotification('select');
+    $this->notifySelect();
     return true;
   }
 
@@ -303,6 +375,10 @@ final class Screen {
     $leaf = $this->focus->selectedLeaf();
     $this->inputMode = false;
     $leaf?->dispatchNotification($notification);
+    // A shown widget overwrite ends when it is left; its own deactivate runs after the restore.
+    if ($leaf !== null && $this->overwrite->restoreTile($leaf)) {
+      $this->layoutChanged = true;
+    }
     $leaf?->dispatchNotification('deactivate');
   }
 

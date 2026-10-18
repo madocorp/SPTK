@@ -10,6 +10,9 @@ use SPTK\Rendering\{Grid, GridWriter};
 /** Holds one widget's grid tile, padded pixel area, and event subscriptions. */
 final class LayoutLeaf {
 
+  use LayoutDeckTile;
+  use LayoutOverwriteTile;
+
   private $grid;
   private ?Tile $area = null;
   private ?Tile $pixelTile = null;
@@ -22,12 +25,14 @@ final class LayoutLeaf {
   private ?Color $pixelBackground = null;
   private array $screenEvents = [];
   private EventDispatcher $eventDispatcher;
+  private bool $preferredSizeChanged = false;
 
   /** Build a leaf with optional grid padding paint and its event subscriptions. */
   public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = [], private bool $navigate = true, private ?PixelBox $box = null, private bool $paintBackground = true) {
     $this->eventDispatcher = new EventDispatcher();
     $this->instance->on('change', $this->notifyChange(...));
     $this->instance->on('reorder', $this->notifyReorder(...));
+    $this->instance->on('preferredSizeChange', $this->notifyPreferredSizeChange(...));
   }
 
   public function setGrid($grid) {
@@ -83,8 +88,8 @@ final class LayoutLeaf {
     [$this->pixelBorder, $this->pixelBackgroundArea, $this->pixelContent] = ($this->box ?? new PixelBox())->areas($tile, $viewportWidth, $viewportHeight);
   }
 
-  /** Paint this widget and dim its cell colors when it is not selected. */
-  public function paint(Grid $grid, bool $selected = true): void {
+  /** Paint this widget, its closed form inside a closed deck tile, and dim it when not selected. */
+  public function paint(Grid $grid, bool $selected = true, bool $closed = false): void {
     if ($this->pixelTile !== null) {
       return;
     }
@@ -92,7 +97,12 @@ final class LayoutLeaf {
     if ($visible->width === 0 || $visible->height === 0) {
       return;
     }
-    $this->instance->paint(new GridWriter($grid, $this->grid, $this->viewport));
+    $writer = new GridWriter($grid, $this->grid, $this->viewport);
+    if (!$closed && !$this->isDeckClosed()) {
+      $this->instance->paint($writer);
+    } else if (!$this->paintDeckSummary($writer, $this->instance->id())) {
+      $this->instance->paintClosed($writer);
+    }
     if (!$selected && $this->instance->dimContentWhenUnselected()) {
       $grid->darken($this->visibleGrid());
     }
@@ -192,6 +202,18 @@ final class LayoutLeaf {
     $this->dispatchXmlNotification('reorder');
   }
 
+  /** Remember a widget size change until the screen checks for remeasurement. */
+  private function notifyPreferredSizeChange(): void {
+    $this->preferredSizeChanged = true;
+  }
+
+  /** Consume a pending preferred size change from this widget. */
+  public function takePreferredSizeChange(): bool {
+    $changed = $this->preferredSizeChanged;
+    $this->preferredSizeChanged = false;
+    return $changed;
+  }
+
   /** Dispatch XML notifications without recursively emitting into the widget. */
   private function dispatchXmlNotification(string $type): void {
     $context = new EventContext($type, $this->instance);
@@ -220,12 +242,16 @@ final class LayoutLeaf {
 
   /** Return the explicit or preferred width used by the parent layout. */
   public function width() {
-    return $this->size($this->width, 'width');
+    return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->size($this->width, 'width'), 'width'), 'width');
   }
 
   /** Return the explicit or preferred height used by the parent layout. */
   public function height() {
-    return $this->size($this->height, 'height');
+    return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->size($this->height, 'height'), 'height'), 'height');
+  }
+
+  public function tileId(): ?string {
+    return $this->instance->id();
   }
 
   /** Measure text at its assigned width or use a nontext widget's preferred height. */
@@ -255,11 +281,16 @@ final class LayoutLeaf {
 
   /** Resolve omitted widths from the widget's pixel preference. */
   public function pixelWidthSize(int $viewportWidth, int $viewportHeight): string {
-    if ($this->width === 'auto') {
+    if ($this->overwriting() !== null) {
+      $target = $this->overwriting();
+      return $target instanceof self ? $target->pixelWidthSize($viewportWidth, $viewportHeight) : $target->width();
+    }
+    $width = $this->deckAdjustedSize($this->width, 'width');
+    if ($width === 'auto') {
       return (string)$this->naturalPixelWidth($viewportWidth, $viewportHeight);
     }
-    if ($this->width !== '') {
-      return $this->width;
+    if ($width !== '') {
+      return $width;
     }
     $preferred = $this->instance->preferredPixelWidth();
     if ($preferred === null) {

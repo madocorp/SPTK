@@ -5,6 +5,7 @@ class Controller {
 
   private static ?\SPTK\Core\Texture $canvasAtlas = null;
   private static int $canvasStep = 0;
+  private static string $deckFruit = 'apple';
 
   /** Compose sprite-sheet tiles and a scaled character into the demo canvas. */
   public static function paintCanvas(\SPTK\Core\Texture $surface, \SPTK\Core\TextureContext $textures): void {
@@ -56,6 +57,21 @@ class Controller {
   /** Print changed list values from the demo. */
   public static function listChanged(\SPTK\Events\EventContext $event): void {
     echo json_encode($event->widget->getValue(), JSON_UNESCAPED_UNICODE) . "\n";
+  }
+
+  /** Remember the deck fruit for its closed summary. */
+  public static function deckFruitChanged(\SPTK\Events\EventContext $event): void {
+    self::$deckFruit = (string)$event->widget->getValue();
+  }
+
+  /** Return a title line and a value line for a closed deck tile. */
+  public static function deckSummary(?string $id): string {
+    return $id === 'deck-fruit' ? "Fruit\n" . ucfirst(self::$deckFruit) : "Person\nFirst and last name";
+  }
+
+  /** Print the file chosen in the overwrite demo after the selector is restored. */
+  public static function overwriteFileChosen(\SPTK\Events\EventContext $event): void {
+    echo 'overwrite file: ' . json_encode($event->widget->getValue(), JSON_UNESCAPED_UNICODE) . "\n";
   }
 
   /** Print a demo callback message. */

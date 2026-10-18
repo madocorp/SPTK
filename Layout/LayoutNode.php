@@ -7,8 +7,12 @@ use SPTK\Core\Color;
 /** Splits a grid tile into child layouts and widgets and measures their separator areas. */
 final class LayoutNode {
 
+  use LayoutDeckTile;
+  use LayoutNodeDeck;
   use LayoutNodeLookup;
+  use LayoutNodePixelSize;
   use LayoutNodeSeparators;
+  use LayoutOverwriteTile;
 
   private $children = [];
   private $grid;
@@ -84,17 +88,21 @@ final class LayoutNode {
   }
 
   public function width() {
-    return $this->width;
+    return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->width, 'width'), 'width');
   }
 
   public function height() {
-    return $this->height;
+    return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->height, 'height'), 'height');
+  }
+
+  public function tileId(): ?string {
+    return $this->id;
   }
 
   /** Measure stacked or side-by-side children at a known width. */
   public function naturalHeight(int $width): int {
     if ($this->direction === 'horizontal') {
-      $children = array_values(array_filter($this->children, fn(mixed $child): bool => !$child instanceof LayoutSeparator));
+      $children = array_values(array_filter($this->visibleChildren(), fn(mixed $child): bool => !$child instanceof LayoutSeparator));
       if ($children === []) {
         return 0;
       }
@@ -107,7 +115,7 @@ final class LayoutNode {
     }
     $height = 0;
     $hasVisibleChild = false;
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
       }
@@ -132,15 +140,35 @@ final class LayoutNode {
   }
 
   public function addNode(LayoutNode $node): void {
+    $this->openFirstDeckTile($node);
     $this->children[] = $node;
   }
 
   public function addLeaf(LayoutLeaf $leaf): void {
+    $this->openFirstDeckTile($leaf);
     $this->children[] = $leaf;
   }
 
   public function addSeparator(LayoutSeparator $separator): void {
     $this->children[] = $separator;
+  }
+
+  /** Return children as shown: without hidden overwrites and the separators they leave at an edge or doubled. */
+  private function visibleChildren(): array {
+    $visible = [];
+    foreach ($this->children as $child) {
+      if ($child instanceof LayoutSeparator) {
+        if ($visible !== [] && !end($visible) instanceof LayoutSeparator) {
+          $visible[] = $child;
+        }
+      } else if (!$child->isOverwriter()) {
+        $visible[] = self::shownTile($child);
+      }
+    }
+    if (end($visible) instanceof LayoutSeparator) {
+      array_pop($visible);
+    }
+    return $visible;
   }
 
   /** Replace a child subtree or leaf while retaining the other layout items and their widgets. */
@@ -166,7 +194,7 @@ final class LayoutNode {
     }
     $this->viewport = $viewport;
     if ($this->pixelMode) {
-      foreach ($this->children as $child) {
+      foreach ($this->visibleChildren() as $child) {
         if ($child instanceof self) {
           $child->assignGrid($grid);
         } else if ($child instanceof LayoutLeaf) {
@@ -175,14 +203,13 @@ final class LayoutNode {
       }
       return;
     }
-    $content = [];
+    // Check the XML order on all children; hidden elements still count as layout items here.
     foreach ($this->children as $index => $child) {
-      if (!$child instanceof LayoutSeparator) {
-        $content[$index] = $child;
-      } else if ($index === 0 || $index === count($this->children) - 1 || $this->children[$index - 1] instanceof LayoutSeparator || $this->children[$index + 1] instanceof LayoutSeparator) {
+      if ($child instanceof LayoutSeparator && ($index === 0 || $index === count($this->children) - 1 || $this->children[$index - 1] instanceof LayoutSeparator || $this->children[$index + 1] instanceof LayoutSeparator)) {
         throw new \RuntimeException('Separator must be placed between two layout items.');
       }
     }
+    $content = array_filter($this->visibleChildren(), fn(mixed $child): bool => !$child instanceof LayoutSeparator);
     if ($this->direction === 'horizontal') {
       $widths = [];
       foreach ($content as $child) {
@@ -217,7 +244,7 @@ final class LayoutNode {
     $this->grid = $grid;
     $this->pixelTile = null;
     $this->focus?->setGrid($grid);
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         $child->assignGrid($grid);
       } else if ($child instanceof LayoutLeaf) {
@@ -235,7 +262,7 @@ final class LayoutNode {
     [$this->pixelBorder, $this->pixelBackgroundArea, $this->pixelContent] = ($this->box ?? new PixelBox())->areas($tile, $viewportWidth, $viewportHeight);
     $content = [];
     $sizes = [];
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof LayoutSeparator) {
         throw new \LogicException('Pixel layouts use border widths and explicit spacing, not separators.');
       }
@@ -253,84 +280,29 @@ final class LayoutNode {
     }
   }
 
-  /** Sum the exact content and box heights needed by an auto-sized pixel node. */
-  public function naturalPixelHeight(int $width, int $viewportWidth, int $viewportHeight): int {
-    $box = $this->box ?? new PixelBox();
-    $margin = PixelBox::edges($box->margin, $viewportWidth, $viewportHeight);
-    $border = PixelBox::edges($box->borderWidth, $viewportWidth, $viewportHeight);
-    $padding = PixelBox::edges($box->padding, $viewportWidth, $viewportHeight);
-    $innerWidth = max(0, $width - $margin['left'] - $margin['right'] - $border['left'] - $border['right'] - $padding['left'] - $padding['right']);
-    $edges = $margin['top'] + $margin['bottom'] + $border['top'] + $border['bottom'] + $padding['top'] + $padding['bottom'];
-    $children = array_values(array_filter($this->children, fn(mixed $child): bool => !$child instanceof LayoutSeparator));
-    if ($this->direction === 'horizontal') {
-      $sizes = array_map(function(mixed $child) use ($viewportWidth, $viewportHeight): string {
-        $size = $child instanceof LayoutLeaf ? $child->pixelWidthSize($viewportWidth, $viewportHeight) : $child->width();
-        return $size === 'auto' ? (string)$child->naturalPixelWidth($viewportWidth, $viewportHeight) : $size;
-      }, $children);
-      $tiles = PixelSplitter::split(new Tile(0, 0, $innerWidth, 0), 'horizontal', $sizes, $viewportWidth, $viewportHeight);
-      $heights = [];
-      foreach ($children as $index => $child) {
-        $heights[] = $child->naturalPixelHeight($tiles[$index]->width, $viewportWidth, $viewportHeight);
-      }
-      return $edges + ($heights === [] ? 0 : max($heights));
-    }
-    $height = 0;
-    foreach ($children as $child) {
-      $size = $child->height();
-      if ($size === 'auto') {
-        $height += $child->naturalPixelHeight($innerWidth, $viewportWidth, $viewportHeight);
-      } else if (str_ends_with($size, '*')) {
-        continue;
-      } else if (str_ends_with($size, '%')) {
-        throw new \LogicException('Percentage child height cannot resolve inside an auto-sized pixel layout.');
-      } else {
-        $height += PixelBox::dimension($size, $viewportWidth, $viewportHeight, $viewportHeight);
-      }
-    }
-    return $edges + $height;
-  }
-
-  /** Resolve an auto width for a nested pixel layout. */
-  public function naturalPixelWidth(int $viewportWidth, int $viewportHeight): int {
-    $box = $this->box ?? new PixelBox();
-    $margin = PixelBox::edges($box->margin, $viewportWidth, $viewportHeight);
-    $border = PixelBox::edges($box->borderWidth, $viewportWidth, $viewportHeight);
-    $padding = PixelBox::edges($box->padding, $viewportWidth, $viewportHeight);
-    $edges = $margin['left'] + $margin['right'] + $border['left'] + $border['right'] + $padding['left'] + $padding['right'];
-    $widths = [];
-    foreach ($this->children as $child) {
-      if ($child instanceof LayoutSeparator) {
-        continue;
-      }
-      $size = $child instanceof LayoutLeaf ? $child->pixelWidthSize($viewportWidth, $viewportHeight) : $child->width();
-      if ($size === 'auto') {
-        $widths[] = $child->naturalPixelWidth($viewportWidth, $viewportHeight);
-      } else if (str_ends_with($size, '*')) {
-        $widths[] = 0;
-      } else if (str_ends_with($size, '%')) {
-        throw new \LogicException('Percentage child width cannot resolve inside an auto-sized pixel layout.');
-      } else {
-        $widths[] = PixelBox::dimension($size, $viewportWidth, $viewportHeight, $viewportWidth);
-      }
-    }
-    return $edges + ($this->direction === 'horizontal' ? array_sum($widths) : ($widths === [] ? 0 : max($widths)));
-  }
-
-  public function paint(\SPTK\Rendering\Grid $grid, ?LayoutLeaf $selected = null): void {
+  /** Paint children, or only the summary while this tile or a deck ancestor is closed. */
+  public function paint(\SPTK\Rendering\Grid $grid, ?LayoutLeaf $selected = null, bool $closed = false): void {
     if ($this->pixelTile !== null) {
       return;
     }
     if ($selected === $this->focus) {
       $selected = null;
     }
-    foreach ($this->children as $child) {
+    $closed = $closed || $this->isDeckClosed();
+    if ($closed && $this->paintDeckSummary(new \SPTK\Rendering\GridWriter($grid, $this->grid, $this->viewport), $this->id)) {
+      if ($selected !== null && !$this->containsLeaf($selected)) {
+        $grid->darken($this->viewport === null ? $this->grid : $this->grid->intersect($this->viewport));
+      }
+      return;
+    }
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
       }
       if ($child instanceof self) {
-        $child->paint($grid, $selected);
+        $child->paint($grid, $selected, $closed);
       } else {
-        $child->paint($grid, $selected === null || $child === $selected);
+        $child->paint($grid, $selected === null || $child === $selected, $closed);
       }
     }
   }
@@ -345,23 +317,22 @@ final class LayoutNode {
       $this->measurePixel($tile, $tile->width, $tile->height, $background);
       return;
     }
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
       }
       $child->measureArea($grid, $geometry);
     }
-    foreach ($this->children as $index => $child) {
+    $children = $this->visibleChildren();
+    foreach ($children as $index => $child) {
       if ($child instanceof LayoutSeparator) {
-        $this->measureSeparatorArea($index, $grid, $geometry);
+        $this->measureSeparatorArea($child, $children[$index - 1], $grid, $geometry);
       }
     }
   }
 
   /** Measure one separator after its preceding child within this layout's padded area. */
-  private function measureSeparatorArea(int $index, Tile $windowGrid, WindowGeometry $geometry): void {
-    $separator = $this->children[$index];
-    $before = $this->children[$index - 1];
+  private function measureSeparatorArea(LayoutSeparator $separator, LayoutNode|LayoutLeaf $before, Tile $windowGrid, WindowGeometry $geometry): void {
     $area = $geometry->separatorArea($this->grid, $before->grid(), $windowGrid, $this->direction);
     $separator->setArea($this->viewport === null ? $area : $area->intersect($geometry->backgroundArea($this->viewport, $windowGrid)));
   }
@@ -379,7 +350,7 @@ final class LayoutNode {
     if ($selected === $this->focus) {
       $selected = null;
     }
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         $child->drawBackgrounds($renderer, $selected);
       } else if (!$child instanceof LayoutSeparator) {
@@ -394,7 +365,7 @@ final class LayoutNode {
       return [$this->focus];
     }
     $leaves = [];
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         array_push($leaves, ...$child->leaves($navigationOnly));
       } else if ($child instanceof LayoutLeaf) {
@@ -407,7 +378,7 @@ final class LayoutNode {
   /** Return the focus targets inside this grouped layout. */
   public function childNavigationLeaves(): array {
     $leaves = [];
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         array_push($leaves, ...$child->leaves(true));
       } else if ($child instanceof LayoutLeaf) {
@@ -420,7 +391,7 @@ final class LayoutNode {
   /** Return arrow destinations inside this grouped layout. */
   public function childMovementLeaves(): array {
     $leaves = [];
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         array_push($leaves, ...$child->movementLeaves());
       } else if ($child instanceof LayoutLeaf && $child->navigate()) {
@@ -435,7 +406,7 @@ final class LayoutNode {
     if ($focus !== null && $this->focus === $focus && $this->enterChildren) {
       return $this;
     }
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         $found = $child->enterableFor($focus);
         if ($found !== null) {
@@ -462,7 +433,7 @@ final class LayoutNode {
     if ($this->focus !== null && $selected === $this->focus) {
       return $this->leaves();
     }
-    foreach ($this->children as $child) {
+    foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         $leaves = $child->focusedLeaves($selected);
         if ($leaves !== []) {

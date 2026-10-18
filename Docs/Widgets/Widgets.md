@@ -7,6 +7,7 @@ Each widget page describes that widget's XML attributes and behavior.
 - [Title](Title.md): displays a one-line heading in the inherited highlight color
 - [StyledText](StyledText.md): renders proportional rich text with inline fonts, colors, and wrapping
 - [Input](Input.md): edits a single line with selection and undo history
+- [ColorInput](ColorInput.md): edits a hex color or selects one from a compact palette
 - [TextEditor](TextEditor.md): edits multiline text with wrapping and scrolling
 - [RadioButton](RadioButton.md): selects one value from a group
 - [CheckboxArray](CheckboxArray.md): toggles independent values in a group

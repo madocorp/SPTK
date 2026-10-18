@@ -21,12 +21,13 @@ trait LayoutNodeSeparators {
       return;
     }
     $color = $this->separatorColor ?? $color;
-    foreach ($this->children as $child) {
+    $children = $this->visibleChildren();
+    foreach ($children as $child) {
       if ($child instanceof LayoutNode) {
         $child->drawSeparators($renderer, $color);
       }
     }
-    foreach ($this->children as $child) {
+    foreach ($children as $child) {
       if ($child instanceof LayoutSeparator) {
         $child->draw($renderer, $color);
       }

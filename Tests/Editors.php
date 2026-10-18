@@ -3,6 +3,8 @@
 define('APP_DIR', __DIR__);
 
 require_once APP_DIR . '/SPTK/App.php';
+// Demo deck summaries call the demo controller while every demo screen is painted.
+require_once APP_DIR . '/SPTK/Demo/Controller.php';
 
 spl_autoload_register(['SPTK\\App', 'load']);
 
@@ -246,6 +248,33 @@ expectEditor(EditorTestListener::$hotkeys, 2, 'function-key button hotkey is blo
 $functionScreen->handleEvent(keyEvent(SDL::KEY_ESCAPE));
 $functionScreen->handleEvent(keyEvent(SDL::KEY_F1));
 expectEditor(EditorTestListener::$hotkeys, 3, 'function-key button hotkey works after editor release');
+$symbolInput = new Input();
+$symbolLayout = new LayoutNode('vertical', '1*', '1*');
+$symbolLayout->addLeaf(new LayoutLeaf('Input', '', '', $symbolInput));
+$symbolLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Section start', '|', EditorTestListener::class . '::hotkey', new Style())));
+$symbolLayout->addLeaf(new LayoutLeaf('Button', '', '', new Button('Trill', 'w', EditorTestListener::class . '::hotkey', new Style())));
+$symbolScreen = new Screen($symbolLayout);
+$symbolScreen->measureGrid(new Tile(0, 0, 24, 4));
+expectEditor(\SPTK\Events\KeyNormalizer::normalizeName('|'), '|', 'pipe is a valid button hotkey');
+expectEditor(\SPTK\Events\KeyNormalizer::normalizeModifiers(SDL::MOD_MODE), SDL::MOD_MODE,
+  'AltGr remains a modifier when matching shortcuts');
+$symbolScreen->handleEvent(textEvent('|'));
+expectEditor(EditorTestListener::$hotkeys, 4, 'pipe text activates a symbol hotkey');
+$symbolScreen->handleEvent(keyEvent(ord('w'), SDL::MOD_MODE));
+expectEditor(EditorTestListener::$hotkeys, 4, 'AltGr+W keydown does not activate W');
+$symbolScreen->handleEvent(textEvent('|'));
+expectEditor(EditorTestListener::$hotkeys, 5, 'AltGr+W text activates only the pipe hotkey');
+$symbolScreen->handleEvent(keyEvent(ord('w')));
+expectEditor(EditorTestListener::$hotkeys, 5, 'W waits for matching typed text');
+$symbolScreen->handleEvent(textEvent('|'));
+expectEditor(EditorTestListener::$hotkeys, 6, 'pipe text cancels a pending W hotkey');
+$symbolScreen->handleEvent(keyEvent(ord('w')));
+$symbolScreen->handleEvent(textEvent('w'));
+expectEditor(EditorTestListener::$hotkeys, 7, 'plain W still activates its button');
+$symbolScreen->handleEvent(keyEvent(SDL::KEY_RETURN));
+$symbolScreen->handleEvent(textEvent('|'));
+expectEditor($symbolInput->getValue(), '|', 'active input receives a pipe without activating the button');
+expectEditor(EditorTestListener::$hotkeys, 7, 'pipe hotkey stays inactive during text editing');
 $document = new TextEdit(true, "a\nb");
 $revision = $document->revision();
 $document->cursor()->setPosition(0, 1);

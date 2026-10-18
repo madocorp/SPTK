@@ -9,6 +9,7 @@ final class App {
   private $sdl;
   private $ttf;
   private $font;
+  private ?Audio\Player $audio = null;
   private $events = [];
   private $initialized = false;
 
@@ -46,6 +47,11 @@ final class App {
 
   public static function eventLoop() {
     return self::$instance->eventLoop;
+  }
+
+  /** Open the shared audio player only when an application needs sound. */
+  public static function audio(): Audio\Player {
+    return self::$instance->audio ??= new Audio\Player(self::$instance->sdl, self::$instance->eventLoop);
   }
 
   /** Notify app actions after a live window's pixel size changes. */
@@ -104,6 +110,7 @@ final class App {
 
   private function close() {
     $this->eventLoop?->closeWindows();
+    $this->audio?->close();
     Widgets\StyledText\Fonts::release();
     if ($this->font !== null) {
       $this->font->close();

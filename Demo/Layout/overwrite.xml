@@ -1,0 +1,26 @@
+<Screen>
+  <Layout direction="vertical">
+    <Text height="1">Overwrite: buttons show hidden elements in place of other tiles</Text>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <Layout id="overwrite-form" width="1*">
+        <Input id="overwrite-file" label="File" height="2" value="none" />
+        <Button label="Browse (widget, Esc or Return restores)" hotkey="b" opens="#overwrite-files" />
+        <Button label="Edit details (layout, Done restores)" hotkey="e" opens="#overwrite-details" />
+        <Empty height="1*" />
+        <FileSelector id="overwrite-files" overwrite="parent" height="1*" path=".."><Event type="deactivate" action="Controller::overwriteFileChosen" /></FileSelector>
+      </Layout>
+      <Separator />
+      <Layout width="1*">
+        <TextEditor id="overwrite-text" title="Text" textWrap="true" height="1*"><![CDATA[The details form replaces this editor while it is shown.]]></TextEditor>
+        <Separator />
+        <Layout id="overwrite-details" overwrite="#overwrite-text" height="1*">
+          <Input id="overwrite-title" label="Title" height="2" />
+          <Input id="overwrite-author" label="Author" height="2" />
+          <Button label="Done" hotkey="d" restores="parent" />
+          <Empty height="1*" />
+        </Layout>
+      </Layout>
+    </Layout>
+  </Layout>
+</Screen>

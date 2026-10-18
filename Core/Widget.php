@@ -69,6 +69,11 @@ abstract class Widget {
   /** Paint the widget into its allocated tile. */
   abstract public function paint(GridWriter $writer): void;
 
+  /** Paint the widget inside a closed deck tile; the normal content is cut to the smaller tile. */
+  public function paintClosed(GridWriter $writer): void {
+    $this->paint($writer);
+  }
+
   /** Paint only pending cells when the widget supports a smaller update. */
   public function paintUpdate(GridWriter $writer): bool {
     return false;

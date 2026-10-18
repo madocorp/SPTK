@@ -12,6 +12,13 @@ typedef Uint32 SDL_KeyboardID;
 typedef Uint16 SDL_Keymod;
 typedef Uint64 SDL_WindowFlags;
 typedef Uint32 SDL_AudioDeviceID;
+typedef struct SDL_AudioStream SDL_AudioStream;
+typedef struct SDL_AudioSpec
+{
+  Uint32 format;
+  int channels;
+  int freq;
+} SDL_AudioSpec;
 typedef Uint32 SDL_SurfaceFlags;
 typedef Uint32 SDL_PixelFormat;
 typedef Sint32 SDL_Keycode;
@@ -101,7 +108,20 @@ typedef struct SDL_Surface
 } SDL_Surface;
 
 bool SDL_Init(Uint32 flags);
+bool SDL_InitSubSystem(Uint32 flags);
+void SDL_QuitSubSystem(Uint32 flags);
 void SDL_Quit(void);
+SDL_AudioDeviceID SDL_OpenAudioDevice(SDL_AudioDeviceID devid, const SDL_AudioSpec *spec);
+void SDL_CloseAudioDevice(SDL_AudioDeviceID devid);
+SDL_AudioStream *SDL_CreateAudioStream(const SDL_AudioSpec *src_spec, const SDL_AudioSpec *dst_spec);
+bool SDL_BindAudioStream(SDL_AudioDeviceID devid, SDL_AudioStream *stream);
+void SDL_DestroyAudioStream(SDL_AudioStream *stream);
+bool SDL_PutAudioStreamData(SDL_AudioStream *stream, const void *buf, int len);
+bool SDL_FlushAudioStream(SDL_AudioStream *stream);
+int SDL_GetAudioStreamQueued(SDL_AudioStream *stream);
+bool SDL_SetAudioStreamGain(SDL_AudioStream *stream, float gain);
+bool SDL_LoadWAV(const char *path, SDL_AudioSpec *spec, Uint8 **audio_buf, Uint32 *audio_len);
+void SDL_free(void *mem);
 SDL_DisplayID SDL_GetPrimaryDisplay(void);
 bool SDL_GetDisplayUsableBounds(SDL_DisplayID displayID, SDL_Rect *rect);
 bool SDL_GetWindowBordersSize(SDL_Window *window, int *top, int *left, int *bottom, int *right);

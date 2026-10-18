@@ -11,6 +11,7 @@ final class ScreenInput {
 
   private EventDispatcher $dispatcher;
   private array $hotkeys = [];
+  private bool $hasSymbolHotkey = false;
   private ?array $pendingCharacterHotkey = null;
 
   /** Retain the screen's XML event declarations. */
@@ -28,6 +29,9 @@ final class ScreenInput {
       throw new \RuntimeException("Duplicate button hotkey: {$key}");
     }
     $this->hotkeys[$key] = $button;
+    if (strlen($key) === 1 && !ctype_alnum($key)) {
+      $this->hasSymbolHotkey = true;
+    }
   }
 
   /** Hold a printable button hotkey until SDL delivers its text input. */
@@ -58,6 +62,10 @@ final class ScreenInput {
     }
     [$button, $keydown] = $this->pendingCharacterHotkey;
     $this->pendingCharacterHotkey = null;
+    if ($event->type === SDL::SDL_EVENT_TEXT_INPUT
+      && strtolower(\FFI::string($event->text->text)) !== $button->hotkey()) {
+      return false;
+    }
     $button->press($keydown);
     return true;
   }
@@ -74,8 +82,18 @@ final class ScreenInput {
       }
       return true;
     }
+    if ($allowHotkeys && $this->hasSymbolHotkey && $type === 'textInput') {
+      $symbol = \FFI::string($event->text->text);
+      if (isset($this->hotkeys[$symbol]) && !ctype_alnum($symbol)) {
+        $this->hotkeys[$symbol]->press($event);
+        return true;
+      }
+    }
     if ($allowHotkeys && $type === 'keyDown') {
       foreach ($this->hotkeys as $key => $button) {
+        if (strlen($key) === 1 && !ctype_alnum($key)) {
+          continue;
+        }
         if ((new EventDefinition('keyDown', $key, ''))->matches($event)) {
           if ($this->pendingCharacterHotkey !== null && $this->pendingCharacterHotkey[0] === $button) {
             return true;

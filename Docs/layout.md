@@ -87,6 +87,68 @@ nested layout may also use `height="auto"` to sum the natural heights of its chi
 Weighted children contribute their numeric weight as a minimum when a parent measures
 its natural height. A horizontal nested layout uses the tallest child's natural height.
 
+## Deck
+
+A deck is a group of tiles where one open tile takes more space and the closed tiles take less.
+Add `deck` to a widget or nested `<Layout>` to make it a deck tile. All children with `deck` in the
+same parent form one deck, and only one of them is open at a time.
+
+`deck` is the size used while the tile is open. The normal size attribute (`height` in a vertical
+parent, `width` in a horizontal one) is the closed size:
+
+```xml
+<Layout id="cards">
+  <TextEditor id="notes" title="Notes" height="2" deck="1*" />
+  <Separator />
+  <List id="fruit" title="Fruit" height="2" deck="1*" summary="Controller::fruitSummary" />
+</Layout>
+```
+
+- The first deck tile starts open. The deck keeps the open tile while the app runs.
+- Selecting a widget inside a closed tile opens that tile and closes the open one. Nested decks open
+  at every level.
+- `Screen::openDeckTile($id)` opens a tile by its layout or widget id, together with its deck
+  ancestors. Call `Window::refreshLayout()` after it.
+- The widgets of the tile that closes get `collapse`; the widgets of the tile that opens get `expand`.
+
+A closed tile paints its normal content cut to the smaller tile, through `Widget::paintClosed()`.
+Widgets may override that method to draw a compact form. Set `summary="Class::method"` to paint a
+summary instead: the static method gets the tile id and returns text. Its first line is painted in the
+highlight color, the other lines in the text color. A summary on a closed `<Layout>` covers its whole
+tile. From code, use `setDeck($size, 'height')` and `setDeckSummary($callable, $style)` on a
+`LayoutNode` or `LayoutLeaf` before adding it to its parent.
+
+## Overwrite
+
+An overwrite element is a hidden widget or `<Layout>` that, while shown, takes the place of another
+tile. `overwrite="parent"` replaces the layout that contains the element; `overwrite="#id"` replaces the
+layout or widget with that id. Any widget or layout can replace any widget or layout. The element needs
+an `id`, and it cannot also be a deck tile. The screen root layout cannot be replaced.
+
+```xml
+<Layout id="form">
+  <Input id="file" label="File" height="2" />
+  <Button label="Browse" hotkey="b" opens="#files" />
+  <FileSelector id="files" overwrite="parent" height="1*">
+    <Event type="deactivate" action="Controller::fileChosen" />
+  </FileSelector>
+</Layout>
+```
+
+- The element is hidden by default: it is not painted, measured, or reached by arrows. A separator
+  that its absence leaves at the start or end of a layout, or next to another separator, is hidden
+  too, so the element can sit after a separator at the end of a layout. `Screen::widget()` still finds it.
+- While shown, it gets the target's size and rectangle; its own size attribute is not used.
+- Show it with `<Button opens="#id">` or `Screen::show($id)`. A shown widget is activated; in a shown
+  layout the first navigable leaf is selected. `Screen::show($id, focus: false)` keeps the current
+  selection and active widget, for example when a state change, not the user, shows the element.
+- A shown **widget** is restored when it is left (Return or Escape releases it); its own `deactivate`
+  runs after the restore. A shown **layout** stays until `<Button restores="parent">`,
+  `<Button restores="#id">`, or `Screen::restore($id)`.
+- After a restore, focus returns to the leaf that was selected before the show.
+- After `show()` or `restore()` from code, call `Window::refreshLayout()`. Key presses that show or
+  restore, such as a button press, refresh the window by themselves.
+
 ## Opt-in pixel layouts
 
 Set `pixel="true"` on a `<Layout>` to measure that subtree in pixels. Its parent still assigns it an ordinary

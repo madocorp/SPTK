@@ -1,0 +1,32 @@
+<Screen>
+  <Layout direction="vertical">
+    <Text height="1">Deck: arrows open a tile; closed tiles show cut content or a summary</Text>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <Layout id="deck-cards" width="2*">
+        <TextEditor id="deck-notes" title="Notes" textWrap="true" height="2" deck="1*"><![CDATA[This tile has no summary.
+When it is closed, its normal content is cut to two rows.
+Open it again to see every line.]]></TextEditor>
+        <Separator />
+        <List id="deck-fruit" title="Fruit" height="2" deck="1*" summary="Controller::deckSummary">
+          <Item value="apple" selected="true">Apple</Item>
+          <Item value="banana">Banana</Item>
+          <Item value="cherry">Cherry</Item>
+          <Event type="change" action="Controller::deckFruitChanged" />
+        </List>
+        <Separator />
+        <Layout id="deck-person" direction="horizontal" height="2" deck="1*" summary="Controller::deckSummary">
+          <Input id="deck-first" label="First name" width="1*" value="Ada" />
+          <Separator />
+          <Input id="deck-last" label="Last name" width="1*" value="Lovelace" />
+        </Layout>
+      </Layout>
+      <Separator />
+      <Layout id="deck-columns" direction="horizontal" width="1*">
+        <Text id="deck-left" width="4" deck="1*">Left column of a horizontal deck.</Text>
+        <Separator />
+        <Text id="deck-right" width="4" deck="1*">Right column of a horizontal deck.</Text>
+      </Layout>
+    </Layout>
+  </Layout>
+</Screen>

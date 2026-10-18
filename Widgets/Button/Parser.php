@@ -13,7 +13,7 @@ final class Parser implements WidgetParser {
 
   /** Validate button and layout attributes. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'label', 'hotkey', 'action']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'label', 'hotkey', 'action', 'opens', 'restores']);
   }
 
   /** Build a button from an empty XML element. */
@@ -24,7 +24,19 @@ final class Parser implements WidgetParser {
     if ($label === null || $label === '' || !mb_check_encoding($label, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $label)) {
       throw new \RuntimeException('Button requires a printable one-line label.');
     }
-    if ($action === null || !preg_match('/^[A-Za-z_\\\\][A-Za-z0-9_\\\\]*::[A-Za-z_][A-Za-z0-9_]*$/', $action)) {
+    $opens = $reader->getAttribute('opens');
+    $restores = $reader->getAttribute('restores');
+    if ($opens !== null && !preg_match('/^#[A-Za-z_][A-Za-z0-9_-]*$/', $opens)) {
+      throw new \RuntimeException('Button opens must name an element as #id.');
+    }
+    if ($restores !== null && $restores !== 'parent' && !preg_match('/^#[A-Za-z_][A-Za-z0-9_-]*$/', $restores)) {
+      throw new \RuntimeException('Button restores must be "parent" or #id.');
+    }
+    // The action is optional only when the button opens or restores an overwrite element.
+    $invalidAction = $action === null
+      ? $opens === null && $restores === null
+      : !preg_match('/^[A-Za-z_\\\\][A-Za-z0-9_\\\\]*::[A-Za-z_][A-Za-z0-9_]*$/', $action);
+    if ($invalidAction) {
       throw new \RuntimeException('Button action must name a static method as Class::method.');
     }
     if ($hotkey !== null) {
@@ -43,7 +55,9 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new Button($label, $hotkey, $action, $style));
+    $button = new Button($label, $hotkey, $action, $style);
+    $button->setOverwrite($opens, $restores);
+    return new WidgetDefinition($button);
   }
 
 }

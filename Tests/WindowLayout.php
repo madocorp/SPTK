@@ -45,6 +45,11 @@ try {
   if ((new ReflectionProperty($replacement, 'area'))->getValue($replacement) === null) {
     throw new RuntimeException('A changed hidden screen was not measured before drawing.');
   }
+  $screen->activateLeaf($replacement);
+  $window->handleEvent((object)['type' => SDL::SDL_EVENT_WINDOW_FOCUS_LOST]);
+  if ($screen->activeLeaf() !== $replacement) {
+    throw new RuntimeException('Leaving the window must not release the active widget.');
+  }
 } finally {
   $window->close();
   $font->close();

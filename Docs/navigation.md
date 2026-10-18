@@ -12,6 +12,9 @@ using edge-to-edge distance. If no widget lies in that direction, focus stays wh
 tile geometry rather than cycling through widgets in XML order. The selected tile is drawn at full brightness;
 other widget tiles are dimmed.
 
+Hidden [overwrite](layout.md#overwrite) elements are not navigation targets until they are shown;
+the tile they replace is not a target while they are shown.
+
 Widgets and layouts with `navigate="false"` are skipped as arrow-key destinations. This does not
 change rendering, initial selection, or explicit selection. A layout with `navigate="false"`
 also omits its children from arrow movement. `navigateChildren="false"` instead makes a layout

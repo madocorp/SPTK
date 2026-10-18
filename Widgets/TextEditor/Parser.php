@@ -3,7 +3,7 @@
 namespace SPTK\Widgets\TextEditor;
 
 use SPTK\Core\{Style, WidgetDefinition};
-use SPTK\XmlParser\{AttributeParser, EventParser, StyleParser, WidgetParser};
+use SPTK\XmlParser\{AttributeParser, EventParser, HighlighterParser, StyleParser, WidgetParser};
 
 /** Parses multiline editor content, wrapping, styling, and event declarations. */
 final class Parser implements WidgetParser {
@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Validate TextEditor attributes together with its layout size. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'textWrap', 'tabSize', 'label', 'title']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'textWrap', 'tabSize', 'label', 'title', 'highlighter']);
   }
 
   /** Build a TextEditor from preserved text or its higher-priority value attribute. */
@@ -20,6 +20,7 @@ final class Parser implements WidgetParser {
     $value = $reader->getAttribute('value');
     $label = $reader->getAttribute('label');
     $title = $reader->getAttribute('title');
+    $highlighter = HighlighterParser::parse($reader->getAttribute('highlighter'));
     $wrap = $this->attrBoolean($reader, 'textWrap', false);
     $tabSize = $this->attrInteger($reader, 'tabSize', 8);
     if ($tabSize < 1) {
@@ -42,7 +43,11 @@ final class Parser implements WidgetParser {
         }
       }
     }
-    return new WidgetDefinition(new TextEditor($value ?? $text, $style, $wrap, $tabSize, $label, $title), $events);
+    $widget = new TextEditor($value ?? $text, $style, $wrap, $tabSize, $label, $title);
+    if ($highlighter !== null) {
+      $widget->setHighlighter($highlighter);
+    }
+    return new WidgetDefinition($widget, $events);
   }
 
 }

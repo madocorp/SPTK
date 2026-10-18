@@ -104,6 +104,7 @@ The framework emits these notifications:
 - `deactivate` after either accept or cancel
 - `change` when a choice or list widget changes its value through user input
 - `reorder` when a list changes its row order through user input
+- `expand` and `collapse` when a [deck](layout.md#deck) tile opens or closes; every widget inside the tile receives it
 
 Matching widget-level notification actions run before screen-level notification actions. Notification return
 values are ignored. The first selected widget receives its initial `select` notification on the screen's first

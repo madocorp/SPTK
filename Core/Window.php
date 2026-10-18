@@ -300,11 +300,6 @@ final class Window {
       \SPTK\App::eventLoop()->quitWindow($this->id);
       return true;
     }
-    if ($event->type === SDL::SDL_EVENT_WINDOW_FOCUS_LOST) {
-      $this->screens[$this->currentScreen]->release();
-      $this->renderScreens();
-      return true;
-    }
     if (
       $event->type === SDL::SDL_EVENT_WINDOW_RESIZED ||
       $event->type === SDL::SDL_EVENT_WINDOW_MAXIMIZED ||
@@ -330,6 +325,8 @@ final class Window {
       $screen = $this->screens[$index];
       $leaf = $screen->activeLeaf();
       $selected = $screen->selectedLeaf();
+      $statusText = $screen->statusBar?->text();
+      $statusKind = $screen->statusBar?->kind();
       $handled = $screen->handleEvent($event);
       if ($this->window === null || $index !== $this->currentScreen) {
         return true;
@@ -337,7 +334,11 @@ final class Window {
       if (!$handled) {
         return false;
       }
-      if ($handled && $leaf !== null && $leaf === $screen->activeLeaf()) {
+      if ($screen->takeLayoutChange()) {
+        $this->refreshLayout();
+      } else if ($screen->statusBar?->text() !== $statusText || $screen->statusBar?->kind() !== $statusKind) {
+        $this->renderScreens();
+      } else if ($handled && $leaf !== null && $leaf === $screen->activeLeaf()) {
         $this->renderLeaf($leaf);
       } else if ($handled && $selected !== null && $screen->selectedLeaf() !== null && $selected !== $screen->selectedLeaf() && $screen->statusBar === null && $selected->name() !== 'Layout' && $screen->selectedLeaf()->name() !== 'Layout') {
         $this->renderFocusChange($selected, $screen->selectedLeaf());

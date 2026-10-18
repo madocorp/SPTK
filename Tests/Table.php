@@ -260,7 +260,7 @@ $largeTable->setCursor(2047, 15);
 expectTable($largeTable->activeRowValues()[0], '2048', 'last indexed row');
 $parser = new SPTK\XmlParser\XmlParser();
 $screens = $parser->windows[0]['screens'];
-expectTable(count($screens), 7, 'demo screen count');
+expectTable(count($screens), 9, 'demo screen count');
 $tables = [];
 foreach ($screens[4]->layout->leaves() as $leaf) {
   if ($leaf->instance() instanceof Table) {

@@ -1,6 +1,8 @@
 # Configuration files
 
-`SPTK\Core\AppData` stores per-application files in `~/.<app-name>`. The default app name is
+`SPTK\Core\AppData` stores per-application files in `~/.<app-name>`: configuration and any other
+application data, such as caches, sessions, or saves. Use `AppData::file()` or `AppData::path()` for
+non-JSON files. The default app name is
 `basename(APP_DIR)`, so the bundled demo uses `~/.Demo`. Pass an explicit app name to keep the same
 configuration location when the application's directory is renamed.
 

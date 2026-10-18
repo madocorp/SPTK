@@ -14,6 +14,7 @@ Second line]]></TextEditor>
 | `label` | absent | Printable single-line text in a separate top row. It is not part of the document or caret navigation. Even an empty label reserves the row. |
 | `textWrap` | `false` | Wrap by character when enabled. |
 | `tabSize` | `8` | Positive number of display cells between tab stops. |
+| `highlighter` | absent | Fully qualified class name of an app-owned `SyntaxHighlighter` with a no-argument constructor. |
 
 The title uses the shared widget title style. `setTitle(?string)` changes it without changing the document; `null` removes the title row. The label uses the widget's highlight and background colors and is clipped to the tile width. Editing, wrapping, and scrolling use the rows below the title and label. A tile only one row high shows the title, or the label when no title is present, while retaining the document.
 Vertical scroll arrows sit at the right edge. Horizontal scroll arrows sit at the left or right edge; when a right and down arrow are both needed, the down arrow moves one row above the right arrow.

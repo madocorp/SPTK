@@ -36,6 +36,12 @@ Classes that belongs strictly to a screen
 - Layout\LayoutLeaf: container for the widgets
 - Layout\LayoutSeparator: marks a split boundary for screen-level separator drawing
 - Layout\LayoutOverflow: clamps vertical scroll offsets and shifts full child tiles through a viewport
+- Layout\LayoutDeckTile: trait giving a node or leaf its open deck size and closed summary
+- Layout\LayoutNodeDeck: trait keeping one open tile among a node's deck children
+- Layout\DeckSummary: paints a closed deck tile's summary text
+- Layout\LayoutOverwriteTile: trait letting a hidden node or leaf take another tile's place and size while shown
+- Layout\LayoutNodePixelSize: trait resolving the intrinsic pixel size of an auto-sized pixel node
+- Core\ScreenOverwrite: shows and restores a screen's overwrite elements and returns focus afterwards
 
 
 ## XML parsing

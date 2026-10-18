@@ -8,6 +8,9 @@ namespace SPTK\SDLWrapper;
 class SDL {
 
   public const SDL_INIT_VIDEO = 0x20;
+  public const SDL_INIT_AUDIO = 0x10;
+  public const SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK = 0xffffffff;
+  public const SDL_AUDIO_F32LE = 0x8120;
 
   public const SDL_EVENT_RENDER_TARGETS_RESET = 0x2000;
   public const SDL_EVENT_RENDER_DEVICE_RESET = 0x2001;
@@ -100,6 +103,7 @@ class SDL {
   public const MOD_SHIFT = 0x0003;
   public const MOD_CTRL = 0x00c0;
   public const MOD_ALT = 0x0300;
+  public const MOD_MODE = 0x4000;
 
   public \FFI $ffi;
 

@@ -1,11 +1,29 @@
 <Screen>
   <Layout direction="vertical">
-    <Text height="1">Selectors: Return to edit; browse colors, dates, and files</Text>
+    <Text height="1">Selectors: Return opens ColorInput colors; Tab switches to hex</Text>
     <Separator />
-    <Layout direction="horizontal" height="1*">
-      <ColorSelector width="64" id="demoColor" value="#ff0000">
-        <Event type="change" action="Controller::colorChanged" />
-      </ColorSelector>
+    <Layout direction="horizontal" height="16">
+      <Layout direction="vertical" width="64">
+        <ColorSelector height="7" id="demoColor" value="#ff0000">
+          <Event type="change" action="Controller::colorChanged" />
+        </ColorSelector>
+        <Separator />
+        <ColorInput height="auto" id="demoColorInput" label="Color input" value="#ff9000">
+          <Item value="#ff9000" />
+          <Item value="#0050ff" />
+          <Item value="#ff5050" />
+          <Item value="#604000" />
+          <Item value="#00bb00" />
+          <Item value="#bf00bf" />
+          <Item value="#008c8c" />
+          <Item value="#b05c00" />
+          <Item value="#7b55c7" />
+          <Item value="#cc3974" />
+          <Item value="#547800" />
+          <Item value="#5555aa" />
+          <Event type="accept" action="Controller::colorChanged" />
+        </ColorInput>
+      </Layout>
       <Separator />
       <DateSelector width="28" id="demoDate">
         <Event type="change" action="Controller::dateChanged" />

@@ -60,15 +60,16 @@ final class ScreenParser {
     $pixel = $parentPixel || $this->attrBoolean($reader, 'pixel', false);
     $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip', 'pixel', 'overflow'];
     if ($parentDirection === 'horizontal') {
-      $allowed[] = 'width';
+      array_push($allowed, 'width', 'deck', 'summary', 'overwrite');
     } else if ($parentDirection === 'vertical') {
-      $allowed[] = 'height';
+      array_push($allowed, 'height', 'deck', 'summary', 'overwrite');
     }
     $this->assertAttributes($reader, $allowed);
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
     $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false), !$parentPixel && $pixel, $pixel ? $this->pixelBox($parentStyle) : null, $pixel && !$parentPixel ? $parentStyle->background : null);
     $layout->setOverflow($this->attrBoolean($reader, 'overflow', false));
+    $this->applyTileAttributes($reader, $layout, $parentDirection, $parentStyle);
     $nodeStyle = $parentStyle;
     $style = $pixel ? $parentStyle->forChild() : $parentStyle;
     $hasItems = false;
@@ -128,7 +129,7 @@ final class ScreenParser {
     if (!$parser instanceof WidgetParser) {
       throw new \RuntimeException("Widget parser must implement WidgetParser: {$parserClass}");
     }
-    $allowed = $direction === 'horizontal' ? ['width', 'navigate', 'id', 'tip', 'activeTip'] : ['height', 'navigate', 'id', 'tip', 'activeTip'];
+    $allowed = [$direction === 'horizontal' ? 'width' : 'height', 'deck', 'summary', 'overwrite', 'navigate', 'id', 'tip', 'activeTip'];
     $parser->validateAttributes($reader, $allowed);
     $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width', '') : '';
     $height = $direction === 'vertical' ? $this->attrSize($reader, 'height', '') : '';
@@ -142,7 +143,38 @@ final class ScreenParser {
     $definition = $parser->parse($reader, $style);
     $definition->widget->setId($id);
     $definition->widget->setTips($tip, $activeTip);
-    $layout->addLeaf(new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events, $navigate, $pixel ? $this->pixelBox($definition->style ?? $style) : null));
+    $leaf = new LayoutLeaf($widgetName, $width, $height, $definition->widget, $definition->events, $navigate, $pixel ? $this->pixelBox($definition->style ?? $style) : null);
+    $this->applyTileAttributes($reader, $leaf, $direction, $definition->style ?? $style);
+    $layout->addLeaf($leaf);
+  }
+
+  /** Read the overwrite target, the deck size and the closed summary of a layout or widget. */
+  private function applyTileAttributes(\XMLReader $reader, LayoutNode|LayoutLeaf $tile, ?string $parentDirection, Style $style): void {
+    $deck = $reader->getAttribute('deck');
+    $summary = $reader->getAttribute('summary');
+    $overwrite = $reader->getAttribute('overwrite');
+    if ($overwrite !== null) {
+      if ($deck !== null) {
+        throw new \RuntimeException("<{$reader->name}> cannot combine 'deck' and 'overwrite'.");
+      }
+      if ($tile->tileId() === null) {
+        throw new \RuntimeException("<{$reader->name} overwrite> requires an id.");
+      }
+      $tile->setOverwrite($overwrite);
+    }
+    if ($deck === null) {
+      if ($summary !== null) {
+        throw new \RuntimeException("<{$reader->name}> attribute 'summary' requires 'deck'.");
+      }
+      return;
+    }
+    $tile->setDeck($this->attrSize($reader, 'deck'), $parentDirection === 'horizontal' ? 'width' : 'height');
+    if ($summary !== null) {
+      if (!preg_match('/^[A-Za-z_\\\\][A-Za-z0-9_\\\\]*::[A-Za-z_][A-Za-z0-9_]*$/', $summary)) {
+        throw new \RuntimeException('Deck summary must name a static method as Class::method.');
+      }
+      $tile->setDeckSummary($summary, $style);
+    }
   }
 
   /** Open an XML file and report a clear error if it cannot be read. */

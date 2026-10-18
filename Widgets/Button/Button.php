@@ -13,6 +13,9 @@ final class Button extends Widget {
 
   private bool $activated = false;
   private ?Window $window = null;
+  private ?string $opens = null;
+  private ?string $restores = null;
+  private ?\Closure $overwriteHandler = null;
 
   /** Create a button for a static action or a screen identifier. */
   public function __construct(
@@ -32,6 +35,17 @@ final class Button extends Widget {
   /** Bind the owning window for screen selection. */
   public function setWindow(Window $window): void {
     $this->window = $window;
+  }
+
+  /** Show an overwrite element (`#id`) or restore one (`parent` or `#id`) on press. */
+  public function setOverwrite(?string $opens, ?string $restores): void {
+    $this->opens = $opens;
+    $this->restores = $restores;
+  }
+
+  /** Bind the owning screen's handler for `opens` and `restores`. */
+  public function setOverwriteHandler(\Closure $handler): void {
+    $this->overwriteHandler = $handler;
   }
 
   /** Replace the displayed label and notify change subscribers. */
@@ -63,13 +77,21 @@ final class Button extends Widget {
     return $this->activated;
   }
 
-  /** Run the button action for Return or its hotkey. */
+  /** Run the button action for Return or its hotkey: show first, then the action, then restore. */
   public function press(mixed $input = null): void {
     if ($this->screenId !== null) {
       $this->window?->setCurrentScreenId($this->screenId);
-    } else if ($this->action !== null) {
+      return;
+    }
+    if ($this->opens !== null) {
+      ($this->overwriteHandler)?->__invoke($this, 'opens', $this->opens);
+    }
+    if ($this->action !== null) {
       $event = new EventDefinition('activate', null, $this->action);
       (new EventDispatcher())->dispatch([$event], new EventContext('activate', $this, $input), false);
+    }
+    if ($this->restores !== null) {
+      ($this->overwriteHandler)?->__invoke($this, 'restores', $this->restores);
     }
   }
 
