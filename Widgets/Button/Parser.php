@@ -40,7 +40,7 @@ final class Parser implements WidgetParser {
       throw new \RuntimeException('Button action must name a static method as Class::method.');
     }
     if ($hotkey !== null) {
-      $hotkey = KeyNormalizer::normalizeName($hotkey);
+      $hotkey = KeyNormalizer::normalizeChord($hotkey);
       if ($hotkey === null) {
         throw new \RuntimeException('Invalid Button hotkey.');
       }

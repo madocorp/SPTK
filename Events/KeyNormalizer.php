@@ -143,4 +143,23 @@ final class KeyNormalizer {
     return null;
   }
 
+  /** Canonicalize a key with optional Ctrl, Alt, and Shift modifiers. */
+  public static function normalizeChord(string $chord): ?string {
+    $parts = array_map('strtolower', explode('+', trim($chord)));
+    $name = self::normalizeName(array_pop($parts));
+    if ($name === null) {
+      return null;
+    }
+    $modifiers = [];
+    foreach ($parts as $part) {
+      $modifier = self::normalizeModifierName($part);
+      if ($modifier === null || in_array($modifier, $modifiers, true)) {
+        return null;
+      }
+      $modifiers[] = $modifier;
+    }
+    sort($modifiers);
+    return implode('+', [...$modifiers, $name]);
+  }
+
 }

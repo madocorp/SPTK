@@ -28,7 +28,9 @@ final class EventDefinition {
     if ($actualModifiers !== $modifiers) {
       return false;
     }
-    return KeyNormalizer::keyName((int)$input->key->key, $nativeModifiers) === $expectedKey;
+    $actualKey = KeyNormalizer::keyName((int)$input->key->key, $nativeModifiers);
+    return $actualKey === $expectedKey
+      || ($expectedKey === '/' && ($modifiers & \SPTK\SDLWrapper\SDL::MOD_SHIFT) !== 0 && $actualKey === '?');
   }
 
   /** Convert a normalized key chord into its modifier mask and key name. */

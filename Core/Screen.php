@@ -253,13 +253,6 @@ final class Screen {
       }
       return true;
     }
-    if ($this->statusBar !== null && $event->type === \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN
-      && ((int)$event->key->mod & (\SPTK\SDLWrapper\SDL::MOD_CTRL | \SPTK\SDLWrapper\SDL::MOD_ALT)) === 0
-      && KeyNormalizer::normalizeInput($event) === ord('?')) {
-      $this->screenInput->cancelCharacterHotkey();
-      $this->statusBar->hint($this->selectedLeaf()?->instance()?->tip($this->inputMode) ?? '');
-      return true;
-    }
     $type = $this->screenInput->type($event);
     if ($type === null) {
       return false;
@@ -268,6 +261,13 @@ final class Screen {
       $event, !$this->inputMode || $this->activeListAllowsHotkeys()
     );
     $handled = $this->routeEvent($event, $type);
+    if (!$handled && $this->statusBar !== null && $event->type === \SPTK\SDLWrapper\SDL::SDL_EVENT_KEY_DOWN
+      && ((int)$event->key->mod & (\SPTK\SDLWrapper\SDL::MOD_CTRL | \SPTK\SDLWrapper\SDL::MOD_ALT)) === 0
+      && KeyNormalizer::normalizeInput($event) === ord('?')) {
+      $this->screenInput->cancelCharacterHotkey();
+      $this->statusBar->hint($this->selectedLeaf()?->instance()?->tip($this->inputMode) ?? '');
+      return true;
+    }
     if ($type === 'textInput' || $type === 'keyUp') {
       if ($this->inputMode && !$this->activeListAllowsHotkeys()) {
         $this->screenInput->cancelCharacterHotkey();

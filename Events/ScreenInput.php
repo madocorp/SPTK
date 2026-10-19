@@ -13,6 +13,8 @@ final class ScreenInput {
   private array $hotkeys = [];
   private bool $hasSymbolHotkey = false;
   private ?array $pendingCharacterHotkey = null;
+  private ?string $suppressedSymbol = null;
+  private int $lastKeyModifiers = 0;
 
   /** Retain the screen's XML event declarations. */
   public function __construct(private array $events) {
@@ -76,9 +78,38 @@ final class ScreenInput {
 
   /** Dispatch matching screen events and button hotkeys. */
   public function dispatch(string $type, ?Widget $widget, mixed $event, bool $allowHotkeys = true): bool {
+    if ($type === 'keyDown') {
+      $this->suppressedSymbol = null;
+      $this->lastKeyModifiers = KeyNormalizer::normalizeModifiers((int)$event->key->mod);
+    }
+    if ($type === 'textInput') {
+      $symbol = \FFI::string($event->text->text);
+      $suppressed = $this->suppressedSymbol;
+      $this->suppressedSymbol = null;
+      $modifiers = $this->lastKeyModifiers;
+      $this->lastKeyModifiers = 0;
+      if ($suppressed !== null && ($symbol === $suppressed || ($suppressed === '/' && $symbol === '?'))) {
+        return true;
+      }
+      if ($modifiers === SDL::MOD_SHIFT && in_array($symbol, ['*', '/', '?'], true)) {
+        $key = $symbol === '?' ? '/' : $symbol;
+        $shifted = (object)['type' => SDL::SDL_EVENT_KEY_DOWN,
+          'key' => (object)['key' => ord($key), 'mod' => $modifiers, 'repeat' => false]];
+        if ($this->dispatcher->dispatch($this->events, new EventContext('keyDown', $widget, $shifted), true)) {
+          $this->pendingCharacterHotkey = null;
+          return true;
+        }
+      }
+    }
     if ($this->dispatcher->dispatch($this->events, new EventContext($type, $widget, $event), true)) {
       if ($type === 'keyDown') {
         $this->pendingCharacterHotkey = null;
+        if (((int)$event->key->mod & SDL::MOD_SHIFT) !== 0) {
+          $key = (int)$event->key->key;
+          $this->suppressedSymbol = match ($key) {
+            SDL::KEY_SLASH, 63 => '/', SDL::KEY_ASTERISK, 56 => '*', default => null,
+          };
+        }
       }
       return true;
     }
@@ -89,8 +120,12 @@ final class ScreenInput {
         return true;
       }
     }
-    if ($allowHotkeys && $type === 'keyDown') {
+    if ($type === 'keyDown') {
       foreach ($this->hotkeys as $key => $button) {
+        // Modified shortcuts remain available while a canvas or text widget is active.
+        if (!$allowHotkeys && !str_contains($key, 'ctrl+') && !str_contains($key, 'alt+')) {
+          continue;
+        }
         if (strlen($key) === 1 && !ctype_alnum($key)) {
           continue;
         }

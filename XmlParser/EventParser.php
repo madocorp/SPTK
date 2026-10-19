@@ -43,22 +43,8 @@ final class EventParser {
 
   /** Normalize a key chord and reject unsupported key or modifier names. */
   private function normalizeKey(string $key): string {
-    $parts = array_map('strtolower', explode('+', trim($key)));
-    $name = array_pop($parts);
-    $modifiers = [];
-    foreach ($parts as $modifier) {
-      $modifier = KeyNormalizer::normalizeModifierName($modifier);
-      if ($modifier === null || in_array($modifier, $modifiers, true)) {
-        throw new \RuntimeException("Invalid key modifier in '{$key}'.");
-      }
-      $modifiers[] = $modifier;
-    }
-    sort($modifiers);
-    $name = KeyNormalizer::normalizeName($name);
-    if ($name === null) {
-      throw new \RuntimeException("Invalid key name in '{$key}'.");
-    }
-    return implode('+', array_merge($modifiers, [$name]));
+    return KeyNormalizer::normalizeChord($key)
+      ?? throw new \RuntimeException("Invalid key chord in '{$key}'.");
   }
 
   /** Reject content inside Event and advance over its closing tag. */

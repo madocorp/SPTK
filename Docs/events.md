@@ -91,8 +91,10 @@ consumes input by returning `true`; `false` lets it continue. A screen action ca
 input mode. Returning `true` from a screen action prevents the screen from applying its navigation or
 activation controls for that event.
 
-Buttons with a `hotkey` register that key at screen scope. Pressing the key runs the button action even when
-another widget is selected or active. The action receives an `EventContext` whose `widget` is that button.
+Buttons with a `hotkey` register that key or chord at screen scope. Control and Alt chords can run even when
+another widget is active. An active text widget keeps unmodified typing keys. The action receives an
+`EventContext` whose `widget` is that button. A screen action for `?` takes precedence over the default
+selected-widget help; the help appears if no action handles the key.
 
 ## Notifications
 
