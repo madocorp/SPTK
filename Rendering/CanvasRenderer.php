@@ -113,7 +113,9 @@ final class CanvasRenderer {
 
   /** Clear and paint a surface while its render target remains selected. */
   private function draw(Canvas $canvas, Texture $surface): void {
-    $surface->clear($canvas->background());
+    if (!$canvas->preservePixels()) {
+      $surface->clear($canvas->background());
+    }
     $canvas->draw($surface, $this->textures);
   }
 

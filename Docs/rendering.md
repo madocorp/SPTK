@@ -107,6 +107,8 @@ and repainted only after invalidation or recreation. Resizing replaces the surfa
 releases unused surfaces. Application sprites and writable layers remain available until explicitly
 destroyed, discarded by PHP, or released during window shutdown. Canvas invalidation queues a window
 expose event to redraw after timer-driven updates as well as keyboard input.
+Canvas subclasses may return `true` from `preservePixels()` to update only a changed region of the
+existing surface. They must paint the complete surface on its first draw and after a size change.
 Queued Canvas exposes carry an internal marker. If input has already repainted all changed Canvas
 surfaces, the window consumes the notification without repainting or presenting again. Native expose
 events continue to redraw the complete frame. Unconsumed input, including the extra text-input event

@@ -149,8 +149,17 @@ if ($fitted->naturalHeight(1) !== 4) {
 $fitted->measureGrid(new Tile(0, 0, 1, 4));
 expectGeometryArea($fitted->leaves()[1]->grid(), [0, 2, 1, 0], 'filler collapses to zero at natural height');
 $fitted->measureGrid(new Tile(0, 0, 1, 7));
-expectGeometryArea($fitted->leaves()[1]->grid(), [0, 2, 1, 3], 'filler receives remaining rows');
+expectGeometryArea($fitted->leaves()[1]->grid(), [0, 3, 1, 2], 'expanded filler leaves a gap after the preceding tile');
 expectGeometryArea($fitted->leaves()[2]->grid(), [0, 6, 1, 1], 'bottom margin stays fixed after filler');
+$fitted->measureArea(new Tile(0, 0, 1, 7), new WindowGeometry(8, 15, 8, 105, 0, 0));
+$above = measuredGeometryArea($fitted->leaves()[0]);
+$spacer = measuredGeometryArea($fitted->leaves()[1]);
+if ($above->y + $above->height > $spacer->y) {
+  throw new RuntimeException('Expanded zero-minimum filler paints over the preceding tile padding.');
+}
+$horizontalFiller = \SPTK\Layout\Splitter::horizontal(new Tile(0, 0, 10, 1), ['2', '0*', '2']);
+expectGeometryArea($horizontalFiller[1], [4, 0, 2, 1], 'expanded horizontal filler leaves a gap after the preceding tile');
+expectGeometryArea($horizontalFiller[2], [8, 0, 2, 1], 'horizontal filler keeps the trailing tile fixed');
 $overflowRoot = new LayoutNode('vertical', '1*', '1*');
 $overflowStack = new LayoutNode('vertical', '1*', '4');
 $overflowStack->setOverflow(true);

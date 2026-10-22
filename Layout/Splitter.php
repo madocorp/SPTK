@@ -71,6 +71,19 @@ final class Splitter {
     return $allocated;
   }
 
+  /** Turn a zero-minimum spacer's first allocated cells into its leading gap. */
+  private static function leadingGaps(array $sizes, array &$allocated, int $normalGap): array {
+    $gaps = [];
+    foreach ($sizes as $index => $size) {
+      $gaps[$index] = $index === 0 || self::collapsedGapBefore($sizes, $index) ? 0 : $normalGap;
+      if ($index > 0 && $size === '0*' && $allocated[$index] > 0) {
+        $gaps[$index] = min($normalGap, $allocated[$index]);
+        $allocated[$index] -= $gaps[$index];
+      }
+    }
+    return $gaps;
+  }
+
   public static function horizontal(Tile $grid, array $sizes): array {
     $columns = $grid->width;
     $collapsedGaps = 0;
@@ -80,11 +93,13 @@ final class Splitter {
       }
     }
     $allocated = self::allocateSizes($sizes, $columns - (count($sizes) - 1) + 2 * $collapsedGaps, $columns);
+    $gaps = self::leadingGaps($sizes, $allocated, 2);
     $result = [];
     $x = 0;
     foreach ($allocated as $index => $width) {
+      $x += $gaps[$index];
       $result[] = new Tile($grid->x + $x, $grid->y, $width, $grid->height);
-      $x += $width + (isset($sizes[$index + 1]) && self::collapsedGapBefore($sizes, $index + 1) ? 0 : 2);
+      $x += $width;
     }
     return $result;
 
@@ -99,11 +114,13 @@ final class Splitter {
       }
     }
     $allocated = self::allocateSizes($sizes, $rows + $collapsedGaps, $rows);
+    $gaps = self::leadingGaps($sizes, $allocated, 1);
     $result = [];
     $y = 0;
     foreach ($allocated as $index => $height) {
+      $y += $gaps[$index];
       $result[] = new Tile($grid->x, $grid->y + $y, $grid->width, $height);
-      $y += $height + (isset($sizes[$index + 1]) && self::collapsedGapBefore($sizes, $index + 1) ? 0 : 1);
+      $y += $height;
     }
     return $result;
   }

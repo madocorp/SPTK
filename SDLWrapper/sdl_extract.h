@@ -177,6 +177,7 @@ bool SDL_StartTextInput(SDL_Window *window);
 bool SDL_SetClipboardText(const char *text);
 bool SDL_SetPrimarySelectionText(const char *text);
 char *SDL_GetClipboardText(void);
+bool SDL_OpenURL(const char *url);
 bool SDL_HasClipboardText(void);
 void SDL_free(void *mem);
 SDL_Surface *SDL_CreateSurface(int width, int height, SDL_PixelFormat format);

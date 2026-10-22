@@ -32,6 +32,7 @@ The full render path, partial updates, dirty cells, and caches are described in 
 Classes that belongs strictly to a screen
 
 - Core\Screen: defines one visible screen and manages widget selection and activation
+  (`setInputGuard()` can temporarily intercept input before normal routing)
 - Layout\LayoutNode: holds the layout structure, tree of vertical and horizontal subdivisions plus leafs
 - Layout\LayoutLeaf: container for the widgets
 - Layout\LayoutSeparator: marks a split boundary for screen-level separator drawing

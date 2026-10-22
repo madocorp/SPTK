@@ -69,6 +69,21 @@ final class Player {
     return $this->music !== null;
   }
 
+  /** Estimate the seconds already consumed from the current music source. */
+  public function musicPositionSeconds(): ?float {
+    if ($this->music === null) {
+      return null;
+    }
+    $track =& $this->music;
+    $queued = $this->sdl->ffi->SDL_GetAudioStreamQueued($track['stream']);
+    if ($queued < 0) {
+      throw new \RuntimeException('SDL_GetAudioStreamQueued failed: ' . $this->sdl->error());
+    }
+    $seconds = max(0.0, ($track['submittedBytes'] - $queued) / ($track['freq'] * $track['frameBytes']));
+    $track['positionSeconds'] = max($track['positionSeconds'], $seconds);
+    return $track['positionSeconds'];
+  }
+
   /** Play an effect independently and return its stop handle. */
   public function playSound(Source|string $source, float $gain = 1.0): int {
     if (!is_finite($gain) || $gain < 0) {
@@ -180,6 +195,7 @@ final class Player {
     $now = hrtime(true);
     return ['stream' => $stream, 'source' => $source, 'loop' => $loop, 'frameBytes' => $frameBytes,
       'freq' => $freq, 'eof' => false, 'drainedAt' => null, 'gain' => $gain,
+      'submittedBytes' => 0, 'positionSeconds' => 0.0,
       'fadeFrom' => $gain, 'fadeStart' => $now, 'fadeEnd' => $now + $fadeInMs * 1000000,
       'stopping' => false];
   }
@@ -231,6 +247,7 @@ final class Player {
       }
       $this->sdl->checkReturnValue($this->sdl->ffi->SDL_PutAudioStreamData($track['stream'], $data, strlen($data)), 'SDL_PutAudioStreamData');
       $queued += strlen($data);
+      $track['submittedBytes'] += strlen($data);
     }
   }
 

@@ -18,6 +18,7 @@ final class Screen {
   private bool $initialSelectionNotified = false;
   private array $events;
   private ScreenInput $screenInput;
+  private ?\Closure $inputGuard = null;
   private array $widgetsById = [];
   private ?LayoutLeaf $statusLeaf = null;
   private bool $statusOverlay = false;
@@ -93,7 +94,7 @@ final class Screen {
         $this->statusLeaf = $leaf;
         $widget->setFocusHandlers($this->showStatus(...), $this->hideStatus(...));
       }
-      if ($widget instanceof Button) {
+      if ($widget instanceof Button && in_array($leaf, $this->leaves, true)) {
         $this->screenInput->register($widget);
       }
     }
@@ -240,6 +241,9 @@ final class Screen {
 
   /** Route input through the active widget, screen subscriptions, and screen controls. */
   public function handleEvent(mixed $event): bool {
+    if ($this->inputGuard !== null && ($this->inputGuard)($event)) {
+      return true;
+    }
     if ($this->statusBar?->handleBlockingInput($event)) {
       return true;
     }
@@ -276,6 +280,11 @@ final class Screen {
       }
     }
     return $handled || $deferred;
+  }
+
+  /** Intercept temporary screen-wide input before widget and tile routing. */
+  public function setInputGuard(?callable $guard): void {
+    $this->inputGuard = $guard === null ? null : \Closure::fromCallable($guard);
   }
 
   /** Send one event to the active widget, screen actions, and tile navigation. */

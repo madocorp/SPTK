@@ -64,6 +64,11 @@ class Canvas extends Widget {
     return $this->background;
   }
 
+  /** Whether a changed canvas can reuse its previous target pixels. */
+  public function preservePixels(): bool {
+    return false;
+  }
+
   /** Suggest a natural width in character cells. */
   public function preferredWidth(): ?int {
     return 40;
