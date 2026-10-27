@@ -180,6 +180,11 @@ expectNavigation($nestedScreen->navigationDepth(), 0, 'Escape leaves container')
 expectNavigation($nestedScreen->selectedLeaf()->instance()->id(), 'container', 'exit restores container focus');
 $nestedScreen->handleEvent(navigationKey(\SPTK\SDLWrapper\SDL::KEY_RETURN));
 expectNavigation($nestedScreen->selectedLeaf() === $second, true, 'reentry remembers selected child');
+$nestedScreen->selectLeaf($after);
+expectNavigation($nestedScreen->navigationDepth(), 0, 'selecting an outer leaf leaves the entered group');
+$nestedScreen->selectLeaf($first);
+expectNavigation($nestedScreen->navigationDepth(), 1, 'selecting a grouped child enters its scope');
+expectNavigation($nestedScreen->selectedLeaf() === $first, true, 'deep selection reaches the requested child');
 $nestedScreen->setLayout($outer);
 expectNavigation($nestedScreen->navigationDepth(), 0, 'layout replacement leaves nested navigation');
 expectNavigation($nestedScreen->selectedLeaf()->instance()->id(), 'container', 'layout replacement keeps outer focus');

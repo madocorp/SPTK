@@ -26,7 +26,7 @@ final class LayoutNode {
   private ?LayoutOverflow $overflow = null;
   private ?Tile $viewport = null;
 
-  public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, private ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false, private bool $pixelMode = false, private ?PixelBox $box = null, private ?Color $outerBackground = null) {
+  public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, private ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false, private bool $pixelMode = false, private ?PixelBox $box = null, private ?Color $outerBackground = null, private ?string $initialFocus = null) {
     if ($enterChildren && $navigateChildren) {
       throw new \InvalidArgumentException('enterChildren requires navigateChildren="false".');
     }
@@ -97,6 +97,22 @@ final class LayoutNode {
 
   public function tileId(): ?string {
     return $this->id;
+  }
+
+  /** Return this layout's focus tile when child navigation is grouped. */
+  public function focusLeaf(): ?LayoutLeaf {
+    return $this->focus;
+  }
+
+  /** Return the outer focus tile when this layout is an enterable group. */
+  public function entryFocus(): ?LayoutLeaf {
+    return $this->enterChildren ? $this->focus : null;
+  }
+
+  /** Return the preferred child when this group is entered. */
+  public function initialFocus(): ?LayoutLeaf {
+    $leaf = $this->initialFocus === null ? null : $this->findTile($this->initialFocus);
+    return $leaf instanceof LayoutLeaf && in_array($leaf, $this->childMovementLeaves(), true) ? $leaf : null;
   }
 
   /** Measure stacked or side-by-side children at a known width. */

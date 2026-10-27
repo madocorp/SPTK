@@ -58,7 +58,7 @@ final class ScreenParser {
   private function parseLayout(\XMLReader $reader, Style $parentStyle, ?string $parentDirection = null, bool $parentPixel = false): LayoutNode {
     $direction = $this->attrEnum($reader, 'direction', ['vertical', 'horizontal']);
     $pixel = $parentPixel || $this->attrBoolean($reader, 'pixel', false);
-    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'navigate', 'id', 'tip', 'pixel', 'overflow'];
+    $allowed = ['direction', 'navigateChildren', 'enterChildren', 'initialFocus', 'navigate', 'id', 'tip', 'pixel', 'overflow'];
     if ($parentDirection === 'horizontal') {
       array_push($allowed, 'width', 'deck', 'summary', 'overwrite');
     } else if ($parentDirection === 'vertical') {
@@ -67,7 +67,7 @@ final class ScreenParser {
     $this->assertAttributes($reader, $allowed);
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
-    $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false), !$parentPixel && $pixel, $pixel ? $this->pixelBox($parentStyle) : null, $pixel && !$parentPixel ? $parentStyle->background : null);
+    $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false), !$parentPixel && $pixel, $pixel ? $this->pixelBox($parentStyle) : null, $pixel && !$parentPixel ? $parentStyle->background : null, $reader->getAttribute('initialFocus'));
     $layout->setOverflow($this->attrBoolean($reader, 'overflow', false));
     $this->applyTileAttributes($reader, $layout, $parentDirection, $parentStyle);
     $nodeStyle = $parentStyle;

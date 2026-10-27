@@ -37,7 +37,15 @@ final class FocusNavigation {
     foreach ($this->stack as [$parent]) {
       $known = $known || $parent->contains($leaf);
     }
-    return $known;
+    if ($known || !in_array($leaf, $this->layout->leaves(), true)) {
+      return $known;
+    }
+    foreach ($this->layout->pathTo($leaf) ?? [] as $node) {
+      if ($node->focusLeaf() !== null && $node->entryFocus() === null) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Select a tile in this or an ancestor scope. */
@@ -48,6 +56,15 @@ final class FocusNavigation {
     $previous = $this->selectedLeaf();
     while (!$this->selection->contains($leaf) && $this->stack !== []) {
       $this->leave();
+    }
+    if (!$this->selection->contains($leaf)) {
+      foreach ($this->layout->pathTo($leaf) ?? [] as $node) {
+        $focus = $node->entryFocus();
+        if ($focus !== null) {
+          $this->selection->select($focus);
+          $this->enter();
+        }
+      }
     }
     $this->selection->select($leaf);
     return $previous !== $this->selectedLeaf();
@@ -72,6 +89,9 @@ final class FocusNavigation {
       if ($targets !== []) {
         $children->select($targets[0]);
       }
+    }
+    if (($initial = $node->initialFocus()) !== null) {
+      $children->select($initial);
     }
     $this->stack[] = [$this->selection, $node];
     $this->selection = $children;

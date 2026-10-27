@@ -107,7 +107,8 @@ final class ScreenOverwrite {
 
   /** Report whether a leaf can be selected from the screen's outer navigation scope. */
   private function selectable(LayoutLeaf $leaf): bool {
-    return in_array($leaf, $this->screen->layout->leaves(true), true);
+    return in_array($leaf, $this->screen->layout->leaves(), true)
+      || in_array($leaf, $this->screen->layout->leaves(true), true);
   }
 
 }
