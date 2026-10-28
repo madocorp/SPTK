@@ -138,6 +138,7 @@ SDL_Window *SDL_GetWindowFromID(SDL_WindowID id);
 bool SDL_MinimizeWindow(SDL_Window *window);
 bool SDL_RestoreWindow(SDL_Window *window);
 bool SDL_ShowWindow(SDL_Window *window);
+bool SDL_RaiseWindow(SDL_Window *window);
 bool SDL_HideWindow(SDL_Window *window);
 bool SDL_MaximizeWindow(SDL_Window *window);
 SDL_WindowFlags SDL_GetWindowFlags(SDL_Window *window);

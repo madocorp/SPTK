@@ -163,6 +163,14 @@ final class Window {
     $this->sdl->ffi->SDL_SyncWindow($this->window);
   }
 
+  /** Bring the window to the front, restoring it first when minimized. */
+  public function raise(): void {
+    if (($this->sdl->ffi->SDL_GetWindowFlags($this->window) & SDL::SDL_WINDOW_MINIMIZED) !== 0) {
+      $this->sdl->ffi->SDL_RestoreWindow($this->window);
+    }
+    $this->sdl->ffi->SDL_RaiseWindow($this->window);
+  }
+
   /** Remeasure a changed screen layout and redraw the retained window frame. */
   public function refreshLayout(): void {
     $grid = new Tile(0, 0, $this->columns, $this->rows);
