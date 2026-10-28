@@ -4,27 +4,6 @@ SPTK is a PHP 8.2+ user interface toolkit. It uses SDL3 and SDL3_ttf through
 PHP FFI for windows, pixel rendering, and text. Applications describe screens
 with XML layouts and can use the widgets in `Widgets/`.
 
-## Audio
-
-`SPTK\App::audio()` opens an SDL3 playback device on first use. The shared
-`SPTK\Audio\Player` plays one music source and overlapping sound effects.
-Pass a WAV filename or an `SPTK\Audio\Source` that supplies PCM frames:
-
-```php
-$audio = \SPTK\App::audio();
-$audio->playMusic('Assets/theme.wav', loop: true, fadeInMs: 500);
-$effect = $audio->playSound('Assets/hit.wav');
-$audio->stopSound($effect);
-$audio->stopMusic(fadeOutMs: 500);
-```
-
-`Source::spec()` returns `format`, `channels`, and `freq` values matching an
-SDL audio specification. `read($frames)` returns whole PCM frames and an empty
-string at the end; `rewind()` restarts the source when music loops. Use a new
-source instance for each simultaneous playback. WAV data is loaded into memory;
-PCM is queued to SDL in bounded chunks on the app event loop. The player closes
-before SDL shuts down. Other audio file formats are not included.
-
 ## Requirements
 
 - PHP CLI 8.2 or newer with FFI, XMLReader, mbstring, and PCNTL enabled.
