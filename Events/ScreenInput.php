@@ -41,7 +41,9 @@ final class ScreenInput {
     if (!$allow || $event->type !== SDL::SDL_EVENT_KEY_DOWN) {
       return false;
     }
-    foreach ($this->hotkeys as $key => $button) {
+    // Array keys like "1" become ints, so read the hotkey from the button.
+    foreach ($this->hotkeys as $button) {
+      $key = $button->hotkey();
       if (strlen($key) === 1 && ctype_alnum($key) && (new EventDefinition('keyDown', $key, ''))->matches($event)) {
         $keydown = $event instanceof \FFI\CData ? new KeyboardEvent($event) : $event;
         $this->pendingCharacterHotkey = [$button, $keydown, KeyNormalizer::normalize((int)$event->key->key, (int)$event->key->mod)];
@@ -121,7 +123,8 @@ final class ScreenInput {
       }
     }
     if ($type === 'keyDown') {
-      foreach ($this->hotkeys as $key => $button) {
+      foreach ($this->hotkeys as $button) {
+        $key = $button->hotkey();
         // Modified shortcuts remain available while a canvas or text widget is active.
         if (!$allowHotkeys && !str_contains($key, 'ctrl+') && !str_contains($key, 'alt+')) {
           continue;
