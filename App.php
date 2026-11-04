@@ -70,6 +70,10 @@ final class App {
       $this->init();
       $this->initialized = true;
       $this->dispatchLifecycleEvent('init');
+      // Init actions may switch screens; show the content only in its final state.
+      foreach ($this->eventLoop->windows() as $window) {
+        $window->showContent();
+      }
       $this->eventLoop->start();
     } catch (Throwable $error) {
       fwrite(STDERR, $error->getMessage() . "\n");
@@ -103,7 +107,7 @@ final class App {
     }
     $this->openFont($xmlParser->fontName, $xmlParser->fontSize);
     foreach ($xmlParser->windows as $windowData) {
-      $window = new Core\Window($windowData);
+      $window = new Core\Window($windowData + ['contentHidden' => true]);
       $this->eventLoop->registerWindow($window);
     }
   }

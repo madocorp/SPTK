@@ -26,6 +26,7 @@ final class Window {
   private $grid;
   private ?\FFI\CData $frameTexture = null;
   private WindowGeometry $geometry;
+  private bool $contentHidden = false; // Present only the background until showContent().
 
   public function __construct(array $data) {
     $this->ffiWidth = \FFI::new('int');
@@ -75,9 +76,18 @@ final class Window {
     $this->gridRenderer = new \SPTK\Rendering\GridRenderer($this->ffiRenderer, $this->pixelRenderer);
     $this->sdl->ffi->SDL_StartTextInput($this->window);
     $this->grid = new \SPTK\Rendering\Grid(1, 1);
+    $this->contentHidden = $data['contentHidden'] ?? false;
     $this->resize();
     if ($data['state'] !== 'hidden') {
       $this->show();
+    }
+  }
+
+  /** Present the retained frame of a window opened with only its background. */
+  public function showContent(): void {
+    if ($this->contentHidden) {
+      $this->contentHidden = false;
+      $this->renderScreens();
     }
   }
 
@@ -161,6 +171,13 @@ final class Window {
   public function show(): void {
     $this->sdl->ffi->SDL_ShowWindow($this->window);
     $this->sdl->ffi->SDL_SyncWindow($this->window);
+    // A maximized or fullscreen window gets its real size only now; don't stretch the old frame.
+    $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
+    if ((int)$this->ffiWidth->cdata !== $this->width || (int)$this->ffiHeight->cdata !== $this->height) {
+      $this->resize();
+    } else {
+      $this->presentFrame();
+    }
   }
 
   /** Bring the window to the front, restoring it first when minimized. */
@@ -298,7 +315,13 @@ final class Window {
   /** Copy the retained frame to the window backbuffer and present it. */
   private function presentFrame(): void {
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, null), 'SDL_SetRenderTarget');
-    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderTexture($this->ffiRenderer, $this->frameTexture, null, null), 'SDL_RenderTexture');
+    if ($this->contentHidden) {
+      $this->pixelRenderer->invalidateDrawColor();
+      $this->pixelRenderer->setDrawColor($this->screens[$this->currentScreen]->background);
+      $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderClear($this->ffiRenderer), 'SDL_RenderClear');
+    } else {
+      $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderTexture($this->ffiRenderer, $this->frameTexture, null, null), 'SDL_RenderTexture');
+    }
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_RenderPresent($this->ffiRenderer), 'SDL_RenderPresent');
   }
 
