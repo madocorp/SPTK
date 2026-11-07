@@ -245,7 +245,7 @@ and returns whether it was found. `LayoutNode::findNode($id)` finds a layout dec
 `Screen::setLayout($screen->layout)` to reindex a changed tree; focus and input mode stay with the
 selected widget if that instance survives. A removed
 active widget is released. Call `setWindow($window)` if newly added buttons need window binding,
-then `$window->resize()` to measure and render the changed tree. MaDemonstrator uses this to
+then `$window->resize()` to measure and render the changed tree. mademonstrator uses this to
 replace its slide preview while retaining the Markdown editor's buffer, cursor, and history.
 
 Window modes and pixel sizes can also be changed at runtime with `Core\WindowPlacement::apply($window,

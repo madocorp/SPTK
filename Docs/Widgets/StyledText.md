@@ -59,7 +59,7 @@ boxes support named `top`, `right`, `bottom`, and `left` edges.
 `raster($width, $height)` caches the immutable raster until text, style, or dimensions change.
 
 Apps can subclass StyledText and override `content()` to resolve semantic styles against
-an enclosing layout's measured grid. MaDemonstrator uses this for slide-relative font sizes
+an enclosing layout's measured grid. mademonstrator uses this for slide-relative font sizes
 in both its presentation and editor preview; their slide subtree uses pixel tiles.
 
 Run `php Tests/StyledText.php` for typography, wrapping, clipping, XML, color, and cache checks.
