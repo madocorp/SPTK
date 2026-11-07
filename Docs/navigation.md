@@ -40,6 +40,19 @@ its layout-mode appearance, while other tiles darken further to show that input 
 Widget-specific input behavior is documented on each widget's page.
 Input and TextEditor keep edits and emit `accept` on Escape. TextEditor inserts a newline on Return and releases on Ctrl+Return. Switching screens releases the active widget with `accept`.
 
+## Mouse input
+
+Left-click a visible tile to select and activate it. A Button runs its action on release, as it does with Return.
+The click completes only if the button is released over the tile where it was pressed. Clicking another tile
+accepts and deactivates the active widget before activating the new one. A click inside an enterable group
+enters that group and activates the clicked child. Mouse clicks do not change where an editor cursor or list
+selection sits within its widget.
+
+The wheel sends Up or Down steps to a built-in list, table, text editor, file selector, choice, or interactive
+image only while that widget is active and the pointer is over its tile. It uses the widget's ordinary cursor,
+scroll, and change behavior. Wheel input over an inactive tile does nothing. Dragging and mouse input for custom
+canvases are not supported. Keyboard navigation and shortcuts keep their existing behavior.
+
 ## Screens
 
 The first screen listed in a window is shown initially. Applications can switch screens with

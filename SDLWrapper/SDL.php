@@ -31,6 +31,8 @@ class SDL {
   public const SDL_EVENT_MOUSE_BUTTON_DOWN = 0x401;
   public const SDL_EVENT_MOUSE_BUTTON_UP = 0x402;
   public const SDL_EVENT_MOUSE_WHEEL = 0x403;
+  public const SDL_BUTTON_LEFT = 1;
+  public const SDL_MOUSEWHEEL_FLIPPED = 1;
 
   public const SDL_PIXELFORMAT_RGBA8888 = 0x16462004;
   public const SDL_PIXELFORMAT_ABGR8888 = 0x16762004;

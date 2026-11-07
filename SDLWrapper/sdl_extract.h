@@ -9,6 +9,8 @@ typedef unsigned char Uint8;
 typedef Uint32 SDL_DisplayID;
 typedef Uint32 SDL_WindowID;
 typedef Uint32 SDL_KeyboardID;
+typedef Uint32 SDL_MouseID;
+typedef Uint32 SDL_MouseButtonFlags;
 typedef Uint16 SDL_Keymod;
 typedef Uint64 SDL_WindowFlags;
 typedef Uint32 SDL_AudioDeviceID;
@@ -68,12 +70,41 @@ typedef struct SDL_WindowEvent
   Sint32 data1;
   Sint32 data2;
 } SDL_WindowEvent;
+typedef struct SDL_MouseButtonEvent
+{
+  SDL_EventType type;
+  Uint32 reserved;
+  Uint64 timestamp;
+  SDL_WindowID windowID;
+  SDL_MouseID which;
+  Uint8 button;
+  bool down;
+  Uint8 clicks;
+  Uint8 padding;
+  float x;
+  float y;
+} SDL_MouseButtonEvent;
+typedef struct SDL_MouseWheelEvent
+{
+  SDL_EventType type;
+  Uint32 reserved;
+  Uint64 timestamp;
+  SDL_WindowID windowID;
+  SDL_MouseID which;
+  float x;
+  float y;
+  int direction;
+  float mouse_x;
+  float mouse_y;
+} SDL_MouseWheelEvent;
 typedef union SDL_Event
 {
   Uint32 type;
   SDL_KeyboardEvent key;
   SDL_TextInputEvent text;
   SDL_WindowEvent window;
+  SDL_MouseButtonEvent button;
+  SDL_MouseWheelEvent wheel;
   Uint8 padding[128];
 } SDL_Event;
 typedef struct SDL_Rect

@@ -12,6 +12,8 @@ use SPTK\SDLWrapper\SDL;
 /** Owns one screen's layout, widget selection, and screen-level input. */
 final class Screen {
 
+  use ScreenPointer;
+
   private array $leaves;
   private FocusNavigation $focus;
   private bool $inputMode = false;
@@ -31,10 +33,12 @@ final class Screen {
     $this->events = $events;
     $this->overwrite = new ScreenOverwrite($this);
     $this->indexWidgets();
+    $this->mouseInput = new MouseInput($this);
   }
 
   /** Reindex a changed layout, retaining focus and activation when the selected widget survives. */
   public function setLayout(LayoutNode $layout): void {
+    $this->mouseInput->reset();
     $selected = $this->focus->rootSelectedLeaf();
     if ($this->focus->depth() > 0) {
       $this->release();
@@ -318,22 +322,7 @@ final class Screen {
       return true;
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_RETURN) {
-      if ($this->focus->enter()) {
-        $leaf?->dispatchNotification('unselect');
-        $this->notifySelect();
-        return true;
-      }
-      if ($leaf?->instance() instanceof Button) {
-        $leaf->dispatchNotification('activate');
-        $leaf->instance()->press($event);
-        return true;
-      }
-      if ($leaf === null || !$leaf->instance()->canActivate()) {
-        return true;
-      }
-      $this->inputMode = true;
-      $leaf->dispatchNotification('activate');
-      return true;
+      return $this->activateSelected($event);
     }
     if ($key === \SPTK\SDLWrapper\SDL::KEY_ESCAPE && $this->focus->leave()) {
       $leaf?->dispatchNotification('unselect');

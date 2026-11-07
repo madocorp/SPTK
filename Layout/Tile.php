@@ -28,4 +28,10 @@ final readonly class Tile {
     return new self($left, $top, $right - $left, $bottom - $top);
   }
 
+  /** Check whether a pixel lies within this half-open rectangle. */
+  public function contains(float $x, float $y): bool {
+    return $x >= $this->x && $x < $this->x + $this->width
+      && $y >= $this->y && $y < $this->y + $this->height;
+  }
+
 }

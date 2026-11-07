@@ -79,6 +79,10 @@ and `keyUp`. Keys can be letters, digits, `f1` through `f12`, or named keys such
 `home`, and `backspace`. The optional modifiers are `ctrl`, `shift`, and `alt`, joined with `+`, as in
 `key="ctrl+shift+a"`. Modifier and key names are case-insensitive.
 
+Mouse clicks use the existing selection, activation, and button notifications. Wheel steps use the active
+widget's existing Up/Down handling and can emit its usual change notification. There are no mouse-specific
+XML events; mouse input does not trigger screen keyboard shortcuts or raw key actions.
+
 Modifiers match by category: either physical Control key matches `ctrl`, and likewise for Shift and Alt. Extra
 lock modifiers do not affect chord matching.
 

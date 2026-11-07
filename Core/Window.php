@@ -130,6 +130,7 @@ final class Window {
       return;
     }
     $this->screens[$this->currentScreen]->release();
+    $this->screens[$this->currentScreen]->resetMouseInput();
     $this->currentScreen = $index;
     foreach ($this->screens as $screen) {
       $screen->setCurrentScreenId($this->screens[$index]->id);
@@ -230,6 +231,7 @@ final class Window {
     \SPTK\App::windowResized($this);
     $grid = new Tile(0, 0, $this->columns, $this->rows);
     foreach ($this->screens as $screen) {
+      $screen->resetMouseInput();
       $screen->measureGrid($grid);
       $screen->measureArea($grid, $this->geometry);
     }
@@ -343,6 +345,10 @@ final class Window {
   }
 
   public function handleEvent(mixed $event): bool {
+    if ($event->type === SDL::SDL_EVENT_WINDOW_FOCUS_LOST) {
+      $this->screens[$this->currentScreen]->resetMouseInput();
+      return false;
+    }
     if ($event->type === SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
       $this->screens[$this->currentScreen]->release();
       \SPTK\App::eventLoop()->quitWindow($this->id);
@@ -367,7 +373,10 @@ final class Window {
     if (
       $event->type === SDL::SDL_EVENT_TEXT_INPUT ||
       $event->type === SDL::SDL_EVENT_KEY_DOWN ||
-      $event->type === SDL::SDL_EVENT_KEY_UP
+      $event->type === SDL::SDL_EVENT_KEY_UP ||
+      $event->type === SDL::SDL_EVENT_MOUSE_BUTTON_DOWN ||
+      $event->type === SDL::SDL_EVENT_MOUSE_BUTTON_UP ||
+      $event->type === SDL::SDL_EVENT_MOUSE_WHEEL
     ) {
       $index = $this->currentScreen;
       $screen = $this->screens[$index];
@@ -375,7 +384,8 @@ final class Window {
       $selected = $screen->selectedLeaf();
       $statusText = $screen->statusBar?->text();
       $statusKind = $screen->statusBar?->kind();
-      $handled = $screen->handleEvent($event);
+      $handled = in_array($event->type, [SDL::SDL_EVENT_MOUSE_BUTTON_DOWN, SDL::SDL_EVENT_MOUSE_BUTTON_UP, SDL::SDL_EVENT_MOUSE_WHEEL], true)
+        ? $screen->handleMouseEvent($event, $this->geometry) : $screen->handleEvent($event);
       if ($this->window === null || $index !== $this->currentScreen) {
         return true;
       }

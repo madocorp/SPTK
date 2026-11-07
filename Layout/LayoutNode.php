@@ -10,6 +10,7 @@ final class LayoutNode {
   use LayoutDeckTile;
   use LayoutNodeDeck;
   use LayoutNodeLookup;
+  use LayoutNodeHitTest;
   use LayoutNodePixelSize;
   use LayoutNodeSeparators;
   use LayoutOverwriteTile;

@@ -197,10 +197,14 @@ final class EventLoop {
       SDL::SDL_EVENT_WINDOW_RESIZED,
       SDL::SDL_EVENT_WINDOW_MAXIMIZED,
       SDL::SDL_EVENT_WINDOW_RESTORED,
+      SDL::SDL_EVENT_WINDOW_FOCUS_LOST,
       SDL::SDL_EVENT_WINDOW_EXPOSED => (int)$event->window->windowID,
       SDL::SDL_EVENT_TEXT_INPUT => (int)$event->text->windowID,
       SDL::SDL_EVENT_KEY_DOWN,
       SDL::SDL_EVENT_KEY_UP => (int)$event->key->windowID,
+      SDL::SDL_EVENT_MOUSE_BUTTON_DOWN,
+      SDL::SDL_EVENT_MOUSE_BUTTON_UP => (int)$event->button->windowID,
+      SDL::SDL_EVENT_MOUSE_WHEEL => (int)$event->wheel->windowID,
       default => 0,
     };
   }
