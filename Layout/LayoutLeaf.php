@@ -69,6 +69,12 @@ final class LayoutLeaf {
     return $this->pixelTile;
   }
 
+  /** Return the measured area owned by this leaf, including its grid padding. */
+  public function paintedArea(): Tile {
+    return $this->pixelTile ?? $this->area
+      ?? throw new \LogicException('Leaf area has not been measured.');
+  }
+
   public function isPixel(): bool {
     return $this->pixelTile !== null;
   }

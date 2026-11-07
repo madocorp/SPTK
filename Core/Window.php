@@ -260,6 +260,7 @@ final class Window {
       }
     }
     $screen->drawSeparators($this->pixelRenderer);
+    $screen->shadeInactiveTiles($this->pixelRenderer, $this->geometry);
     $this->presentFrame();
   }
 
@@ -269,19 +270,35 @@ final class Window {
     $leaf->paintUpdate($this->grid);
     $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderTarget($this->ffiRenderer, $this->frameTexture), 'SDL_SetRenderTarget');
     $this->pixelRenderer->invalidateDrawColor();
-    if ($leaf->instance()->paintsPixels()) {
-      $this->grid->dirtyCells();
-      $leaf->drawBackground($this->pixelRenderer);
-      if (!$leaf->isPixel()) {
-        $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
+    $opening = $this->screens[$this->currentScreen]->activeOpening($this->geometry)
+      ?? throw new \LogicException('An active widget needs a measured tile area.');
+    $state = new \SPTK\Rendering\RenderState($this->ffiRenderer);
+    $rect = $this->sdl->ffi->new('SDL_Rect');
+    $rect->x = $opening->x;
+    $rect->y = $opening->y;
+    $rect->w = $opening->width;
+    $rect->h = $opening->height;
+    try {
+      $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderClipRect($this->ffiRenderer, \FFI::addr($rect)), 'SDL_SetRenderClipRect');
+      if ($leaf->instance()->paintsPixels()) {
+        $this->grid->dirtyCells();
+        $leaf->drawBackground($this->pixelRenderer);
+        if (!$leaf->isPixel()) {
+          $this->gridRenderer->drawTile($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
+        }
+        $leaf->paintPixels($this->pixelRenderer, $this->geometry, true);
+        if (!$leaf->isPixel() && $leaf->instance()->pixelBehindText()) {
+          $this->gridRenderer->drawGlyphs($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
+        }
+        $painted = true;
+      } else {
+        $painted = $this->gridRenderer->drawDirty($this->ffiRenderer, $this->grid) > 0;
       }
-      $leaf->paintPixels($this->pixelRenderer, $this->geometry, true);
-      if (!$leaf->isPixel() && $leaf->instance()->pixelBehindText()) {
-        $this->gridRenderer->drawGlyphs($this->ffiRenderer, $this->grid, $leaf->visibleGrid());
-      }
-      $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
-      $this->presentFrame();
-    } else if ($this->gridRenderer->drawDirty($this->ffiRenderer, $this->grid) > 0) {
+    } finally {
+      $state->restore();
+      $this->pixelRenderer->invalidateDrawColor();
+    }
+    if ($painted) {
       $this->presentFrame();
     }
   }
@@ -371,7 +388,7 @@ final class Window {
         $this->renderScreens();
       } else if ($handled && $leaf !== null && $leaf === $screen->activeLeaf()) {
         $this->renderLeaf($leaf);
-      } else if ($handled && $selected !== null && $screen->selectedLeaf() !== null && $selected !== $screen->selectedLeaf() && $screen->statusBar === null && $selected->name() !== 'Layout' && $screen->selectedLeaf()->name() !== 'Layout') {
+      } else if ($handled && $leaf === null && $screen->activeLeaf() === null && $selected !== null && $screen->selectedLeaf() !== null && $selected !== $screen->selectedLeaf() && $screen->statusBar === null && $selected->name() !== 'Layout' && $screen->selectedLeaf()->name() !== 'Layout') {
         $this->renderFocusChange($selected, $screen->selectedLeaf());
       } else {
         $this->renderScreens();

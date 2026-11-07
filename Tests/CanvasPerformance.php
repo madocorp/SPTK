@@ -67,10 +67,12 @@ try {
   $revisionBefore = $canvas->revision();
   $times = [];
   $queuedRedraws = 0;
+  $space = FFI::new('char[2]');
+  FFI::memcpy($space, ' ', 1);
   for ($i = 0; $i < 50; $i++) {
     $start = hrtime(true);
     $window->handleEvent(performanceKey($sdl, SDL::KEY_SPACE, $i > 0));
-    $textHandled = $window->handleEvent((object)['type' => SDL::SDL_EVENT_TEXT_INPUT, 'text' => (object)['text' => ' ']]);
+    $textHandled = $window->handleEvent((object)['type' => SDL::SDL_EVENT_TEXT_INPUT, 'text' => (object)['text' => $space]]);
     if ($textHandled) {
       throw new RuntimeException('Unconsumed Space text must not redraw the window.');
     }

@@ -38,6 +38,52 @@ final class PixelRenderer {
     $this->sdl->checkReturnValue($ret, 'SDL_RenderFillRect');
   }
 
+  /** Darken a complete window except for one rectangular opening. */
+  public function shadeOutside(Tile $window, Tile $opening, int $opacity): void {
+    $opening = $window->intersect($opening);
+    if ($opening == $window) {
+      return;
+    }
+    if ($opening->width === 0 || $opening->height === 0) {
+      $this->shade([$window], $opacity);
+      return;
+    }
+    $right = $opening->x + $opening->width;
+    $bottom = $opening->y + $opening->height;
+    $this->shade([
+      new Tile($window->x, $window->y, $window->width, $opening->y - $window->y),
+      new Tile($window->x, $bottom, $window->width, $window->y + $window->height - $bottom),
+      new Tile($window->x, $opening->y, $opening->x - $window->x, $opening->height),
+      new Tile($right, $opening->y, $window->x + $window->width - $right, $opening->height),
+    ], $opacity);
+  }
+
+  /** Darken completed rectangles with one translucent overlay pass. */
+  public function shade(array $areas, int $opacity): void {
+    if ($areas === []) {
+      return;
+    }
+    $state = new RenderState($this->ffiRenderer);
+    try {
+      $ffi = $this->sdl->ffi;
+      $this->sdl->checkReturnValue($ffi->SDL_SetRenderDrawBlendMode($this->ffiRenderer, SDL::SDL_BLENDMODE_BLEND), 'SDL_SetRenderDrawBlendMode');
+      $this->sdl->checkReturnValue($ffi->SDL_SetRenderDrawColor($this->ffiRenderer, 0, 0, 0, $opacity), 'SDL_SetRenderDrawColor');
+      foreach ($areas as $area) {
+        if ($area->width === 0 || $area->height === 0) {
+          continue;
+        }
+        $this->rect->x = $area->x;
+        $this->rect->y = $area->y;
+        $this->rect->w = $area->width;
+        $this->rect->h = $area->height;
+        $this->sdl->checkReturnValue($ffi->SDL_RenderFillRect($this->ffiRenderer, \FFI::addr($this->rect)), 'SDL_RenderFillRect');
+      }
+    } finally {
+      $state->restore();
+      $this->invalidateDrawColor();
+    }
+  }
+
   /** Set the renderer draw color only when its RGB value changes. */
   public function setDrawColor(Color $color): void {
     $rgb = ($color->r << 16) | ($color->g << 8) | $color->b;

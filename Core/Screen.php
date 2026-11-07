@@ -427,6 +427,30 @@ final class Screen {
     $this->layout->drawSeparators($renderer, $this->borderColor);
   }
 
+  /** Return the active tile's measured opening, excluding separator pixels. */
+  public function activeOpening(WindowGeometry $geometry): ?Tile {
+    $active = $this->activeLeaf();
+    if ($active === null) {
+      return null;
+    }
+    $area = $active->paintedArea();
+    $left = $area->x === 0 ? 0 : 1;
+    $top = $area->y === 0 ? 0 : 1;
+    $right = $area->x + $area->width === $geometry->windowWidth ? 0 : 1;
+    $bottom = $area->y + $area->height === $geometry->windowHeight ? 0 : 1;
+    return new Tile($area->x + $left, $area->y + $top,
+      $area->width - $left - $right, $area->height - $top - $bottom);
+  }
+
+  /** Dim the window outside the active tile, including gaps and separators. */
+  public function shadeInactiveTiles(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry): void {
+    $opening = $this->activeOpening($geometry);
+    if ($opening === null) {
+      return;
+    }
+    $renderer->shadeOutside(new Tile(0, 0, $geometry->windowWidth, $geometry->windowHeight), $opening, 88);
+  }
+
   public function paint(\SPTK\Rendering\Grid $grid): void {
     $this->layout->paint($grid, $this->selectedLeaf());
   }

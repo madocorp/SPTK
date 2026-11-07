@@ -19,7 +19,10 @@ It clears the frame texture and the grid, then renders the current screen in thi
    rectangle through `paintClippedPixels()`.
 5. For widgets whose pixels belong behind text, `GridRenderer::drawGlyphs()` restores glyphs without repainting
    their cell backgrounds. Terminal inline images use this path.
-6. `Window::presentFrame()` copies the frame texture to the window backbuffer and calls `SDL_RenderPresent()`.
+6. When a tile is active, `Screen::shadeInactiveTiles()` adds one translucent overlay to the retained frame
+   with an opening around that tile. Other tiles, padding, and separators darken together. Active widget
+   updates are clipped to the opening, so they preserve the cached shading outside it.
+7. `Window::presentFrame()` copies the retained frame to the window and calls `SDL_RenderPresent()`.
 
 Resizing recreates the frame texture and grid, measures the layout again, and takes this full render path.
 Window also replaces its readonly `Layout\WindowGeometry` on resize and passes the same object to every

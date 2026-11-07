@@ -34,7 +34,8 @@ immediately and stays in layout mode.
 
 The activated widget receives input first. By default, Return or keypad Enter accepts and deactivates it, while
 Escape cancels and deactivates it. If widget handling and event actions do not consume those keys, the screen applies
-the widget's release rule. Arrow keys do not move selection while input mode is active.
+the widget's release rule. Arrow keys do not move selection while input mode is active. The selected tile keeps
+its layout-mode appearance, while other tiles darken further to show that input stays within the active widget.
 
 Widget-specific input behavior is documented on each widget's page.
 Input and TextEditor keep edits and emit `accept` on Escape. TextEditor inserts a newline on Return and releases on Ctrl+Return. Switching screens releases the active widget with `accept`.
