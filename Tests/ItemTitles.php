@@ -122,6 +122,13 @@ $list->setFilter('missing');
 $empty = titleGrid($list, 30, 3);
 expectTitle(rtrim(titleRow($empty, 0)), 'Title', 'Title remains above the no-results message');
 expectTitle(str_starts_with(titleRow($empty, 1), '(no results'), true, 'No-results message starts in the item area');
+$star = new ListView([['value' => 'a', 'label' => 'AP-1 Login rework'], ['value' => 'b', 'label' => 'AP-2 Billing']]);
+$star->setFilter('*LOGIN');
+expectTitle($star->getValue(), 'a', 'A leading * matches anywhere in the label');
+$starGrid = titleGrid($star, 30, 2);
+expectTitle($starGrid->cell(5, 0)->fg == (new Style())->highlight && $starGrid->cell(4, 0)->fg != (new Style())->highlight, true, 'The * match is highlighted where it is found');
+$star->setFilter('login');
+expectTitle($star->getValue(), null, 'A query without * still matches the label start only');
 
 foreach ([new ListView(), new RadioButton(), new CheckboxArray()] as $widget) {
   expectTitle($widget->preferredHeight(), 1, 'Untitled empty widget keeps its original preferred height');

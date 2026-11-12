@@ -60,14 +60,16 @@ final class Painter {
     $this->paintMatch($writer, $item, $query, $y, $cursorBg);
   }
 
-  /** Overlay a matching prefix in the highlight color. */
+  /** Overlay the matching part in the highlight color. */
   private function paintMatch(GridWriter $writer, array $item, string $query, int $y, Color $bg): void {
-    $offset = $item['searchOffset'] ?? 0;
-    $label = mb_substr($item['label'], $offset);
-    if ($query === '' || !str_starts_with(mb_strtolower($label), mb_strtolower($query))) {
+    $match = $query === '' ? null : ItemSearch::matchStart($item, $query);
+    if ($match === null || $match[1] === 0) {
       return;
     }
-    $writer->write($offset, $y, mb_substr($label, 0, mb_strlen($query)), $this->style->highlight, $bg);
+    $offset = $item['searchOffset'] ?? 0;
+    $label = mb_substr($item['label'], $offset);
+    $column = $offset + TextMetrics::width(mb_substr($label, 0, $match[0]));
+    $writer->write($column, $y, mb_substr($label, $match[0], $match[1]), $this->style->highlight, $bg);
   }
 
   /** Draw an inverted scroll mark against the right edge. */
