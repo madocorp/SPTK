@@ -170,20 +170,14 @@ $overflowRoot->addNode($overflowStack);
 $overflowRoot->addLeaf($prompt);
 $overflowStack->setScrollOffset(1);
 $overflowRoot->measureGrid(new Tile(0, 0, 4, 6));
-expectGeometryArea($terminal->grid(), [0, -1, 4, 6], 'overflow keeps the full terminal tile');
-expectGeometryArea($terminal->visibleGrid(), [0, 0, 4, 4], 'overflow clips terminal to its viewport');
-if ($overflowStack->maxScrollOffset() !== 2) {
-  throw new RuntimeException('Overflow stack must report the two hidden rows.');
+expectGeometryArea($terminal->grid(), [0, 0, 4, 4], 'a tile is never longer than its parent');
+expectGeometryArea($terminal->visibleGrid(), [0, 0, 4, 4], 'the cut terminal fills its parent');
+if ($overflowStack->isScrolling() || $overflowStack->scrollOffset() !== 0) {
+  throw new RuntimeException('A single cut tile must not scroll its parent.');
 }
 $overflowGrid = new \SPTK\Rendering\Grid(4, 6);
 $overflowRoot->paint($overflowGrid);
-if ($overflowGrid->cell(0, 0)->glyph !== 'B' || $overflowGrid->cell(0, 3)->glyph !== 'E' || $overflowGrid->cell(0, 5)->glyph !== 'P') {
-  throw new RuntimeException('Partially visible terminal rows must not overwrite the prompt.');
-}
-$overflowStack->setScrollOffset(PHP_INT_MAX);
-$overflowStack->measureGrid(new Tile(0, 0, 4, 4));
-$overflowStack->measureGrid(new Tile(0, 0, 4, 3));
-if ($overflowStack->scrollOffset() !== 3) {
-  throw new RuntimeException('Bottom-aligned overflow must follow viewport resizing.');
+if ($overflowGrid->cell(0, 0)->glyph !== 'A' || $overflowGrid->cell(0, 3)->glyph !== 'D' || $overflowGrid->cell(0, 5)->glyph !== 'P') {
+  throw new RuntimeException('The cut terminal must not overwrite the prompt.');
 }
 echo "Window geometry checks passed\n";

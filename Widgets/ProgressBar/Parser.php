@@ -12,7 +12,7 @@ final class Parser implements WidgetParser {
 
   /** Accept progress, display, title, and parent layout attributes. */
   public function validateAttributes(\XMLReader $reader, array $layoutAttributes): void {
-    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'max', 'display', 'text', 'title']);
+    $this->assertAttributes($reader, [...$layoutAttributes, 'value', 'max', 'display', 'text', 'title', 'detail', 'detailPlacement', 'barWidth']);
   }
 
   /** Build a progress bar from attributes and optional text or child declarations. */
@@ -22,6 +22,12 @@ final class Parser implements WidgetParser {
     $title = $reader->getAttribute('title') ?? '';
     $textAttribute = $reader->getAttribute('text');
     $displayAttribute = $reader->getAttribute('display');
+    $detail = $reader->getAttribute('detail') ?? '';
+    $detailPlacement = $reader->getAttribute('detailPlacement') ?? 'after';
+    $barWidth = $reader->getAttribute('barWidth');
+    if ($barWidth !== null && (!ctype_digit($barWidth) || (int)$barWidth < 1)) {
+      throw new \RuntimeException('ProgressBar barWidth must be a positive integer.');
+    }
     $body = '';
     $events = [];
     if (!$reader->isEmptyElement) {
@@ -45,7 +51,11 @@ final class Parser implements WidgetParser {
     }
     $text = $textAttribute ?? $body;
     $display = $displayAttribute ?? ($text === '' ? 'percent' : 'text');
-    return new WidgetDefinition(new ProgressBar($value, $maximum, $display, $text, $title, $style), $events);
+    $bar = new ProgressBar($value, $maximum, $display, $text, $title, $style);
+    $bar->setDetail($detail);
+    $bar->setDetailPlacement($detailPlacement);
+    $bar->setBarWidth($barWidth === null ? null : (int)$barWidth);
+    return new WidgetDefinition($bar, $events);
   }
 
   /** Parse one finite numeric XML attribute. */

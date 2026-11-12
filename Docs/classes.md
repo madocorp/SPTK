@@ -36,7 +36,9 @@ Classes that belongs strictly to a screen
 - Layout\LayoutNode: holds the layout structure, tree of vertical and horizontal subdivisions plus leafs
 - Layout\LayoutLeaf: container for the widgets
 - Layout\LayoutSeparator: marks a split boundary for screen-level separator drawing
-- Layout\LayoutOverflow: clamps vertical scroll offsets and shifts full child tiles through a viewport
+- Layout\LayoutScroll: keeps one layout's scroll offset on whole tiles and counts the hidden tiles
+- Layout\LayoutNodeScroll: trait that scrolls a node's children when they do not fit, keeps the selection in view and places scroll marks
+- Layout\LayoutMinSize: trait giving a weighted node or leaf its minimum size for scrolling
 - Layout\LayoutDeckTile: trait giving a node or leaf its open deck size and closed summary
 - Layout\LayoutNodeDeck: trait keeping one open tile among a node's deck children
 - Layout\DeckSummary: paints a closed deck tile's summary text

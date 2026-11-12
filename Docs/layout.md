@@ -75,17 +75,59 @@ of its parent, just like a widget; omitted nested-layout sizes default to `1*`.
 Percentage sizes resolve to whole cells from the parent tile's width or height when the layout is measured.
 For example, `width="5%"` reserves 5% of the parent's columns; `height="5%"` reserves 5% of its rows.
 Weighted children share the remaining cells after fixed sizes and layout gaps.
-Set `overflow="true"` on a vertical grid layout to keep fixed and auto child heights when their total
-exceeds its tile. `setScrollOffset()` moves the full child tiles through that layout's viewport;
-`maxScrollOffset()` reports the measured limit. The first and last visible tiles may be partial.
-Grid painting is clipped to the viewport's cells. Tile backgrounds and separators are clipped to
-its padded bounds so decoration reaches the tile edge without painting over adjacent prompt or
-status content. Overflow viewports currently support grid-only widgets.
-In a vertical layout, a StyledText child may use `height="auto"`. Its text is
-measured at the available width and rounded up to whole cells. A vertical
+When children leave unused space at the end of a grid layout, the layout fills that space
+with an automatic, non-navigable `Empty` tile. It uses the layout's inherited background
+color and dims along with other unselected tiles. Explicit `<Empty>` widgets remain useful
+for gaps in a chosen position or for a selectable blank tile.
+When the children do not fit, the layout scrolls; see [Scrolling](#scrolling).
+In a vertical layout, Text and StyledText children may use `height="auto"`.
+Text counts its wrapped visual rows and optional title; StyledText measures
+its content at the available width and rounds up to whole cells. A vertical
 nested layout may also use `height="auto"` to sum the natural heights of its children.
 Weighted children contribute their numeric weight as a minimum when a parent measures
 its natural height. A horizontal nested layout uses the tallest child's natural height.
+
+## Scrolling
+
+Every grid layout scrolls on its own axis when its children do not fit: a vertical layout scrolls
+up and down, a horizontal one left and right. Nothing has to be switched on.
+
+- Each child keeps a minimum size: its fixed size, its `auto` height, or for a weighted size the
+  `min` attribute (default 1 cell). When the minimums and gaps are longer than the tile, the
+  children get their minimum sizes and the layout scrolls through them.
+- A tile is never longer than its parent on the parent's axis. A larger fixed, `auto`, `min` or
+  percentage size is cut to the parent. The widget then scrolls its own content while it is active,
+  or it is clipped; a nested layout scrolls its own children.
+
+  ```xml
+  <Layout direction="horizontal">
+    <Layout id="todo" width="1*" min="28">…</Layout>
+    <Separator />
+    <Layout id="done" width="1*" min="28">…</Layout>
+  </Layout>
+  ```
+
+- The selected tile stays in view. Each measurement scrolls the child that holds the selection
+  into view by the smallest amount: a tile above or to the left is aligned to the top or
+  left edge, a tile below or to the right to the bottom or right edge. An editor that grows, an
+  overwrite, a deck card that opens, or a resize never leaves the selection cut off. A layout shown
+  at its end stays at the end when its content or view changes.
+- Arrows scroll first. Moving towards hidden tiles selects the next tile inside the scrolled layout;
+  focus leaves the layout only at its end. When focus leaves a layout, tiles that are fully hidden
+  elsewhere are skipped if a visible one is in that direction.
+- A mark shows each side with hidden content, with the number of hidden or cut navigation tiles.
+  A vertical layout puts `▲3` on the separator above it and `3▼` on the separator below it, at the
+  right end. A horizontal layout puts both on the separator above it: `◀3` at the left end and
+  `12▶` at the right end. Without a separator, the mark sits on the layout's own top or bottom row.
+  Marks of an outer layout are drawn over the marks of inner ones.
+- Grid cells, tile backgrounds and separators are clipped to the visible part of the layout. Pixel
+  widgets are clipped too; a widget that clips its own pixels reports it through
+  `clipsPixelViewport()`.
+- Inside a deck that scrolls, the open card with a weighted open size gets the whole view.
+- From code, `setScrollOffset()` requests an offset in cells (it snaps to a tile start on the next
+  measurement), `scrollOffset()` and `maxScrollOffset()` report the measured values, and
+  `isScrolling()` tells whether the children did not fit. `setMinSize()` sets `min` on a
+  `LayoutNode` or `LayoutLeaf`. The old `overflow` attribute is ignored.
 
 ## Deck
 

@@ -262,6 +262,7 @@ final class Window {
       }
     }
     $screen->drawSeparators($this->pixelRenderer);
+    $this->gridRenderer->drawCells($this->ffiRenderer, $screen->scrollMarks());
     $screen->shadeInactiveTiles($this->pixelRenderer, $this->geometry);
     $this->presentFrame();
   }
@@ -296,6 +297,7 @@ final class Window {
       } else {
         $painted = $this->gridRenderer->drawDirty($this->ffiRenderer, $this->grid) > 0;
       }
+      $this->drawLeafScrollMarks($leaf);
     } finally {
       $state->restore();
       $this->pixelRenderer->invalidateDrawColor();
@@ -303,6 +305,18 @@ final class Window {
     if ($painted) {
       $this->presentFrame();
     }
+  }
+
+  /** Draw again the scroll marks that sit on an updated widget's own cells. */
+  private function drawLeafScrollMarks(LayoutLeaf $leaf): void {
+    $visible = $leaf->visibleGrid();
+    $cells = [];
+    foreach ($this->screens[$this->currentScreen]->scrollMarks() as $mark) {
+      if ($mark[0] >= $visible->x && $mark[0] < $visible->x + $visible->width && $mark[1] >= $visible->y && $mark[1] < $visible->y + $visible->height) {
+        $cells[] = $mark;
+      }
+    }
+    $this->gridRenderer->drawCells($this->ffiRenderer, $cells);
   }
 
   /** Redraw the old and new focus tiles with their updated selection colors. */
@@ -328,6 +342,7 @@ final class Window {
       }
     }
     $this->screens[$this->currentScreen]->drawSeparators($this->pixelRenderer);
+    $this->gridRenderer->drawCells($this->ffiRenderer, $this->screens[$this->currentScreen]->scrollMarks());
     $this->presentFrame();
   }
 

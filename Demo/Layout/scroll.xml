@@ -1,0 +1,467 @@
+<Screen>
+  <Layout direction="vertical">
+    <Text height="1">Scroll: tiles that do not fit scroll by whole tiles; arrows scroll first, marks show the hidden side. Resize the window to try.</Text>
+    <Separator />
+    <Layout direction="horizontal" height="1*">
+      <Layout id="scroll-deck" width="30">
+        <List id="scroll-card-1" title="Card 1" height="2" deck="1*">
+          <Item value="alpha">Alpha 1</Item>
+          <Item value="beta">Beta 1</Item>
+          <Item value="gamma">Gamma 1</Item>
+          <Item value="delta">Delta 1</Item>
+          <Item value="epsilon">Epsilon 1</Item>
+          <Item value="zeta">Zeta 1</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-2" title="Card 2" height="2" deck="1*">
+          <Item value="alpha">Alpha 2</Item>
+          <Item value="beta">Beta 2</Item>
+          <Item value="gamma">Gamma 2</Item>
+          <Item value="delta">Delta 2</Item>
+          <Item value="epsilon">Epsilon 2</Item>
+          <Item value="zeta">Zeta 2</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-3" title="Card 3" height="2" deck="1*">
+          <Item value="alpha">Alpha 3</Item>
+          <Item value="beta">Beta 3</Item>
+          <Item value="gamma">Gamma 3</Item>
+          <Item value="delta">Delta 3</Item>
+          <Item value="epsilon">Epsilon 3</Item>
+          <Item value="zeta">Zeta 3</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-4" title="Card 4" height="2" deck="1*">
+          <Item value="alpha">Alpha 4</Item>
+          <Item value="beta">Beta 4</Item>
+          <Item value="gamma">Gamma 4</Item>
+          <Item value="delta">Delta 4</Item>
+          <Item value="epsilon">Epsilon 4</Item>
+          <Item value="zeta">Zeta 4</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-5" title="Card 5" height="2" deck="1*">
+          <Item value="alpha">Alpha 5</Item>
+          <Item value="beta">Beta 5</Item>
+          <Item value="gamma">Gamma 5</Item>
+          <Item value="delta">Delta 5</Item>
+          <Item value="epsilon">Epsilon 5</Item>
+          <Item value="zeta">Zeta 5</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-6" title="Card 6" height="2" deck="1*">
+          <Item value="alpha">Alpha 6</Item>
+          <Item value="beta">Beta 6</Item>
+          <Item value="gamma">Gamma 6</Item>
+          <Item value="delta">Delta 6</Item>
+          <Item value="epsilon">Epsilon 6</Item>
+          <Item value="zeta">Zeta 6</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-7" title="Card 7" height="2" deck="1*">
+          <Item value="alpha">Alpha 7</Item>
+          <Item value="beta">Beta 7</Item>
+          <Item value="gamma">Gamma 7</Item>
+          <Item value="delta">Delta 7</Item>
+          <Item value="epsilon">Epsilon 7</Item>
+          <Item value="zeta">Zeta 7</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-8" title="Card 8" height="2" deck="1*">
+          <Item value="alpha">Alpha 8</Item>
+          <Item value="beta">Beta 8</Item>
+          <Item value="gamma">Gamma 8</Item>
+          <Item value="delta">Delta 8</Item>
+          <Item value="epsilon">Epsilon 8</Item>
+          <Item value="zeta">Zeta 8</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-9" title="Card 9" height="2" deck="1*">
+          <Item value="alpha">Alpha 9</Item>
+          <Item value="beta">Beta 9</Item>
+          <Item value="gamma">Gamma 9</Item>
+          <Item value="delta">Delta 9</Item>
+          <Item value="epsilon">Epsilon 9</Item>
+          <Item value="zeta">Zeta 9</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-10" title="Card 10" height="2" deck="1*">
+          <Item value="alpha">Alpha 10</Item>
+          <Item value="beta">Beta 10</Item>
+          <Item value="gamma">Gamma 10</Item>
+          <Item value="delta">Delta 10</Item>
+          <Item value="epsilon">Epsilon 10</Item>
+          <Item value="zeta">Zeta 10</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-11" title="Card 11" height="2" deck="1*">
+          <Item value="alpha">Alpha 11</Item>
+          <Item value="beta">Beta 11</Item>
+          <Item value="gamma">Gamma 11</Item>
+          <Item value="delta">Delta 11</Item>
+          <Item value="epsilon">Epsilon 11</Item>
+          <Item value="zeta">Zeta 11</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-12" title="Card 12" height="2" deck="1*">
+          <Item value="alpha">Alpha 12</Item>
+          <Item value="beta">Beta 12</Item>
+          <Item value="gamma">Gamma 12</Item>
+          <Item value="delta">Delta 12</Item>
+          <Item value="epsilon">Epsilon 12</Item>
+          <Item value="zeta">Zeta 12</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-13" title="Card 13" height="2" deck="1*">
+          <Item value="alpha">Alpha 13</Item>
+          <Item value="beta">Beta 13</Item>
+          <Item value="gamma">Gamma 13</Item>
+          <Item value="delta">Delta 13</Item>
+          <Item value="epsilon">Epsilon 13</Item>
+          <Item value="zeta">Zeta 13</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-14" title="Card 14" height="2" deck="1*">
+          <Item value="alpha">Alpha 14</Item>
+          <Item value="beta">Beta 14</Item>
+          <Item value="gamma">Gamma 14</Item>
+          <Item value="delta">Delta 14</Item>
+          <Item value="epsilon">Epsilon 14</Item>
+          <Item value="zeta">Zeta 14</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-15" title="Card 15" height="2" deck="1*">
+          <Item value="alpha">Alpha 15</Item>
+          <Item value="beta">Beta 15</Item>
+          <Item value="gamma">Gamma 15</Item>
+          <Item value="delta">Delta 15</Item>
+          <Item value="epsilon">Epsilon 15</Item>
+          <Item value="zeta">Zeta 15</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-16" title="Card 16" height="2" deck="1*">
+          <Item value="alpha">Alpha 16</Item>
+          <Item value="beta">Beta 16</Item>
+          <Item value="gamma">Gamma 16</Item>
+          <Item value="delta">Delta 16</Item>
+          <Item value="epsilon">Epsilon 16</Item>
+          <Item value="zeta">Zeta 16</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-17" title="Card 17" height="2" deck="1*">
+          <Item value="alpha">Alpha 17</Item>
+          <Item value="beta">Beta 17</Item>
+          <Item value="gamma">Gamma 17</Item>
+          <Item value="delta">Delta 17</Item>
+          <Item value="epsilon">Epsilon 17</Item>
+          <Item value="zeta">Zeta 17</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-18" title="Card 18" height="2" deck="1*">
+          <Item value="alpha">Alpha 18</Item>
+          <Item value="beta">Beta 18</Item>
+          <Item value="gamma">Gamma 18</Item>
+          <Item value="delta">Delta 18</Item>
+          <Item value="epsilon">Epsilon 18</Item>
+          <Item value="zeta">Zeta 18</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-19" title="Card 19" height="2" deck="1*">
+          <Item value="alpha">Alpha 19</Item>
+          <Item value="beta">Beta 19</Item>
+          <Item value="gamma">Gamma 19</Item>
+          <Item value="delta">Delta 19</Item>
+          <Item value="epsilon">Epsilon 19</Item>
+          <Item value="zeta">Zeta 19</Item>
+        </List>
+        <Separator />
+        <List id="scroll-card-20" title="Card 20" height="2" deck="1*">
+          <Item value="alpha">Alpha 20</Item>
+          <Item value="beta">Beta 20</Item>
+          <Item value="gamma">Gamma 20</Item>
+          <Item value="delta">Delta 20</Item>
+          <Item value="epsilon">Epsilon 20</Item>
+          <Item value="zeta">Zeta 20</Item>
+        </List>
+      </Layout>
+      <Separator />
+      <Layout id="scroll-board" direction="horizontal" width="1*">
+        <Layout id="scroll-column-0" width="1*" min="28">
+          <Title height="1">Backlog</Title>
+          <Separator />
+          <Text id="scroll-ticket-101" height="3">DEMO-101
+Ticket 101 in backlog
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-102" height="3">DEMO-102
+Ticket 102 in backlog
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-103" height="3">DEMO-103
+Ticket 103 in backlog
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-104" height="3">DEMO-104
+Ticket 104 in backlog
+Owner 4</Text>
+          <Separator />
+          <Text id="scroll-ticket-105" height="3">DEMO-105
+Ticket 105 in backlog
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-106" height="3">DEMO-106
+Ticket 106 in backlog
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-107" height="3">DEMO-107
+Ticket 107 in backlog
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-108" height="3">DEMO-108
+Ticket 108 in backlog
+Owner 4</Text>
+          <Separator />
+          <Text id="scroll-ticket-109" height="3">DEMO-109
+Ticket 109 in backlog
+Owner 1</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-1" width="1*" min="28">
+          <Title height="1">To do</Title>
+          <Separator />
+          <Text id="scroll-ticket-110" height="3">DEMO-110
+Ticket 110 in to do
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-111" height="3">DEMO-111
+Ticket 111 in to do
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-112" height="3">DEMO-112
+Ticket 112 in to do
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-113" height="3">DEMO-113
+Ticket 113 in to do
+Owner 4</Text>
+          <Separator />
+          <Text id="scroll-ticket-114" height="3">DEMO-114
+Ticket 114 in to do
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-115" height="3">DEMO-115
+Ticket 115 in to do
+Owner 2</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-2" width="1*" min="28">
+          <Title height="1">In progress</Title>
+          <Separator />
+          <Text id="scroll-ticket-116" height="3">DEMO-116
+Ticket 116 in in progress
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-117" height="3">DEMO-117
+Ticket 117 in in progress
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-118" height="3">DEMO-118
+Ticket 118 in in progress
+Owner 3</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-3" width="1*" min="28">
+          <Title height="1">Review</Title>
+          <Separator />
+          <Text id="scroll-ticket-119" height="3">DEMO-119
+Ticket 119 in review
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-120" height="3">DEMO-120
+Ticket 120 in review
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-121" height="3">DEMO-121
+Ticket 121 in review
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-122" height="3">DEMO-122
+Ticket 122 in review
+Owner 4</Text>
+          <Separator />
+          <Text id="scroll-ticket-123" height="3">DEMO-123
+Ticket 123 in review
+Owner 1</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-4" width="1*" min="28">
+          <Title height="1">Testing</Title>
+          <Separator />
+          <Text id="scroll-ticket-124" height="3">DEMO-124
+Ticket 124 in testing
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-125" height="3">DEMO-125
+Ticket 125 in testing
+Owner 2</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-5" width="1*" min="28">
+          <Title height="1">Blocked</Title>
+          <Text height="1*">No tickets</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-6" width="1*" min="28">
+          <Title height="1">Ready</Title>
+          <Separator />
+          <Text id="scroll-ticket-126" height="3">DEMO-126
+Ticket 126 in ready
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-127" height="3">DEMO-127
+Ticket 127 in ready
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-128" height="3">DEMO-128
+Ticket 128 in ready
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-129" height="3">DEMO-129
+Ticket 129 in ready
+Owner 4</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-7" width="1*" min="28">
+          <Title height="1">Done</Title>
+          <Separator />
+          <Text id="scroll-ticket-130" height="3">DEMO-130
+Ticket 130 in done
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-131" height="3">DEMO-131
+Ticket 131 in done
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-132" height="3">DEMO-132
+Ticket 132 in done
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-133" height="3">DEMO-133
+Ticket 133 in done
+Owner 4</Text>
+          <Separator />
+          <Text id="scroll-ticket-134" height="3">DEMO-134
+Ticket 134 in done
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-135" height="3">DEMO-135
+Ticket 135 in done
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-136" height="3">DEMO-136
+Ticket 136 in done
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-137" height="3">DEMO-137
+Ticket 137 in done
+Owner 4</Text>
+          <Separator />
+          <Text id="scroll-ticket-138" height="3">DEMO-138
+Ticket 138 in done
+Owner 1</Text>
+          <Separator />
+          <Text id="scroll-ticket-139" height="3">DEMO-139
+Ticket 139 in done
+Owner 2</Text>
+          <Separator />
+          <Text id="scroll-ticket-140" height="3">DEMO-140
+Ticket 140 in done
+Owner 3</Text>
+          <Separator />
+          <Text id="scroll-ticket-141" height="3">DEMO-141
+Ticket 141 in done
+Owner 4</Text>
+        </Layout>
+        <Separator />
+        <Layout id="scroll-column-8" width="1*" min="28">
+          <Title height="1">Archived</Title>
+          <Separator />
+          <Text id="scroll-ticket-142" height="3">DEMO-142
+Ticket 142 in archived
+Owner 1</Text>
+        </Layout>
+      </Layout>
+      <Separator />
+      <Layout width="32">
+        <Layout id="scroll-properties" height="1*">
+          <Input id="scroll-summary" label="Summary" height="2" value="Scroll demo ticket" />
+          <Separator />
+          <Input id="scroll-status" label="Status" height="2" value="Open" />
+          <Separator />
+          <Input id="scroll-assignee" label="Assignee" height="2" value="Nobody" />
+          <Separator />
+          <Input id="scroll-priority" label="Priority" height="2" value="Medium" />
+          <Separator />
+          <Input id="scroll-labels" label="Labels" height="2" value="demo, scroll" />
+          <Separator />
+          <Input id="scroll-sprint" label="Sprint" height="2" value="Sprint 42" />
+          <Separator />
+          <Input id="scroll-estimate" label="Estimate" height="2" value="3" />
+          <Separator />
+          <Input id="scroll-due" label="Due date" height="2" value="2026-12-01" />
+          <Separator />
+          <Input id="scroll-reporter" label="Reporter" height="2" value="Demo user" />
+          <Separator />
+          <Input id="scroll-component" label="Component" height="2" value="Layout" />
+          <Separator />
+          <Text id="scroll-notes" title="Notes (cut to the pane, scrolls when active)" height="41" wrap="false">Note line 1: a tile is never taller than its parent.
+Note line 2: a tile is never taller than its parent.
+Note line 3: a tile is never taller than its parent.
+Note line 4: a tile is never taller than its parent.
+Note line 5: a tile is never taller than its parent.
+Note line 6: a tile is never taller than its parent.
+Note line 7: a tile is never taller than its parent.
+Note line 8: a tile is never taller than its parent.
+Note line 9: a tile is never taller than its parent.
+Note line 10: a tile is never taller than its parent.
+Note line 11: a tile is never taller than its parent.
+Note line 12: a tile is never taller than its parent.
+Note line 13: a tile is never taller than its parent.
+Note line 14: a tile is never taller than its parent.
+Note line 15: a tile is never taller than its parent.
+Note line 16: a tile is never taller than its parent.
+Note line 17: a tile is never taller than its parent.
+Note line 18: a tile is never taller than its parent.
+Note line 19: a tile is never taller than its parent.
+Note line 20: a tile is never taller than its parent.
+Note line 21: a tile is never taller than its parent.
+Note line 22: a tile is never taller than its parent.
+Note line 23: a tile is never taller than its parent.
+Note line 24: a tile is never taller than its parent.
+Note line 25: a tile is never taller than its parent.
+Note line 26: a tile is never taller than its parent.
+Note line 27: a tile is never taller than its parent.
+Note line 28: a tile is never taller than its parent.
+Note line 29: a tile is never taller than its parent.
+Note line 30: a tile is never taller than its parent.
+Note line 31: a tile is never taller than its parent.
+Note line 32: a tile is never taller than its parent.
+Note line 33: a tile is never taller than its parent.
+Note line 34: a tile is never taller than its parent.
+Note line 35: a tile is never taller than its parent.
+Note line 36: a tile is never taller than its parent.
+Note line 37: a tile is never taller than its parent.
+Note line 38: a tile is never taller than its parent.
+Note line 39: a tile is never taller than its parent.
+Note line 40: a tile is never taller than its parent.</Text>
+        </Layout>
+        <Separator />
+        <Layout direction="horizontal" height="1">
+          <Button label="Edit status" hotkey="s" action="Controller::editScrollStatus" width="1*" />
+          <Separator />
+          <Button label="Edit assignee" hotkey="a" action="Controller::editScrollAssignee" width="1*" />
+        </Layout>
+      </Layout>
+    </Layout>
+  </Layout>
+</Screen>

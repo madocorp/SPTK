@@ -60,14 +60,15 @@ final class ScreenParser {
     $pixel = $parentPixel || $this->attrBoolean($reader, 'pixel', false);
     $allowed = ['direction', 'navigateChildren', 'enterChildren', 'initialFocus', 'navigate', 'id', 'tip', 'pixel', 'overflow'];
     if ($parentDirection === 'horizontal') {
-      array_push($allowed, 'width', 'deck', 'summary', 'overwrite');
+      array_push($allowed, 'width', 'min', 'deck', 'summary', 'overwrite');
     } else if ($parentDirection === 'vertical') {
-      array_push($allowed, 'height', 'deck', 'summary', 'overwrite');
+      array_push($allowed, 'height', 'min', 'deck', 'summary', 'overwrite');
     }
     $this->assertAttributes($reader, $allowed);
     $width = $this->attrSize($reader, 'width');
     $height = $this->attrSize($reader, 'height');
     $layout = new LayoutNode($direction, $width, $height, $this->attrBoolean($reader, 'navigateChildren', true), $reader->getAttribute('id'), $reader->getAttribute('tip'), $this->attrBoolean($reader, 'navigate', true), $this->attrBoolean($reader, 'enterChildren', false), !$parentPixel && $pixel, $pixel ? $this->pixelBox($parentStyle) : null, $pixel && !$parentPixel ? $parentStyle->background : null, $reader->getAttribute('initialFocus'));
+    $layout->setGridBackground($parentStyle->background);
     $layout->setOverflow($this->attrBoolean($reader, 'overflow', false));
     $this->applyTileAttributes($reader, $layout, $parentDirection, $parentStyle);
     $nodeStyle = $parentStyle;
@@ -85,6 +86,7 @@ final class ScreenParser {
           }
           if (!$pixel) {
             $layout->setSeparatorColor($style->separator);
+            $layout->setGridBackground($style->background);
           }
         } else if ($reader->name === 'Layout') {
           $hasItems = true;
@@ -129,7 +131,7 @@ final class ScreenParser {
     if (!$parser instanceof WidgetParser) {
       throw new \RuntimeException("Widget parser must implement WidgetParser: {$parserClass}");
     }
-    $allowed = [$direction === 'horizontal' ? 'width' : 'height', 'deck', 'summary', 'overwrite', 'navigate', 'id', 'tip', 'activeTip'];
+    $allowed = [$direction === 'horizontal' ? 'width' : 'height', 'min', 'deck', 'summary', 'overwrite', 'navigate', 'id', 'tip', 'activeTip'];
     $parser->validateAttributes($reader, $allowed);
     $width = $direction === 'horizontal' ? $this->attrSize($reader, 'width', '') : '';
     $height = $direction === 'vertical' ? $this->attrSize($reader, 'height', '') : '';
@@ -150,6 +152,13 @@ final class ScreenParser {
 
   /** Read the overwrite target, the deck size and the closed summary of a layout or widget. */
   private function applyTileAttributes(\XMLReader $reader, LayoutNode|LayoutLeaf $tile, ?string $parentDirection, Style $style): void {
+    $min = $reader->getAttribute('min');
+    if ($min !== null) {
+      if (!ctype_digit($min)) {
+        throw new \RuntimeException("<{$reader->name}> attribute 'min' must be a whole number of cells.");
+      }
+      $tile->setMinSize((int)$min);
+    }
     $deck = $reader->getAttribute('deck');
     $summary = $reader->getAttribute('summary');
     $overwrite = $reader->getAttribute('overwrite');

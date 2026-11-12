@@ -8,10 +8,13 @@ use SPTK\Core\Color;
 final class LayoutNode {
 
   use LayoutDeckTile;
+  use LayoutMinSize;
   use LayoutNodeDeck;
   use LayoutNodeLookup;
   use LayoutNodeHitTest;
   use LayoutNodePixelSize;
+  use LayoutNodeRemainder;
+  use LayoutNodeScroll;
   use LayoutNodeSeparators;
   use LayoutOverwriteTile;
 
@@ -24,7 +27,6 @@ final class LayoutNode {
   private ?Color $pixelParentBackground = null;
   private ?Color $pixelBackground = null;
   private ?LayoutLeaf $focus = null;
-  private ?LayoutOverflow $overflow = null;
   private ?Tile $viewport = null;
 
   public function __construct(private string $direction, private string $width, private string $height, bool $navigateChildren = true, private ?string $id = null, ?string $tip = null, private bool $navigate = true, private bool $enterChildren = false, private bool $pixelMode = false, private ?PixelBox $box = null, private ?Color $outerBackground = null, private ?string $initialFocus = null) {
@@ -54,29 +56,6 @@ final class LayoutNode {
 
   public function pixelTile(): ?Tile {
     return $this->pixelTile;
-  }
-
-  /** Enable vertical overflow so fixed-height children retain their full tiles. */
-  public function setOverflow(bool $overflow): void {
-    if ($overflow && ($this->direction !== 'vertical' || $this->pixelMode)) {
-      throw new \InvalidArgumentException('Overflow requires a vertical grid layout.');
-    }
-    $this->overflow = $overflow ? new LayoutOverflow() : null;
-  }
-
-  /** Set the requested row offset, clamped on the next measurement. */
-  public function setScrollOffset(int $rows): void {
-    $this->overflow?->setOffset($rows);
-  }
-
-  /** Return the last measured maximum row offset. */
-  public function maxScrollOffset(): int {
-    return $this->overflow?->maximum() ?? 0;
-  }
-
-  /** Return the row offset used by the latest measurement. */
-  public function scrollOffset(): int {
-    return $this->overflow?->offset() ?? 0;
   }
 
   /** Apply a local Style to this pixel node's own box. */
@@ -202,13 +181,12 @@ final class LayoutNode {
     return false;
   }
 
-  public function measureGrid(\SPTK\Layout\Tile $grid, ?Tile $viewport = null) {
+  /** Measure child tiles; edges tell which sides touch a separator, and reveal is the leaf to keep in view. */
+  public function measureGrid(Tile $grid, ?Tile $viewport = null, array $edges = [], ?LayoutLeaf $reveal = null) {
     $this->grid = $grid;
     $this->pixelTile = null;
+    $this->remainder = null;
     $this->focus?->setGrid($grid);
-    if ($this->overflow !== null) {
-      $viewport = $this->overflow->viewport($grid, $viewport);
-    }
     $this->viewport = $viewport;
     if ($this->pixelMode) {
       foreach ($this->visibleChildren() as $child) {
@@ -226,34 +204,18 @@ final class LayoutNode {
         throw new \RuntimeException('Separator must be placed between two layout items.');
       }
     }
-    $content = array_filter($this->visibleChildren(), fn(mixed $child): bool => !$child instanceof LayoutSeparator);
-    if ($this->direction === 'horizontal') {
-      $widths = [];
-      foreach ($content as $child) {
-        $widths[] = $child->width();
-      }
-      $grids = Splitter::horizontal($grid, $widths);
-    } else {
-      $heights = [];
-      foreach ($content as $child) {
-        $size = $child->height();
-        $heights[] = $size === 'auto' ? (string)$child->naturalHeight($grid->width) : $size;
-      }
-      $grids = Splitter::vertical($grid, $heights);
-      if ($this->overflow !== null) {
-        $grids = $this->overflow->shift($grid, $grids);
-      }
-    }
-    $gridIndex = 0;
+    $content = array_values(array_filter($this->visibleChildren(), fn(mixed $child): bool => !$child instanceof LayoutSeparator));
+    $sizes = [];
     foreach ($content as $child) {
-      $child->setGrid($grids[$gridIndex]);
-      if ($child instanceof self) {
-        $child->measureGrid($grids[$gridIndex], $viewport);
+      if ($this->direction === 'horizontal') {
+        $sizes[] = $child->width();
       } else {
-        $child->setViewport($viewport);
+        $size = $child->height();
+        $sizes[] = $size === 'auto' ? (string)$child->naturalHeight($grid->width) : $size;
       }
-      $gridIndex++;
     }
+    $grids = $this->measureContent($grid, $content, $sizes, $viewport, $edges, $reveal);
+    $this->measureRemainder($grids, $grid, $this->viewport);
   }
 
   /** Retain a grid rectangle only for navigation while descendants use pixel rectangles. */
@@ -312,6 +274,7 @@ final class LayoutNode {
       }
       return;
     }
+    $this->remainder?->paint($grid, $selected === null, $closed);
     foreach ($this->visibleChildren() as $child) {
       if ($child instanceof LayoutSeparator) {
         continue;
@@ -340,6 +303,7 @@ final class LayoutNode {
       }
       $child->measureArea($grid, $geometry);
     }
+    $this->remainder?->measureArea($grid, $geometry);
     $children = $this->visibleChildren();
     foreach ($children as $index => $child) {
       if ($child instanceof LayoutSeparator) {
@@ -367,6 +331,7 @@ final class LayoutNode {
     if ($selected === $this->focus) {
       $selected = null;
     }
+    $this->remainder?->drawBackground($renderer, $selected === null);
     foreach ($this->visibleChildren() as $child) {
       if ($child instanceof self) {
         $child->drawBackgrounds($renderer, $selected);

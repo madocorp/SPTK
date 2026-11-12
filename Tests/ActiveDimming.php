@@ -71,7 +71,7 @@ $layout->addSeparator($separator);
 $layout->addLeaf($second);
 $layout->addLeaf($canvas);
 $screen = new Screen($layout);
-$window = new Window(['title' => 'Active dimming', 'width' => 32, 'height' => 8,
+$window = new Window(['title' => 'Active dimming', 'width' => 32, 'height' => 9,
   'state' => 'hidden', 'resizable' => false, 'screens' => [$screen]]);
 try {
   $geometry = (new ReflectionProperty(Window::class, 'geometry'))->getValue($window);

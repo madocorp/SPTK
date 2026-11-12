@@ -120,6 +120,19 @@ final class PixelRenderer {
     return $this->canvases->redrawNeeded();
   }
 
+  /** Limit later drawing to an area, or remove the limit with null. */
+  public function clip(?Tile $area): void {
+    if ($area === null) {
+      $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderClipRect($this->ffiRenderer, null), 'SDL_SetRenderClipRect');
+      return;
+    }
+    $this->clipRect->x = $area->x;
+    $this->clipRect->y = $area->y;
+    $this->clipRect->w = $area->width;
+    $this->clipRect->h = $area->height;
+    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetRenderClipRect($this->ffiRenderer, \FFI::addr($this->clipRect)), 'SDL_SetRenderClipRect');
+  }
+
   /** Draw a decoded image while clipping all pixels to its widget tile. */
   public function image(RasterImage $image, Tile $area, Tile $clip, bool $selected): void {
     if ($area->width < 1 || $area->height < 1 || $clip->width < 1 || $clip->height < 1) {

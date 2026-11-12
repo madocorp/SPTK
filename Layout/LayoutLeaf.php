@@ -11,6 +11,7 @@ use SPTK\Rendering\{Grid, GridWriter};
 final class LayoutLeaf {
 
   use LayoutDeckTile;
+  use LayoutMinSize;
   use LayoutOverwriteTile;
 
   private $grid;
@@ -130,9 +131,6 @@ final class LayoutLeaf {
 
   /** Paint pixel content in the cell rectangle or across the full measured tile without padding. */
   public function paintPixels(\SPTK\Rendering\PixelRenderer $renderer, WindowGeometry $geometry, bool $selected): void {
-    if ($this->viewport !== null && $this->instance->paintsPixels() && !$this->instance->clipsPixelViewport()) {
-      throw new \LogicException('Overflow viewports currently require grid-only widgets.');
-    }
     if ($this->pixelContent !== null) {
       $this->instance->paintPixels($renderer, $this->pixelContent, $selected);
       return;
@@ -142,7 +140,16 @@ final class LayoutLeaf {
     }
     $area = $this->instance->pixelArea($geometry->pixelArea($this->grid), $this->area);
     $clip = $this->viewport === null ? $area : $geometry->pixelArea($this->visibleGrid())->intersect($area);
-    $this->instance->paintClippedPixels($renderer, $area, $clip, $selected);
+    if ($this->viewport === null || !$this->instance->paintsPixels() || $this->instance->clipsPixelViewport()) {
+      $this->instance->paintClippedPixels($renderer, $area, $clip, $selected);
+      return;
+    }
+    $renderer->clip($clip);
+    try {
+      $this->instance->paintClippedPixels($renderer, $area, $clip, $selected);
+    } finally {
+      $renderer->clip(null);
+    }
   }
 
   /** Measure this widget's background including padding at interior and window edges. */
@@ -262,6 +269,9 @@ final class LayoutLeaf {
 
   /** Measure text at its assigned width or use a nontext widget's preferred height. */
   public function naturalHeight(int $width): int {
+    if ($this->instance instanceof \SPTK\Widgets\Text\Text) {
+      return max(1, $this->instance->naturalHeight($width));
+    }
     if (!$this->instance instanceof \SPTK\Widgets\StyledText\StyledText) {
       return max(1, $this->instance->preferredHeight() ?? 1);
     }

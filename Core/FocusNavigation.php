@@ -70,9 +70,9 @@ final class FocusNavigation {
     return $previous !== $this->selectedLeaf();
   }
 
-  /** Move to the next eligible tile inside the current scope. */
-  public function move(string $direction): bool {
-    return $this->selection->move($direction);
+  /** Move to the next eligible tile inside the current scope, optionally only to accepted leaves. */
+  public function move(string $direction, ?\Closure $accept = null): bool {
+    return $this->selection->move($direction, $accept);
   }
 
   /** Enter the selected layout and restore its last child selection when available. */

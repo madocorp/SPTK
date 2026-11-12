@@ -14,7 +14,9 @@ Each widget page describes that widget's XML attributes and behavior.
 - [List](List.md): browses, filters, selects, and optionally reorders items
 - [Table](Table.md): browses rows and columns from XML or TSV data
 - [Graph](Graph.md): plots numeric lines, points, and grouped bars as a cached image
+- [Sparkline](Sparkline.md): draws a compact one-row history from supplied samples
 - [ProgressBar](ProgressBar.md): shows determinate progress with a title and a percent, fraction, or text label
+- [Slider](Slider.md): changes a numeric value with an interactive filled bar
 - [ColorSelector](ColorSelector.md): selects an RGB color from swatches or six-digit hex input
 - [DateSelector](DateSelector.md): selects a date from a Monday-first calendar or eight-digit input
 - [FileSelector](FileSelector.md): browses directories and selects file paths

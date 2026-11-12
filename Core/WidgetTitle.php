@@ -25,13 +25,14 @@ final class WidgetTitle {
   }
 
   /** Return the item area, optionally painting its fixed title during a full redraw. */
-  public function body(GridWriter $writer, bool $paint = true): GridWriter {
+  public function body(GridWriter $writer, bool $paint = true, ?Color $color = null): GridWriter {
     if ($this->title === null || $writer->height() < 1) {
       return $writer;
     }
     if ($paint) {
-      $writer->fillRow(0, $this->style->highlight, $this->style->background);
-      $writer->write(0, 0, $this->title, $this->style->highlight, $this->style->background);
+      $ink = $color ?? $this->style->highlight;
+      $writer->fillRow(0, $ink, $this->style->background);
+      $writer->write(0, 0, $this->title, $ink, $this->style->background);
     }
     return $writer->below(1);
   }

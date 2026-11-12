@@ -74,11 +74,28 @@ final class Text extends Widget {
     $this->contentWidth = null;
     $this->paintedCursorCell = null;
     $this->emit('change');
+    $this->emit('preferredSizeChange');
+  }
+
+  /** Replace the fixed title above the scrollable text. */
+  public function setTitle(?string $title): void {
+    $height = $this->title->height();
+    $this->title = new WidgetTitle($title, $this->style);
+    $this->paintedCursorCell = null;
+    $this->emit('change');
+    if ($this->title->height() !== $height) {
+      $this->emit('preferredSizeChange');
+    }
   }
 
   /** Return the displayed document text. */
   public function text(): string {
     return implode("\n", $this->lines);
+  }
+
+  /** Measure the title and visible text rows for an auto-height grid tile. */
+  public function naturalHeight(int $width): int {
+    return $this->title->height() + count($this->visualRows(max(1, $width)));
   }
 
   /** Return the source line and grapheme under the read-only cursor. */

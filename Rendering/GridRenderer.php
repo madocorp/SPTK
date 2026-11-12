@@ -34,8 +34,14 @@ final class GridRenderer {
   /** Redraw cells written by the current widget update. */
   public function drawDirty(\FFI\CData $ffiRenderer, Grid $grid): int {
     $dirty = $grid->dirtyCells();
+    $this->drawCells($ffiRenderer, $dirty);
+    return count($dirty);
+  }
+
+  /** Draw [x, y, Cell] entries with their backgrounds, also outside widget tiles. */
+  public function drawCells(\FFI\CData $ffiRenderer, array $cells): void {
     try {
-      foreach ($dirty as [$x, $y, $cell]) {
+      foreach ($cells as [$x, $y, $cell]) {
         $this->pixels->fill(new Tile(
           $x * $this->font->cellWidth() + $this->ox,
           $y * $this->font->cellHeight() + $this->oy,
@@ -43,7 +49,7 @@ final class GridRenderer {
           $this->font->cellHeight(),
         ), $cell->bg);
       }
-      foreach ($dirty as [$x, $y, $cell]) {
+      foreach ($cells as [$x, $y, $cell]) {
         if ($cell->glyph !== ' ') {
           $this->drawGlyph($ffiRenderer, $cell, $x, $y);
         }
@@ -51,7 +57,6 @@ final class GridRenderer {
     } finally {
       $this->sdl->ffi->SDL_SetRenderClipRect($ffiRenderer, null);
     }
-    return count($dirty);
   }
 
   /** Draw every cell inside one widget tile, leaving separator gaps untouched. */

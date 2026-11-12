@@ -37,8 +37,8 @@ final class WidgetSelection {
     throw new \InvalidArgumentException('Selected leaf does not belong to this screen.');
   }
 
-  /** Move focus in the requested direction and report whether the selection changed. */
-  public function move(string $direction): bool {
+  /** Move focus in the requested direction, optionally only to accepted leaves, and report a change. */
+  public function move(string $direction, ?\Closure $accept = null): bool {
     $current = $this->selectedLeaf();
     if ($current === null) {
       return false;
@@ -46,7 +46,7 @@ final class WidgetSelection {
     $tile = $current->navigationArea();
     $allCandidates = [];
     foreach ($this->leaves as $index => $leaf) {
-      if ($index === $this->selectedIndex || !in_array($leaf, $this->movementLeaves ?? $this->leaves, true)) {
+      if ($index === $this->selectedIndex || !in_array($leaf, $this->movementLeaves ?? $this->leaves, true) || ($accept !== null && !$accept($leaf))) {
         continue;
       }
       $next = $leaf->navigationArea();

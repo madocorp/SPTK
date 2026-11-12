@@ -13,6 +13,7 @@ use SPTK\SDLWrapper\SDL;
 final class Screen {
 
   use ScreenPointer;
+  use ScreenScroll;
 
   private array $leaves;
   private FocusNavigation $focus;
@@ -174,6 +175,7 @@ final class Screen {
       return false;
     }
     $this->openDeckAround($leaf);
+    $this->revealSelection();
     if ($this->initialSelectionNotified) {
       $previous?->dispatchNotification('unselect');
       $leaf->dispatchNotification('select');
@@ -349,14 +351,17 @@ final class Screen {
     return $widget instanceof ListView && !$widget->acceptsTextInput();
   }
 
-  /** Move focus between tiles while no widget is active. */
+  /** Move focus between tiles while no widget is active; a scrolled layout scrolls before focus leaves it. */
   private function moveSelection(string $direction): bool {
     $previous = $this->selectedLeaf();
-    if (!$this->focus->move($direction)) {
+    if (!$this->moveInScrollers($previous, $direction)
+      && !$this->focus->move($direction, $this->isShown(...))
+      && !$this->focus->move($direction)) {
       return false;
     }
     $previous?->dispatchNotification('unselect');
     $this->notifySelect();
+    $this->revealSelection();
     return true;
   }
 
@@ -399,8 +404,9 @@ final class Screen {
     $this->statusOverlay = false;
   }
 
+  /** Measure the layout and scroll the selected tile into view. */
   public function measureGrid(\SPTK\Layout\Tile $grid) {
-    $this->layout->measureGrid($grid);
+    $this->layout->measureGrid($grid, null, [], $this->focus->selectedLeaf());
   }
 
   /** Measure padded layout areas using the owning window's geometry. */

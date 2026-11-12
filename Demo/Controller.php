@@ -6,6 +6,8 @@ class Controller {
   private static ?\SPTK\Core\Texture $canvasAtlas = null;
   private static int $canvasStep = 0;
   private static string $deckFruit = 'apple';
+  private static ?\SPTK\Layout\LayoutLeaf $scrollInput = null;
+  private static ?\SPTK\Layout\LayoutLeaf $scrollEditor = null;
 
   /** Compose sprite-sheet tiles and a scaled character into the demo canvas. */
   public static function paintCanvas(\SPTK\Core\Texture $surface, \SPTK\Core\TextureContext $textures): void {
@@ -67,6 +69,60 @@ class Controller {
   /** Return a title line and a value line for a closed deck tile. */
   public static function deckSummary(?string $id): string {
     return $id === 'deck-fruit' ? "Fruit\n" . ucfirst(self::$deckFruit) : "Person\nFirst and last name";
+  }
+
+  /** Replace the Status input with a taller list, as an app's in-place editor does. */
+  public static function editScrollStatus(): bool {
+    return self::editScrollProperty('scroll-status', 'Status', ['Open', 'In progress', 'Review', 'Testing', 'Blocked', 'Ready', 'Done', 'Closed']);
+  }
+
+  /** Replace the Assignee input with a long list that needs scrolling. */
+  public static function editScrollAssignee(): bool {
+    return self::editScrollProperty('scroll-assignee', 'Assignee', array_map(self::scrollUserName(...), range(1, 14)));
+  }
+
+  /** Put the input back and copy the chosen value into it. */
+  public static function finishScrollEdit(\SPTK\Events\EventContext $event): void {
+    if (self::$scrollEditor === null) {
+      return;
+    }
+    $screen = self::scrollScreen();
+    self::$scrollInput->instance()->setValue((string)self::$scrollEditor->instance()->getValue());
+    $screen->layout->replaceChild(self::$scrollEditor, self::$scrollInput);
+    $screen->setLayout($screen->layout);
+    $screen->selectLeaf(self::$scrollInput);
+    self::$scrollEditor = null;
+    \SPTK\App::eventLoop()->windows()[0]->refreshLayout();
+  }
+
+  /** Swap a two-row input for a list tile with one row per value. */
+  private static function editScrollProperty(string $id, string $title, array $values): bool {
+    if (self::$scrollEditor !== null) {
+      return true;
+    }
+    $screen = self::scrollScreen();
+    self::$scrollInput = $screen->layout->findTile($id);
+    $items = [];
+    foreach ($values as $value) {
+      $items[] = ['value' => $value, 'label' => $value];
+    }
+    $list = new \SPTK\Widgets\List\ListView($items, false, true, true, false, new \SPTK\Core\Style(), $title);
+    self::$scrollEditor = new \SPTK\Layout\LayoutLeaf('List', '1*', (string)(count($items) + 1), $list, [
+      new \SPTK\Events\EventDefinition('deactivate', null, self::class . '::finishScrollEdit'),
+    ]);
+    $screen->layout->replaceChild(self::$scrollInput, self::$scrollEditor);
+    $screen->setLayout($screen->layout);
+    $screen->activateLeaf(self::$scrollEditor);
+    \SPTK\App::eventLoop()->windows()[0]->refreshLayout();
+    return true;
+  }
+
+  private static function scrollUserName(int $number): string {
+    return 'User ' . $number;
+  }
+
+  private static function scrollScreen(): \SPTK\Core\Screen {
+    return \SPTK\App::eventLoop()->windows()[0]->screen('scroll');
   }
 
   /** Print the file chosen in the overwrite demo after the selector is restored. */

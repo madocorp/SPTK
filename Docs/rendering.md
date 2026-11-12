@@ -31,8 +31,9 @@ for pixel widgets: `Screen::paintPixels($renderer, $geometry)` forwards it to ea
 `LayoutLeaf::paintPixels($renderer, $geometry, $selected)` converts the leaf's grid tile into a pixel area.
 Existing widgets receive `paintPixels($renderer, $area, $selected)` with their concrete pixel rectangle.
 `paintClippedPixels($renderer, $area, $clip, $selected)` delegates to that method by default. A widget that
-can clip its own pixels inside an overflow viewport overrides the clipped method and reports support through
-`clipsPixelViewport()`.
+can clip its own pixels inside a scrolled layout overrides the clipped method and reports support through
+`clipsPixelViewport()`; other pixel widgets are clipped with a renderer clip rectangle. Scroll marks are
+drawn after the separators on every render path.
 
 ## Input updates
 

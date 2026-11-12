@@ -36,5 +36,7 @@ Vertical arrows sit at the right edge; horizontal arrows sit at the left or righ
 
 `setText(string $text)` replaces the content, resets cursor and scrolling, clears cached
 rows, and emits `change`. It preserves wrapping, alignment, and style.
+`setTitle(?string $title)` changes the fixed heading; `null` removes its row.
+Set `height="auto"` to make a Text tile follow its content rows and title.
 `text()` returns the displayed document, and `cursorPosition()` returns its source line and grapheme index.
 `setHighlighter()` applies optional syntax colors while the widget remains read-only.
