@@ -263,6 +263,16 @@ final class LayoutLeaf {
     return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->size($this->height, 'height'), 'height'), 'height');
   }
 
+  /** Change this leaf's size along its parent's horizontal axis. */
+  public function setWidth(string $width): void {
+    $this->width = $width;
+  }
+
+  /** Change this leaf's size along its parent's vertical axis. */
+  public function setHeight(string $height): void {
+    $this->height = $height;
+  }
+
   public function tileId(): ?string {
     return $this->instance->id();
   }

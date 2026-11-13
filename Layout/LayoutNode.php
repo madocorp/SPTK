@@ -67,12 +67,27 @@ final class LayoutNode {
     return $this->direction;
   }
 
+  /** Return the axis used to arrange direct children. */
+  public function direction(): string {
+    return $this->direction;
+  }
+
   public function width() {
     return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->width, 'width'), 'width');
   }
 
   public function height() {
     return $this->overwriteAdjustedSize($this->deckAdjustedSize($this->height, 'height'), 'height');
+  }
+
+  /** Change this node's size along its parent's horizontal axis. */
+  public function setWidth(string $width): void {
+    $this->width = $width;
+  }
+
+  /** Change this node's size along its parent's vertical axis. */
+  public function setHeight(string $height): void {
+    $this->height = $height;
   }
 
   public function tileId(): ?string {
@@ -147,6 +162,17 @@ final class LayoutNode {
 
   public function addSeparator(LayoutSeparator $separator): void {
     $this->children[] = $separator;
+  }
+
+  /** Return direct layout and leaf children without separator markers. */
+  public function childTiles(): array {
+    $tiles = [];
+    foreach ($this->children as $child) {
+      if ($child instanceof self || $child instanceof LayoutLeaf) {
+        $tiles[] = $child;
+      }
+    }
+    return $tiles;
   }
 
   /** Return children as shown: without hidden overwrites and the separators they leave at an edge or doubled. */
