@@ -105,6 +105,7 @@ class SDL {
   public const MOD_SHIFT = 0x0003;
   public const MOD_CTRL = 0x00c0;
   public const MOD_ALT = 0x0300;
+  public const MOD_LALT = 0x0100;
   public const MOD_MODE = 0x4000;
 
   public \FFI $ffi;
