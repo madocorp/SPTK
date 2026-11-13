@@ -198,6 +198,16 @@ final class Window {
     $this->renderScreens();
   }
 
+  /** Draw only the changed cells of the active widget, or the full screen when no widget is active. */
+  public function refreshActiveLeaf(): void {
+    $leaf = $this->screens[$this->currentScreen]->activeLeaf();
+    if ($leaf === null) {
+      $this->renderScreens();
+    } else {
+      $this->renderLeaf($leaf);
+    }
+  }
+
   /** Recreate the frame and remeasure every screen with the current window geometry. */
   public function resize() {
     $this->sdl->ffi->SDL_GetWindowSize($this->window, \FFI::addr($this->ffiWidth), \FFI::addr($this->ffiHeight));
