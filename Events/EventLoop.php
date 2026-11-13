@@ -167,6 +167,11 @@ final class EventLoop {
 
   private function handleSdlEvent(mixed $event): void {
     if ($event->type === SDL::SDL_QUIT) {
+      foreach ($this->windows as $window) {
+        if (!$window->acceptsCloseRequest()) {
+          return;
+        }
+      }
       $this->running = false;
       return;
     }

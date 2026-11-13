@@ -27,6 +27,7 @@ final class Window {
   private ?\FFI\CData $frameTexture = null;
   private WindowGeometry $geometry;
   private bool $contentHidden = false; // Present only the background until showContent().
+  private ?\Closure $closeRequestHandler = null;
 
   public function __construct(array $data) {
     $this->ffiWidth = \FFI::new('int');
@@ -111,6 +112,21 @@ final class Window {
 
   public function id(): int {
     return $this->id;
+  }
+
+  /** Change the title shown by the desktop window manager. */
+  public function setTitle(string $title): void {
+    $this->sdl->checkReturnValue($this->sdl->ffi->SDL_SetWindowTitle($this->window, $title), 'SDL_SetWindowTitle');
+  }
+
+  /** Let an application defer a native close request while it asks the user. */
+  public function setCloseRequestHandler(?callable $handler): void {
+    $this->closeRequestHandler = $handler === null ? null : \Closure::fromCallable($handler);
+  }
+
+  /** Ask whether this window may close now. */
+  public function acceptsCloseRequest(): bool {
+    return $this->closeRequestHandler === null || ($this->closeRequestHandler)() !== false;
   }
 
   /** Set the native window icon from a PNG path relative to Layout or an absolute path. */
@@ -375,6 +391,9 @@ final class Window {
       return false;
     }
     if ($event->type === SDL::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+      if (!$this->acceptsCloseRequest()) {
+        return true;
+      }
       $this->screens[$this->currentScreen]->release();
       \SPTK\App::eventLoop()->quitWindow($this->id);
       return true;
