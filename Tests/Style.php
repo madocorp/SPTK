@@ -59,6 +59,9 @@ foreach ($widgets as $widget) {
   $widget->emit('activate');
   $grid = paintStyleWidget($widget);
   expectStyleColor($grid->cell(0, 0)->bg, $style->cursorBackground, $name . ' active cursor');
+  if ($widget instanceof ListView) {
+    expectStyleColor($grid->cell(19, 0)->bg, $style->cursorBackground, $name . ' cursor fills row');
+  }
   $cursor = $widget instanceof Text ? $style->cursorForeground : $normal;
   expectStyleColor($grid->cell(0, 0)->fg, $cursor, $name . ' cursor text');
 }

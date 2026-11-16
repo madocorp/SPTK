@@ -14,8 +14,8 @@ final class View {
   private int $paintedHeight = -1;
 
   /** Share the list's viewport, redraw state, and inherited title and item colors. */
-  public function __construct(Style $style, private ItemViewport $viewport, private Redraw $redraw, ?string $title) {
-    $this->painter = new Painter($style);
+  public function __construct(Style $style, private ItemViewport $viewport, private Redraw $redraw, ?string $title, bool $highlightSelection) {
+    $this->painter = new Painter($style, $highlightSelection);
     $this->title = new WidgetTitle($title, $style);
   }
 
