@@ -6,6 +6,7 @@ namespace SPTK\Rendering;
 final class TextMetrics {
 
   private static array $widths = [];
+  private static ?\IntlBreakIterator $breaker = null;
 
   public static function glyphs(string $text): array {
     if (!mb_check_encoding($text, 'UTF-8')) {
@@ -14,7 +15,7 @@ final class TextMetrics {
     if (preg_match('/^[\x00-\x7f]*$/D', $text)) {
       return str_split($text);
     }
-    $iterator = \IntlBreakIterator::createCharacterInstance('root');
+    $iterator = self::$breaker ??= \IntlBreakIterator::createCharacterInstance('root');
     $iterator->setText($text);
     $glyphs = [];
     $start = $iterator->first();

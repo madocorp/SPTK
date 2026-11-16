@@ -7,14 +7,24 @@ use SPTK\Rendering\TextMetrics;
 /** Maps logical text lines to clipped visual rows and cursor coordinates. */
 final class TextRows {
 
-  /** Build visual rows using no, display-word, editable-word, or character wrapping. */
+  private array $cache = [];
+  private string $cacheKey = '';
+
+  /**
+   * Build visual rows using no, display-word, editable-word, or character wrapping.
+   * Rows are cached per line text, so after an edit only the changed lines are wrapped again.
+   */
   public function build(array $lines, int $width, string $wrap, int $tabSize = 8, bool $caretRow = false): array {
+    $width = max(1, $width);
+    $key = "{$width}:{$wrap}:{$tabSize}:" . (int)$caretRow;
+    $cache = $key === $this->cacheKey ? $this->cache : [];
+    $used = [];
     $rows = [];
     foreach ($lines as $lineNumber => $line) {
-      $segments = match ($wrap) {
-        'word' => $this->wordWrap($line, max(1, $width), $tabSize),
-        'word-preserve' => $this->editableWordWrap($line, max(1, $width), $tabSize, $caretRow),
-        'character' => $this->characterWrap($line, max(1, $width), $tabSize, $caretRow),
+      $segments = $used[$line] ??= $cache[$line] ?? match ($wrap) {
+        'word' => $this->wordWrap($line, $width, $tabSize),
+        'word-preserve' => $this->editableWordWrap($line, $width, $tabSize, $caretRow),
+        'character' => $this->characterWrap($line, $width, $tabSize, $caretRow),
         default => [['start' => 0, 'length' => TextMetrics::length($line), 'text' => $line]],
       };
       foreach ($segments as $segment) {
@@ -22,6 +32,8 @@ final class TextRows {
         $rows[] = $segment;
       }
     }
+    $this->cache = $used;
+    $this->cacheKey = $key;
     return $rows;
   }
 
@@ -29,34 +41,34 @@ final class TextRows {
   private function editableWordWrap(string $line, int $width, int $tabSize, bool $caretRow): array {
     $glyphs = TextMetrics::glyphs($line);
     $count = count($glyphs);
+    $bytes = $this->byteOffsets($glyphs);
+    $spaces = array_map($this->isSpace(...), $glyphs);
     $rows = [];
     $start = 0;
     $used = 0;
     for ($index = 0; $index < $count; $index++) {
       $glyph = $glyphs[$index];
-      $space = preg_match('/^\s$/u', $glyph) === 1;
-      if (!$space && ($index === 0 || preg_match('/^\s$/u', $glyphs[$index - 1]) === 1) && $used > 0) {
-        $end = $index;
-        while ($end < $count && preg_match('/^\s$/u', $glyphs[$end]) !== 1) {
-          $end++;
+      if (!$spaces[$index] && ($index === 0 || $spaces[$index - 1]) && $used > 0) {
+        $wordWidth = 0;
+        for ($end = $index; $end < $count && !$spaces[$end]; $end++) {
+          $wordWidth += TextMetrics::glyphWidthAt($glyphs[$end], $wordWidth, $tabSize);
         }
-        $word = implode('', array_slice($glyphs, $index, $end - $index));
-        if ($used + TextMetrics::width($word, $tabSize) > $width) {
-          $rows[] = ['start' => $start, 'length' => $index - $start, 'text' => TextMetrics::slice($line, $start, $index - $start)];
+        if ($used + $wordWidth > $width) {
+          $rows[] = $this->row($line, $bytes, $start, $index);
           $start = $index;
           $used = 0;
         }
       }
       $glyphWidth = TextMetrics::glyphWidthAt($glyph, $used, $tabSize);
       if ($used > 0 && $used + $glyphWidth > $width) {
-        $rows[] = ['start' => $start, 'length' => $index - $start, 'text' => TextMetrics::slice($line, $start, $index - $start)];
+        $rows[] = $this->row($line, $bytes, $start, $index);
         $start = $index;
         $used = 0;
         $glyphWidth = TextMetrics::glyphWidthAt($glyph, 0, $tabSize);
       }
       $used += min($width, $glyphWidth);
     }
-    $rows[] = ['start' => $start, 'length' => $count - $start, 'text' => TextMetrics::slice($line, $start)];
+    $rows[] = $this->row($line, $bytes, $start, $count);
     if ($caretRow && $used >= $width && $count > 0) {
       $rows[] = ['start' => $count, 'length' => 0, 'text' => ''];
     }
@@ -81,66 +93,100 @@ final class TextRows {
 
   /** Split one line at display-cell boundaries. */
   private function characterWrap(string $line, int $width, int $tabSize, bool $caretRow): array {
+    $glyphs = TextMetrics::glyphs($line);
+    $rows = $this->characterRows($line, $glyphs, $this->byteOffsets($glyphs), 0, count($glyphs), $width, $tabSize, $used);
+    if ($caretRow && $used >= $width) {
+      $rows[] = ['start' => count($glyphs), 'length' => 0, 'text' => ''];
+    }
+    return $rows;
+  }
+
+  /** Split a grapheme range at display-cell boundaries; $used gets the last row's width. */
+  private function characterRows(string $line, array $glyphs, array $bytes, int $from, int $to, int $width, int $tabSize, ?int &$used): array {
     $rows = [];
-    $start = 0;
-    $length = 0;
+    $start = $from;
     $used = 0;
-    foreach (TextMetrics::glyphs($line) as $index => $glyph) {
-      $glyphWidth = TextMetrics::glyphWidthAt($glyph, $used, $tabSize);
+    for ($index = $from; $index < $to; $index++) {
+      $glyphWidth = TextMetrics::glyphWidthAt($glyphs[$index], $used, $tabSize);
       if ($used > 0 && $used + $glyphWidth > $width) {
-        $rows[] = ['start' => $start, 'length' => $length, 'text' => TextMetrics::slice($line, $start, $length)];
+        $rows[] = $this->row($line, $bytes, $start, $index);
         $start = $index;
-        $length = 0;
         $used = 0;
-        $glyphWidth = TextMetrics::glyphWidthAt($glyph, 0, $tabSize);
+        $glyphWidth = TextMetrics::glyphWidthAt($glyphs[$index], 0, $tabSize);
       }
-      $length++;
       $used += min($width, $glyphWidth);
     }
-    $rows[] = ['start' => $start, 'length' => $length, 'text' => TextMetrics::slice($line, $start, $length)];
-    if ($caretRow && $used >= $width) {
-      $rows[] = ['start' => TextMetrics::length($line), 'length' => 0, 'text' => ''];
-    }
+    $rows[] = $this->row($line, $bytes, $start, $to);
     return $rows;
   }
 
   /** Wrap words while retaining their original grapheme positions. */
   private function wordWrap(string $line, int $width, int $tabSize): array {
-    preg_match_all('/\S+/u', $line, $matches, PREG_OFFSET_CAPTURE);
-    if ($matches[0] === []) {
-      return [['start' => 0, 'length' => 0, 'text' => '']];
-    }
+    $glyphs = TextMetrics::glyphs($line);
+    $count = count($glyphs);
+    $bytes = $this->byteOffsets($glyphs);
     $rows = [];
-    $current = null;
-    $previousEnd = 0;
-    foreach ($matches[0] as [$word, $byteOffset]) {
-      $wordStart = TextMetrics::length(substr($line, 0, $byteOffset));
-      $wordLength = TextMetrics::length($word);
-      $separator = $current === null ? '' : TextMetrics::slice($line, $previousEnd, $wordStart - $previousEnd);
-      if (TextMetrics::width($word, $tabSize) > $width) {
-        if ($current !== null) {
-          $rows[] = $current;
-          $current = null;
-        }
-        foreach ($this->characterWrap($word, $width, $tabSize, false) as $part) {
-          $part['start'] += $wordStart;
-          $rows[] = $part;
-        }
-      } else if ($current === null) {
-        $current = ['start' => $wordStart, 'length' => $wordLength, 'text' => $word];
-      } else if (TextMetrics::width($current['text'] . $separator . $word, $tabSize) <= $width) {
-        $current['length'] = $wordStart + $wordLength - $current['start'];
-        $current['text'] .= $separator . $word;
-      } else {
-        $rows[] = $current;
-        $current = ['start' => $wordStart, 'length' => $wordLength, 'text' => $word];
+    $start = null;
+    $end = 0;
+    $used = 0;
+    for ($index = 0; $index < $count;) {
+      if ($this->isSpace($glyphs[$index])) {
+        $index++;
+        continue;
       }
-      $previousEnd = $wordStart + $wordLength;
+      $wordStart = $index;
+      $wordWidth = 0;
+      for (; $index < $count && !$this->isSpace($glyphs[$index]); $index++) {
+        $wordWidth += TextMetrics::glyphWidthAt($glyphs[$index], $wordWidth, $tabSize);
+      }
+      if ($wordWidth > $width) {
+        if ($start !== null) {
+          $rows[] = $this->row($line, $bytes, $start, $end);
+          $start = null;
+        }
+        array_push($rows, ...$this->characterRows($line, $glyphs, $bytes, $wordStart, $index, $width, $tabSize, $unused));
+        continue;
+      }
+      if ($start !== null) {
+        // The separator keeps its tabs, so measure it from the current row width.
+        $joined = $used;
+        for ($glyph = $end; $glyph < $index; $glyph++) {
+          $joined += TextMetrics::glyphWidthAt($glyphs[$glyph], $joined, $tabSize);
+        }
+        if ($joined <= $width) {
+          $end = $index;
+          $used = $joined;
+          continue;
+        }
+        $rows[] = $this->row($line, $bytes, $start, $end);
+      }
+      $start = $wordStart;
+      $end = $index;
+      $used = $wordWidth;
     }
-    if ($current !== null) {
-      $rows[] = $current;
+    if ($start !== null) {
+      $rows[] = $this->row($line, $bytes, $start, $end);
     }
-    return $rows;
+    return $rows === [] ? [['start' => 0, 'length' => 0, 'text' => '']] : $rows;
+  }
+
+  /** Return the byte offset of every grapheme, plus the total length at the end. */
+  private function byteOffsets(array $glyphs): array {
+    $offsets = [0];
+    $offset = 0;
+    foreach ($glyphs as $glyph) {
+      $offsets[] = $offset += strlen($glyph);
+    }
+    return $offsets;
+  }
+
+  /** Cut a grapheme range from the line by byte offsets. */
+  private function row(string $line, array $bytes, int $start, int $end): array {
+    return ['start' => $start, 'length' => $end - $start, 'text' => substr($line, $bytes[$start], $bytes[$end] - $bytes[$start])];
+  }
+
+  private function isSpace(string $glyph): bool {
+    return strlen($glyph) === 1 ? $glyph === ' ' || $glyph === "\t" : preg_match('/^\s+$/u', $glyph) === 1;
   }
 
 }
