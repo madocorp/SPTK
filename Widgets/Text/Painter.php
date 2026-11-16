@@ -10,6 +10,8 @@ final class Painter {
 
   private ?SyntaxHighlighter $highlighter = null;
   private array $tokenLines = [];
+  private array $lineStates = [];
+  private array $highlightedLines = [];
   private array $colors = [];
   private array $fillStyles = [];
 
@@ -20,6 +22,8 @@ final class Painter {
   /** Install optional syntax colors for the shared text renderer. */
   public function setHighlighter(?SyntaxHighlighter $highlighter): void {
     $this->highlighter = $highlighter;
+    $this->tokenLines = [];
+    $this->lineStates = [];
     $this->colors = [];
     $this->fillStyles = [];
     foreach ($highlighter?->styleColors() ?? [] as $name => $colors) {
@@ -35,7 +39,10 @@ final class Painter {
 
   /** Paint visible rows, optional selection and cursor, and scroll indicators. */
   public function paint(GridWriter $writer, array $rows, array $lines, TextCursor $cursor, int $scrollY, int $scrollX, bool $wrap, array $caret, int $tabSize = 8, bool $showSelection = true, string $align = 'left', ?int $contentWidth = null): ?array {
-    $this->tokenLines = $this->highlighter?->highlight($lines) ?? [];
+    $lastRow = $rows[min(count($rows) - 1, $scrollY + $writer->height() - 1)] ?? null;
+    if ($lastRow !== null) {
+      $this->highlightThrough($lines, $lastRow['line']);
+    }
     $writer->fill($this->style->foreground, $this->style->background);
     for ($y = 0; $y < $writer->height(); $y++) {
       $row = $rows[$scrollY + $y] ?? null;
@@ -53,6 +60,34 @@ final class Painter {
   /** Paint a cursor over existing rows and return the cell it covered. */
   public function paintActiveCursor(GridWriter $writer, array $rows, array $lines, TextCursor $cursor, array $caret, int $scrollY, int $scrollX, int $tabSize, string $align): ?array {
     return $this->paintCursor($writer, $rows, $lines, $cursor, $caret, $scrollY, $scrollX, $tabSize, $align);
+  }
+
+  /** Highlight up to a line, continuing from the last cached line and its state. */
+  private function highlightThrough(array $lines, int $last): void {
+    if ($this->highlighter === null) {
+      return;
+    }
+    if ($lines !== $this->highlightedLines) {
+      $this->dropChangedTokens($lines);
+    }
+    $state = $this->lineStates[count($this->tokenLines) - 1] ?? null;
+    for ($line = count($this->tokenLines); $line <= $last; $line++) {
+      [$this->tokenLines[$line], $state] = $this->highlighter->highlightLine($lines[$line], $state);
+      $this->lineStates[$line] = $state;
+    }
+  }
+
+  /** Forget tokens from the first changed line, because later states may depend on it. */
+  private function dropChangedTokens(array $lines): void {
+    $count = count($this->tokenLines);
+    for ($line = 0; $line < $count; $line++) {
+      if (($lines[$line] ?? null) !== $this->highlightedLines[$line]) {
+        $this->tokenLines = array_slice($this->tokenLines, 0, $line);
+        $this->lineStates = array_slice($this->lineStates, 0, $line);
+        break;
+      }
+    }
+    $this->highlightedLines = $lines;
   }
 
   /** Draw a visual row and tint its selected source graphemes. */

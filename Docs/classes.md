@@ -107,7 +107,7 @@ Static or reusable classes.
 - Core\AppData: resolves private per-application files and loads or saves JSON [configuration](config.md)
 - Core\Color: rgb color data
 - Core\Style: inherited application colors with defaults and local overrides
-- Core\SyntaxHighlighter: supplies grapheme-based token spans and optional colors to TextEditor through `setHighlighter()`; a style with `fillRow => true` extends its background to the tile edge when its token covers the whole source line
+- Core\SyntaxHighlighter: supplies grapheme-based token spans and optional colors to Text and TextEditor through `setHighlighter()`; `highlightLine($line, $state)` returns `[tokens, state]`, and the state goes to the next line (e.g. inside a code block). The painter caches tokens and states, highlights only down to the last visible line, and re-highlights from the first changed line after an edit; a style with `fillRow => true` extends its background to the tile edge when its token covers the whole source line
 - Core\Cell: a character grid cell; glyph, fg, bg, width
 
 `TextEditor` with `textWrap="true"` wraps at word boundaries while retaining all source characters and cursor positions. Words wider than the tile wrap by character.
