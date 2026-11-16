@@ -17,7 +17,7 @@ trait LayoutNodeSeparators {
 
   /** Draw separators after content so their lines remain visible. */
   public function drawSeparators(PixelRenderer $renderer, Color $color): void {
-    if ($this->pixelTile !== null) {
+    if ($this->pixelTile !== null || $this->grid === null || $this->grid->width === 0 || $this->grid->height === 0) {
       return;
     }
     $color = $this->separatorColor ?? $color;

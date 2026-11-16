@@ -175,20 +175,29 @@ final class LayoutNode {
     return $tiles;
   }
 
-  /** Return children as shown: without hidden overwrites and the separators they leave at an edge or doubled. */
+  /** Return shown children with separators only between noncollapsed tiles. */
   private function visibleChildren(): array {
     $visible = [];
+    $separator = null;
+    $hasShownTile = false;
     foreach ($this->children as $child) {
       if ($child instanceof LayoutSeparator) {
-        if ($visible !== [] && !end($visible) instanceof LayoutSeparator) {
-          $visible[] = $child;
-        }
-      } else if (!$child->isOverwriter()) {
-        $visible[] = self::shownTile($child);
+        $separator ??= $child;
+        continue;
       }
-    }
-    if (end($visible) instanceof LayoutSeparator) {
-      array_pop($visible);
+      if ($child->isOverwriter()) {
+        continue;
+      }
+      $tile = self::shownTile($child);
+      $size = $this->direction === 'vertical' ? $tile->height() : $tile->width();
+      if ($size !== '0' && $size !== '0*') {
+        if ($hasShownTile && $separator !== null) {
+          $visible[] = $separator;
+        }
+        $hasShownTile = true;
+        $separator = null;
+      }
+      $visible[] = $tile;
     }
     return $visible;
   }
@@ -340,6 +349,10 @@ final class LayoutNode {
 
   /** Measure one separator after its preceding child within this layout's padded area. */
   private function measureSeparatorArea(LayoutSeparator $separator, LayoutNode|LayoutLeaf $before, Tile $windowGrid, WindowGeometry $geometry): void {
+    if ($this->grid->width === 0 || $this->grid->height === 0) {
+      $separator->setArea(new Tile(0, 0, 0, 0));
+      return;
+    }
     $area = $geometry->separatorArea($this->grid, $before->grid(), $windowGrid, $this->direction);
     $separator->setArea($this->viewport === null ? $area : $area->intersect($geometry->backgroundArea($this->viewport, $windowGrid)));
   }
