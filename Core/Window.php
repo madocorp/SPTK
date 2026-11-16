@@ -175,6 +175,11 @@ final class Window {
     return null;
   }
 
+  /** Return the screens owned by this window. */
+  public function screens(): array {
+    return $this->screens;
+  }
+
   /** Return the screen currently receiving input. */
   public function currentScreenId(): string {
     return $this->screens[$this->currentScreen]->id;
