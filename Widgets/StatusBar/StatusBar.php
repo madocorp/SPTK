@@ -81,8 +81,8 @@ final class StatusBar extends Widget {
     $this->generation++;
     $this->locked = false;
     $this->confirmation = [$yes, $no, $legacyCancel];
-    $this->message($message . ($legacyCancel === null ? '  Y/Return: yes  N/Esc: no' : '  Y/Return: yes  N: no  Esc: cancel'), $style, 'confirmation');
     $this->requestFocus();
+    $this->message($message . ($legacyCancel === null ? '  Y/Return: yes  N/Esc: no' : '  Y/Return: yes  N: no  Esc: cancel'), $style, 'confirmation');
   }
 
   public function confirming(): bool {
@@ -166,12 +166,12 @@ final class StatusBar extends Widget {
     $this->generation++;
     $this->locked = $lock;
     $this->confirmation = null;
-    $this->message($text, $style, $behavior);
     if ($behavior === 'modal') {
       $this->requestFocus();
     } else {
       $this->dismissFocus();
     }
+    $this->message($text, $style, $behavior);
     if ($behavior === 'background') {
       $generation = $this->generation;
       ($this->schedule)($durationMs, function() use ($generation): void {
@@ -189,13 +189,13 @@ final class StatusBar extends Widget {
     $this->behavior = 'empty';
     $this->locked = false;
     $this->confirmation = null;
+    $this->dismissFocus();
     if ($this->continuous !== null) {
       [$text, $style] = $this->continuous;
       $this->message($text, $style, 'continuous');
     } else {
       $this->emit('change');
     }
-    $this->dismissFocus();
   }
 
   private function message(string $message, string $kind, string $behavior): void {

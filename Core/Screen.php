@@ -120,6 +120,11 @@ final class Screen {
 
   /** Bind all buttons to their owning window. */
   public function setWindow(Window $window): void {
+    $this->statusBar?->on('change', function() use ($window): void {
+      if (\SPTK\App::eventLoop()->window($window->id()) === $window && $window->currentScreenId() === $this->id) {
+        $window->refreshLayout();
+      }
+    });
     $this->statusBar?->setScheduler(function(int $delayMs, callable $callback) use ($window): void {
       \SPTK\App::eventLoop()->after($delayMs, function() use ($callback, $window): void {
         $callback();

@@ -71,12 +71,18 @@ expectStatus($bar->text(), 'Custom editor active.', 'active tile help uses its a
 $screen->handleEvent(statusKey(SDL::KEY_RETURN));
 expectStatus($screen->activeLeaf(), $editorLeaf, 'Return resumes the active editor');
 
+$focusAtChange = null;
+$bar->on('change', function() use (&$focusAtChange, $screen): void {
+  $focusAtChange = $screen->selectedLeaf();
+});
 $bar->notice('Saved document');
 expectStatus([$bar->kind(), $screen->selectedLeaf()], ['notice', $statusLeaf], 'notice requires acknowledgment');
+expectStatus($focusAtChange, $statusLeaf, 'modal is focused before observers redraw it');
 $screen->handleEvent(statusKey(SDL::KEY_RIGHT));
 expectStatus($screen->selectedLeaf(), $statusLeaf, 'notice drains unrelated navigation');
 $screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
 expectStatus([$bar->text(), $screen->activeLeaf()], ['', $editorLeaf], 'Escape acknowledges notice and resumes editor');
+expectStatus($focusAtChange, $editorLeaf, 'modal restores prior focus before observers redraw');
 $bar->notice('Settings saved');
 expectStatus([$bar->kind(), $screen->selectedLeaf()], ['notice', $statusLeaf], 'another notice requires acknowledgment');
 $screen->handleEvent(statusKey(SDL::KEY_RETURN));
