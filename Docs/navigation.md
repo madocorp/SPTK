@@ -14,6 +14,8 @@ other widget tiles are dimmed.
 
 Hidden [overwrite](layout.md#overwrite) elements are not navigation targets until they are shown;
 the tile they replace is not a target while they are shown.
+Tiles with no measured width or height, including tiles inside collapsed panels, are skipped by arrows.
+Offscreen tiles inside the current scrolling layout remain reachable so arrows can bring them into view.
 
 Widgets and layouts with `navigate="false"` are skipped as arrow-key destinations. This does not
 change rendering, initial selection, or explicit selection. A layout with `navigate="false"`

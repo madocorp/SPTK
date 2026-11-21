@@ -27,7 +27,9 @@ offers the same choices without a style-specific method.
 | `confirmation` | Y or Return accepts; N or Esc declines; other input is drained |
 
 Use `confirm($text, $yes, $no, $legacyCancel = null, $style = 'warning')` for a
-confirmation. The optional fourth callback keeps the old separate Esc cancel action.
+confirmation. The bar appends `[Y/N]` to the message; Return also accepts and Esc
+also declines. The optional fourth callback keeps the old separate Esc cancel action
+and changes the suffix to `[Y/N/Esc]`.
 For a synchronous job, `info($text, 'modal', lock: true)` drains all input until
 the application replaces or clears it. `clear()` also removes a continuous message.
 `kind()` reports the color style and `behavior()` reports the input behavior.

@@ -4,7 +4,7 @@ define('APP_DIR', __DIR__);
 require_once APP_DIR . '/SPTK/App.php';
 spl_autoload_register(['SPTK\\App', 'load']);
 
-use SPTK\Core\Style;
+use SPTK\Core\{Color, Style};
 use SPTK\Layout\Tile;
 use SPTK\Rendering\{Grid, GridWriter};
 use SPTK\SDLWrapper\SDL;
@@ -44,15 +44,41 @@ $plain->paint($writer);
 if ($grid->cell(0, 0)->fg != $style->foreground || $grid->cell(11, 0)->bg != $style->cursorBackground) {
   throw new RuntimeException('List without selection highlighting lost its active cursor.');
 }
+$inactiveColor = new Color(0, 0, 128);
+$marked = new ListView([
+  ['value' => 'one', 'label' => 'One', 'selected' => true],
+  ['value' => 'two', 'label' => 'Two'],
+], multiple: true, style: $style, inactiveCursorBackground: $inactiveColor);
+$marked->paint($writer);
+if ($grid->cell(0, 0)->fg != $style->selected || $grid->cell(11, 0)->bg != $inactiveColor
+  || $grid->cell(11, 1)->bg != $style->background) {
+  throw new RuntimeException('Inactive cursor background did not preserve pin color or fill only its row.');
+}
+$marked->emit('activate');
+$marked->paint($writer);
+if ($grid->cell(11, 0)->bg != $style->cursorBackground) {
+  throw new RuntimeException('Active cursor background did not override the inactive color.');
+}
+$marked->handleInput((object)['type' => SDL::SDL_EVENT_KEY_DOWN,
+  'key' => (object)['key' => SDL::KEY_DOWN, 'mod' => 0, 'repeat' => false]]);
+if (!$marked->paintUpdate($writer) || $grid->cell(11, 0)->bg != $style->background
+  || $grid->cell(11, 1)->bg != $style->cursorBackground) {
+  throw new RuntimeException('Moving an active cursor left an incorrect row background.');
+}
+$marked->emit('deactivate');
+$marked->paint($writer);
+if ($grid->cell(11, 0)->bg != $style->background || $grid->cell(11, 1)->bg != $inactiveColor) {
+  throw new RuntimeException('Inactive cursor background did not follow the current row.');
+}
 $reader = new XMLReader();
-$reader->XML('<List highlightSelection="false"><Item>One</Item></List>');
+$reader->XML('<List highlightSelection="false" inactiveCursorBackground="#000080"><Item>One</Item></List>');
 $reader->read();
 $parser = new SPTK\Widgets\List\Parser();
 $parser->validateAttributes($reader, []);
 $xmlList = $parser->parse($reader, $style)->widget;
 $xmlList->paint($writer);
-if ($grid->cell(0, 0)->fg != $style->foreground) {
-  throw new RuntimeException('XML List did not apply highlightSelection="false".');
+if ($grid->cell(0, 0)->fg != $style->foreground || $grid->cell(11, 0)->bg != $inactiveColor) {
+  throw new RuntimeException('XML List did not apply its selection or inactive cursor options.');
 }
 $reader->close();
 echo "List cursor row checks passed.\n";

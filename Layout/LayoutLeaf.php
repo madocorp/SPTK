@@ -32,6 +32,7 @@ final class LayoutLeaf {
   public function __construct(public string $widget, private string $width, private string $height, private Widget $instance, private array $events = [], private bool $navigate = true, private ?PixelBox $box = null, private bool $paintBackground = true) {
     $this->eventDispatcher = new EventDispatcher();
     $this->instance->on('change', $this->notifyChange(...));
+    $this->instance->on('cursor', $this->notifyCursor(...));
     $this->instance->on('reorder', $this->notifyReorder(...));
     $this->instance->on('preferredSizeChange', $this->notifyPreferredSizeChange(...));
   }
@@ -208,6 +209,11 @@ final class LayoutLeaf {
   /** Forward a widget-originated change event to XML subscriptions. */
   private function notifyChange(): void {
     $this->dispatchXmlNotification('change');
+  }
+
+  /** Forward a list cursor change separately from marked-value changes. */
+  private function notifyCursor(): void {
+    $this->dispatchXmlNotification('cursor');
   }
 
   /** Forward a widget-originated order change to XML subscriptions. */

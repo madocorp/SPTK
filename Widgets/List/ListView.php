@@ -33,10 +33,11 @@ final class ListView extends Widget {
     private readonly Style $style = new Style(),
     ?string $title = null,
     bool $highlightSelection = true,
+    ?Color $inactiveCursorBackground = null,
   ) {
     $this->viewport = new ItemViewport();
     $this->redraw = new Redraw();
-    $this->view = new View($style, $this->viewport, $this->redraw, $title, $highlightSelection);
+    $this->view = new View($style, $this->viewport, $this->redraw, $title, $highlightSelection, $inactiveCursorBackground);
     $this->setItems($items);
     $this->on('activate', $this->activate(...));
     $this->on('deactivate', $this->deactivate(...));
@@ -207,10 +208,15 @@ final class ListView extends Widget {
   /** Apply a user operation and notify value and order changes. */
   private function changeValue(callable $operation, mixed ...$arguments): void {
     $before = $this->getValue();
+    $cursor = $this->activeValue();
     $order = $this->reorderable ? $this->values() : null;
     $operation(...$arguments);
     $reordered = $order !== null && $order !== $this->values();
-    if ($before !== $this->getValue()) {
+    $changed = $before !== $this->getValue();
+    if ($cursor !== $this->activeValue()) {
+      $this->emit('cursor');
+    }
+    if ($changed) {
       $this->emit('change');
     }
     if ($reordered) {

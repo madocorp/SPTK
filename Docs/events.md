@@ -109,6 +109,7 @@ The framework emits these notifications:
 - `accept` or `cancel` when a widget leaves input mode; its release rule determines which
 - `deactivate` after either accept or cancel
 - `change` when a choice or list widget changes its value through user input
+- `cursor` when a list moves its current row, independently of its marked values
 - `reorder` when a list changes its row order through user input
 - `expand` and `collapse` when a [deck](layout.md#deck) tile opens or closes; every widget inside the tile receives it
 

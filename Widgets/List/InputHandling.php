@@ -25,6 +25,9 @@ trait InputHandling {
     if ($key === SDL::KEY_LEFT || $key === SDL::KEY_RIGHT) {
       return false;
     }
+    if ($key === SDL::KEY_DELETE && $this->query === '') {
+      return false;
+    }
     if ($key === SDL::KEY_BACKSPACE || $key === SDL::KEY_DELETE) {
       $query = $key === SDL::KEY_DELETE ? '' : mb_substr($this->query, 0, max(0, mb_strlen($this->query) - 1));
       $this->changeValue($this->setFilter(...), $query);

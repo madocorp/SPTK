@@ -2,7 +2,7 @@
 
 namespace SPTK\Widgets\List;
 
-use SPTK\Core\{ItemViewport, Style, WidgetTitle};
+use SPTK\Core\{Color, ItemViewport, Style, WidgetTitle};
 use SPTK\Rendering\GridWriter;
 
 /** Paints a list's fixed title and full or partial item rows with shared viewport bookkeeping. */
@@ -14,8 +14,8 @@ final class View {
   private int $paintedHeight = -1;
 
   /** Share the list's viewport, redraw state, and inherited title and item colors. */
-  public function __construct(Style $style, private ItemViewport $viewport, private Redraw $redraw, ?string $title, bool $highlightSelection) {
-    $this->painter = new Painter($style, $highlightSelection);
+  public function __construct(Style $style, private ItemViewport $viewport, private Redraw $redraw, ?string $title, bool $highlightSelection, ?Color $inactiveCursorBackground) {
+    $this->painter = new Painter($style, $highlightSelection, $inactiveCursorBackground);
     $this->title = new WidgetTitle($title, $style);
   }
 

@@ -113,8 +113,8 @@ up and down, a horizontal one left and right. Nothing has to be switched on.
   overwrite, a deck card that opens, or a resize never leaves the selection cut off. A layout shown
   at its end stays at the end when its content or view changes.
 - Arrows scroll first. Moving towards hidden tiles selects the next tile inside the scrolled layout;
-  focus leaves the layout only at its end. When focus leaves a layout, tiles that are fully hidden
-  elsewhere are skipped if a visible one is in that direction.
+  focus leaves the layout only at its end. Tiles that are fully hidden elsewhere and tiles inside
+  collapsed panels are skipped.
 - A mark shows each side with hidden content, with the number of hidden or cut navigation tiles.
   A vertical layout puts `▲3` on the separator above it and `3▼` on the separator below it, at the
   right end. A horizontal layout puts both on the separator above it: `◀3` at the left end and

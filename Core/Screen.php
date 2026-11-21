@@ -360,8 +360,7 @@ final class Screen {
   private function moveSelection(string $direction): bool {
     $previous = $this->selectedLeaf();
     if (!$this->moveInScrollers($previous, $direction)
-      && !$this->focus->move($direction, $this->isShown(...))
-      && !$this->focus->move($direction)) {
+      && !$this->focus->move($direction, $this->isShown(...))) {
       return false;
     }
     $previous?->dispatchNotification('unselect');

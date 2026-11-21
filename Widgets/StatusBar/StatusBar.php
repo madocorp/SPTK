@@ -82,7 +82,7 @@ final class StatusBar extends Widget {
     $this->locked = false;
     $this->confirmation = [$yes, $no, $legacyCancel];
     $this->requestFocus();
-    $this->message($message . ($legacyCancel === null ? '  Y/Return: yes  N/Esc: no' : '  Y/Return: yes  N: no  Esc: cancel'), $style, 'confirmation');
+    $this->message($message . ($legacyCancel === null ? ' [Y/N]' : ' [Y/N/Esc]'), $style, 'confirmation');
   }
 
   public function confirming(): bool {

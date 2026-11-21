@@ -9,7 +9,7 @@ use SPTK\Rendering\{GridWriter, TextMetrics};
 final class Painter {
 
   /** Hold the colors used by list rows, matches, and the cursor. */
-  public function __construct(private readonly Style $style, private readonly bool $highlightSelection) {
+  public function __construct(private readonly Style $style, private readonly bool $highlightSelection, private readonly ?Color $inactiveCursorBackground) {
   }
 
   /** Paint the visible list viewport. */
@@ -55,8 +55,10 @@ final class Painter {
     }
     $item = $items[$index];
     $selected = $multiple ? $item['selected'] : $position === $viewport->position();
-    $cursorBg = $active && $position === $viewport->position() ? $this->style->cursorBackground : $this->style->background;
-    if ($active && $position === $viewport->position()) {
+    $cursorBg = $position === $viewport->position()
+      ? ($active ? $this->style->cursorBackground : ($this->inactiveCursorBackground ?? $this->style->background))
+      : $this->style->background;
+    if ($position === $viewport->position() && ($active || $this->inactiveCursorBackground !== null)) {
       $writer->fillRow($y, $this->style->foreground, $cursorBg);
     }
     $writer->write(0, $y, $item['label'], $this->highlightSelection && $selected ? $this->style->selected : $this->style->foreground, $cursorBg);

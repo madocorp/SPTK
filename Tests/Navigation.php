@@ -88,6 +88,24 @@ foreach (['left', 'right', 'up', 'down'] as $direction) {
 }
 $selection = new WidgetSelection([]);
 expectNavigation($selection->move('right'), false, 'empty screen keeps focus');
+$hiddenRoot = new LayoutNode('horizontal', '1*', '1*');
+$hiddenPanel = new LayoutNode('vertical', '6', '1*');
+$hiddenTarget = new LayoutLeaf('Empty', '1*', '2', new Placeholder(new Color(0, 0, 0)));
+$visibleTarget = new LayoutLeaf('Empty', '1*', '1*', new Placeholder(new Color(0, 0, 0)));
+$visiblePanel = new LayoutNode('vertical', '1*', '1*');
+$visiblePanel->addLeaf(new LayoutLeaf('Empty', '1*', '1', new Placeholder(new Color(0, 0, 0)), navigate: false));
+$visiblePanel->addLeaf($visibleTarget);
+$hiddenPanel->addLeaf($hiddenTarget);
+$hiddenRoot->addNode($hiddenPanel);
+$hiddenRoot->addNode($visiblePanel);
+$hiddenScreen = new Screen($hiddenRoot);
+$hiddenScreen->measureGrid(new Tile(0, 0, 20, 4));
+$hiddenScreen->selectLeaf($visibleTarget);
+$hiddenPanel->setWidth('0');
+$hiddenScreen->measureGrid(new Tile(0, 0, 20, 4));
+expectNavigation($hiddenTarget->grid()->width, 0, 'collapsed panel child has no visible width');
+$hiddenScreen->handleEvent(navigationKey(\SPTK\SDLWrapper\SDL::KEY_UP));
+expectNavigation($hiddenScreen->selectedLeaf() === $visibleTarget, true, 'arrow keeps focus when only a collapsed panel is ahead');
 $hidden = new LayoutLeaf('Empty', '', '', new Placeholder(new Color(0, 0, 0)));
 $left = new LayoutLeaf('Empty', '', '', new Placeholder(new Color(0, 0, 0)));
 $right = new LayoutLeaf('Empty', '', '', new Placeholder(new Color(0, 0, 0)));

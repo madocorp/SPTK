@@ -24,7 +24,8 @@ trait ScreenScroll {
       return false;
     }
     foreach ($this->layout->scrollersAround($leaf, $direction) as $scroller) {
-      if ($this->focus->move($direction, $scroller->containsLeaf(...))) {
+      if ($this->focus->move($direction, fn(LayoutLeaf $candidate): bool => $scroller->containsLeaf($candidate)
+        && $candidate->grid()->width > 0 && $candidate->grid()->height > 0)) {
         return true;
       }
     }

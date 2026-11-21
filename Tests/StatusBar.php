@@ -139,6 +139,7 @@ $screen->handleEvent(statusKey(SDL::KEY_RETURN));
 
 $decision = '';
 $bar->confirm('Proceed?', function() use (&$decision): void { $decision = 'yes'; }, function() use (&$decision): void { $decision = 'no'; });
+expectStatus($bar->text(), 'Proceed? [Y/N]', 'confirmation uses compact choices');
 $screen->handleEvent(statusKey(SDL::KEY_RIGHT));
 expectStatus([$bar->confirming(), $screen->selectedLeaf()], [true, $statusLeaf], 'confirmation drains unrelated input');
 $screen->handleEvent(statusKey(ord('n')));
@@ -149,6 +150,7 @@ $screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
 expectStatus($decision, 'no', 'Escape declines confirmation');
 $decision = '';
 $bar->confirm('Legacy decision?', function() use (&$decision): void { $decision = 'yes'; }, function() use (&$decision): void { $decision = 'no'; }, function() use (&$decision): void { $decision = 'cancel'; });
+expectStatus($bar->text(), 'Legacy decision? [Y/N/Esc]', 'three-choice confirmation shows Escape');
 $screen->handleEvent(statusKey(SDL::KEY_ESCAPE));
 expectStatus($decision, 'cancel', 'legacy fourth callback keeps Escape cancellation');
 $bar->confirm('Proceed?', function() use (&$decision): void { $decision = 'yes'; }, function() use (&$decision): void { $decision = 'no'; });
